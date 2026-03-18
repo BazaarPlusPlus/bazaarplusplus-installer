@@ -11,6 +11,7 @@
   import InstallerInstallPreviewModal from '$lib/components/installer/InstallerInstallPreviewModal.svelte';
   import InstallerUpdatedModal from '$lib/components/installer/InstallerUpdatedModal.svelte';
   import InstallerStatusSteps from '$lib/components/installer/InstallerStatusSteps.svelte';
+  import InstallerSupportBar from '$lib/components/installer/InstallerSupportBar.svelte';
   import {
     detectDotnetRuntime as detectDotnetRuntimeApi,
     detectEnvironment as detectEnvironmentApi,
@@ -429,13 +430,14 @@
     t={t}
     onPickGamePath={pickGamePath}
     onCheckPath={checkPath}
-    onDetectEnvironment={detectEnvironment}
     onRequestInstall={requestInstall}
     onUninstall={uninstallBpp}
     onLaunchGame={launchGame}
     onResetBazaar={resetBazaar}
     onCustomGamePathInput={clearBazaarInvalid}
   />
+
+  <InstallerSupportBar />
 
   <footer class="footer" aria-hidden="true">
     <div class="rule"><span></span><span class="diamond small">+</span><span></span></div>

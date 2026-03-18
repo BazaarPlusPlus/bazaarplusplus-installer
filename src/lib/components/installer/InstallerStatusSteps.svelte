@@ -25,7 +25,6 @@
   export let t: (key: keyof typeof messages.en, params?: Record<string, string | number>) => string;
   export let onPickGamePath: () => void | Promise<void>;
   export let onCheckPath: () => void | Promise<void>;
-  export let onDetectEnvironment: () => void | Promise<void>;
   export let onRequestInstall: () => void | Promise<void>;
   export let onUninstall: () => void | Promise<void>;
   export let onLaunchGame: () => void | Promise<void>;
@@ -96,33 +95,8 @@
     </div>
   </div>
 
-  <div class="step" class:step-found={dotnetState === 'found'} class:step-warn={dotnetState === 'not_found'}>
-    <div class="step-index" aria-hidden="true">II</div>
-    <div class="step-body">
-      <span class="step-title">
-        {t('stepDotnet')}
-        {#if dotnetState === 'found'}
-          <span class="tag tag-ok">{env?.dotnet_version ?? 'OK'}</span>
-        {:else if dotnetState === 'not_found'}
-          <span class="tag tag-warn">{t('statusRuntimeMissing')}</span>
-        {/if}
-      </span>
-
-      {#if dotnetState === 'found'}
-        <p class="detail-line detail-muted">{t('runtimeCompatible')}</p>
-      {:else if dotnetState === 'not_found'}
-        <p class="detail-line detail-muted">{t('runtimeNotFound')}</p>
-        <button class="dotnet-download-btn" onclick={() => openUrl(dotnetDownloadUrl)} type="button">
-          {t('runtimeDownload')}
-        </button>
-      {:else if dotnetState === 'idle'}
-        <p class="detail-line detail-muted">{t('runtimeIdle')}</p>
-      {/if}
-    </div>
-  </div>
-
   <div class="step" class:step-found={bazaarFound}>
-    <div class="step-index" aria-hidden="true">III</div>
+    <div class="step-index" aria-hidden="true">II</div>
     <div class="step-body">
       <span class="step-title">
         {t('stepBazaar')}
@@ -171,19 +145,32 @@
   </div>
 
   <div class="step step-install">
-    <div class="step-index" aria-hidden="true">IV</div>
+    <div class="step-index" aria-hidden="true">III</div>
     <div class="step-body">
-      <span class="step-title">{t('stepActions')}</span>
-      <div class="action-row">
-        <button class="secondary-btn detect-btn" onclick={onDetectEnvironment} type="button" disabled={isBusy}>
-          {#if actionBusy === 'detect'}
-            <span class="spinner" aria-hidden="true"></span>
-            {t('actionDetecting')}
-          {:else}
-            {t('actionDetect')}
-          {/if}
-        </button>
+      <div class="step-heading">
+        <span class="step-title">{t('stepActions')}</span>
 
+        {#if dotnetState === 'not_found'}
+          <button class="runtime-chip runtime-chip-button" onclick={() => openUrl(dotnetDownloadUrl)} type="button">
+            {t('runtimeDownload')}
+          </button>
+        {:else}
+          <div class="runtime-chip" aria-live="polite">
+            <span class="runtime-chip-label">.NET</span>
+            <span class="runtime-chip-value">
+              {#if dotnetState === 'found'}
+                {env?.dotnet_version ?? 'OK'}
+              {:else if actionBusy === 'detect'}
+                {t('statusChecking')}
+              {:else}
+                ...
+              {/if}
+            </span>
+          </div>
+        {/if}
+      </div>
+
+      <div class="action-row">
         <div class="action-primary">
           <button class="install-btn" class:install-btn-danger={versionMismatch} disabled={!canInstall} onclick={onRequestInstall} type="button">
             {#if actionBusy === 'install'}
@@ -252,10 +239,6 @@
     box-shadow: 0 6px 28px rgba(0,0,0,0.35), 0 0 18px rgba(90, 200, 130, 0.05);
   }
 
-  .step-warn {
-    border-color: rgba(205, 150, 60, 0.3);
-  }
-
   .step-error {
     border-color: rgba(196, 98, 76, 0.28);
     box-shadow: 0 6px 28px rgba(0,0,0,0.35), 0 0 14px rgba(196, 98, 76, 0.04);
@@ -309,6 +292,14 @@
     min-width: 0;
   }
 
+  .step-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+
   .tag {
     font-family: 'Fira Code', monospace;
     font-size: 0.65rem;
@@ -326,6 +317,53 @@
   .tag-ok   { background: rgba(80, 180, 120, 0.15); color: #6dd9a0; border: 1px solid rgba(80, 180, 120, 0.25); }
   .tag-warn { background: rgba(200, 140, 50, 0.12); color: #c4923a; border: 1px solid rgba(200, 140, 50, 0.22); }
   .tag-danger { background: rgba(191, 104, 81, 0.1); color: #f0b2a2; border: 1px solid rgba(191, 104, 81, 0.2); }
+
+  .runtime-chip {
+    flex: 0 0 auto;
+    min-width: 0;
+    padding: 0.32rem 0.58rem;
+    border: 1px solid rgba(92, 146, 176, 0.16);
+    border-radius: 999px;
+    background: rgba(92, 146, 176, 0.06);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.42rem;
+    color: rgba(150, 196, 224, 0.88);
+  }
+
+  .runtime-chip-button {
+    color: rgba(128, 176, 206, 0.82);
+    border-color: rgba(100, 160, 220, 0.22);
+    background: rgba(100, 160, 220, 0.08);
+    transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  }
+
+  .runtime-chip-button:hover {
+    background: rgba(100, 160, 220, 0.14);
+    color: rgba(156, 204, 234, 0.94);
+    border-color: rgba(100, 160, 220, 0.32);
+  }
+
+  .runtime-chip-button:focus-visible {
+    outline: 2px solid rgba(255, 214, 140, 0.9);
+    outline-offset: 2px;
+  }
+
+  .runtime-chip-label {
+    font-family: 'Cinzel', serif;
+    font-size: 0.5rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgba(196, 168, 120, 0.72);
+  }
+
+  .runtime-chip-value {
+    font-family: 'Fira Code', monospace;
+    font-size: 0.62rem;
+    letter-spacing: 0;
+    text-transform: none;
+    color: currentColor;
+  }
 
   .detail-line {
     margin: 0;
@@ -550,11 +588,6 @@
     gap: 0.75rem;
   }
 
-  .detect-btn {
-    flex: 0 0 auto;
-    min-width: 96px;
-  }
-
   .action-primary {
     flex: 1;
     min-width: 0;
@@ -633,27 +666,6 @@
   .redetect-btn:hover {
     color: rgba(200, 160, 80, 0.8);
     border-color: rgba(200, 148, 55, 0.35);
-  }
-
-  .dotnet-download-btn {
-    align-self: start;
-    margin-top: 0.25rem;
-    padding: 0.38rem 0.8rem;
-    font-family: 'Cinzel', serif;
-    font-size: 0.54rem;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-    color: rgba(100, 160, 220, 0.78);
-    border: 1px solid rgba(100, 160, 220, 0.22);
-    border-radius: 2px;
-    background: rgba(100, 160, 220, 0.08);
-    transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
-  }
-
-  .dotnet-download-btn:hover {
-    color: rgba(130, 190, 240, 0.95);
-    background: rgba(100, 160, 220, 0.14);
-    border-color: rgba(100, 160, 220, 0.38);
   }
 
   .install-btn {
@@ -738,6 +750,10 @@
   }
 
   @media (max-width: 520px) {
+    .step-heading {
+      align-items: flex-start;
+    }
+
     .action-row,
     .action-primary {
       flex-direction: column;
@@ -748,7 +764,6 @@
       gap: 0.7rem;
     }
 
-    .detect-btn,
     .menu-trigger {
       width: 100%;
     }
