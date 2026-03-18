@@ -76,7 +76,7 @@ function readCargoLockVersion(rootDir, packageName) {
 
   const cargoLock = readText(cargoLockFile);
   const pattern = new RegExp(
-    String.raw`\[\[package\]\]\nname = "${escapeRegExp(packageName)}"\nversion = "([^"]+)"`,
+    String.raw`\[\[package\]\]\r?\nname = "${escapeRegExp(packageName)}"\r?\nversion = "([^"]+)"`,
     "m",
   );
   const match = cargoLock.match(pattern);
@@ -120,7 +120,7 @@ function updateCargoLockVersion(rootDir, packageName, version) {
 
   const cargoLock = readText(filePath);
   const pattern = new RegExp(
-    String.raw`(\[\[package\]\]\nname = "${escapeRegExp(packageName)}"\nversion = ")([^"]+)(")`,
+    String.raw`(\[\[package\]\]\r?\nname = "${escapeRegExp(packageName)}"\r?\nversion = ")([^"]+)(")`,
     "m",
   );
   const updatedCargoLock = replaceRequired(
