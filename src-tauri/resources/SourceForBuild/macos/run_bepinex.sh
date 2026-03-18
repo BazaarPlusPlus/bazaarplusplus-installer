@@ -102,6 +102,7 @@ fi
 
 # Use POSIX-compatible way to get the directory of the executable
 a="/$0"; a=${a%/*}; a=${a#/}; a=${a:-.}; BASEDIR=$(cd "$a" || exit; pwd -P)
+cd "$BASEDIR" # GIB: workaround for some games only working if script is run from game dir
 
 arch=""
 executable_path=""
@@ -320,14 +321,42 @@ else
     export DYLD_INSERT_LIBRARIES="${doorstop_name}:${DYLD_INSERT_LIBRARIES}"
 fi
 
-if [ -n "${is_apple_silicon}" ]; then
-    export ARCHPREFERENCE="arm64,x86_64"
+# gib: workaround to ensure game content is packaged in an .app folder
+app_path="${executable_path%/Contents/MacOS*}"
+if [[ $(basename "$app_path") != *.app ]]; then
+    real_executable_name=$(basename "$executable_path")
+    executable_path="${app_path}/${real_executable_name}.app/Contents/MacOS/${real_executable_name}"
+    target_path="${app_path}/${real_executable_name}.app/Contents"
+    mkdir -p "$target_path"
+    cp -ca "${app_path}/Contents/" "${target_path}/"
+fi
 
-    # We need to use arch for Apple Silicon to allow the executable to be run natively as otherwise if
-    # the executable is universal, supporting both x86_64 and arm64, MacOs will still run it as x86_64
-    # if the parent process is running as x86.
-    # arch also strips the DYLD_INSERT_LIBRARIES env var so we have to pass that in manually
-    exec arch -e DYLD_INSERT_LIBRARIES="${DYLD_INSERT_LIBRARIES}" "$executable_path" "$@"
+# gib: workaround to ensure game is not codesigned so that doorstop can inject BepInEx
+# macOS 26+: sign with JIT entitlements so Harmony can write to executable memory (mprotect W+X)
+app_path="${executable_path%/Contents/MacOS*}"
+if command -v codesign &>/dev/null; then
+    _entitlements_file="$(mktemp /tmp/bepinex_ents.XXXXXX.plist)"
+    cat > "$_entitlements_file" << 'ENTEOF'
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>com.apple.security.cs.allow-jit</key><true/>
+    <key>com.apple.security.cs.allow-unsigned-executable-memory</key><true/>
+    <key>com.apple.security.cs.disable-library-validation</key><true/>
+</dict>
+</plist>
+ENTEOF
+    codesign --remove-signature "$app_path" 2>/dev/null || true
+    codesign --force --deep --sign - --entitlements "$_entitlements_file" "$app_path"
+    rm -f "$_entitlements_file"
+fi
+
+if [ -n "${is_apple_silicon}" ]; then
+    # Force x86_64 (Rosetta) so Harmony can use mprotect W+X for patching.
+    # On arm64, Apple Silicon hardware enforces W^X at CPU level, blocking all Harmony patches.
+    # arch strips DYLD_INSERT_LIBRARIES so pass it manually via -e.
+    exec arch -x86_64 -e DYLD_INSERT_LIBRARIES="${DYLD_INSERT_LIBRARIES}" "$executable_path" "$@"
 else
     exec "$executable_path" "$@"
 fi
