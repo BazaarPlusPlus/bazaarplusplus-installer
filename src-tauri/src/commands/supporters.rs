@@ -137,8 +137,8 @@ fn load_supporters_sync() -> Result<SupportersResponse, String> {
 
     match fetch_remote_entries(SUPPORTERS_REMOTE_URL) {
         Ok(remote_entries) => {
-            if let Err(error) = write_cached_payload(&remote_entries, now) {
-                debug_error!("failed to write supporters cache: {error}");
+            if let Err(_error) = write_cached_payload(&remote_entries, now) {
+                debug_error!("failed to write supporters cache: {_error}");
             }
 
             Ok(SupportersResponse {
@@ -148,8 +148,8 @@ fn load_supporters_sync() -> Result<SupportersResponse, String> {
                 stale: false,
             })
         }
-        Err(error) => {
-            debug_error!("failed to refresh supporters: {error}");
+        Err(_error) => {
+            debug_error!("failed to refresh supporters: {_error}");
 
             Ok(SupportersResponse {
                 entries: local_payload.entries,

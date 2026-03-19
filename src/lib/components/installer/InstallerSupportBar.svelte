@@ -1,11 +1,9 @@
 <script lang="ts">
   import { openUrl } from '@tauri-apps/plugin-opener';
-  import { onMount } from 'svelte';
   import AppModal from '$lib/components/AppModal.svelte';
+  import SupporterListModal from '$lib/components/supporters/SupporterListModal.svelte';
   import { locale } from '$lib/locale';
   import { hasTauriRuntime } from '$lib/installer/runtime';
-  import { loadSupportersData } from '$lib/supporters';
-  import type { SupporterEntry } from '$lib/types';
 
   type CopyKey =
     | 'title'
@@ -19,11 +17,6 @@
     | 'supportQrTitle'
     | 'supportQrBody'
     | 'supportQrHint'
-    | 'supportersTitle'
-    | 'supportersIntro'
-    | 'supportersEmpty'
-    | 'supportersError'
-    | 'supportersThanks'
     | 'close';
 
   const copy = {
@@ -39,11 +32,6 @@
       supportQrTitle: 'Support BazaarPlusPlus',
       supportQrBody: 'Scan the WeChat code if you want to support the author directly.',
       supportQrHint: 'Thank you for helping BazaarPlusPlus keep shipping.',
-      supportersTitle: 'Supporters',
-      supportersIntro: 'Thanks to everyone who backed BazaarPlusPlus.',
-      supportersEmpty: 'The supporter list is not available yet.',
-      supportersError: 'Failed to load supporter list.',
-      supportersThanks: 'Thanks as well to everyone who supported without leaving a name.',
       close: 'Close'
     },
     zh: {
@@ -58,11 +46,6 @@
       supportQrTitle: '\u652f\u6301 BazaarPlusPlus',
       supportQrBody: '\u5982\u679c\u4f60\u60f3\u76f4\u63a5\u652f\u6301\u4f5c\u8005\uff0c\u53ef\u4ee5\u626b\u63cf\u5fae\u4fe1\u6536\u6b3e\u7801\u3002',
       supportQrHint: '\u611f\u8c22\u4f60\u8ba9 BazaarPlusPlus \u7ee7\u7eed\u66f4\u65b0\u3002',
-      supportersTitle: '\u652f\u6301\u8005\u540d\u5355',
-      supportersIntro: '\u611f\u8c22\u6bcf\u4e00\u4f4d\u652f\u6301 BazaarPlusPlus \u7684\u670b\u53cb\u3002',
-      supportersEmpty: '\u6682\u65f6\u8fd8\u6ca1\u6709\u8bfb\u53d6\u5230\u652f\u6301\u8005\u540d\u5355\u3002',
-      supportersError: '\u8bfb\u53d6\u652f\u6301\u8005\u540d\u5355\u5931\u8d25\u3002',
-      supportersThanks: '\u4e5f\u611f\u8c22\u6240\u6709\u6ca1\u6709\u7559\u540d\u7684\u652f\u6301\u8005\u3002',
       close: '\u5173\u95ed'
     }
   } as const;
@@ -71,41 +54,8 @@
 
   let showPaymentCodes = false;
   let showSupporterList = false;
-  let supporters: SupporterEntry[] = [];
-  let supportersLoaded = false;
-  let supportersLoadError = '';
-  let supportersLoadPromise: Promise<void> | null = null;
 
   $: currentCopy = $locale === 'zh' ? copy.zh : copy.en;
-  $: sortedSupporters = supporters;
-
-  onMount(() => {
-    void loadSupporters();
-  });
-
-  async function loadSupporters() {
-    if (supportersLoaded) return;
-    if (supportersLoadPromise) return supportersLoadPromise;
-
-    supportersLoadPromise = (async () => {
-      supportersLoadError = '';
-
-      try {
-        const payload = await loadSupportersData({
-          hasTauriRuntime: hasTauriRuntime()
-        });
-        supporters = payload.entries;
-        supportersLoaded = true;
-      } catch (error) {
-        supporters = [];
-        supportersLoadError = error instanceof Error ? error.message : String(error);
-      } finally {
-        supportersLoadPromise = null;
-      }
-    })();
-
-    return supportersLoadPromise;
-  }
 
   function openPaymentCodes() {
     showPaymentCodes = true;
@@ -126,9 +76,8 @@
     }
   }
 
-  async function openSupporterList() {
+  function openSupporterList() {
     showSupporterList = true;
-    await loadSupporters();
   }
 </script>
 
@@ -151,35 +100,12 @@
   </section>
 </AppModal>
 
-<AppModal
+<SupporterListModal
   open={showSupporterList}
-  eyebrow="BazaarPlusPlus"
-  title={currentCopy.supportersTitle}
-  bodyClass="supporter-modal-body"
-  confirmText={currentCopy.close}
-  onConfirm={() => {
+  onClose={() => {
     showSupporterList = false;
   }}
-  wide={true}
->
-  <section class="supporter-modal-shell">
-    <p class="supporter-modal-copy">{currentCopy.supportersIntro}</p>
-
-    {#if supportersLoadError}
-      <p class="supporter-state">{currentCopy.supportersError}</p>
-    {:else if sortedSupporters.length > 0}
-      <ul class="supporter-list" aria-label={currentCopy.supportersTitle}>
-        {#each sortedSupporters as supporter}
-          <li class={`supporter-item supporter-item-tier-${supporter.tier}`}>{supporter.name}</li>
-        {/each}
-      </ul>
-    {:else}
-      <p class="supporter-state">{currentCopy.supportersEmpty}</p>
-    {/if}
-
-    <p class="supporter-note">{currentCopy.supportersThanks}</p>
-  </section>
-</AppModal>
+/>
 
 <section class="support-strip" aria-label={currentCopy.title}>
   <div class="support-copy">
@@ -298,103 +224,31 @@
     color: rgba(200, 170, 120, 0.58);
   }
 
-  .supporter-list {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.45rem;
-  }
-
-  .supporter-item {
-    --pill-border: rgba(255, 232, 174, 0.18);
-    --pill-top: rgba(255, 248, 231, 0.12);
-    --pill-bottom: rgba(200, 148, 55, 0.08);
-    --pill-shadow: rgba(255, 214, 140, 0.04);
-    --pill-glow: transparent;
-    padding: 0.34rem 0.66rem;
-    border-radius: 999px;
-    background:
-      radial-gradient(circle at top, var(--pill-glow), transparent 70%),
-      linear-gradient(180deg, var(--pill-top), var(--pill-bottom));
-    border: 1px solid var(--pill-border);
-    color: rgba(236, 224, 198, 0.88);
-    font-family: 'Fira Code', monospace;
-    font-size: 0.66rem;
-    line-height: 1.3;
-    box-shadow:
-      inset 0 0 0 1px var(--pill-shadow),
-      0 4px 14px rgba(0, 0, 0, 0.12);
-  }
-
-  .supporter-item-tier-1 {
-    --pill-border: rgba(111, 166, 224, 0.3);
-    --pill-top: rgba(216, 235, 255, 0.12);
-    --pill-bottom: rgba(111, 166, 224, 0.08);
-    --pill-shadow: rgba(141, 198, 255, 0.06);
-    --pill-glow: rgba(141, 198, 255, 0.14);
-  }
-
-  .supporter-item-tier-2 {
-    --pill-border: rgba(220, 156, 76, 0.28);
-    --pill-top: rgba(255, 232, 178, 0.12);
-    --pill-bottom: rgba(220, 156, 76, 0.08);
-    --pill-shadow: rgba(255, 187, 104, 0.06);
-    --pill-glow: rgba(255, 187, 104, 0.14);
-  }
-
-  .supporter-item-tier-3 {
-    --pill-border: rgba(219, 102, 86, 0.28);
-    --pill-top: rgba(255, 218, 208, 0.12);
-    --pill-bottom: rgba(219, 102, 86, 0.08);
-    --pill-shadow: rgba(255, 132, 118, 0.06);
-    --pill-glow: rgba(255, 110, 92, 0.14);
-  }
-
-  .supporter-item-tier-4 {
-    --pill-border: rgba(172, 138, 219, 0.32);
-    --pill-top: rgba(240, 228, 255, 0.14);
-    --pill-bottom: rgba(172, 138, 219, 0.1);
-    --pill-shadow: rgba(210, 177, 255, 0.07);
-    --pill-glow: rgba(210, 177, 255, 0.16);
-  }
-
-  .supporter-state,
-  .supporter-note,
   .support-modal-copy,
-  .support-modal-hint,
-  .supporter-modal-copy {
+  .support-modal-hint {
     margin: 0;
   }
 
-  .support-modal-body,
-  .supporter-modal-body {
+  :global(.support-modal-body) {
     padding-top: 0.1rem;
   }
 
-  .support-modal-shell,
-  .supporter-modal-shell {
+  .support-modal-shell {
     display: grid;
     gap: 0.8rem;
     text-align: center;
   }
 
-  .support-modal-copy,
-  .supporter-modal-copy {
+  .support-modal-copy {
     font-size: 0.82rem;
     line-height: 1.6;
     color: rgba(228, 216, 191, 0.8);
   }
 
-  .support-modal-hint,
-  .supporter-note {
+  .support-modal-hint {
     font-size: 0.74rem;
     line-height: 1.6;
     color: rgba(200, 170, 120, 0.72);
-  }
-
-  .supporter-state {
-    font-size: 0.8rem;
-    line-height: 1.6;
-    color: rgba(214, 190, 146, 0.76);
   }
 
   .payment-frame {
