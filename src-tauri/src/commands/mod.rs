@@ -1,6 +1,7 @@
 pub mod bepinex;
 pub mod detect;
 pub mod steam;
+pub mod supporters;
 pub mod vdf;
 
 macro_rules! debug_log {

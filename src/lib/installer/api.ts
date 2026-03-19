@@ -1,5 +1,11 @@
 import { invoke } from '@tauri-apps/api/core';
-import type { DotnetInfo, EnvironmentInfo, LaunchOptionsPatchResult, SteamRunningInfo } from '$lib/types';
+import type {
+  DotnetInfo,
+  EnvironmentInfo,
+  LaunchOptionsPatchResult,
+  SteamRunningInfo,
+  SupportersResponse
+} from '$lib/types';
 
 export async function verifyGamePath(path: string) {
   return invoke<boolean>('verify_game_path', { path });
@@ -29,4 +35,8 @@ export async function uninstallBpp(steamPath: string, gamePath: string) {
 
 export async function patchLaunchOptions(steamPath: string, gamePath: string) {
   return invoke<LaunchOptionsPatchResult>('patch_launch_options', { steamPath, gamePath });
+}
+
+export async function loadSupporters() {
+  return invoke<SupportersResponse>('load_supporters');
 }

@@ -4,14 +4,8 @@
   import AppModal from '$lib/components/AppModal.svelte';
   import { formatMessage, messages } from '$lib/i18n';
   import { locale, handleLocaleToggle } from '$lib/locale';
-
-  type SupporterTierId = 1 | 2 | 3 | 4;
-
-  type SupporterEntry = {
-    name: string;
-    tier: SupporterTierId;
-    amount: number;
-  };
+  import { loadSupportersData } from '$lib/supporters';
+  import type { SupporterEntry } from '$lib/types';
 
   let appVersion = '0.0.0';
   let showPaymentCodes = false;
@@ -36,12 +30,9 @@
       accent: 'payment-card-wechat'
     }
   ];
+  let supportersLoadPromise: Promise<void> | null = null;
 
-  const supporterTierIds: SupporterTierId[] = [1, 2, 3, 4];
-
-  $: sortedSupporters = supporters
-    .slice()
-    .sort((left, right) => right.tier - left.tier || right.amount - left.amount || left.name.localeCompare(right.name));
+  $: sortedSupporters = supporters;
 
   const inspiredBy = [
     { name: 'BazaarHelper', url: 'https://github.com/Duangi/BazaarHelper' },
@@ -94,77 +85,31 @@
     showPaymentCodes = false;
   }
 
-  function normalizeSupporterTier(value: unknown): SupporterTierId | null {
-    if (typeof value !== 'number' || !Number.isInteger(value)) return null;
+  async function loadSupporters() {
+    if (supportersLoaded) return;
+    if (supportersLoadPromise) return supportersLoadPromise;
 
-    const matchedTier = supporterTierIds.find((tierId) => tierId === value);
+    supportersLoadPromise = (async () => {
+      supportersLoadError = '';
 
-    return matchedTier ?? null;
-  }
+      try {
+        const payload = await loadSupportersData();
+        supporters = payload.entries;
+        supportersLoaded = true;
+      } catch (error) {
+        supporters = [];
+        supportersLoadError = error instanceof Error ? error.message : String(error);
+      } finally {
+        supportersLoadPromise = null;
+      }
+    })();
 
-  function normalizeSupporterAmount(value: unknown): number | null {
-    if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0) {
-      return null;
-    }
-
-    return Math.round(value * 100) / 100;
-  }
-
-  function normalizeSupporterEntry(value: unknown): SupporterEntry | null {
-    if (!value || typeof value !== 'object') {
-      return null;
-    }
-
-    const { name, tier, amount } = value as { name?: unknown; tier?: unknown; amount?: unknown };
-    if (typeof name !== 'string' || !name.trim()) {
-      return null;
-    }
-
-    const normalizedTier = normalizeSupporterTier(tier);
-    if (normalizedTier == null) {
-      return null;
-    }
-
-    const normalizedAmount = normalizeSupporterAmount(amount);
-    if (normalizedAmount === null) {
-      return null;
-    }
-
-    return {
-      name: name.trim(),
-      tier: normalizedTier,
-      amount: normalizedAmount
-    };
-  }
-
-  function normalizeSupporterPayload(payload: unknown): SupporterEntry[] {
-    const entries = Array.isArray(payload) ? payload : [];
-
-    return entries
-      .map((entry) => normalizeSupporterEntry(entry))
-      .filter((entry): entry is SupporterEntry => entry !== null);
+    return supportersLoadPromise;
   }
 
   async function openSupporterList() {
     showSupporterList = true;
-
-    if (supportersLoaded) return;
-
-    supportersLoadError = '';
-
-    try {
-      const response = await fetch('/support/supportorlist.json');
-      if (!response.ok) {
-        throw new Error(`Failed to load supporter list: ${response.status}`);
-      }
-
-      const payload = await response.json();
-      supporters = normalizeSupporterPayload(payload);
-      supportersLoaded = true;
-    } catch (error) {
-      supporters = [];
-      supportersLoadError = error instanceof Error ? error.message : String(error);
-    }
+    await loadSupporters();
   }
 
   function closeSupporterList() {
