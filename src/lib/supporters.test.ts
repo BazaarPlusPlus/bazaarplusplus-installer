@@ -47,6 +47,8 @@ test('loadSupportersData falls back to bundled JSON when Tauri runtime is unavai
     assert.deepEqual(payload.entries, [{ name: 'Remote', tier: 4, amount: 1.2 }]);
     assert.equal(payload.source, 'bundled');
     assert.equal(fetchMock.mock.callCount(), 1);
+    const firstCall = fetchMock.mock.calls[0] as { arguments: unknown[] } | undefined;
+    assert.equal(firstCall?.arguments[0], '/support/supporter-list.json');
   } finally {
     globalThis.fetch = originalFetch;
   }

@@ -8,10 +8,10 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use crate::commands::{debug_error, debug_log};
 
-const BUNDLED_SUPPORTERS_JSON: &str = include_str!("../../../static/support/supportorlist.json");
+const BUNDLED_SUPPORTERS_JSON: &str = include_str!("../../../static/support/supporter-list.json");
 const SUPPORTERS_CACHE_FILE_NAME: &str = "supporters-cache.json";
 const SUPPORTERS_CACHE_DIR_NAME: &str = "BazaarPlusPlusInstaller";
-const SUPPORTERS_REMOTE_URL: &str = "https://bpp-static.bazaarplusplus.com/supportorlist.json";
+const SUPPORTERS_REMOTE_URL: &str = "https://bpp-static.bazaarplusplus.com/supporter-list.json";
 
 pub const SUPPORTER_REFRESH_INTERVAL_SECS: u64 = 24 * 60 * 60;
 

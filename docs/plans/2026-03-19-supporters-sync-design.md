@@ -6,7 +6,7 @@
 
 ## Current State
 
-- The installer support bar and the about page each load `/support/supportorlist.json` separately.
+- The installer support bar and the about page each load `/support/supporter-list.json` separately.
 - The bundled JSON is the only source of truth today.
 - Frontend components own payload validation, sorting, and error handling.
 

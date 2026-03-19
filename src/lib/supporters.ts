@@ -3,7 +3,7 @@ import { hasTauriRuntime as detectTauriRuntime } from './installer/runtime.ts';
 import type { SupporterEntry, SupporterTierId, SupportersResponse } from './types.ts';
 
 const SUPPORTER_TIERS: readonly SupporterTierId[] = [1, 2, 3, 4];
-const BUNDLED_SUPPORTERS_PATH = '/support/supportorlist.json';
+const BUNDLED_SUPPORTERS_PATH = '/support/supporter-list.json';
 
 type LoadSupportersDataOptions = {
   hasTauriRuntime?: boolean;
