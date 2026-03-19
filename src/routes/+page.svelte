@@ -426,7 +426,7 @@
     {canInstall}
     {canLaunchGame}
     {dotnetDownloadUrl}
-    effectiveGamePath={effectiveGamePath()}
+    effectiveGamePath={pageState.effectiveGamePath}
     t={t}
     onPickGamePath={pickGamePath}
     onCheckPath={checkPath}

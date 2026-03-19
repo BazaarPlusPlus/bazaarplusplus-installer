@@ -45,7 +45,7 @@ export function createPageState(input: PageStateInput): PageState {
   );
   const installPrereqsMet = input.bazaarFound && hasPath;
   const canInstall = !isBusy && (installPrereqsMet || input.isDebugInstallPreview);
-  const canLaunchGame = !isBusy && input.bazaarFound;
+  const canLaunchGame = !isBusy && input.bazaarFound && hasPath;
 
   return {
     hasPath,

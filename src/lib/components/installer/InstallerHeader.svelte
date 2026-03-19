@@ -80,12 +80,6 @@
     <span></span><span class="diamond">+</span><span></span>
   </div>
 
-  <div class="header-links">
-    <a class="header-link header-link-featured" href="/whats-new">
-      <span class="header-link-kicker">{$locale === 'zh' ? '新版本' : 'Update'}</span>
-      <span class="header-link-title">{$locale === 'zh' ? '查看 WhatsNew' : "Open What's New"}</span>
-    </a>
-  </div>
 </header>
 
 <style>
@@ -258,76 +252,8 @@
 
   .diamond { font-size: 0.55rem; color: rgba(205, 150, 60, 0.55); }
 
-  .header-links {
-    width: 100%;
-    display: flex;
-    justify-content: center;
-    margin-top: 0.55rem;
-  }
-
-  .header-link {
-    min-width: min(100%, 260px);
-    display: grid;
-    gap: 0.12rem;
-    justify-items: center;
-    padding: 0.72rem 0.95rem 0.78rem;
-    border: 1px solid rgba(200, 148, 55, 0.2);
-    border-radius: 3px;
-    text-decoration: none;
-    transition:
-      transform 0.15s ease,
-      background 0.15s ease,
-      border-color 0.15s ease,
-      box-shadow 0.15s ease;
-  }
-
-  .header-link-featured {
-    background:
-      radial-gradient(circle at top, rgba(255, 214, 140, 0.08), transparent 58%),
-      linear-gradient(180deg, rgba(200, 148, 55, 0.09), rgba(200, 148, 55, 0.03));
-    box-shadow:
-      0 0 0 1px rgba(255, 198, 98, 0.05) inset,
-      0 10px 24px rgba(0, 0, 0, 0.22);
-  }
-
-  .header-link:hover {
-    transform: translateY(-1px);
-    border-color: rgba(220, 168, 76, 0.36);
-    background:
-      radial-gradient(circle at top, rgba(255, 214, 140, 0.12), transparent 58%),
-      linear-gradient(180deg, rgba(200, 148, 55, 0.14), rgba(200, 148, 55, 0.05));
-    box-shadow:
-      0 0 0 1px rgba(255, 198, 98, 0.09) inset,
-      0 14px 28px rgba(0, 0, 0, 0.28);
-  }
-
-  .header-link:focus-visible {
-    outline: 2px solid rgba(255, 214, 140, 0.9);
-    outline-offset: 2px;
-  }
-
-  .header-link-kicker {
-    font-family: 'Cinzel', serif;
-    font-size: 0.52rem;
-    letter-spacing: 0.22em;
-    text-transform: uppercase;
-    color: rgba(214, 171, 96, 0.72);
-  }
-
-  .header-link-title {
-    font-family: 'Cinzel', serif;
-    font-size: 0.68rem;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: rgba(236, 224, 196, 0.9);
-  }
-
   @media (max-width: 520px) {
     .header { padding: 1.2rem 1rem 1rem; }
-    .header-link {
-      min-width: 0;
-      width: 100%;
-    }
     .locale-toggle {
       top: 0.7rem;
       right: 0.7rem;

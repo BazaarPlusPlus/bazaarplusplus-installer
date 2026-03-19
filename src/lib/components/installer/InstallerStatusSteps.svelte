@@ -52,11 +52,9 @@
           {t('stepBpp')}
           {#if versionMismatch}
             <span class="tag tag-danger">{$locale === 'zh' ? '版本不一致' : 'Version mismatch'}</span>
-          {:else if modInstalled}
-            <span class="tag tag-ok">{t('statusInstalled')}{env?.bpp_version ? ` · v${env.bpp_version}` : ''}</span>
           {:else if actionBusy === 'detect'}
             <span class="tag">{t('statusChecking')}</span>
-          {:else}
+          {:else if !modInstalled}
             <span class="tag tag-warn">{t('statusNotInstalled')}</span>
           {/if}
         </span>
@@ -64,48 +62,53 @@
           <div class="mismatch-summary">
             <p class="detail-line detail-muted">
               {$locale === 'zh'
-                ? '已安装版本和安装器内置版本不同，建议重新安装前先看一下本次更新内容。'
+                ? '已安装版本和安装器版本不同，建议重新安装'
                 : 'The installed version differs from the bundled one. Check what changed before reinstalling.'}
             </p>
-            <a class="mismatch-link" href="/whats-new">
-              {$locale === 'zh' ? '查看更新内容' : "View what's new"}
-            </a>
           </div>
           <div class="mismatch-versions">
             <span class="mismatch-version">
-              <span class="mismatch-version-label">{$locale === 'zh' ? '已安装' : 'Installed'}</span>
+              <span class="mismatch-version-label">{$locale === 'zh' ? '本地已安装' : 'Installed'}</span>
               <span class="mismatch-version-value">v{installedBppVersion}</span>
             </span>
             <span class="mismatch-version">
-              <span class="mismatch-version-label">{$locale === 'zh' ? '安装器内置' : 'Installer bundle'}</span>
+              <span class="mismatch-version-label">{$locale === 'zh' ? '安装器版本' : 'Installer bundle'}</span>
               <span class="mismatch-version-value">v{bundledBppVersion}</span>
             </span>
           </div>
         {:else if modInstalled}
-          <p class="detail-line detail-muted">{t('modInstalledHint')}</p>
-          {#if bundledBppVersion}
-            <p class="detail-line detail-faint">
-              {$locale === 'zh' ? '安装器内置版本' : 'Installer bundle'}: v{bundledBppVersion}
-            </p>
-          {/if}
+          <div class="mismatch-versions">
+            <span class="mismatch-version">
+              <span class="mismatch-version-label">{$locale === 'zh' ? '本地已安装' : 'Installed'}</span>
+              <span class="mismatch-version-value">v{env?.bpp_version}</span>
+            </span>
+          </div>
+          <p class="detail-line detail-muted">
+            {$locale === 'zh' ? 'BazaarPlusPlus 当前已处于最新状态' : 'BazaarPlusPlus is already up to date'}
+          </p>
         {:else}
           <p class="detail-line detail-muted">{t('detectInstalledHint')}</p>
         {/if}
       </div>
+      <div class="step-bpp-action">
+        <a class="secondary-btn mismatch-link-button" href="/whats-new">
+          {$locale === 'zh' ? "What's New" : "What's New"}
+        </a>
+      </div>
     </div>
   </div>
 
-  <div class="step" class:step-found={bazaarFound}>
+  <div class="step" class:step-found={bazaarFound && Boolean(effectiveGamePath)}>
     <div class="step-index" aria-hidden="true">II</div>
     <div class="step-body">
       <span class="step-title">
         {t('stepBazaar')}
-        {#if bazaarFound}
+        {#if bazaarFound && effectiveGamePath}
           <span class="tag tag-ok">{t('statusFound')}</span>
         {/if}
       </span>
 
-      {#if bazaarFound}
+      {#if bazaarFound && effectiveGamePath}
         <p class="detail-line detail-path" title={effectiveGamePath}>{effectiveGamePath}</p>
         <button class="redetect-btn" onclick={onResetBazaar} type="button">{t('actionReenter')}</button>
       {:else}
@@ -268,15 +271,22 @@
   }
 
   .step-body-bpp {
-    display: flex;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 8.8rem;
     align-items: stretch;
     gap: 1.1rem;
   }
 
   .step-bpp-content {
-    flex: 1;
     display: grid;
     gap: 0.7rem;
+    min-width: 0;
+  }
+
+  .step-bpp-action {
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
     min-width: 0;
   }
 
@@ -385,43 +395,27 @@
     color: rgba(200, 170, 120, 0.6);
   }
 
-  .detail-faint {
-    font-size: 0.74rem;
-    color: rgba(180, 150, 110, 0.48);
-  }
-
   .mismatch-summary {
     display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.55rem 0.85rem;
-  }
-
-  .mismatch-link {
-    flex-shrink: 0;
-    color: rgba(223, 184, 115, 0.86);
-    font-family: 'Cinzel', serif;
-    font-size: 0.6rem;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    text-decoration: none;
-    white-space: nowrap;
-  }
-
-  .mismatch-link:hover {
-    color: rgba(240, 211, 152, 0.96);
-  }
-
-  .mismatch-link:focus-visible {
-    outline: 2px solid rgba(255, 214, 140, 0.9);
-    outline-offset: 2px;
+    gap: 0.55rem;
   }
 
   .mismatch-versions {
     display: flex;
-    flex-wrap: wrap;
+    flex-direction: column;
     gap: 0.45rem;
+    min-width: 0;
+    align-items: flex-start;
+  }
+
+  .mismatch-link-button {
+    text-decoration: none;
+    width: 100%;
+    min-height: 3.4rem;
+    padding-left: 0.8rem;
+    padding-right: 0.8rem;
+    line-height: 1.5;
+    text-align: center;
   }
 
   .mismatch-version {
@@ -760,8 +754,12 @@
     }
 
     .step-body-bpp {
-      flex-direction: column;
+      grid-template-columns: 1fr;
       gap: 0.7rem;
+    }
+
+    .step-bpp-action {
+      justify-content: stretch;
     }
 
     .menu-trigger {

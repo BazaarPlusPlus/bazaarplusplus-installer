@@ -94,3 +94,19 @@ test('createPageState does not block install while dotnet status is idle when ga
   assert.equal(state.canInstall, true);
   assert.equal(state.canLaunchGame, true);
 });
+
+test('createPageState does not allow launch when Bazaar is flagged found but no path exists', () => {
+  const state = createPageState({
+    actionBusy: 'idle',
+    dotnetState: 'found',
+    bazaarFound: true,
+    selectedGamePath: null,
+    detectedGamePath: null,
+    isDebugInstallPreview: false,
+    bundledBppVersion: '1.2.0',
+    installedBppVersion: '1.2.0'
+  });
+
+  assert.equal(state.hasPath, false);
+  assert.equal(state.canLaunchGame, false);
+});
