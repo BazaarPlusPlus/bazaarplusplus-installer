@@ -60,6 +60,11 @@
     "amount": 0.148
   },
   {
+    "name": "whyyy945",
+    "tier": 3,
+    "amount": 0.148
+  },
+  {
     "name": "巴扎王",
     "tier": 2,
     "amount": 0.10
@@ -90,6 +95,16 @@
     "amount": 0.10
   },
   {
+    "name": "黄大霸",
+    "tier": 2,
+    "amount": 0.10
+  },
+  {
+    "name": "忘颜",
+    "tier": 2,
+    "amount": 0.04
+  },
+  {
     "name": "北洋|神之手贪狼",
     "tier": 2,
     "amount": 0.03
@@ -111,6 +126,11 @@
   },
   {
     "name": "斗腾",
+    "tier": 2,
+    "amount": 0.04
+  },
+  {
+    "name": "十天",
     "tier": 2,
     "amount": 0.04
   }
