@@ -14,8 +14,23 @@
   bodyClass="install-preview"
   confirmText={$locale === 'zh' ? '确认安装' : 'Install'}
   confirmDisabled={!installAcknowledged}
+  wide={true}
   {onConfirm}
 >
+  <section class="install-overview">
+    <p class="install-overview-kicker">{$locale === 'zh' ? '安装前说明' : 'Before You Install'}</p>
+    <p class="install-overview-body">
+      {$locale === 'zh'
+        ? '本次安装会将 BazaarPlusPlus 的核心增强功能写入当前游戏目录，完成后即可使用主要预览与界面辅助能力。'
+        : 'This installation writes BazaarPlusPlus core enhancements into the current game directory so the main preview and interface improvements are available right away.'}
+    </p>
+    <p class="install-overview-note">
+      {$locale === 'zh'
+        ? '安装会修改游戏目录中的模组文件；如需恢复原状，可稍后使用卸载功能。'
+        : 'Installation updates the mod files inside the game directory; you can later use the uninstall action to restore the original state.'}
+    </p>
+  </section>
+
   <div class="feature-list">
     <article class="feature-card">
       <div class="feature-icon">I</div>
@@ -23,8 +38,8 @@
         <h3>{$locale === 'zh' ? '怪物预览增强' : 'Enhanced Monster Preview'}</h3>
         <p>
           {$locale === 'zh'
-            ? '右键点击查看怪物棋盘与技能信息'
-            : 'Right-click to inspect the monster board and skill details.'}
+            ? '更直接地查看怪物棋盘、技能与关键信息，减少临场判断成本。'
+            : 'Inspect monster boards, skills, and key details with less friction during a run.'}
         </p>
       </div>
     </article>
@@ -33,42 +48,28 @@
       <div class="feature-icon">II</div>
       <div class="feature-copy">
         <h3>{$locale === 'zh' ? '附魔预览增强' : 'Enhanced Enchantment Preview'}</h3>
-        {#if $locale === 'zh'}
-          <p>默认直接显示附魔效果预览</p>
-        {:else}
-          <p>Enchantment results are shown directly by default.</p>
-        {/if}
+        <p>
+          {$locale === 'zh'
+            ? '附魔结果与变化会更直观地展示，浏览装备选择时更省步骤。'
+            : 'See enchantment outcomes and changes more directly while comparing gear choices.'}
+        </p>
       </div>
     </article>
 
     <article class="feature-card feature-card-wide">
       <div class="feature-icon">III</div>
       <div class="feature-copy">
-        <h3>{$locale === 'zh' ? '战斗状态条' : 'Combat Status Bar'}</h3>
-        {#if $locale === 'zh'}
-          <p>可选功能，显示战斗时间、帧数和速度控制</p>
-          <p class="feature-callout">
-            <span class="feature-callout-line">
-              首次使用可在 <span class="feature-emphasis">游戏内选项菜单中开启</span>
-            </span>
-            <span class="feature-callout-line">
-              游戏内可按 <span class="feature-hotkey">F6</span> 快速切换显示
-            </span>
-          </p>
-        {:else}
-          <p>
-            Optional feature showing battle time, frame count, and speed controls.
-            <br />
-            Launch the game once, enable it from the in-game options menu, then restart the game
-            to apply. Press <span class="feature-hotkey">F6</span> in-game to toggle it quickly.
-          </p>
-          <p class="feature-callout">
-            <span class="feature-callout-line">Enable it from the in-game options menu</span>
-            <span class="feature-callout-line">
-              Press <span class="feature-hotkey">F6</span> in-game to toggle it quickly
-            </span>
-          </p>
-        {/if}
+        <h3>{$locale === 'zh' ? '战斗信息增强' : 'Combat HUD Enhancements'}</h3>
+        <p>
+          {$locale === 'zh'
+            ? '补充战斗过程中的状态显示与信息反馈，让节奏和局势变化更容易读。'
+            : 'Adds extra combat status feedback so timing and board-state changes are easier to read.'}
+        </p>
+        <p class="feature-callout">
+          <span class="feature-callout-line">
+            {$locale === 'zh' ? '安装仅影响 BazaarPlusPlus 模组文件，不会改动你的账号或库路径。' : 'The installer only touches BazaarPlusPlus mod files and does not change your account or library path.'}
+          </span>
+        </p>
       </div>
     </article>
   </div>
@@ -78,13 +79,52 @@
     <span class="install-acknowledge-box" aria-hidden="true"></span>
     <span>
       {$locale === 'zh'
-        ? '我已了解战斗状态条需在安装后前往游戏内选项菜单手动开启'
-        : 'I understand that the combat status bar must be enabled later from the in-game options menu after installation.'}
+        ? '我已阅读说明，并准备继续安装'
+        : 'I have read the notes and I am ready to continue with the installation.'}
     </span>
   </label>
 </AppModal>
 
 <style>
+  .install-overview {
+    display: grid;
+    gap: 0.42rem;
+    padding: 0.92rem 1rem;
+    text-align: left;
+    border: 1px solid rgba(200, 148, 55, 0.18);
+    border-radius: 4px;
+    background:
+      linear-gradient(180deg, rgba(200, 148, 55, 0.07), rgba(200, 148, 55, 0.02)),
+      rgba(12, 8, 4, 0.86);
+    box-shadow:
+      inset 0 0 0 1px rgba(255, 198, 98, 0.04),
+      0 10px 24px rgba(0, 0, 0, 0.16);
+  }
+
+  .install-overview-kicker {
+    margin: 0;
+    font-family: 'Cinzel', serif;
+    font-size: 0.6rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: rgba(232, 200, 122, 0.88);
+  }
+
+  .install-overview-body,
+  .install-overview-note {
+    margin: 0;
+    font-size: 0.82rem;
+    line-height: 1.55;
+  }
+
+  .install-overview-body {
+    color: rgba(236, 225, 202, 0.84);
+  }
+
+  .install-overview-note {
+    color: rgba(200, 170, 120, 0.7);
+  }
+
   .feature-list {
     display: grid;
     gap: 0.7rem;
@@ -121,7 +161,7 @@
 
   .feature-copy {
     display: grid;
-    gap: 0.28rem;
+    gap: 0.34rem;
     min-width: 0;
   }
 
@@ -137,20 +177,20 @@
   .feature-copy p {
     margin: 0;
     font-size: 0.84rem;
-    line-height: 1.55;
-    color: rgba(228, 216, 191, 0.72);
+    line-height: 1.6;
+    color: rgba(228, 216, 191, 0.78);
     white-space: pre-line;
   }
 
   .feature-callout {
     display: grid;
     gap: 0.22rem;
-    margin-top: 0.08rem;
-    padding: 0.32rem 0.48rem;
+    margin-top: 0.12rem;
+    padding: 0.42rem 0.55rem;
     border: 1px solid rgba(240, 201, 120, 0.1);
     border-radius: 3px;
     background: linear-gradient(180deg, rgba(240, 201, 120, 0.035), rgba(240, 201, 120, 0.01));
-    color: rgba(228, 216, 191, 0.56);
+    color: rgba(228, 216, 191, 0.62);
     font-size: 0.72rem;
     line-height: 1.4;
   }
@@ -160,29 +200,6 @@
     flex-wrap: wrap;
     align-items: center;
     gap: 0.35rem;
-  }
-
-  .feature-emphasis {
-    color: rgba(246, 216, 146, 0.88);
-    font-weight: 600;
-  }
-
-  .feature-hotkey {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    vertical-align: middle;
-    padding: 0.05rem 0.34rem;
-    border: 1px solid rgba(240, 201, 120, 0.36);
-    border-radius: 999px;
-    background: linear-gradient(180deg, rgba(240, 201, 120, 0.12), rgba(158, 92, 30, 0.1));
-    box-shadow: 0 0 0 1px rgba(255, 198, 98, 0.05) inset;
-    color: #f7d995;
-    font-family: 'Fira Code', monospace;
-    font-size: 0.78em;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    white-space: nowrap;
   }
 
   .install-acknowledge {
@@ -199,7 +216,7 @@
     box-shadow: inset 0 0 0 1px rgba(255, 198, 98, 0.04);
     text-align: left;
     color: rgba(228, 216, 191, 0.78);
-    font-size: 0.77rem;
+    font-size: 0.8rem;
     line-height: 1.45;
     cursor: pointer;
   }
