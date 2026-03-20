@@ -78,7 +78,7 @@
           </div>
         {:else if modInstalled}
           <div class="mismatch-versions">
-            <span class="mismatch-version">
+            <span class="mismatch-version mismatch-version-ok">
               <span class="mismatch-version-label">{$locale === 'zh' ? '本地已安装' : 'Installed'}</span>
               <span class="mismatch-version-value">v{env?.bpp_version}</span>
             </span>
@@ -429,10 +429,20 @@
     background: rgba(191, 104, 81, 0.06);
   }
 
+  .mismatch-version-ok {
+    border-color: rgba(80, 180, 120, 0.24);
+    background: rgba(80, 180, 120, 0.1);
+    box-shadow: 0 0 0 1px rgba(80, 180, 120, 0.04) inset;
+  }
+
   .mismatch-version-label {
     color: rgba(214, 182, 126, 0.62);
     font-size: 0.68rem;
     white-space: nowrap;
+  }
+
+  .mismatch-version-ok .mismatch-version-label {
+    color: rgba(156, 214, 179, 0.78);
   }
 
   .mismatch-version-value {
@@ -440,6 +450,10 @@
     font-family: 'Fira Code', monospace;
     font-size: 0.72rem;
     white-space: nowrap;
+  }
+
+  .mismatch-version-ok .mismatch-version-value {
+    color: rgba(216, 244, 228, 0.92);
   }
 
   .locate-bar {
