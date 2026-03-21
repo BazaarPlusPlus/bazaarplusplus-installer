@@ -10,7 +10,7 @@
 <AppModal
   {open}
   eyebrow="BazaarPlusPlus"
-  title={$locale === 'zh' ? '开始安装' : 'Install BazaarPlusPlus'}
+  title={$locale === 'zh' ? '安装 BazaarPlusPlus' : 'Install BazaarPlusPlus'}
   bodyClass="install-preview"
   confirmText={$locale === 'zh' ? '确认安装' : 'Install'}
   confirmDisabled={!installAcknowledged}
@@ -18,69 +18,30 @@
   {onConfirm}
 >
   <section class="install-overview">
-    <p class="install-overview-kicker">{$locale === 'zh' ? '安装前说明' : 'Before You Install'}</p>
+    <p class="install-overview-kicker">{$locale === 'zh' ? '本次安装内容' : 'What This Installation Enables'}</p>
     <p class="install-overview-body">
       {$locale === 'zh'
-        ? '本次安装会将 BazaarPlusPlus 的核心增强功能写入当前游戏目录，完成后即可使用主要预览与界面辅助能力。'
-        : 'This installation writes BazaarPlusPlus core enhancements into the current game directory so the main preview and interface improvements are available right away.'}
-    </p>
-    <p class="install-overview-note">
-      {$locale === 'zh'
-        ? '安装会修改游戏目录中的模组文件；如需恢复原状，可稍后使用卸载功能。'
-        : 'Installation updates the mod files inside the game directory; you can later use the uninstall action to restore the original state.'}
+        ? 'BazaarPlusPlus 包含几项最常用的功能：战绩记录、战斗回放、野怪预览、升级预览和附魔预览。'
+        : "This installation enables several of BazaarPlusPlus's most useful enhancements, including match history, battle replay, monster preview, level-up preview, and enchantment preview."}
     </p>
   </section>
 
-  <div class="feature-list">
-    <article class="feature-card">
-      <div class="feature-icon">I</div>
-      <div class="feature-copy">
-        <h3>{$locale === 'zh' ? '怪物预览增强' : 'Enhanced Monster Preview'}</h3>
-        <p>
-          {$locale === 'zh'
-            ? '更直接地查看怪物棋盘、技能与关键信息，减少临场判断成本。'
-            : 'Inspect monster boards, skills, and key details with less friction during a run.'}
-        </p>
-      </div>
-    </article>
-
-    <article class="feature-card">
-      <div class="feature-icon">II</div>
-      <div class="feature-copy">
-        <h3>{$locale === 'zh' ? '附魔预览增强' : 'Enhanced Enchantment Preview'}</h3>
-        <p>
-          {$locale === 'zh'
-            ? '附魔结果与变化会更直观地展示，浏览装备选择时更省步骤。'
-            : 'See enchantment outcomes and changes more directly while comparing gear choices.'}
-        </p>
-      </div>
-    </article>
-
-    <article class="feature-card feature-card-wide">
-      <div class="feature-icon">III</div>
-      <div class="feature-copy">
-        <h3>{$locale === 'zh' ? '战斗信息增强' : 'Combat HUD Enhancements'}</h3>
-        <p>
-          {$locale === 'zh'
-            ? '补充战斗过程中的状态显示与信息反馈，让节奏和局势变化更容易读。'
-            : 'Adds extra combat status feedback so timing and board-state changes are easier to read.'}
-        </p>
-        <p class="feature-callout">
-          <span class="feature-callout-line">
-            {$locale === 'zh' ? '安装仅影响 BazaarPlusPlus 模组文件，不会改动你的账号或库路径。' : 'The installer only touches BazaarPlusPlus mod files and does not change your account or library path.'}
-          </span>
-        </p>
-      </div>
-    </article>
-  </div>
+  <section class="install-impact">
+    <p class="install-impact-kicker">{$locale === 'zh' ? '安装影响范围' : 'What It Changes'}</p>
+    <p class="install-impact-body">
+      {$locale === 'zh'
+        ? '安装会将 BazaarPlusPlus 所需文件写入当前游戏目录，不会改动你的账号信息或游戏库位置。如需恢复原状，之后可随时卸载。'
+        : 'The installer writes the required BazaarPlusPlus files into the current game directory. It does not change your account data or library location, and you can uninstall later at any time.'}
+    </p>
+  </section>
 
   <label class="install-acknowledge">
     <input class="install-acknowledge-input" bind:checked={installAcknowledged} type="checkbox" />
     <span class="install-acknowledge-box" aria-hidden="true"></span>
     <span>
       {$locale === 'zh'
-        ? '我已阅读说明，并准备继续安装'
-        : 'I have read the notes and I am ready to continue with the installation.'}
+        ? '我已了解本次安装会启用哪些内容，并准备继续'
+        : 'I understand what this installation enables and I am ready to continue.'}
     </span>
   </label>
 </AppModal>
@@ -111,7 +72,7 @@
   }
 
   .install-overview-body,
-  .install-overview-note {
+  .install-impact-body {
     margin: 0;
     font-size: 0.82rem;
     line-height: 1.55;
@@ -121,85 +82,30 @@
     color: rgba(236, 225, 202, 0.84);
   }
 
-  .install-overview-note {
-    color: rgba(200, 170, 120, 0.7);
-  }
-
-  .feature-list {
+  .install-impact {
     display: grid;
-    gap: 0.7rem;
+    gap: 0.42rem;
+    padding: 0.92rem 1rem;
     text-align: left;
-  }
-
-  .feature-card {
-    display: grid;
-    grid-template-columns: 2.25rem 1fr;
-    gap: 0.8rem;
-    align-items: start;
-    padding: 0.9rem;
-    border: 1px solid rgba(200, 148, 55, 0.18);
-    border-radius: 3px;
+    border: 1px solid rgba(200, 148, 55, 0.14);
+    border-radius: 4px;
     background:
-      linear-gradient(180deg, rgba(200, 148, 55, 0.08), rgba(200, 148, 55, 0.02)),
-      rgba(12, 8, 4, 0.82);
-    box-shadow: inset 0 0 0 1px rgba(255, 198, 98, 0.04);
+      linear-gradient(180deg, rgba(200, 148, 55, 0.04), rgba(200, 148, 55, 0.015)),
+      rgba(12, 8, 4, 0.78);
+    box-shadow: inset 0 0 0 1px rgba(255, 198, 98, 0.03);
   }
 
-  .feature-icon {
-    width: 2.25rem;
-    height: 2.25rem;
-    display: grid;
-    place-items: center;
-    border: 1px solid rgba(214, 169, 84, 0.28);
-    border-radius: 999px;
-    background: radial-gradient(circle at 30% 30%, rgba(232, 200, 122, 0.22), rgba(158, 92, 30, 0.14));
-    color: rgba(232, 200, 122, 0.92);
-    font-family: 'Cinzel', serif;
-    font-size: 0.66rem;
-    letter-spacing: 0.12em;
-  }
-
-  .feature-copy {
-    display: grid;
-    gap: 0.34rem;
-    min-width: 0;
-  }
-
-  .feature-copy h3 {
+  .install-impact-kicker {
     margin: 0;
     font-family: 'Cinzel', serif;
-    font-size: 0.78rem;
-    letter-spacing: 0.08em;
+    font-size: 0.6rem;
+    letter-spacing: 0.18em;
     text-transform: uppercase;
-    color: rgba(233, 215, 182, 0.92);
+    color: rgba(216, 188, 123, 0.8);
   }
 
-  .feature-copy p {
-    margin: 0;
-    font-size: 0.84rem;
-    line-height: 1.6;
-    color: rgba(228, 216, 191, 0.78);
-    white-space: pre-line;
-  }
-
-  .feature-callout {
-    display: grid;
-    gap: 0.22rem;
-    margin-top: 0.12rem;
-    padding: 0.42rem 0.55rem;
-    border: 1px solid rgba(240, 201, 120, 0.1);
-    border-radius: 3px;
-    background: linear-gradient(180deg, rgba(240, 201, 120, 0.035), rgba(240, 201, 120, 0.01));
-    color: rgba(228, 216, 191, 0.62);
-    font-size: 0.72rem;
-    line-height: 1.4;
-  }
-
-  .feature-callout-line {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 0.35rem;
+  .install-impact-body {
+    color: rgba(200, 170, 120, 0.7);
   }
 
   .install-acknowledge {
@@ -281,7 +187,8 @@
   }
 
   @media (max-width: 520px) {
-    .feature-card,
+    .install-overview,
+    .install-impact,
     .install-acknowledge {
       padding-left: 0.85rem;
       padding-right: 0.85rem;
