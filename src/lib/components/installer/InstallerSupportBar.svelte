@@ -30,8 +30,10 @@
       supporters: 'Supporters',
       supportersAction: 'Open list',
       supportQrTitle: 'Support BazaarPlusPlus',
-      supportQrBody: 'Scan the WeChat code if you want to support the project directly.',
-      supportQrHint: 'Thank you for helping BazaarPlusPlus keep shipping.',
+      supportQrCardTitle: 'Support the Project',
+      supportQrCardBody: 'Buy Bazaar++ a drink.',
+      supportQrBody: 'With your support, Bazaar++ gets to grow more good stuff.',
+      supportQrHint: 'If you want, you can leave a supporter ID in the payment note.',
       close: 'Close'
     },
     zh: {
@@ -44,8 +46,10 @@
       supporters: '\u652f\u6301\u8005\u540d\u5355',
       supportersAction: '\u67e5\u770b\u540d\u5355',
       supportQrTitle: '\u652f\u6301 BazaarPlusPlus',
-      supportQrBody: '\u5982\u679c\u4f60\u60f3\u76f4\u63a5\u652f\u6301\u9879\u76ee\uff0c\u53ef\u4ee5\u626b\u63cf\u5fae\u4fe1\u6536\u6b3e\u7801\u3002',
-      supportQrHint: '\u611f\u8c22\u4f60\u8ba9 BazaarPlusPlus \u7ee7\u7eed\u66f4\u65b0\u3002',
+      supportQrCardTitle: '\u652f\u6301\u9879\u76ee',
+      supportQrCardBody: '\u8bf7 Bazaar++ \u559d\u4e00\u676f',
+      supportQrBody: '\u6709\u4f60\u652f\u6301\uff0cBazaar++ \u4f1a\u5192\u51fa\u66f4\u591a\u597d\u4e1c\u897f',
+      supportQrHint: '\u5982\u679c\u613f\u610f\uff0c\u6b22\u8fce\u5728\u5907\u6ce8\u91cc\u7559\u4e00\u4e2a\u652f\u6301\u8005 ID',
       close: '\u5173\u95ed'
     }
   } as const;
@@ -92,11 +96,21 @@
   }}
 >
   <section class="support-modal-shell">
-    <p class="support-modal-copy">{currentCopy.supportQrBody}</p>
-    <div class="payment-frame">
-      <img class="payment-image" src="/support/wechat-pay.svg" alt={currentCopy.wechat} />
+    <div class="payment-grid">
+      <article class="payment-card payment-card-wechat">
+        <div class="payment-frame">
+          <img class="payment-image" src="/support/wechat-pay.svg" alt={currentCopy.wechat} />
+        </div>
+
+        <div class="payment-copy">
+          <h3>{currentCopy.supportQrCardTitle}</h3>
+          <p>{currentCopy.supportQrCardBody}</p>
+        </div>
+      </article>
     </div>
-    <p class="support-modal-hint">{currentCopy.supportQrHint}</p>
+
+    <p class="payment-support-note">{currentCopy.supportQrBody}</p>
+    <p class="payment-support-tip">{currentCopy.supportQrHint}</p>
   </section>
 </AppModal>
 
@@ -224,43 +238,97 @@
     color: rgba(200, 170, 120, 0.58);
   }
 
-  .support-modal-copy,
-  .support-modal-hint {
-    margin: 0;
-  }
-
   :global(.support-modal-body) {
     padding-top: 0.1rem;
   }
 
   .support-modal-shell {
     display: grid;
+    gap: 0.9rem;
+    text-align: left;
+  }
+
+  .payment-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 260px);
+    justify-content: center;
     gap: 0.8rem;
+  }
+
+  .payment-support-note {
+    margin: -0.1rem 0 0;
     text-align: center;
+    font-size: 0.76rem;
+    line-height: 1.6;
+    color: rgba(214, 190, 146, 0.76);
   }
 
-  .support-modal-copy {
-    font-size: 0.82rem;
-    line-height: 1.6;
-    color: rgba(228, 216, 191, 0.8);
+  .payment-support-tip {
+    margin: -0.2rem auto 0;
+    max-width: 28rem;
+    text-align: center;
+    font-size: 0.72rem;
+    line-height: 1.65;
+    color: rgba(240, 220, 184, 0.82);
   }
 
-  .support-modal-hint {
-    font-size: 0.74rem;
-    line-height: 1.6;
-    color: rgba(200, 170, 120, 0.72);
+  .payment-card {
+    position: relative;
+    padding: 0.75rem;
+    background:
+      radial-gradient(circle at top, rgba(255, 232, 174, 0.08), transparent 54%),
+      linear-gradient(180deg, rgba(34, 20, 8, 0.96), rgba(16, 9, 4, 0.98));
+    border: 1px solid rgba(200, 148, 55, 0.16);
+    border-radius: 4px;
+    display: grid;
+    gap: 0.65rem;
+    box-shadow: inset 0 0 0 1px rgba(255, 198, 98, 0.05);
+  }
+
+  .payment-card::after {
+    content: '';
+    position: absolute;
+    inset: 0.45rem;
+    border: 1px solid rgba(255, 220, 155, 0.05);
+    border-radius: 2px;
+    pointer-events: none;
+  }
+
+  .payment-card-wechat {
+    box-shadow:
+      inset 0 0 0 1px rgba(255, 198, 98, 0.05),
+      0 10px 32px rgba(42, 110, 78, 0.14);
   }
 
   .payment-frame {
-    width: min(100%, 280px);
-    margin: 0 auto;
-    padding: 0.8rem;
     aspect-ratio: 1 / 1;
+    padding: 0.8rem;
     background: linear-gradient(135deg, rgba(255, 248, 231, 0.98), rgba(245, 238, 220, 0.98));
     border-radius: 3px;
     box-shadow:
       inset 0 0 0 1px rgba(95, 65, 19, 0.08),
       0 10px 24px rgba(0, 0, 0, 0.22);
+  }
+
+  .payment-copy {
+    display: grid;
+    gap: 0.18rem;
+    text-align: center;
+  }
+
+  .payment-copy h3 {
+    margin: 0;
+    font-family: 'Cinzel', serif;
+    font-size: 0.82rem;
+    letter-spacing: 0.04em;
+    color: rgba(238, 220, 182, 0.94);
+  }
+
+  .payment-copy p {
+    margin: 0;
+    font-size: 0.66rem;
+    line-height: 1.45;
+    color: rgba(200, 170, 120, 0.8);
   }
 
   .payment-image {
@@ -280,6 +348,10 @@
 
   @media (max-width: 520px) {
     .support-actions {
+      grid-template-columns: 1fr;
+    }
+
+    .payment-grid {
       grid-template-columns: 1fr;
     }
   }
