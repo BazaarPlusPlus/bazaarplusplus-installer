@@ -2,6 +2,7 @@
 set -euo pipefail
 
 PROD=false
+CLEAN_DEPS=false
 
 usage() {
     cat <<'EOF'
@@ -11,6 +12,9 @@ Usage:
 
   ./build.sh --prod
       Build release artifacts for the current host platform.
+
+  ./build.sh --prod --clean-deps
+      Reinstall npm dependencies before building.
 EOF
 }
 
@@ -18,6 +22,9 @@ while [ "$#" -gt 0 ]; do
     case "$1" in
         --prod)
             PROD=true
+            ;;
+        --clean-deps)
+            CLEAN_DEPS=true
             ;;
         -h|--help)
             usage
@@ -77,7 +84,16 @@ current_platform() {
 }
 
 install_dependencies() {
-    if [ -f "$SCRIPT_DIR/package-lock.json" ]; then
+    if [ "$CLEAN_DEPS" = false ] \
+        && [ -d "$SCRIPT_DIR/node_modules" ] \
+        && [ -d "$SCRIPT_DIR/node_modules/@tauri-apps/cli" ] \
+        && { [ -f "$SCRIPT_DIR/node_modules/.bin/tauri" ] || [ -f "$SCRIPT_DIR/node_modules/.bin/tauri.cmd" ]; }; then
+        echo "==> Reusing existing npm dependencies"
+        echo "    Remove node_modules or rerun with --clean-deps to force a reinstall."
+        return
+    fi
+
+    if [ "$CLEAN_DEPS" = true ] && [ -f "$SCRIPT_DIR/package-lock.json" ]; then
         invoke_step "Installing npm dependencies" npm ci
     else
         invoke_step "Installing npm dependencies" npm install

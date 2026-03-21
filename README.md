@@ -30,6 +30,12 @@ Build the desktop bundle:
 ./build.sh --prod
 ```
 
+If you need a clean dependency reinstall first:
+
+```bash
+./build.sh --prod --clean-deps
+```
+
 Artifacts are written under `src-tauri/target/release/`.
 
 ## Structure
