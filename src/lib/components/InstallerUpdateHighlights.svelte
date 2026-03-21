@@ -1,4 +1,5 @@
 <script lang="ts">
+  import AppModal from '$lib/components/AppModal.svelte';
   import { locale } from '$lib/locale';
 
   type LocalizedText = {
@@ -6,131 +7,135 @@
     en: string;
   };
 
+  type HighlightTone = 'default' | 'featured' | 'warning';
+
   type HighlightSection = {
     icon: string;
     title: LocalizedText;
     bullets: LocalizedText[];
-    tone?: 'default' | 'support' | 'warning';
+    tone?: HighlightTone;
+    badge?: LocalizedText;
+    actionLead?: LocalizedText;
+    actionLabel?: LocalizedText;
   };
+
+  let showSupportQr = false;
 
   const sections: HighlightSection[] = [
     {
       icon: 'I',
       title: {
-        zh: '野怪掉落预览',
-        en: 'Monster Preview'
+        zh: '战绩记录和战斗回放',
+        en: 'Match History and Battle Replays'
       },
       bullets: [
         {
-          zh: '修复了进入门票事件后，野怪预览可能失效的问题。',
-          en: 'Fixed an issue where monster previews might fail to display after entering a ticket event.'
-        },
-        {
-          zh: '新增野怪的血量、经验和金币展示，战斗收益信息更直观。',
-          en: 'Monster previews now show health, experience, and gold so combat rewards are easier to read.'
+          zh: '增加了战绩记录和战斗回放功能。',
+          en: 'Added match history and battle replay features.'
         }
-      ]
+      ],
+      tone: 'featured',
+      badge: {
+        zh: '主推功能',
+        en: 'Featured'
+      },
+      actionLead: {
+        zh: '太牛了',
+        en: 'Love It'
+      },
+      actionLabel: {
+        zh: '支持作者',
+        en: 'Support Author'
+      }
     },
     {
       icon: 'II',
       title: {
-        zh: '附魔效果预览',
-        en: 'Enchant Preview'
+        zh: '预览修饰键更改',
+        en: 'Preview Modifier Key Changes'
       },
       bullets: [
         {
-          zh: '优化了附魔效果预览的展示形式。',
-          en: 'The enchant preview layout has been refined.'
-        },
-        {
-          zh: '现在对手棋盘和商店中的物品也支持附魔预览。',
-          en: 'Items on the opponent board and in shops now support enchant previews as well.'
-        },
-        {
-          zh: '修复了关闭“总是显示附魔”后，悬停时再按 Ctrl 无法正常显示附魔预览的问题。',
-          en: 'Fixed an issue where enchant previews would not appear on hover with Ctrl after disabling Always Show.'
+          zh: '增加了修饰键更改功能。',
+          en: 'Added support for changing modifier keys.'
         }
       ]
     },
     {
       icon: 'III',
       title: {
-        zh: '升级效果预览',
-        en: 'Upgrade Preview'
+        zh: '战斗加速调整',
+        en: 'Combat Speed Changes'
       },
       bullets: [
         {
-          zh: '鼠标悬停卡牌时，按住 Shift 即可查看升级后的效果变化。',
-          en: 'Hold Shift while hovering a card to inspect how its upgraded effect changes.'
+          zh: '移除了战斗加速功能。',
+          en: 'Removed the combat speed-up feature.'
         }
       ]
     },
     {
       icon: 'IV',
       title: {
-        zh: '战斗状态展示',
-        en: 'Combat Status Bar'
+        zh: '设置路径优化',
+        en: 'Settings Path Optimization'
       },
       bullets: [
         {
-          zh: '战斗状态条支持的最大倍速已从 5 降低到 3。',
-          en: 'The maximum speed multiplier supported by the combat status bar has been reduced from 5x to 3x.'
-        },
-        {
-          zh: '优化了战斗状态条的显示逻辑，现在可以显示上一场战斗的耗时。',
-          en: 'The display logic has been improved and can now show the duration of the previous combat.'
+          zh: '优化了设置的路径。',
+          en: 'Optimized the settings path.'
         }
       ]
     },
     {
       icon: 'V',
       title: {
-        zh: '安装器',
-        en: 'Installer'
+        zh: '野怪预览修复',
+        en: 'Monster Preview Fixes'
       },
       bullets: [
         {
-          zh: '安装器现已加入可选的自动更新功能。',
-          en: 'The installer now includes optional automatic updates.'
-        },
-        {
-          zh: '优化了自定义游戏路径下的安装检测与重装流程。',
-          en: 'Improved installation detection and reinstall flow for custom game paths.'
-        },
-        {
-          zh: '安装器现在更聚焦于检测、安装、更新和启动流程。',
-          en: 'The installer is now more focused on detection, installation, updates, and launch flow.'
+          zh: '修复了野怪预览的附魔。',
+          en: 'Fixed enchant display in monster previews.'
         }
       ]
     },
     {
       icon: 'VI',
       title: {
-        zh: '支持者',
-        en: 'Supporters'
+        zh: '首轮野怪加速修复',
+        en: 'First-Round Monster Speed Fix'
       },
       bullets: [
         {
-          zh: '信息页面增加了支持者名单，感谢大家的支持。',
-          en: 'The information page now includes a supporters list to thank everyone backing the project.'
+          zh: '修复了首轮野怪加速不会生效的问题。',
+          en: 'Fixed an issue where first-round monster acceleration would not take effect.'
         }
-      ],
-      tone: 'support'
+      ]
     },
     {
       icon: 'VII',
+      title: {
+        zh: 'F6 战斗状态条显隐自动记忆',
+        en: 'F6 Combat Status Bar Visibility Memory'
+      },
+      bullets: [
+        {
+          zh: '增加 F6 战斗状态条显隐自动记忆。',
+          en: 'Added automatic memory for F6 combat status bar visibility.'
+        }
+      ]
+    },
+    {
+      icon: 'VIII',
       title: {
         zh: '已知问题',
         en: 'Known Issues'
       },
       bullets: [
         {
-          zh: '商店中的卡牌在预览升级效果时，文本可能会出现溢出。',
-          en: 'Upgrade preview text can still overflow for cards shown in shops.'
-        },
-        {
-          zh: '厨师职业的高温词条可能会影响 Bazaar++ Logo 的显示。',
-          en: 'The Chef class high-temperature affix can still affect Bazaar++ logo rendering.'
+          zh: '战斗回放的玩家血条显示不准确。',
+          en: 'The player health bar is displayed inaccurately during battle replay.'
         }
       ],
       tone: 'warning'
@@ -138,25 +143,51 @@
   ];
 </script>
 
+<AppModal
+  open={showSupportQr}
+  eyebrow="BazaarPlusPlus"
+  title={$locale === 'zh' ? '支持 BazaarPlusPlus' : 'Support BazaarPlusPlus'}
+  bodyClass="support-modal-body"
+  confirmText={$locale === 'zh' ? '关闭' : 'Close'}
+  onConfirm={() => {
+    showSupportQr = false;
+  }}
+>
+  <section class="support-modal-shell">
+    <p class="support-modal-copy">
+      {$locale === 'zh'
+        ? '如果你想直接支持作者，可以扫描微信收款码。'
+        : 'Scan the WeChat code if you want to support the author directly.'}
+    </p>
+    <div class="payment-frame">
+      <img class="payment-image" src="/support/wechat-pay.svg" alt="WePay" />
+    </div>
+    <p class="support-modal-hint">
+      {$locale === 'zh' ? '感谢支持，BazaarPlusPlus 会继续更新。' : 'Thank you for supporting BazaarPlusPlus.'}
+    </p>
+  </section>
+</AppModal>
+
 <section class="update-hero">
   <p class="update-kicker">
-    {$locale === 'zh' ? '当前版本 · 更新亮点' : 'Current build · What is new'}
+    {$locale === 'zh' ? '当前版本 · 更新亮点' : "Current Build · What's New"}
   </p>
-  <h2 class="update-title">
-    {$locale === 'zh' ? 'BazaarPlusPlus' : "BazaarPlusPlus"}
-  </h2>
+  <h2 class="update-title">BazaarPlusPlus</h2>
   <p class="update-summary">
     {$locale === 'zh'
-      ? '本次更新主要覆盖野怪掉落预览、附魔与升级预览、战斗状态展示、安装器体验，以及当前已知问题。'
-      : 'This update focuses on monster drop previews, enchant and upgrade previews, the combat status display, installer improvements, and current known issues.'}
+      ? '本次更新主推战绩记录和战斗回放功能，同时包含修饰键调整、设置路径优化、多项功能修复，以及当前已知问题。'
+      : 'This release is centered on match history and battle replays, with modifier key customization, settings path improvements, several bug fixes, and known issues also included.'}
   </p>
 </section>
 
 <div class="update-feature-list">
   {#each sections as section}
-    <article class={`update-feature-card ${section.tone ? `tone-${section.tone}` : ''}`}>
+    <article class={`update-feature-card tone-${section.tone ?? 'default'}`}>
       <div class="update-feature-icon">{section.icon}</div>
       <div class="update-feature-copy">
+        {#if section.badge}
+          <p class="update-feature-badge">{$locale === 'zh' ? section.badge.zh : section.badge.en}</p>
+        {/if}
         <h3>{$locale === 'zh' ? section.title.zh : section.title.en}</h3>
         <ul class="update-feature-points">
           {#each section.bullets as bullet}
@@ -164,6 +195,14 @@
           {/each}
         </ul>
       </div>
+      {#if section.actionLabel && section.actionLead}
+        <div class="update-feature-action">
+          <button class="featured-support-button" type="button" onclick={() => (showSupportQr = true)}>
+            <span class="featured-support-lead">{$locale === 'zh' ? section.actionLead.zh : section.actionLead.en}</span>
+            <span class="featured-support-label">{$locale === 'zh' ? section.actionLabel.zh : section.actionLabel.en}</span>
+          </button>
+        </div>
+      {/if}
     </article>
   {/each}
 </div>
@@ -220,26 +259,36 @@
     gap: 0.8rem;
     align-items: start;
     padding: 0.9rem;
-    border: 1px solid rgba(200, 148, 55, 0.18);
     border-radius: 3px;
-    background:
-      linear-gradient(180deg, rgba(200, 148, 55, 0.08), rgba(200, 148, 55, 0.02)),
-      rgba(12, 8, 4, 0.82);
     box-shadow: inset 0 0 0 1px rgba(255, 198, 98, 0.04);
   }
 
-  .tone-support {
-    border-color: rgba(118, 174, 120, 0.24);
+  .tone-default {
+    border: 1px solid rgba(200, 148, 55, 0.18);
     background:
-      linear-gradient(180deg, rgba(118, 174, 120, 0.1), rgba(118, 174, 120, 0.03)),
+      linear-gradient(180deg, rgba(200, 148, 55, 0.08), rgba(200, 148, 55, 0.02)),
       rgba(12, 8, 4, 0.82);
   }
 
-  .tone-warning {
-    border-color: rgba(200, 104, 82, 0.26);
+  .tone-featured {
+    grid-template-columns: 2.25rem minmax(0, 1fr) auto;
+    border: 1px solid rgba(226, 181, 82, 0.34);
     background:
-      linear-gradient(180deg, rgba(200, 104, 82, 0.11), rgba(200, 104, 82, 0.03)),
-      rgba(12, 8, 4, 0.82);
+      radial-gradient(circle at top right, rgba(255, 218, 120, 0.16), transparent 38%),
+      linear-gradient(180deg, rgba(230, 178, 74, 0.14), rgba(200, 148, 55, 0.04)),
+      rgba(16, 10, 4, 0.88);
+    box-shadow:
+      inset 0 0 0 1px rgba(255, 216, 125, 0.08),
+      0 10px 28px rgba(0, 0, 0, 0.18);
+  }
+
+  .tone-warning {
+    border: 1px solid rgba(214, 78, 78, 0.4);
+    background:
+      radial-gradient(circle at top right, rgba(214, 78, 78, 0.14), transparent 42%),
+      linear-gradient(180deg, rgba(165, 44, 44, 0.16), rgba(114, 26, 26, 0.06)),
+      rgba(16, 8, 8, 0.88);
+    box-shadow: inset 0 0 0 1px rgba(255, 132, 132, 0.05);
   }
 
   .update-feature-icon {
@@ -256,51 +305,181 @@
     letter-spacing: 0.12em;
   }
 
-  .tone-support .update-feature-icon {
-    border-color: rgba(154, 201, 146, 0.3);
-    background: radial-gradient(circle at 30% 30%, rgba(154, 201, 146, 0.26), rgba(63, 105, 63, 0.18));
-    color: rgba(214, 241, 206, 0.92);
+  .tone-featured .update-feature-icon {
+    border-color: rgba(255, 212, 111, 0.42);
+    background: radial-gradient(circle at 30% 30%, rgba(255, 219, 129, 0.34), rgba(194, 120, 25, 0.18));
+    color: rgba(255, 226, 150, 0.98);
   }
 
   .tone-warning .update-feature-icon {
-    border-color: rgba(228, 150, 121, 0.3);
-    background: radial-gradient(circle at 30% 30%, rgba(228, 150, 121, 0.26), rgba(128, 45, 33, 0.2));
-    color: rgba(255, 222, 213, 0.94);
-  }
-
-  .update-feature-copy {
-    display: grid;
-    gap: 0.35rem;
-    min-width: 0;
+    border-color: rgba(223, 110, 110, 0.42);
+    background: radial-gradient(circle at 30% 30%, rgba(224, 112, 112, 0.28), rgba(133, 31, 31, 0.16));
+    color: rgba(255, 182, 182, 0.94);
   }
 
   .update-feature-copy h3 {
-    margin: 0;
+    margin: 0 0 0.35rem;
     font-family: 'Cinzel', serif;
-    font-size: 0.78rem;
-    letter-spacing: 0.08em;
+    font-size: 0.86rem;
+    letter-spacing: 0.06em;
+    color: rgba(239, 223, 188, 0.92);
+  }
+
+  .update-feature-badge {
+    display: inline-flex;
+    align-items: center;
+    margin: 0 0 0.35rem;
+    padding: 0.18rem 0.5rem;
+    border: 1px solid rgba(255, 216, 124, 0.32);
+    border-radius: 999px;
+    background: rgba(255, 216, 124, 0.08);
+    color: rgba(255, 222, 148, 0.92);
+    font-family: 'Cinzel', serif;
+    font-size: 0.54rem;
+    letter-spacing: 0.16em;
     text-transform: uppercase;
-    color: rgba(233, 215, 182, 0.92);
+  }
+
+  .tone-warning .update-feature-copy h3 {
+    color: rgba(255, 202, 202, 0.95);
+  }
+
+  .update-feature-action {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    min-height: 100%;
+  }
+
+  .featured-support-button {
+    display: grid;
+    gap: 0.18rem;
+    min-width: 13.5rem;
+    padding: 0.9rem 1.1rem;
+    border: 1px solid rgba(236, 195, 104, 0.34);
+    border-radius: 14px;
+    background:
+      linear-gradient(180deg, rgba(255, 221, 146, 0.12), rgba(204, 142, 40, 0.08)),
+      rgba(28, 18, 8, 0.88);
+    color: rgba(248, 230, 185, 0.96);
+    text-align: left;
+    box-shadow:
+      inset 0 0 0 1px rgba(255, 225, 154, 0.05),
+      0 10px 24px rgba(0, 0, 0, 0.18);
+    transition:
+      transform 0.15s ease,
+      border-color 0.15s ease,
+      background 0.15s ease,
+      box-shadow 0.15s ease;
+  }
+
+  .featured-support-button:hover {
+    transform: translateY(-1px);
+    border-color: rgba(255, 214, 118, 0.52);
+    background:
+      linear-gradient(180deg, rgba(255, 225, 154, 0.16), rgba(214, 152, 48, 0.1)),
+      rgba(32, 20, 8, 0.92);
+    box-shadow:
+      inset 0 0 0 1px rgba(255, 229, 162, 0.06),
+      0 14px 28px rgba(0, 0, 0, 0.22);
+  }
+
+  .featured-support-lead {
+    font-family: 'Cinzel', serif;
+    font-size: 0.62rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: rgba(255, 215, 124, 0.78);
+  }
+
+  .featured-support-label {
+    font-family: 'Cinzel', serif;
+    font-size: 0.92rem;
+    letter-spacing: 0.08em;
+    color: rgba(255, 235, 190, 0.98);
+  }
+
+  :global(.support-modal-body) {
+    max-width: 24rem;
+  }
+
+  .support-modal-shell {
+    display: grid;
+    gap: 0.95rem;
+    text-align: center;
+  }
+
+  .support-modal-copy,
+  .support-modal-hint {
+    margin: 0;
+    line-height: 1.6;
+    color: rgba(226, 215, 189, 0.84);
+  }
+
+  .payment-frame {
+    display: flex;
+    justify-content: center;
+    padding: 0.8rem;
+    border: 1px solid rgba(200, 148, 55, 0.18);
+    border-radius: 10px;
+    background:
+      linear-gradient(180deg, rgba(200, 148, 55, 0.06), rgba(200, 148, 55, 0.02)),
+      rgba(12, 8, 4, 0.72);
+  }
+
+  .payment-image {
+    width: min(100%, 16rem);
+    height: auto;
+    display: block;
   }
 
   .update-feature-points {
     margin: 0;
     padding-left: 1.1rem;
     display: grid;
-    gap: 0.3rem;
-    color: rgba(228, 216, 191, 0.78);
+    gap: 0.35rem;
+    color: rgba(233, 222, 198, 0.82);
+    line-height: 1.62;
+    font-size: 0.88rem;
   }
 
-  .update-feature-points li {
-    font-size: 0.84rem;
-    line-height: 1.58;
+  .tone-featured .update-feature-points {
+    color: rgba(245, 231, 198, 0.9);
   }
 
-  @media (max-width: 520px) {
-    .update-hero,
+  .tone-warning .update-feature-points {
+    color: rgba(244, 214, 214, 0.9);
+  }
+
+  .update-feature-points li::marker {
+    color: rgba(232, 200, 122, 0.72);
+  }
+
+  .tone-warning .update-feature-points li::marker {
+    color: rgba(239, 126, 126, 0.88);
+  }
+
+  @media (max-width: 560px) {
     .update-feature-card {
-      padding-left: 0.85rem;
-      padding-right: 0.85rem;
+      grid-template-columns: 1fr;
+    }
+
+    .tone-featured {
+      grid-template-columns: 1fr;
+    }
+
+    .update-feature-icon {
+      width: 2rem;
+      height: 2rem;
+    }
+
+    .update-feature-action {
+      justify-content: stretch;
+    }
+
+    .featured-support-button {
+      width: 100%;
+      min-width: 0;
     }
   }
 </style>

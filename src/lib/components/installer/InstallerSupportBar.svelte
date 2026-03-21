@@ -21,8 +21,8 @@
 
   const copy = {
     en: {
-      title: 'Support the Author',
-      body: 'If BazaarPlusPlus saved you time, you can support the project here.',
+      title: 'Support the Project',
+      body: "If you've been enjoying BazaarPlusPlus, you can support the project here.",
       wechat: 'WePay',
       wechatAction: 'Open QR',
       kofi: 'Ko-fi',
@@ -30,13 +30,13 @@
       supporters: 'Supporters',
       supportersAction: 'Open list',
       supportQrTitle: 'Support BazaarPlusPlus',
-      supportQrBody: 'Scan the WeChat code if you want to support the author directly.',
+      supportQrBody: 'Scan the WeChat code if you want to support the project directly.',
       supportQrHint: 'Thank you for helping BazaarPlusPlus keep shipping.',
       close: 'Close'
     },
     zh: {
-      title: '\u652f\u6301\u4f5c\u8005',
-      body: '\u5982\u679c BazaarPlusPlus \u5bf9\u4f60\u6709\u5e2e\u52a9\uff0c\u53ef\u4ee5\u5728\u8fd9\u91cc\u652f\u6301\u9879\u76ee\u3002',
+      title: '\u652f\u6301\u9879\u76ee',
+      body: '\u5982\u679c\u4f60\u89c9\u5f97 BazaarPlusPlus \u8fd8\u4e0d\u9519\uff0c\u6b22\u8fce\u5728\u8fd9\u91cc\u652f\u6301\u9879\u76ee\u7ee7\u7eed\u66f4\u65b0\u3002',
       wechat: 'WePay',
       wechatAction: '\u6253\u5f00\u6536\u6b3e\u7801',
       kofi: 'Ko-fi',
@@ -44,7 +44,7 @@
       supporters: '\u652f\u6301\u8005\u540d\u5355',
       supportersAction: '\u67e5\u770b\u540d\u5355',
       supportQrTitle: '\u652f\u6301 BazaarPlusPlus',
-      supportQrBody: '\u5982\u679c\u4f60\u60f3\u76f4\u63a5\u652f\u6301\u4f5c\u8005\uff0c\u53ef\u4ee5\u626b\u63cf\u5fae\u4fe1\u6536\u6b3e\u7801\u3002',
+      supportQrBody: '\u5982\u679c\u4f60\u60f3\u76f4\u63a5\u652f\u6301\u9879\u76ee\uff0c\u53ef\u4ee5\u626b\u63cf\u5fae\u4fe1\u6536\u6b3e\u7801\u3002',
       supportQrHint: '\u611f\u8c22\u4f60\u8ba9 BazaarPlusPlus \u7ee7\u7eed\u66f4\u65b0\u3002',
       close: '\u5173\u95ed'
     }
