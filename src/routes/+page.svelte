@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { getVersion } from '@tauri-apps/api/app';
   import { open } from '@tauri-apps/plugin-dialog';
   import { openUrl } from '@tauri-apps/plugin-opener';
   import { onMount } from 'svelte';
@@ -9,7 +8,6 @@
   import { formatMessage, messages } from '$lib/i18n';
   import InstallerHeader from '$lib/components/installer/InstallerHeader.svelte';
   import InstallerInstallPreviewModal from '$lib/components/installer/InstallerInstallPreviewModal.svelte';
-  import InstallerUpdatedModal from '$lib/components/installer/InstallerUpdatedModal.svelte';
   import InstallerStatusSteps from '$lib/components/installer/InstallerStatusSteps.svelte';
   import InstallerSupportBar from '$lib/components/installer/InstallerSupportBar.svelte';
   import {
@@ -21,7 +19,7 @@
     uninstallBpp as uninstallBppApi,
     verifyGamePath as verifyGamePathApi
   } from '$lib/installer/api';
-  import { loadPersistedCustomGamePath, loadLastSeenAppVersion, persistCustomGamePath, persistLastSeenAppVersion } from '$lib/installer/storage';
+  import { loadPersistedCustomGamePath, persistCustomGamePath } from '$lib/installer/storage';
   import { hasTauriRuntime, resolveInstallDebugPreview, shouldConfirmSteamQuit, shouldPatchSteamLaunchOptions } from '$lib/installer/runtime';
   import { createPageState, selectCustomGamePath, selectEffectiveGamePath, type StepState } from '$lib/installer/state';
 
@@ -37,8 +35,6 @@
   let showInstallModal = false;
   let showLaunchOptionsWarningModal = false;
   let showSteamQuitModal = false;
-  let showUpdatedInstallerModal = false;
-  let pendingReinstallAfterUpdate = false;
   let installAcknowledged = false;
   let pendingSteamAction: 'install' | 'uninstall' | null = null;
 
@@ -85,10 +81,6 @@
     await installBundled();
   }
 
-  function acknowledgeUpdatedInstallerPrompt() {
-    showUpdatedInstallerModal = false;
-  }
-
   function closeLaunchOptionsWarningModal() {
     showLaunchOptionsWarningModal = false;
   }
@@ -111,12 +103,6 @@
     if (action === 'uninstall') {
       await uninstallBpp(true);
     }
-  }
-
-  function reopenInstallFlowAfterUpdate() {
-    showUpdatedInstallerModal = false;
-    pendingReinstallAfterUpdate = true;
-    void detectEnvironment();
   }
 
   async function detectDotnetRuntime() {
@@ -332,34 +318,12 @@
     : 'https://dotnet.microsoft.com/en-us/download';
   $: localeBadge = $locale === 'zh' ? '中' : 'EN';
   $: localeButtonLabel = $locale === 'zh' ? 'Switch to English' : '切换到中文';
-  $: if (pendingReinstallAfterUpdate && canInstall) {
-    pendingReinstallAfterUpdate = false;
-    requestInstall();
-  }
   $: persistCustomGamePath(customGamePath);
 
   onMount(() => {
     locale.init();
     void detectEnvironment();
-    void detectUpdatedInstaller();
   });
-
-  async function detectUpdatedInstaller() {
-    if (!hasTauriRuntime()) return;
-
-    try {
-      const currentVersion = await getVersion();
-      const lastSeenVersion = loadLastSeenAppVersion();
-
-      if (lastSeenVersion && lastSeenVersion !== currentVersion) {
-        showUpdatedInstallerModal = true;
-      }
-
-      persistLastSeenAppVersion(currentVersion);
-    } catch (e) {
-      console.error(e);
-    }
-  }
 </script>
 
 <svelte:head>
@@ -392,12 +356,6 @@
     showCancel={true}
     onConfirm={confirmSteamQuitAndContinue}
     onCancel={closeSteamQuitModal}
-  />
-
-  <InstallerUpdatedModal
-    open={showUpdatedInstallerModal}
-    onConfirm={reopenInstallFlowAfterUpdate}
-    onCancel={acknowledgeUpdatedInstallerPrompt}
   />
 
   <InstallerHeader
