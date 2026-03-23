@@ -16,3 +16,10 @@ test('home page and about page both use the shared supporter list modal', async 
   assert.match(supportBarSource, new RegExp(SHARED_MODAL_IMPORT.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
   assert.match(aboutPageSource, new RegExp(SHARED_MODAL_IMPORT.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
 });
+
+test('supporter modal reloads data on each open instead of permanently caching the first load', async () => {
+  const modalSource = await readFile(new URL('./components/supporters/SupporterListModal.svelte', import.meta.url), 'utf8');
+
+  assert.equal(modalSource.includes('let supportersLoaded = false;'), false);
+  assert.equal(modalSource.includes('if (supportersLoaded) return;'), false);
+});

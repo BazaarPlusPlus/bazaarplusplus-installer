@@ -2,7 +2,7 @@
 
 **Date:** 2026-03-19
 
-**Goal:** Keep the shipped supporter list usable offline while refreshing it from R2 no more than once every 24 hours.
+**Goal:** Keep the shipped supporter list usable offline while refreshing it from R2 no more than once every 12 hours.
 
 ## Current State
 
@@ -18,7 +18,7 @@
   1. Cached JSON on disk
   2. Bundled JSON shipped with the app
 - After local data is loaded, the app should decide whether to refresh from R2.
-- Remote refresh should happen only when the last successful fetch is older than 24 hours.
+- Remote refresh should happen only when the last successful fetch is older than 12 hours.
 - A successful remote fetch must replace the on-disk cache and update in-memory data.
 - A failed or invalid remote fetch must not clear the current list.
 
@@ -40,7 +40,6 @@ Each supporter entry remains:
 
 - `name: string`
 - `tier: 1 | 2 | 3 | 4`
-- `amount: number`
 
 Cached payload on disk should include metadata:
 
@@ -49,14 +48,14 @@ Cached payload on disk should include metadata:
 
 ## Cache Policy
 
-- Refresh interval: 24 hours.
+- Refresh interval: 12 hours.
 - No cached file:
   - return bundled data
   - try remote fetch in the background
-- Cached file younger than 24 hours:
+- Cached file younger than 12 hours:
   - return cached data
   - skip remote fetch
-- Cached file older than 24 hours:
+- Cached file older than 12 hours:
   - return cached data first
   - try remote fetch
 

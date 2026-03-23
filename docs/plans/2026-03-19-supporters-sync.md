@@ -2,7 +2,7 @@
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
-**Goal:** Add bundled-plus-cache supporter loading with a 24-hour R2 refresh policy and reuse it across the installer and about page.
+**Goal:** Add bundled-plus-cache supporter loading with a 12-hour R2 refresh policy and reuse it across the installer and about page.
 
 **Architecture:** A new Tauri command will own bundled parsing, cache reads, cache freshness checks, remote refresh, and normalized response shaping. The Svelte app will call a shared frontend loader that uses the Tauri command when available and falls back to bundled JSON in browser-only contexts.
 
@@ -20,7 +20,7 @@
 - Add unit tests for:
   - valid supporter entry parsing
   - invalid supporter entry rejection
-  - stale cache detection at 24 hours
+  - stale cache detection at 12 hours
   - cache preferred over bundled data when valid
   - bundled preferred when cache is missing or invalid
 

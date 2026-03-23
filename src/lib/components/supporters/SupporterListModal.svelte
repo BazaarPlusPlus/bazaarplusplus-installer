@@ -29,7 +29,6 @@
   } as const;
 
   let supporters: SupporterEntry[] = [];
-  let supportersLoaded = false;
   let supportersLoadError = '';
   let supportersLoadPromise: Promise<void> | null = null;
 
@@ -40,7 +39,6 @@
   }
 
   async function loadSupporters() {
-    if (supportersLoaded) return;
     if (supportersLoadPromise) return supportersLoadPromise;
 
     supportersLoadPromise = (async () => {
@@ -49,7 +47,6 @@
       try {
         const payload = await loadSupportersData();
         supporters = payload.entries;
-        supportersLoaded = true;
       } catch (error) {
         supporters = [];
         supportersLoadError = error instanceof Error ? error.message : String(error);

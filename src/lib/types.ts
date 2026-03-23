@@ -26,7 +26,6 @@ export type SupporterTierId = 1 | 2 | 3 | 4;
 export interface SupporterEntry {
   name: string;
   tier: SupporterTierId;
-  amount: number;
 }
 
 export type SupportersSource = 'bundled' | 'cache' | 'remote';

@@ -1,307 +1,254 @@
 [
   {
     "name": "FeiMary",
-    "tier": 4,
-    "amount": 1.49
+    "tier": 4
   },
   {
     "name": "EcitsujNT",
-    "tier": 4,
-    "amount": 1.49
+    "tier": 4
   },
   {
     "name": "小和尚济海",
-    "tier": 4,
-    "amount": 1.00
+    "tier": 4
   },
   {
     "name": "麦麦在逃脆薯饼",
-    "tier": 3,
-    "amount": 0.35
+    "tier": 3
   },
   {
     "name": "山那边有片海",
-    "tier": 3,
-    "amount": 0.30
+    "tier": 3
   },
   {
     "name": "UnknownWorld",
-    "tier": 3,
-    "amount": 0.29
+    "tier": 3
   },
   {
     "name": "鸽子积年不徙",
-    "tier": 3,
-    "amount": 0.29
+    "tier": 3
   },
   {
     "name": "凝日",
-    "tier": 3,
-    "amount": 0.15
+    "tier": 3
   },
   {
     "name": "Tanyaa",
-    "tier": 3,
-    "amount": 0.15
+    "tier": 3
   },
   {
     "name": "天真",
-    "tier": 3,
-    "amount": 0.148
+    "tier": 3
   },
   {
     "name": "能年玲奈 Non",
-    "tier": 3,
-    "amount": 0.148
+    "tier": 3
   },
   {
     "name": "暴击符文剑",
-    "tier": 3,
-    "amount": 0.148
+    "tier": 3
   },
   {
     "name": "whyyy945",
-    "tier": 3,
-    "amount": 0.148
+    "tier": 3
   },
   {
     "name": "巴扎王",
-    "tier": 2,
-    "amount": 0.10
+    "tier": 2
   },
   {
     "name": "fun",
-    "tier": 2,
-    "amount": 0.10
+    "tier": 2
   },
   {
     "name": "wither2000",
-    "tier": 2,
-    "amount": 0.10
+    "tier": 2
   },
   {
     "name": "逃的河",
-    "tier": 2,
-    "amount": 0.10
+    "tier": 2
   },
   {
     "name": "洛夏昂",
-    "tier": 2,
-    "amount": 0.10
+    "tier": 2
   },
   {
     "name": "梅孝亮",
-    "tier": 2,
-    "amount": 0.10
+    "tier": 2
   },
   {
     "name": "黄大霸",
-    "tier": 2,
-    "amount": 0.10
+    "tier": 2
   },
   {
     "name": "忘颜",
-    "tier": 2,
-    "amount": 0.04
+    "tier": 2
   },
   {
     "name": "北洋|神之手贪狼",
-    "tier": 2,
-    "amount": 0.03
+    "tier": 2
   },
   {
     "name": "脑袋怎么扁扁的",
-    "tier": 2,
-    "amount": 0.01
+    "tier": 2
   },
   {
     "name": "佩格peg51486",
-    "tier": 2,
-    "amount": 0.05
+    "tier": 2
   },
   {
     "name": "地上喧喧闹闹",
-    "tier": 2,
-    "amount": 0.04
+    "tier": 2
   },
   {
     "name": "斗腾",
-    "tier": 2,
-    "amount": 0.04
+    "tier": 2
   },
   {
     "name": "十天",
-    "tier": 2,
-    "amount": 0.04
+    "tier": 2
   },
   {
     "name": "土凡",
-    "tier": 2,
-    "amount": 0.099
+    "tier": 2
   },
   {
     "name": "Jakobs",
-    "tier": 3,
-    "amount": 0.149
+    "tier": 3
   },
   {
     "name": "sylar1223",
-    "tier": 3,
-    "amount": 0.149
+    "tier": 3
   },
   {
     "name": "aishuishen",
-    "tier": 3,
-    "amount": 0.149
+    "tier": 3
   },
   {
     "name": "现状毁灭",
-    "tier": 3,
-    "amount": 0.149
+    "tier": 3
   },
   {
     "name": "YeG",
-    "tier": 2,
-    "amount": 0.099
+    "tier": 2
   },
   {
     "name": "跺脚的叁角龙",
-    "tier": 2,
-    "amount": 0.0299
+    "tier": 2
   },
   {
     "name": "物哀师",
-    "tier": 3,
-    "amount": 0.149
+    "tier": 3
   },
   {
     "name": "yeling",
-    "tier": 2,
-    "amount": 0.099
+    "tier": 2
   },
   {
     "name": "卫衣的季节",
-    "tier": 3,
-    "amount": 0.149
+    "tier": 3
   },
   {
     "name": "想上太空的鱼航员",
-    "tier": 3,
-    "amount": 0.149
+    "tier": 3
   },
   {
     "name": "Dee",
-    "tier": 2,
-    "amount": 0.0299
+    "tier": 2
   },
   {
     "name": "Murphy",
-    "tier": 3,
-    "amount": 0.149
+    "tier": 3
   },
   {
     "name": "VicodinCereal",
-    "tier": 3,
-    "amount": 0.3
+    "tier": 3
   },
   {
     "name": "轻尘",
-    "tier": 3,
-    "amount": 0.2
+    "tier": 3
   },
   {
     "name": "Chaos33",
-    "tier": 2,
-    "amount": 0.099
+    "tier": 2
   },
   {
     "name": "玛奇玛味冰淇淋",
-    "tier": 2,
-    "amount": 0.099
+    "tier": 2
   },
   {
     "name": "隱",
-    "tier": 3,
-    "amount": 0.149
+    "tier": 3
   },
   {
     "name": "加油加油",
-    "tier": 2,
-    "amount": 0.099
+    "tier": 2
   },
   {
     "name": "Egg",
-    "tier": 3,
-    "amount": 0.149
+    "tier": 3
   },
   {
     "name": "kuer",
-    "tier": 2,
-    "amount": 0.0299
+    "tier": 2
   },
   {
     "name": "正义的麦旋风",
-    "tier": 3,
-    "amount": 0.3
+    "tier": 3
   },
   {
     "name": "莫奈尤雅美",
-    "tier": 4,
-    "amount": 0.5
+    "tier": 4
   },
   {
     "name": "小笠原翔子",
-    "tier": 2,
-    "amount": 0.099
+    "tier": 2
   },
   {
     "name": "硝铵",
-    "tier": 3,
-    "amount": 0.149
+    "tier": 3
   },
   {
     "name": "火龙果柠檬茶",
-    "tier": 3,
-    "amount": 0.149
+    "tier": 3
   },
   {
     "name": "大河马瑞恩",
-    "tier": 4,
-    "amount": 0.499
+    "tier": 4
   },
   {
     "name": "铭侦探乌有",
-    "tier": 4,
-    "amount": 1.499
+    "tier": 4
   },
   {
     "name": "VRose",
-    "tier": 3,
-    "amount": 0.149
+    "tier": 3
   },
   {
     "name": "杨澄卿Ringo",
-    "tier": 3,
-    "amount": 0.149
+    "tier": 3
   },
   {
     "name": "麻雀",
-    "tier": 2,
-    "amount": 0.05
+    "tier": 2
   },
   {
     "name": "Miyav",
-    "tier": 2,
-    "amount": 0.0299
+    "tier": 2
   },
   {
     "name": "左手酱",
-    "tier": 2,
-    "amount": 0.099
+    "tier": 2
   },
   {
     "name": "Rsoiry",
-    "tier": 3,
-    "amount": 0.149
+    "tier": 3
+  },
+  {
+    "name": "sw_paz",
+    "tier": 2
+  },
+  {
+    "name": "langligedang",
+    "tier": 3
   }
 ]
