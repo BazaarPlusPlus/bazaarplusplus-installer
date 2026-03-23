@@ -13,7 +13,7 @@ const SUPPORTERS_CACHE_FILE_NAME: &str = "supporters-cache.json";
 const SUPPORTERS_CACHE_DIR_NAME: &str = "BazaarPlusPlusInstaller";
 const SUPPORTERS_REMOTE_URL: &str = "https://bpp-static.bazaarplusplus.com/supporter-list.json";
 
-pub const SUPPORTER_REFRESH_INTERVAL_SECS: u64 = 8 * 60 * 60;
+pub const SUPPORTER_REFRESH_INTERVAL_SECS: u64 = 12 * 60 * 60;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct SupporterEntry {
