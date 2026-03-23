@@ -133,5 +133,175 @@
     "name": "十天",
     "tier": 2,
     "amount": 0.04
+  },
+  {
+    "name": "土凡",
+    "tier": 2,
+    "amount": 0.099
+  },
+  {
+    "name": "Jakobs",
+    "tier": 3,
+    "amount": 0.149
+  },
+  {
+    "name": "sylar1223",
+    "tier": 3,
+    "amount": 0.149
+  },
+  {
+    "name": "aishuishen",
+    "tier": 3,
+    "amount": 0.149
+  },
+  {
+    "name": "现状毁灭",
+    "tier": 3,
+    "amount": 0.149
+  },
+  {
+    "name": "YeG",
+    "tier": 2,
+    "amount": 0.099
+  },
+  {
+    "name": "跺脚的叁角龙",
+    "tier": 2,
+    "amount": 0.0299
+  },
+  {
+    "name": "物哀师",
+    "tier": 3,
+    "amount": 0.149
+  },
+  {
+    "name": "yeling",
+    "tier": 2,
+    "amount": 0.099
+  },
+  {
+    "name": "卫衣的季节",
+    "tier": 3,
+    "amount": 0.149
+  },
+  {
+    "name": "想上太空的鱼航员",
+    "tier": 3,
+    "amount": 0.149
+  },
+  {
+    "name": "Dee",
+    "tier": 2,
+    "amount": 0.0299
+  },
+  {
+    "name": "Murphy",
+    "tier": 3,
+    "amount": 0.149
+  },
+  {
+    "name": "VicodinCereal",
+    "tier": 3,
+    "amount": 0.3
+  },
+  {
+    "name": "轻尘",
+    "tier": 3,
+    "amount": 0.2
+  },
+  {
+    "name": "Chaos33",
+    "tier": 2,
+    "amount": 0.099
+  },
+  {
+    "name": "玛奇玛味冰淇淋",
+    "tier": 2,
+    "amount": 0.099
+  },
+  {
+    "name": "隱",
+    "tier": 3,
+    "amount": 0.149
+  },
+  {
+    "name": "加油加油",
+    "tier": 2,
+    "amount": 0.099
+  },
+  {
+    "name": "Egg",
+    "tier": 3,
+    "amount": 0.149
+  },
+  {
+    "name": "kuer",
+    "tier": 2,
+    "amount": 0.0299
+  },
+  {
+    "name": "正义的麦旋风",
+    "tier": 3,
+    "amount": 0.3
+  },
+  {
+    "name": "莫奈尤雅美",
+    "tier": 4,
+    "amount": 0.5
+  },
+  {
+    "name": "小笠原翔子",
+    "tier": 2,
+    "amount": 0.099
+  },
+  {
+    "name": "硝铵",
+    "tier": 3,
+    "amount": 0.149
+  },
+  {
+    "name": "火龙果柠檬茶",
+    "tier": 3,
+    "amount": 0.149
+  },
+  {
+    "name": "大河马瑞恩",
+    "tier": 4,
+    "amount": 0.499
+  },
+  {
+    "name": "铭侦探乌有",
+    "tier": 4,
+    "amount": 1.499
+  },
+  {
+    "name": "VRose",
+    "tier": 3,
+    "amount": 0.149
+  },
+  {
+    "name": "杨澄卿Ringo",
+    "tier": 3,
+    "amount": 0.149
+  },
+  {
+    "name": "麻雀",
+    "tier": 2,
+    "amount": 0.05
+  },
+  {
+    "name": "Miyav",
+    "tier": 2,
+    "amount": 0.0299
+  },
+  {
+    "name": "左手酱",
+    "tier": 2,
+    "amount": 0.099
+  },
+  {
+    "name": "Rsoiry",
+    "tier": 3,
+    "amount": 0.149
   }
 ]
