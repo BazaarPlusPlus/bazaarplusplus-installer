@@ -45,12 +45,17 @@ fn escape_vdf_string(value: &str) -> String {
     value.replace('\\', "\\\\").replace('"', "\\\"")
 }
 
-fn verify_launch_options_in_content(vdf_content: &str, expected: &str) -> Result<Option<bool>, String> {
+fn verify_launch_options_in_content(
+    vdf_content: &str,
+    expected: &str,
+) -> Result<Option<bool>, String> {
     let lines = vdf_content.lines().map(str::to_string).collect::<Vec<_>>();
     let Some((apps_open, apps_close)) = find_apps_block(&lines) else {
         return Err("Malformed VDF: could not locate Steam/apps object".to_string());
     };
-    let Some((app_open, app_close)) = find_named_block(&lines, apps_open..=apps_close, THE_BAZAAR_APP_ID) else {
+    let Some((app_open, app_close)) =
+        find_named_block(&lines, apps_open..=apps_close, THE_BAZAAR_APP_ID)
+    else {
         return Ok(None);
     };
 
@@ -131,7 +136,11 @@ fn find_apps_block(lines: &[String]) -> Option<(usize, usize)> {
     None
 }
 
-fn find_named_block(lines: &[String], range: std::ops::RangeInclusive<usize>, key: &str) -> Option<(usize, usize)> {
+fn find_named_block(
+    lines: &[String],
+    range: std::ops::RangeInclusive<usize>,
+    key: &str,
+) -> Option<(usize, usize)> {
     let mut idx = *range.start();
     while idx <= *range.end() {
         if lines[idx].trim() == format!("\"{key}\"") {
@@ -175,7 +184,11 @@ fn malformed_launch_option_fragment_count(lines: &[String], start: usize) -> usi
         }
     }
 
-    if saw_command { consumed } else { 0 }
+    if saw_command {
+        consumed
+    } else {
+        0
+    }
 }
 
 fn collect_fragment_text(lines: &[String], start: usize, count: usize) -> String {
@@ -225,7 +238,9 @@ fn upsert_launch_options_text(vdf_content: &str, args: &str) -> Result<Option<St
     let Some((apps_open, apps_close)) = find_apps_block(&lines) else {
         return Err("Malformed VDF: could not locate Steam/apps object".to_string());
     };
-    let Some((app_open, app_close)) = find_named_block(&lines, apps_open..=apps_close, THE_BAZAAR_APP_ID) else {
+    let Some((app_open, app_close)) =
+        find_named_block(&lines, apps_open..=apps_close, THE_BAZAAR_APP_ID)
+    else {
         return Ok(None);
     };
 
@@ -265,7 +280,9 @@ fn remove_launch_options_text(vdf_content: &str) -> Result<Option<String>, Strin
     let Some((apps_open, apps_close)) = find_apps_block(&lines) else {
         return Err("Malformed VDF: could not locate Steam/apps object".to_string());
     };
-    let Some((app_open, app_close)) = find_named_block(&lines, apps_open..=apps_close, THE_BAZAAR_APP_ID) else {
+    let Some((app_open, app_close)) =
+        find_named_block(&lines, apps_open..=apps_close, THE_BAZAAR_APP_ID)
+    else {
         return Ok(None);
     };
 
@@ -304,7 +321,10 @@ pub fn clear_launch_options(vdf_content: &str) -> Result<Option<String>, String>
 
 #[cfg(target_os = "macos")]
 fn launch_options_args(game_path: &Path) -> String {
-    format!("\"{}\" %command%", game_path.join("run_bepinex.sh").display())
+    format!(
+        "\"{}\" %command%",
+        game_path.join("run_bepinex.sh").display()
+    )
 }
 
 #[cfg(target_os = "windows")]
@@ -325,8 +345,12 @@ fn ensure_launcher_executable(script_path: &Path) -> Result<(), String> {
         .map_err(|err| format!("Cannot access {}: {err}", script_path.display()))?;
     let mut permissions = metadata.permissions();
     permissions.set_mode(permissions.mode() | 0o111);
-    std::fs::set_permissions(script_path, permissions)
-        .map_err(|err| format!("Cannot set executable permission on {}: {err}", script_path.display()))
+    std::fs::set_permissions(script_path, permissions).map_err(|err| {
+        format!(
+            "Cannot set executable permission on {}: {err}",
+            script_path.display()
+        )
+    })
 }
 
 #[cfg(not(target_os = "macos"))]
@@ -372,7 +396,10 @@ fn write_localconfig(localconfig: &Path, content: &str) -> Result<(), String> {
     std::fs::rename(&tmp, localconfig).map_err(|err| err.to_string())
 }
 
-fn plan_localconfig_updates<F>(steam_path: &Path, mut transform: F) -> Result<Vec<LocalconfigUpdate>, String>
+fn plan_localconfig_updates<F>(
+    steam_path: &Path,
+    mut transform: F,
+) -> Result<Vec<LocalconfigUpdate>, String>
 where
     F: FnMut(&str) -> Result<Option<String>, String>,
 {
@@ -385,7 +412,11 @@ where
     for localconfig in localconfigs {
         let content = std::fs::read_to_string(&localconfig).map_err(|err| err.to_string())?;
         let Some(new_content) = transform(&content)? else {
-            debug_log!("Skipped {} because app {} is not present.", localconfig.display(), THE_BAZAAR_APP_ID);
+            debug_log!(
+                "Skipped {} because app {} is not present.",
+                localconfig.display(),
+                THE_BAZAAR_APP_ID
+            );
             continue;
         };
 
@@ -427,7 +458,8 @@ fn apply_localconfig_updates(updates: Vec<LocalconfigUpdate>) -> Result<usize, S
 }
 
 fn patch_localconfigs(steam_path: &Path, args: &str) -> Result<usize, String> {
-    let planned = plan_localconfig_updates(steam_path, |content| inject_launch_options(content, args))?;
+    let planned =
+        plan_localconfig_updates(steam_path, |content| inject_launch_options(content, args))?;
     if planned.is_empty() {
         return Err(format!(
             "Could not find app {} in any localconfig.vdf under Steam/userdata",
@@ -561,7 +593,9 @@ mod tests {
 
     #[test]
     fn test_inject_launch_options_inserts_when_missing() {
-        let result = inject_launch_options(fixture_vdf(), "MY_ARGS").unwrap().unwrap();
+        let result = inject_launch_options(fixture_vdf(), "MY_ARGS")
+            .unwrap()
+            .unwrap();
         assert!(result.contains("LaunchOptions"));
         assert!(result.contains("MY_ARGS"));
     }
@@ -573,7 +607,9 @@ mod tests {
             "\"LaunchOptions\"\t\t\"OLD_ARGS\"\n\t\t\t\t\t\"LastPlayed\"",
         );
 
-        let result = inject_launch_options(&vdf_with_lo, "NEW_ARGS").unwrap().unwrap();
+        let result = inject_launch_options(&vdf_with_lo, "NEW_ARGS")
+            .unwrap()
+            .unwrap();
         assert!(result.contains("NEW_ARGS"));
         assert!(!result.contains("OLD_ARGS"));
     }

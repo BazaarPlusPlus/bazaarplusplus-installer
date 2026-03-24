@@ -41,6 +41,7 @@ pnpm-debug.log*
 *~
 .cache/
 .eslintcache
+.wrangler/
 
 # OS files
 .DS_Store

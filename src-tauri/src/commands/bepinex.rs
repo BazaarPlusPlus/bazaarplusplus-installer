@@ -155,7 +155,11 @@ pub fn install_bepinex(
 }
 
 #[tauri::command]
-pub fn uninstall_bpp(_app: tauri::AppHandle, _steam_path: String, game_path: String) -> Result<(), String> {
+pub fn uninstall_bpp(
+    _app: tauri::AppHandle,
+    _steam_path: String,
+    game_path: String,
+) -> Result<(), String> {
     let game_path = Path::new(&game_path);
     ensure_valid_game_path(game_path)?;
 
@@ -169,7 +173,10 @@ pub fn uninstall_bpp(_app: tauri::AppHandle, _steam_path: String, game_path: Str
         crate::commands::vdf::clear_launch_options_for_steam(Path::new(&_steam_path))?;
     }
 
-    debug_log!("Uninstalled BazaarPlusPlus payload from {}", game_path.display());
+    debug_log!(
+        "Uninstalled BazaarPlusPlus payload from {}",
+        game_path.display()
+    );
     Ok(())
 }
 
@@ -256,7 +263,11 @@ mod tests {
     fn test_uninstall_payload_removes_platform_files() {
         let tmp = tempfile::tempdir().unwrap();
         std::fs::create_dir_all(tmp.path().join("BepInEx/plugins")).unwrap();
-        std::fs::write(tmp.path().join("BepInEx/plugins/BazaarPlusPlus.dll"), b"dll").unwrap();
+        std::fs::write(
+            tmp.path().join("BepInEx/plugins/BazaarPlusPlus.dll"),
+            b"dll",
+        )
+        .unwrap();
 
         #[cfg(target_os = "macos")]
         {

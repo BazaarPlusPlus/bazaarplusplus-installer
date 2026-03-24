@@ -18,5 +18,5 @@ macro_rules! debug_error {
     };
 }
 
-pub(super) use debug_log;
 pub(super) use debug_error;
+pub(super) use debug_log;

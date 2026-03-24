@@ -18,7 +18,11 @@ pub struct SteamRunningInfo {
     pub running: bool,
 }
 
-fn steam_running_from_pgrep(status_code: Option<i32>, stdout: &[u8], stderr: &[u8]) -> Result<bool, String> {
+fn steam_running_from_pgrep(
+    status_code: Option<i32>,
+    stdout: &[u8],
+    stderr: &[u8],
+) -> Result<bool, String> {
     match status_code {
         Some(0) => {
             let output = String::from_utf8_lossy(stdout);

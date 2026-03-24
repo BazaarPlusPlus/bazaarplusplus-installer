@@ -1,8 +1,8 @@
-﻿use serde::{Deserialize, Serialize};
+use keyvalues_parser::{Obj, Parser, Value};
+use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use tauri::AppHandle;
-use keyvalues_parser::{Obj, Parser, Value};
 
 #[cfg(target_os = "windows")]
 use std::os::windows::process::CommandExt;
@@ -28,7 +28,10 @@ pub struct DotnetInfo {
 }
 
 #[tauri::command]
-pub fn detect_environment(app: AppHandle, game_path: Option<String>) -> Result<EnvironmentInfo, String> {
+pub fn detect_environment(
+    app: AppHandle,
+    game_path: Option<String>,
+) -> Result<EnvironmentInfo, String> {
     let steam_path = get_steam_path();
     let requested_game_path = normalize_game_path(game_path);
     let game_path = resolve_game_path(steam_path.as_deref(), requested_game_path.as_deref());
@@ -62,7 +65,10 @@ fn normalize_game_path(game_path: Option<String>) -> Option<PathBuf> {
         .map(PathBuf::from)
 }
 
-fn resolve_game_path(steam_path: Option<&Path>, requested_game_path: Option<&Path>) -> Option<PathBuf> {
+fn resolve_game_path(
+    steam_path: Option<&Path>,
+    requested_game_path: Option<&Path>,
+) -> Option<PathBuf> {
     requested_game_path
         .map(Path::to_path_buf)
         .or_else(|| steam_path.and_then(get_game_path))
@@ -138,7 +144,11 @@ pub fn parse_dotnet_runtimes(output: &str) -> Option<String> {
 
 fn parse_version_tuple(v: &str) -> (u32, u32, u32) {
     let mut parts = v.split('.').filter_map(|p| p.parse::<u32>().ok());
-    (parts.next().unwrap_or(0), parts.next().unwrap_or(0), parts.next().unwrap_or(0))
+    (
+        parts.next().unwrap_or(0),
+        parts.next().unwrap_or(0),
+        parts.next().unwrap_or(0),
+    )
 }
 
 fn is_supported_dotnet_version(version: &str) -> bool {
@@ -161,8 +171,8 @@ fn get_steam_path() -> Option<PathBuf> {
 
     #[cfg(target_os = "windows")]
     {
-        use winreg::RegKey;
         use winreg::enums::HKEY_CURRENT_USER;
+        use winreg::RegKey;
 
         let hkcu = RegKey::predef(HKEY_CURRENT_USER);
         if let Ok(key) = hkcu.open_subkey(r"Software\Valve\Steam") {
@@ -179,22 +189,28 @@ fn get_steam_path() -> Option<PathBuf> {
 }
 
 fn get_game_path(steam_path: &Path) -> Option<PathBuf> {
-    let library_vdf = std::fs::read_to_string(steam_path.join("steamapps/libraryfolders.vdf")).ok()?;
+    let library_vdf =
+        std::fs::read_to_string(steam_path.join("steamapps/libraryfolders.vdf")).ok()?;
     let library_root = find_game_in_library_vdf(&library_vdf, "1617400")?;
     let candidate = PathBuf::from(library_root).join("steamapps/common/The Bazaar");
     candidate.exists().then_some(candidate)
 }
 
 pub(crate) fn is_bepinex_installed(game_path: &Path) -> bool {
-    if !game_path.join("BepInEx/core/BepInEx.Preloader.dll").exists() {
+    if !game_path
+        .join("BepInEx/core/BepInEx.Preloader.dll")
+        .exists()
+    {
         return false;
     }
 
     #[cfg(target_os = "macos")]
-    return game_path.join("run_bepinex.sh").exists() && game_path.join("libdoorstop.dylib").exists();
+    return game_path.join("run_bepinex.sh").exists()
+        && game_path.join("libdoorstop.dylib").exists();
 
     #[cfg(target_os = "windows")]
-    return game_path.join("doorstop_config.ini").exists() && game_path.join("winhttp.dll").exists();
+    return game_path.join("doorstop_config.ini").exists()
+        && game_path.join("winhttp.dll").exists();
 
     #[cfg(not(any(target_os = "macos", target_os = "windows")))]
     return true;
@@ -242,8 +258,8 @@ fn detect_dotnet() -> (Option<String>, bool) {
             continue;
         };
         let stdout = String::from_utf8_lossy(&output.stdout);
-        if let Some(version) = parse_dotnet_runtimes(&stdout)
-            .filter(|version| is_supported_dotnet_version(version))
+        if let Some(version) =
+            parse_dotnet_runtimes(&stdout).filter(|version| is_supported_dotnet_version(version))
         {
             return (Some(version), true);
         }
@@ -251,7 +267,6 @@ fn detect_dotnet() -> (Option<String>, bool) {
 
     (None, false)
 }
-
 
 /// Returns true if the game installation is found at the given path.
 #[tauri::command]
@@ -415,5 +430,4 @@ mod tests {
 
         assert_eq!(game_path, Some(requested));
     }
-
 }
