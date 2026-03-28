@@ -27,6 +27,7 @@ dirs = "6"
 keyvalues-parser = "0.2"
 reqwest = { version = "0.12", default-features = false, features = ["blocking", "rustls-tls"] }
 zip = { version = "6.0.0", default-features = false, features = ["deflate"] }
+uuid = { version = "1", features = ["v4"] }
 
 [target.'cfg(windows)'.dependencies]
 winreg = "0.52"

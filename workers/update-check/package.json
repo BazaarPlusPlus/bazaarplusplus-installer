@@ -1,0 +1,13 @@
+{
+  "name": "bppinstaller-update-check-worker",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "deploy": "wrangler deploy --config wrangler.toml",
+    "dev": "wrangler dev --config wrangler.toml",
+    "db:migrate:remote": "wrangler d1 migrations apply ACTIVITY_DB --remote --config wrangler.toml"
+  },
+  "devDependencies": {
+    "wrangler": "^4.10.0"
+  }
+}

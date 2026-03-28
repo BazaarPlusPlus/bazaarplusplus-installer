@@ -1,5 +1,6 @@
 pub mod bepinex;
 pub mod detect;
+pub mod machine;
 pub mod steam;
 pub mod supporters;
 pub mod vdf;

@@ -40,3 +40,7 @@ export async function patchLaunchOptions(steamPath: string, gamePath: string) {
 export async function loadSupporters() {
   return invoke<SupportersResponse>('load_supporters');
 }
+
+export async function loadMachineId() {
+  return invoke<string>('load_machine_id');
+}

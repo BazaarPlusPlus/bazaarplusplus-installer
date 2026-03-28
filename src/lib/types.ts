@@ -21,6 +21,13 @@ export interface SteamRunningInfo {
   running: boolean;
 }
 
+export interface InstallerUpdateInfo {
+  latestVersion: string;
+  websiteUrl: string;
+  title: string | null;
+  message: string | null;
+}
+
 export type SupporterTierId = 1 | 2 | 3 | 4;
 
 export interface SupporterEntry {
