@@ -8,6 +8,6 @@
     "db:migrate:remote": "wrangler d1 migrations apply ACTIVITY_DB --remote --config wrangler.toml"
   },
   "devDependencies": {
-    "wrangler": "^4.10.0"
+    "wrangler": "^4.78.0"
   }
 }
