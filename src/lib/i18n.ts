@@ -58,7 +58,11 @@ export type MessageKey =
   | 'updateAvailableTitle'
   | 'updateAvailableBody'
   | 'updateAvailableAction'
-  | 'updateAvailableDismiss';
+  | 'updateAvailableDismiss'
+  | 'updateStatusChecking'
+  | 'updateStatusLatest'
+  | 'updateStatusAvailable'
+  | 'updateStatusFailed';
 
 export const defaultLocale: Locale = 'zh';
 
@@ -124,6 +128,10 @@ export const messages: Record<Locale, Record<MessageKey, string>> = {
     updateAvailableBody: 'A newer installer version ({version}) is available on the official website.',
     updateAvailableAction: 'Open website',
     updateAvailableDismiss: 'Later',
+    updateStatusChecking: 'Checking',
+    updateStatusLatest: 'Latest',
+    updateStatusAvailable: 'Update',
+    updateStatusFailed: 'Retry',
   },
   zh: {
     htmlLang: 'zh-CN',
@@ -186,6 +194,10 @@ export const messages: Record<Locale, Record<MessageKey, string>> = {
     updateAvailableBody: '官网已提供更新的安装器版本（{version}），建议前往下载最新版。',
     updateAvailableAction: '打开官网',
     updateAvailableDismiss: '稍后',
+    updateStatusChecking: '检查中',
+    updateStatusLatest: '最新',
+    updateStatusAvailable: '更新',
+    updateStatusFailed: '重试',
   }
 };
 

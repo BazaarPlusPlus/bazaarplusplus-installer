@@ -214,3 +214,40 @@ test('runInstallerUpdateCheck persists the timestamp when the request succeeds w
   assert.equal(result, null);
   assert.deepEqual(persistedTimestamps, [1_700_000_000_000]);
 });
+
+test('runInstallerUpdateCheck can bypass the throttle window for a user-triggered refresh', async () => {
+  const persistedTimestamps: Array<number | null> = [];
+  const fetchMock = mock.fn(async () => {
+    return new Response(
+      JSON.stringify({
+        latestVersion: '1.9.0',
+        websiteUrl: 'https://example.com/download'
+      }),
+      {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      }
+    );
+  });
+
+  await runInstallerUpdateCheck({
+    endpoint: 'https://updates.example.com/check',
+    now: 1_700_000_000_000,
+    getLastCheckedAt: () => 1_699_999_990_000,
+    persistLastCheckedAt: (timestamp) => persistedTimestamps.push(timestamp),
+    getAppVersion: async () => '1.9.0',
+    getInstallId: () => 'install-123',
+    getMachineId: async () => 'machine-123',
+    getClientMetadata: () => ({
+      platform: 'windows',
+      osVersion: '11',
+      arch: 'x64',
+      locale: 'zh-CN'
+    }),
+    fetchImpl: fetchMock as typeof fetch,
+    force: true
+  });
+
+  assert.equal(fetchMock.mock.calls.length, 1);
+  assert.deepEqual(persistedTimestamps, [1_700_000_000_000]);
+});

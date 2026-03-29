@@ -1,4 +1,4 @@
-import type { InstallerUpdateInfo } from '$lib/types';
+import type { InstallerUpdateCheckState, InstallerUpdateInfo } from '$lib/types';
 
 export const DEFAULT_UPDATE_CHECK_INTERVAL_MS = 12 * 60 * 60 * 1000;
 
@@ -26,6 +26,7 @@ interface CheckForInstallerUpdateOptions {
 interface RunInstallerUpdateCheckOptions {
   endpoint: string;
   now?: number;
+  force?: boolean;
   getLastCheckedAt: () => number | null;
   persistLastCheckedAt: (timestamp: number) => void;
   getAppVersion: () => Promise<string | null>;
@@ -44,6 +45,11 @@ interface RunInstallerUpdateCheckOptions {
 interface UpdateCheckResult {
   updateInfo: InstallerUpdateInfo | null;
   requestSucceeded: boolean;
+}
+
+export interface RunInstallerUpdateCheckResult {
+  updateInfo: InstallerUpdateInfo | null;
+  state: Exclude<InstallerUpdateCheckState, 'checking'>;
 }
 
 export function compareSemanticVersions(left: string, right: string): number {
@@ -147,21 +153,28 @@ async function checkForInstallerUpdateResult(
 export async function runInstallerUpdateCheck(
   options: RunInstallerUpdateCheckOptions
 ): Promise<InstallerUpdateInfo | null> {
+  const result = await runInstallerUpdateCheckResult(options);
+  return result.updateInfo;
+}
+
+export async function runInstallerUpdateCheckResult(
+  options: RunInstallerUpdateCheckOptions
+): Promise<RunInstallerUpdateCheckResult> {
   const now = options.now ?? Date.now();
   const lastCheckedAt = options.getLastCheckedAt();
-  if (!shouldCheckForInstallerUpdate({ now, lastCheckedAt })) {
-    return null;
+  if (!options.force && !shouldCheckForInstallerUpdate({ now, lastCheckedAt })) {
+    return { updateInfo: null, state: 'latest' };
   }
 
   const appVersion = (await options.getAppVersion())?.trim() ?? '';
   if (!appVersion) {
-    return null;
+    return { updateInfo: null, state: 'failed' };
   }
 
   const metadata = options.getClientMetadata();
   const machineId = (await options.getMachineId())?.trim();
   if (!machineId) {
-    return null;
+    return { updateInfo: null, state: 'failed' };
   }
   const result = await checkForInstallerUpdateResult({
     endpoint: options.endpoint,
@@ -180,7 +193,12 @@ export async function runInstallerUpdateCheck(
     options.persistLastCheckedAt(now);
   }
 
-  return result.updateInfo;
+  return {
+    updateInfo: result.updateInfo,
+    state: result.requestSucceeded
+      ? (result.updateInfo ? 'available' : 'latest')
+      : 'failed'
+  };
 }
 
 export function resolveClientUpdateMetadata(): {

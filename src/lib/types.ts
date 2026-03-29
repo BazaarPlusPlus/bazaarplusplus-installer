@@ -28,6 +28,8 @@ export interface InstallerUpdateInfo {
   message: string | null;
 }
 
+export type InstallerUpdateCheckState = 'checking' | 'latest' | 'available' | 'failed';
+
 export type SupporterTierId = 1 | 2 | 3 | 4;
 
 export interface SupporterEntry {

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import type { InstallerUpdateCheckState } from '$lib/types';
   import { locale, handleLocaleToggle } from '$lib/locale';
 
   export let kicker: string;
@@ -6,6 +7,11 @@
   export let localeBadge: string;
   export let localeButtonLabel: string;
   export let bilibiliUrl: string;
+  export let updateCheckState: InstallerUpdateCheckState;
+  export let updateStatusLabel: string;
+  export let updateStatusTitle: string;
+  export let updateStatusDisabled = false;
+  export let onUpdateStatusClick: () => void | Promise<void>;
   export let onOpenBilibili: (event?: MouseEvent) => void;
 </script>
 
@@ -45,6 +51,20 @@
         <path d="M9 5.5L7.4 3.8M15 5.5l1.6-1.7M9 11.2h1.8M13.2 11.2H15M9.3 14.1c1 .7 4.4.7 5.4 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none" />
       </svg>
     </a>
+
+    <button
+      class="about-toggle update-status-toggle"
+      class:is-checking={updateCheckState === 'checking'}
+      class:is-available={updateCheckState === 'available'}
+      class:is-failed={updateCheckState === 'failed'}
+      type="button"
+      title={updateStatusTitle}
+      aria-label={updateStatusTitle}
+      disabled={updateStatusDisabled}
+      onclick={onUpdateStatusClick}
+    >
+      <span>{updateStatusLabel}</span>
+    </button>
   </div>
 
   <button
@@ -143,6 +163,37 @@
   .social-toggle {
     padding: 0;
     cursor: pointer;
+  }
+
+  .update-status-toggle {
+    width: auto;
+    min-width: 3.2rem;
+    padding: 0 0.45rem;
+    font-family: 'Cinzel', serif;
+    font-size: 0.54rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    cursor: pointer;
+  }
+
+  .update-status-toggle.is-available {
+    border-color: rgba(220, 172, 78, 0.52);
+    color: rgba(255, 232, 184, 0.96);
+    background: linear-gradient(180deg, rgba(200, 148, 55, 0.24), rgba(200, 148, 55, 0.12));
+  }
+
+  .update-status-toggle.is-failed {
+    border-color: rgba(184, 106, 82, 0.42);
+    color: rgba(236, 197, 183, 0.88);
+    background: linear-gradient(180deg, rgba(120, 45, 33, 0.3), rgba(72, 24, 18, 0.18));
+  }
+
+  .update-status-toggle.is-checking {
+    color: rgba(228, 216, 191, 0.68);
+  }
+
+  .update-status-toggle:disabled {
+    cursor: default;
   }
 
   .locale-toggle {

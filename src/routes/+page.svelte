@@ -4,7 +4,7 @@
   import { openUrl } from '@tauri-apps/plugin-opener';
   import { onMount } from 'svelte';
   import AppModal from '$lib/components/AppModal.svelte';
-  import type { EnvironmentInfo, InstallerUpdateInfo } from '$lib/types';
+  import type { EnvironmentInfo, InstallerUpdateCheckState, InstallerUpdateInfo } from '$lib/types';
   import { locale } from '$lib/locale';
   import { formatMessage, messages } from '$lib/i18n';
   import InstallerHeader from '$lib/components/installer/InstallerHeader.svelte';
@@ -32,7 +32,7 @@
   import { createPageState, selectCustomGamePath, selectEffectiveGamePath, type StepState } from '$lib/installer/state';
   import {
     resolveClientUpdateMetadata,
-    runInstallerUpdateCheck
+    runInstallerUpdateCheckResult
   } from '$lib/installer/update';
 
   let env: EnvironmentInfo | null = null;
@@ -50,6 +50,8 @@
   let installAcknowledged = false;
   let pendingSteamAction: 'install' | 'uninstall' | null = null;
   let updateBanner: InstallerUpdateInfo | null = null;
+  let latestUpdateInfo: InstallerUpdateInfo | null = null;
+  let updateCheckState: InstallerUpdateCheckState = 'checking';
   const UPDATE_CHECK_URL = 'https://update-check.bazaarplusplus.com';
 
   $: t = (key: keyof typeof messages.en, params?: Record<string, string | number>): string =>
@@ -308,23 +310,27 @@
   }
 
   async function openUpdateWebsite() {
-    if (!updateBanner?.websiteUrl) return;
+    if (!latestUpdateInfo?.websiteUrl) return;
 
     try {
-      await openUrl(updateBanner.websiteUrl);
+      await openUrl(latestUpdateInfo.websiteUrl);
     } catch (error) {
       console.error(error);
     }
   }
 
-  async function loadInstallerUpdate() {
+  async function loadInstallerUpdate(force = false) {
     if (!UPDATE_CHECK_URL || !hasTauriRuntime()) {
+      updateCheckState = 'failed';
       return;
     }
 
+    updateCheckState = 'checking';
+
     try {
-      updateBanner = await runInstallerUpdateCheck({
+      const result = await runInstallerUpdateCheckResult({
         endpoint: UPDATE_CHECK_URL,
+        force,
         getLastCheckedAt: loadLastUpdateCheckAt,
         persistLastCheckedAt: persistLastUpdateCheckAt,
         getAppVersion: async () => (await getVersion())?.trim() ?? null,
@@ -332,9 +338,27 @@
         getMachineId: loadMachineId,
         getClientMetadata: resolveClientUpdateMetadata
       });
+
+      latestUpdateInfo = result.updateInfo;
+      updateBanner = result.updateInfo;
+      updateCheckState = result.state;
     } catch (error) {
+      updateCheckState = 'failed';
       console.error(error);
     }
+  }
+
+  async function handleUpdateStatusClick() {
+    if (updateCheckState === 'checking') {
+      return;
+    }
+
+    if (updateCheckState === 'available') {
+      await openUpdateWebsite();
+      return;
+    }
+
+    await loadInstallerUpdate(true);
   }
 
   function clearBazaarInvalid() {
@@ -366,6 +390,21 @@
     : 'https://dotnet.microsoft.com/en-us/download';
   $: localeBadge = $locale === 'zh' ? '中' : 'EN';
   $: localeButtonLabel = $locale === 'zh' ? 'Switch to English' : '切换到中文';
+  $: updateStatusLabel = (
+    updateCheckState === 'available' ? t('updateStatusAvailable')
+      : updateCheckState === 'failed' ? t('updateStatusFailed')
+        : updateCheckState === 'latest' ? t('updateStatusLatest')
+          : t('updateStatusChecking')
+  );
+  $: updateStatusTitle = (
+    updateCheckState === 'available'
+      ? `${t('updateAvailableTitle')} · ${t('updateAvailableAction')}`
+      : updateCheckState === 'failed'
+        ? t('updateStatusFailed')
+        : updateCheckState === 'latest'
+          ? t('updateStatusLatest')
+          : t('updateStatusChecking')
+  );
   $: persistCustomGamePath(customGamePath);
 
   onMount(() => {
@@ -432,6 +471,11 @@
     {localeBadge}
     {localeButtonLabel}
     bilibiliUrl={BILIBILI_URL}
+    {updateCheckState}
+    {updateStatusLabel}
+    {updateStatusTitle}
+    updateStatusDisabled={updateCheckState === 'checking'}
+    onUpdateStatusClick={handleUpdateStatusClick}
     onOpenBilibili={openBilibili}
   />
 
