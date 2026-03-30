@@ -1,31 +1,31 @@
-import fs from "node:fs";
-import path from "node:path";
-import process from "node:process";
-import zlib from "node:zlib";
+import fs from 'node:fs';
+import path from 'node:path';
+import process from 'node:process';
+import zlib from 'node:zlib';
 import {
   assertVersionsAreAligned,
-  collectVersionSnapshot,
-} from "./version-sync.mjs";
+  collectVersionSnapshot
+} from './version-sync.mjs';
 
-export const sharedBundledZipPath = "BepInExSource/BepInEx.zip";
+export const sharedBundledZipPath = 'BepInExSource/BepInEx.zip';
 
 const platformAliases = new Map([
-  ["darwin", "macos"],
-  ["macos", "macos"],
-  ["win32", "windows"],
-  ["windows", "windows"],
+  ['darwin', 'macos'],
+  ['macos', 'macos'],
+  ['win32', 'windows'],
+  ['windows', 'windows']
 ]);
 
 const managedPluginDependencies = [
-  "BepInEx/plugins/Microsoft.Data.Sqlite.dll",
-  "BepInEx/plugins/SQLitePCLRaw.batteries_v2.dll",
-  "BepInEx/plugins/SQLitePCLRaw.core.dll",
-  "BepInEx/plugins/SQLitePCLRaw.provider.e_sqlite3.dll",
+  'BepInEx/plugins/Microsoft.Data.Sqlite.dll',
+  'BepInEx/plugins/SQLitePCLRaw.batteries_v2.dll',
+  'BepInEx/plugins/SQLitePCLRaw.core.dll',
+  'BepInEx/plugins/SQLitePCLRaw.provider.e_sqlite3.dll'
 ];
 
 export function resolveTargetPlatforms(platformEnv) {
   if (!platformEnv) {
-    return ["macos", "windows"];
+    return ['macos', 'windows'];
   }
 
   const platform = platformAliases.get(platformEnv);
@@ -37,25 +37,25 @@ export function resolveTargetPlatforms(platformEnv) {
 }
 
 export function requiredEntriesForPlatform(platform) {
-  if (platform === "macos") {
+  if (platform === 'macos') {
     return [
-      "run_bepinex.sh",
-      "libdoorstop.dylib",
-      "BepInEx/plugins/BazaarPlusPlus.dll",
-      "BepInEx/plugins/BazaarPlusPlus.version",
+      'run_bepinex.sh',
+      'libdoorstop.dylib',
+      'BepInEx/plugins/BazaarPlusPlus.dll',
+      'BepInEx/plugins/BazaarPlusPlus.version',
       ...managedPluginDependencies,
-      "BepInEx/plugins/libe_sqlite3.dylib",
+      'BepInEx/plugins/libe_sqlite3.dylib'
     ];
   }
 
-  if (platform === "windows") {
+  if (platform === 'windows') {
     return [
-      "winhttp.dll",
-      "doorstop_config.ini",
-      "BepInEx/plugins/BazaarPlusPlus.dll",
-      "BepInEx/plugins/BazaarPlusPlus.version",
+      'winhttp.dll',
+      'doorstop_config.ini',
+      'BepInEx/plugins/BazaarPlusPlus.dll',
+      'BepInEx/plugins/BazaarPlusPlus.version',
       ...managedPluginDependencies,
-      "BepInEx/plugins/e_sqlite3.dll",
+      'BepInEx/plugins/e_sqlite3.dll'
     ];
   }
 
@@ -65,11 +65,11 @@ export function requiredEntriesForPlatform(platform) {
 function sourceZipPathForPlatform(rootDir, platform) {
   return path.join(
     rootDir,
-    "src-tauri",
-    "resources",
-    "BepInExSource",
+    'src-tauri',
+    'resources',
+    'BepInExSource',
     platform,
-    "BepInEx.zip",
+    'BepInEx.zip'
   );
 }
 
@@ -80,7 +80,7 @@ function findEndOfCentralDirectory(buffer) {
     }
   }
 
-  throw new Error("Zip end-of-central-directory record not found");
+  throw new Error('Zip end-of-central-directory record not found');
 }
 
 export function listZipEntries(buffer) {
@@ -102,7 +102,7 @@ export function listZipEntries(buffer) {
     const fileNameStart = cursor + 46;
     const fileNameEnd = fileNameStart + fileNameLength;
 
-    entries.push(buffer.toString("utf8", fileNameStart, fileNameEnd));
+    entries.push(buffer.toString('utf8', fileNameStart, fileNameEnd));
     cursor = fileNameEnd + extraLength + commentLength;
   }
 
@@ -125,9 +125,9 @@ export function readZipEntry(buffer, entryName) {
     const localHeaderOffset = buffer.readUInt32LE(cursor + 42);
     const fileNameStart = cursor + 46;
     const fileName = buffer.toString(
-      "utf8",
+      'utf8',
       fileNameStart,
-      fileNameStart + fileNameLength,
+      fileNameStart + fileNameLength
     );
 
     if (fileName === entryName || fileName.endsWith(`/${entryName}`)) {
@@ -139,14 +139,14 @@ export function readZipEntry(buffer, entryName) {
         localHeaderOffset + 30 + localFileNameLength + localExtraLength;
       const compressedData = buffer.subarray(
         dataStart,
-        dataStart + compressedSize,
+        dataStart + compressedSize
       );
 
-      if (compressionMethod === 0) return compressedData.toString("utf8");
+      if (compressionMethod === 0) return compressedData.toString('utf8');
       if (compressionMethod === 8)
-        return zlib.inflateRawSync(compressedData).toString("utf8");
+        return zlib.inflateRawSync(compressedData).toString('utf8');
       throw new Error(
-        `Unsupported compression method ${compressionMethod} for ${entryName}`,
+        `Unsupported compression method ${compressionMethod} for ${entryName}`
       );
     }
 
@@ -170,23 +170,23 @@ function ensureZipLooksValid(zipPath, platform) {
   const entries = listZipEntries(buffer);
   for (const requiredEntry of requiredEntriesForPlatform(platform)) {
     const present = entries.some(
-      (entry) => entry === requiredEntry || entry.endsWith(`/${requiredEntry}`),
+      (entry) => entry === requiredEntry || entry.endsWith(`/${requiredEntry}`)
     );
     if (!present) {
       throw new Error(
-        `${platform} zip is missing required entry '${requiredEntry}' in ${zipPath}`,
+        `${platform} zip is missing required entry '${requiredEntry}' in ${zipPath}`
       );
     }
   }
 
-  const version = readZipEntry(buffer, "BazaarPlusPlus.version");
+  const version = readZipEntry(buffer, 'BazaarPlusPlus.version');
   if (version) {
     console.log(`[${platform}] BazaarPlusPlus.version: ${version.trim()}`);
   }
 }
 
 export function runPrebuildCheck(rootDir, platformEnv) {
-  console.log("Running prebuild check...");
+  console.log('Running prebuild check...');
   assertVersionsAreAligned(collectVersionSnapshot(rootDir));
   const platforms = resolveTargetPlatforms(platformEnv);
 
@@ -201,7 +201,7 @@ const invokedAsScript =
 if (invokedAsScript) {
   try {
     runPrebuildCheck(process.cwd(), process.env.TAURI_ENV_PLATFORM);
-    console.log("prebuild-check: ok");
+    console.log('prebuild-check: ok');
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     console.error(`prebuild-check: ${message}`);

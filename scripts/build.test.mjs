@@ -1,15 +1,15 @@
-import test from "node:test";
-import assert from "node:assert/strict";
-import { execFileSync } from "node:child_process";
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
 
 function runShell(script) {
-  return execFileSync("bash", ["-lc", script], {
-    cwd: "/Users/yxinyu/codes/bpp_codes/bazaarplusplus-installer",
-    encoding: "utf8",
+  return execFileSync('bash', ['-lc', script], {
+    cwd: '/Users/yxinyu/codes/bpp_codes/bazaarplusplus-installer',
+    encoding: 'utf8'
   });
 }
 
-test("macOS production build targets universal artifacts", () => {
+test('macOS production build targets universal artifacts', () => {
   const output = runShell(`
     set -euo pipefail
     source ./build.sh
@@ -24,23 +24,23 @@ test("macOS production build targets universal artifacts", () => {
 
   assert.match(
     output,
-    /Building macos app binary\|npm run tauri build -- --no-bundle --config .*src-tauri\/tauri\.macos\.conf\.json --target universal-apple-darwin/,
+    /Building macos app binary\|npm run tauri build -- --no-bundle --config .*src-tauri\/tauri\.macos\.conf\.json --target universal-apple-darwin/
   );
   assert.match(
     output,
-    /Bundling macos installer\|npm run tauri bundle -- --bundles dmg --config .*src-tauri\/tauri\.macos\.conf\.json --target universal-apple-darwin/,
+    /Bundling macos installer\|npm run tauri bundle -- --bundles dmg --config .*src-tauri\/tauri\.macos\.conf\.json --target universal-apple-darwin/
   );
   assert.match(
     output,
-    /Binary:\s+.*src-tauri\/target\/universal-apple-darwin\/release\/bppinstaller/,
+    /Binary:\s+.*src-tauri\/target\/universal-apple-darwin\/release\/bppinstaller/
   );
   assert.match(
     output,
-    /Bundle:\s+.*src-tauri\/target\/universal-apple-darwin\/release\/bundle\/dmg/,
+    /Bundle:\s+.*src-tauri\/target\/universal-apple-darwin\/release\/bundle\/dmg/
   );
 });
 
-test("Windows production build keeps the default target layout", () => {
+test('Windows production build keeps the default target layout', () => {
   const output = runShell(`
     set -euo pipefail
     source ./build.sh
@@ -55,17 +55,17 @@ test("Windows production build keeps the default target layout", () => {
 
   assert.match(
     output,
-    /Building windows app binary\|npm run tauri build -- --no-bundle --config .*src-tauri\/tauri\.windows\.conf\.json/,
+    /Building windows app binary\|npm run tauri build -- --no-bundle --config .*src-tauri\/tauri\.windows\.conf\.json/
   );
   assert.doesNotMatch(output, /universal-apple-darwin/);
   assert.match(
     output,
-    /Binary:\s+.*src-tauri\/target\/release\/bppinstaller\.exe/,
+    /Binary:\s+.*src-tauri\/target\/release\/bppinstaller\.exe/
   );
   assert.match(output, /Bundle:\s+.*src-tauri\/target\/release\/bundle\/nsis/);
 });
 
-test("macOS production build requires both Rust targets for universal output", () => {
+test('macOS production build requires both Rust targets for universal output', () => {
   const output = runShell(`
     source ./build.sh
     set +e
