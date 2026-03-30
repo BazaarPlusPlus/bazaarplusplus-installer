@@ -24,10 +24,12 @@ test('install preview modal uses the new installation summary copy', () => {
   );
 });
 
-test('install preview modal uses an install-content acknowledgement', () => {
-  assert.equal(modalSource.includes('我已了解本次安装会启用哪些内容，并准备继续'), true);
+test('install preview modal warns that installation deletes historical battle records', () => {
+  assert.equal(modalSource.includes('我已了解安装会删除历史作战记录，并准备继续'), true);
   assert.equal(
-    modalSource.includes('I understand what this installation enables and I am ready to continue.'),
+    modalSource.includes(
+      'I understand that this installation will delete historical battle records and I am ready to continue.'
+    ),
     true
   );
 });

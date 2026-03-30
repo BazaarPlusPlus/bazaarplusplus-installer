@@ -124,6 +124,17 @@ fn prepare_install_target(game_path: &Path) -> Result<(), String> {
     uninstall_payload(game_path)
 }
 
+fn cleanup_bazaarplusplus_directory_for_installer_version(
+    game_path: &Path,
+    installer_version: &str,
+) -> Result<(), String> {
+    if installer_version.trim() != "2.0.0" {
+        return Ok(());
+    }
+
+    remove_path_if_exists(&game_path.join("BazaarPlusPlus"))
+}
+
 #[tauri::command]
 pub fn install_bepinex(
     app: tauri::AppHandle,
@@ -134,6 +145,10 @@ pub fn install_bepinex(
     #[cfg(target_os = "macos")]
     crate::commands::steam::prepare_steam_for_launch_option_update(Path::new(&steam_path))?;
     prepare_install_target(game_path)?;
+    cleanup_bazaarplusplus_directory_for_installer_version(
+        game_path,
+        &app.package_info().version.to_string(),
+    )?;
 
     debug_log!("Reading bundled BepInEx.zip...");
     let relative_zip_path = bundled_zip_relative_path();
@@ -294,5 +309,29 @@ mod tests {
             assert!(!tmp.path().join("doorstop_config.ini").exists());
             assert!(!tmp.path().join("winhttp.dll").exists());
         }
+    }
+
+    #[test]
+    fn test_cleanup_bazaarplusplus_directory_removes_directory_for_installer_2_0_0() {
+        let tmp = tempfile::tempdir().unwrap();
+        let legacy_dir = tmp.path().join("BazaarPlusPlus");
+        std::fs::create_dir_all(&legacy_dir).unwrap();
+        std::fs::write(legacy_dir.join("legacy.dll"), b"dll").unwrap();
+
+        cleanup_bazaarplusplus_directory_for_installer_version(tmp.path(), "2.0.0").unwrap();
+
+        assert!(!legacy_dir.exists());
+    }
+
+    #[test]
+    fn test_cleanup_bazaarplusplus_directory_keeps_directory_for_other_versions() {
+        let tmp = tempfile::tempdir().unwrap();
+        let legacy_dir = tmp.path().join("BazaarPlusPlus");
+        std::fs::create_dir_all(&legacy_dir).unwrap();
+        std::fs::write(legacy_dir.join("legacy.dll"), b"dll").unwrap();
+
+        cleanup_bazaarplusplus_directory_for_installer_version(tmp.path(), "2.0.1").unwrap();
+
+        assert!(legacy_dir.exists());
     }
 }

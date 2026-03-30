@@ -40,8 +40,8 @@
     <span class="install-acknowledge-box" aria-hidden="true"></span>
     <span>
       {$locale === 'zh'
-        ? '我已了解本次安装会启用哪些内容，并准备继续'
-        : 'I understand what this installation enables and I am ready to continue.'}
+        ? '我已了解安装会删除历史作战记录，并准备继续'
+        : 'I understand that this installation will delete historical battle records and I am ready to continue.'}
     </span>
   </label>
 </AppModal>
