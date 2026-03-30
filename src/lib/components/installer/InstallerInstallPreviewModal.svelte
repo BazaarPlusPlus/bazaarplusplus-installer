@@ -20,23 +20,28 @@
   {onConfirm}
 >
   <section class="install-impact">
-    <p class="install-impact-kicker">
-      {$locale === 'zh' ? '使用教程' : 'How to Use It'}
-    </p>
-    <p class="install-impact-body">
-      {$locale === 'zh'
-        ? '查看 B 站 BazaarPlusPlus 最新视频获取使用教程。'
-        : 'Check the latest BazaarPlusPlus video on Bilibili for the usage tutorial.'}
-    </p>
-    <a
-      class="install-impact-link"
-      href={bilibiliUrl}
-      rel="noreferrer"
-      target="_blank"
-      onclick={onOpenBilibili}
-    >
-      {$locale === 'zh' ? '查看最新视频' : 'Watch Latest Video'}
-    </a>
+    <div class="install-impact-copy">
+      <p class="install-impact-kicker">
+        {$locale === 'zh' ? '使用教程' : 'How to Use It'}
+      </p>
+      <p class="install-impact-body">
+        {$locale === 'zh'
+          ? '查看 B 站 BazaarPlusPlus 最新视频获取使用教程。'
+          : 'Check the latest BazaarPlusPlus video on Bilibili for the usage tutorial.'}
+      </p>
+    </div>
+
+    <div class="install-impact-action">
+      <a
+        class="install-impact-link"
+        href={bilibiliUrl}
+        rel="noreferrer"
+        target="_blank"
+        onclick={onOpenBilibili}
+      >
+        {$locale === 'zh' ? '查看最新视频' : 'Watch Latest Video'}
+      </a>
+    </div>
   </section>
 
   <label class="install-acknowledge">
@@ -55,15 +60,11 @@
 </AppModal>
 
 <style>
-  .install-impact-body {
-    margin: 0;
-    font-size: 0.82rem;
-    line-height: 1.55;
-  }
-
   .install-impact {
     display: grid;
-    gap: 0.42rem;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 1rem;
+    align-items: center;
     padding: 0.92rem 1rem;
     text-align: left;
     border: 1px solid rgba(200, 148, 55, 0.14);
@@ -78,6 +79,12 @@
     box-shadow: inset 0 0 0 1px rgba(255, 198, 98, 0.03);
   }
 
+  .install-impact-copy {
+    display: grid;
+    gap: 0.42rem;
+    min-width: 0;
+  }
+
   .install-impact-kicker {
     margin: 0;
     font-family: 'Cinzel', serif;
@@ -88,7 +95,14 @@
   }
 
   .install-impact-body {
+    margin: 0;
+    font-size: 0.82rem;
+    line-height: 1.55;
     color: rgba(200, 170, 120, 0.7);
+  }
+
+  .install-impact-action {
+    justify-self: end;
   }
 
   .install-impact-link {
@@ -227,6 +241,15 @@
     .install-acknowledge {
       padding-left: 0.85rem;
       padding-right: 0.85rem;
+    }
+
+    .install-impact {
+      grid-template-columns: 1fr;
+      align-items: start;
+    }
+
+    .install-impact-action {
+      justify-self: start;
     }
   }
 </style>
