@@ -337,6 +337,8 @@
   <InstallerInstallPreviewModal
     open={showInstallModal}
     bind:installAcknowledged
+    bilibiliUrl={BILIBILI_URL}
+    onOpenBilibili={openBilibili}
     onConfirm={confirmInstall}
   />
 

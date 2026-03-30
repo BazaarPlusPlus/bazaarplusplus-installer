@@ -44,19 +44,19 @@
     {
       icon: 'I',
       title: {
-        zh: '战绩记录和战斗回放',
-        en: 'Match History and Battle Replays'
+        zh: '镜像战斗回看',
+        en: 'Mirror Battle Review'
       },
       bullets: [
         {
-          zh: '增加了战绩记录和战斗回放功能。',
-          en: 'Added match history and battle replay features.'
+          zh: '增加镜像战斗的数据。',
+          en: 'Added data support for mirror battles.'
         }
       ],
       tone: 'featured',
       badge: {
-        zh: '主推功能',
-        en: 'Featured'
+        zh: '本次主打',
+        en: 'Headline Feature'
       },
       actionLead: {
         zh: '太牛了',
@@ -70,94 +70,62 @@
     {
       icon: 'II',
       title: {
-        zh: '预览修饰键更改',
-        en: 'Preview Modifier Key Changes'
+        zh: '优化 History Panel',
+        en: 'History Panel Improvements'
       },
       bullets: [
         {
-          zh: '增加了修饰键更改功能。',
-          en: 'Added support for changing modifier keys.'
+          zh: '改为打开时加载数据，收紧回放可用性判断，并提升 Collections 菜单入口挂接的稳定性。',
+          en: 'History data now loads on open, replay availability checks are stricter, and the Collections menu entry hookup is more reliable.'
+        },
+        {
+          zh: '支持删除 run。',
+          en: 'Added support for deleting runs.'
+        },
+        {
+          zh: '优化数据的采集场景，降低卡顿的可能性。',
+          en: 'Improved data collection timing to reduce the chance of stutter.'
         }
       ]
     },
     {
       icon: 'III',
       title: {
-        zh: '战斗加速调整',
-        en: 'Combat Speed Changes'
+        zh: '快捷键支持鼠标绑定',
+        en: 'Mouse Binding for Hotkeys'
       },
       bullets: [
         {
-          zh: '移除了战斗加速功能。',
-          en: 'Removed the combat speed-up feature.'
+          zh: '快捷键现在支持绑定到鼠标按键。',
+          en: 'Hotkeys can now be bound to mouse buttons.'
         }
       ]
     },
     {
       icon: 'IV',
       title: {
-        zh: '设置路径优化',
-        en: 'Settings Path Optimization'
+        zh: '升级预览 Tooltip 改进',
+        en: 'Upgrade Preview Tooltip Improvements'
       },
       bullets: [
         {
-          zh: '优化了设置的路径。',
-          en: 'Optimized the settings path.'
+          zh: '升级预览 tooltip 从显示两个改为显示一个，展示更加好看。',
+          en: 'Upgrade preview tooltips were consolidated from two into one for a cleaner presentation.'
         }
       ]
     },
     {
       icon: 'V',
       title: {
-        zh: '野怪预览修复',
-        en: 'Monster Preview Fixes'
+        zh: '有限随机英雄',
+        en: 'Limited Random Heroes'
       },
       bullets: [
         {
-          zh: '修复了野怪预览的附魔。',
-          en: 'Fixed enchant display in monster previews.'
+          zh: '增加有限随机英雄。',
+          en: 'Added limited random heroes.'
         }
       ]
-    },
-    {
-      icon: 'VI',
-      title: {
-        zh: '首轮野怪加速修复',
-        en: 'First-Round Monster Speed Fix'
-      },
-      bullets: [
-        {
-          zh: '修复了首轮野怪加速不会生效的问题。',
-          en: 'Fixed an issue where first-round monster acceleration would not take effect.'
-        }
-      ]
-    },
-    {
-      icon: 'VII',
-      title: {
-        zh: 'F6 战斗状态条显隐自动记忆',
-        en: 'F6 Combat Status Bar Visibility Memory'
-      },
-      bullets: [
-        {
-          zh: '增加 F6 战斗状态条显隐自动记忆。',
-          en: 'Added automatic memory for F6 combat status bar visibility.'
-        }
-      ]
-    },
-    {
-      icon: 'VIII',
-      title: {
-        zh: '已知问题',
-        en: 'Known Issues'
-      },
-      bullets: [
-        {
-          zh: '战斗回放的玩家血条显示不准确。',
-          en: 'The player health bar is displayed inaccurately during battle replay.'
-        }
-      ],
-      tone: 'warning'
     }
   ];
 </script>
@@ -198,8 +166,8 @@
   <h2 class="update-title">BazaarPlusPlus</h2>
   <p class="update-summary">
     {$locale === 'zh'
-      ? '本次更新主推战绩记录和战斗回放功能，同时包含修饰键调整、设置路径优化、多项功能修复，以及当前已知问题。'
-      : 'This release is centered on match history and battle replays, with modifier key customization, settings path improvements, several bug fixes, and known issues also included.'}
+      ? '本次更新主打镜像战斗回看，补充镜像战斗数据；同时带来 History Panel 优化、鼠标快捷键绑定、升级预览 tooltip 改进，以及有限随机英雄。'
+      : 'This release headlines mirror battle review with added mirror battle data, alongside History Panel improvements, mouse binding for hotkeys, cleaner upgrade preview tooltips, and limited random heroes.'}
   </p>
 </section>
 

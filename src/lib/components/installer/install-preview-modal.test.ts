@@ -9,19 +9,16 @@ const modalSource = readFileSync(
   'utf8'
 );
 
-test('install preview modal uses the new installation summary copy', () => {
+test('install preview modal points users to the latest tutorial video', () => {
+  assert.equal(modalSource.includes('查看 B 站 BazaarPlusPlus 最新视频获取使用教程。'), true);
   assert.equal(
-    modalSource.includes(
-      'BazaarPlusPlus 包含几项最常用的功能：战绩记录、战斗回放、野怪预览、升级预览和附魔预览。'
-    ),
+    modalSource.includes('Check the latest BazaarPlusPlus video on Bilibili for the usage tutorial.'),
     true
   );
-  assert.equal(
-    modalSource.includes(
-      "This installation enables several of BazaarPlusPlus's most useful enhancements, including match history, battle replay, monster preview, level-up preview, and enchantment preview."
-    ),
-    true
-  );
+  assert.equal(modalSource.includes('查看最新视频'), true);
+  assert.equal(modalSource.includes('Watch Latest Video'), true);
+  assert.equal(modalSource.includes('href={bilibiliUrl}'), true);
+  assert.equal(modalSource.includes('onclick={onOpenBilibili}'), true);
 });
 
 test('install preview modal warns that installation deletes historical battle records', () => {
@@ -34,14 +31,18 @@ test('install preview modal warns that installation deletes historical battle re
   );
 });
 
-test('install preview modal keeps the lightweight uninstall disclaimer', () => {
+test('install preview modal no longer shows the old installation summary', () => {
   assert.equal(
-    modalSource.includes('如需恢复原状，之后可随时卸载'),
-    true
+    modalSource.includes(
+      'BazaarPlusPlus 包含几项最常用的功能：战绩记录、战斗回放、野怪预览、升级预览和附魔预览。'
+    ),
+    false
   );
   assert.equal(
-    modalSource.includes('you can uninstall later at any time'),
-    true
+    modalSource.includes(
+      "This installation enables several of BazaarPlusPlus's most useful enhancements, including match history, battle replay, monster preview, level-up preview, and enchantment preview."
+    ),
+    false
   );
 });
 

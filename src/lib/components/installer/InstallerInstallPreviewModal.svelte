@@ -4,6 +4,8 @@
 
   export let open: boolean;
   export let installAcknowledged: boolean;
+  export let bilibiliUrl: string;
+  export let onOpenBilibili: (event?: MouseEvent) => void;
   export let onConfirm: () => void | Promise<void>;
 </script>
 
@@ -17,22 +19,22 @@
   wide={true}
   {onConfirm}
 >
-  <section class="install-overview">
-    <p class="install-overview-kicker">{$locale === 'zh' ? '本次安装内容' : 'What This Installation Enables'}</p>
-    <p class="install-overview-body">
-      {$locale === 'zh'
-        ? 'BazaarPlusPlus 包含几项最常用的功能：战绩记录、战斗回放、野怪预览、升级预览和附魔预览。'
-        : "This installation enables several of BazaarPlusPlus's most useful enhancements, including match history, battle replay, monster preview, level-up preview, and enchantment preview."}
-    </p>
-  </section>
-
   <section class="install-impact">
-    <p class="install-impact-kicker">{$locale === 'zh' ? '安装影响范围' : 'What It Changes'}</p>
+    <p class="install-impact-kicker">{$locale === 'zh' ? '使用教程' : 'How to Use It'}</p>
     <p class="install-impact-body">
       {$locale === 'zh'
-        ? '安装会将 BazaarPlusPlus 所需文件写入当前游戏目录，不会改动你的账号信息或游戏库位置。如需恢复原状，之后可随时卸载。'
-        : 'The installer writes the required BazaarPlusPlus files into the current game directory. It does not change your account data or library location, and you can uninstall later at any time.'}
+        ? '查看 B 站 BazaarPlusPlus 最新视频获取使用教程。'
+        : 'Check the latest BazaarPlusPlus video on Bilibili for the usage tutorial.'}
     </p>
+    <a
+      class="install-impact-link"
+      href={bilibiliUrl}
+      rel="noreferrer"
+      target="_blank"
+      onclick={onOpenBilibili}
+    >
+      {$locale === 'zh' ? '查看最新视频' : 'Watch Latest Video'}
+    </a>
   </section>
 
   <label class="install-acknowledge">
@@ -47,39 +49,10 @@
 </AppModal>
 
 <style>
-  .install-overview {
-    display: grid;
-    gap: 0.42rem;
-    padding: 0.92rem 1rem;
-    text-align: left;
-    border: 1px solid rgba(200, 148, 55, 0.18);
-    border-radius: 4px;
-    background:
-      linear-gradient(180deg, rgba(200, 148, 55, 0.07), rgba(200, 148, 55, 0.02)),
-      rgba(12, 8, 4, 0.86);
-    box-shadow:
-      inset 0 0 0 1px rgba(255, 198, 98, 0.04),
-      0 10px 24px rgba(0, 0, 0, 0.16);
-  }
-
-  .install-overview-kicker {
-    margin: 0;
-    font-family: 'Cinzel', serif;
-    font-size: 0.6rem;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-    color: rgba(232, 200, 122, 0.88);
-  }
-
-  .install-overview-body,
   .install-impact-body {
     margin: 0;
     font-size: 0.82rem;
     line-height: 1.55;
-  }
-
-  .install-overview-body {
-    color: rgba(236, 225, 202, 0.84);
   }
 
   .install-impact {
@@ -106,6 +79,36 @@
 
   .install-impact-body {
     color: rgba(200, 170, 120, 0.7);
+  }
+
+  .install-impact-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: fit-content;
+    margin-top: 0.15rem;
+    padding: 0.58rem 0.82rem;
+    border: 1px solid rgba(214, 169, 84, 0.24);
+    border-radius: 3px;
+    background: linear-gradient(180deg, rgba(200, 148, 55, 0.12), rgba(200, 148, 55, 0.06));
+    color: rgba(236, 225, 202, 0.88);
+    text-decoration: none;
+    font-family: 'Cinzel', serif;
+    font-size: 0.64rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+  }
+
+  .install-impact-link:hover {
+    background: linear-gradient(180deg, rgba(200, 148, 55, 0.2), rgba(200, 148, 55, 0.1));
+    border-color: rgba(200, 148, 55, 0.4);
+    transform: translateY(-1px);
+  }
+
+  .install-impact-link:focus-visible {
+    outline: 2px solid rgba(255, 214, 140, 0.9);
+    outline-offset: 2px;
   }
 
   .install-acknowledge {
@@ -187,7 +190,6 @@
   }
 
   @media (max-width: 520px) {
-    .install-overview,
     .install-impact,
     .install-acknowledge {
       padding-left: 0.85rem;
