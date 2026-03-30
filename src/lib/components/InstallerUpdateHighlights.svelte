@@ -135,7 +135,9 @@
   eyebrow="BazaarPlusPlus"
   title={$locale === 'zh' ? supportQrCopy.zh.title : supportQrCopy.en.title}
   bodyClass="support-modal-body"
-  confirmText={$locale === 'zh' ? supportQrCopy.zh.close : supportQrCopy.en.close}
+  confirmText={$locale === 'zh'
+    ? supportQrCopy.zh.close
+    : supportQrCopy.en.close}
   onConfirm={() => {
     showSupportQr = false;
   }}
@@ -144,18 +146,34 @@
     <div class="payment-grid">
       <article class="payment-card payment-card-wechat">
         <div class="payment-frame">
-          <img class="payment-image" src="/support/wechat-pay.svg" alt="WePay" />
+          <img
+            class="payment-image"
+            src="/support/wechat-pay.svg"
+            alt="WePay"
+          />
         </div>
 
         <div class="payment-copy">
-          <h3>{$locale === 'zh' ? supportQrCopy.zh.cardTitle : supportQrCopy.en.cardTitle}</h3>
-          <p>{$locale === 'zh' ? supportQrCopy.zh.cardBody : supportQrCopy.en.cardBody}</p>
+          <h3>
+            {$locale === 'zh'
+              ? supportQrCopy.zh.cardTitle
+              : supportQrCopy.en.cardTitle}
+          </h3>
+          <p>
+            {$locale === 'zh'
+              ? supportQrCopy.zh.cardBody
+              : supportQrCopy.en.cardBody}
+          </p>
         </div>
       </article>
     </div>
 
-    <p class="payment-support-note">{$locale === 'zh' ? supportQrCopy.zh.note : supportQrCopy.en.note}</p>
-    <p class="payment-support-tip">{$locale === 'zh' ? supportQrCopy.zh.tip : supportQrCopy.en.tip}</p>
+    <p class="payment-support-note">
+      {$locale === 'zh' ? supportQrCopy.zh.note : supportQrCopy.en.note}
+    </p>
+    <p class="payment-support-tip">
+      {$locale === 'zh' ? supportQrCopy.zh.tip : supportQrCopy.en.tip}
+    </p>
   </section>
 </AppModal>
 
@@ -177,7 +195,9 @@
       <div class="update-feature-icon">{section.icon}</div>
       <div class="update-feature-copy">
         {#if section.badge}
-          <p class="update-feature-badge">{$locale === 'zh' ? section.badge.zh : section.badge.en}</p>
+          <p class="update-feature-badge">
+            {$locale === 'zh' ? section.badge.zh : section.badge.en}
+          </p>
         {/if}
         <h3>{$locale === 'zh' ? section.title.zh : section.title.en}</h3>
         <ul class="update-feature-points">
@@ -188,9 +208,21 @@
       </div>
       {#if section.actionLabel && section.actionLead}
         <div class="update-feature-action">
-          <button class="featured-support-button" type="button" onclick={() => (showSupportQr = true)}>
-            <span class="featured-support-lead">{$locale === 'zh' ? section.actionLead.zh : section.actionLead.en}</span>
-            <span class="featured-support-label">{$locale === 'zh' ? section.actionLabel.zh : section.actionLabel.en}</span>
+          <button
+            class="featured-support-button"
+            type="button"
+            onclick={() => (showSupportQr = true)}
+          >
+            <span class="featured-support-lead"
+              >{$locale === 'zh'
+                ? section.actionLead.zh
+                : section.actionLead.en}</span
+            >
+            <span class="featured-support-label"
+              >{$locale === 'zh'
+                ? section.actionLabel.zh
+                : section.actionLabel.en}</span
+            >
           </button>
         </div>
       {/if}
@@ -207,8 +239,16 @@
     border: 1px solid rgba(200, 148, 55, 0.18);
     border-radius: 4px;
     background:
-      radial-gradient(circle at top right, rgba(232, 200, 122, 0.16), transparent 42%),
-      linear-gradient(180deg, rgba(200, 148, 55, 0.08), rgba(200, 148, 55, 0.02)),
+      radial-gradient(
+        circle at top right,
+        rgba(232, 200, 122, 0.16),
+        transparent 42%
+      ),
+      linear-gradient(
+        180deg,
+        rgba(200, 148, 55, 0.08),
+        rgba(200, 148, 55, 0.02)
+      ),
       rgba(12, 8, 4, 0.84);
     box-shadow: inset 0 0 0 1px rgba(255, 198, 98, 0.04);
   }
@@ -257,7 +297,11 @@
   .tone-default {
     border: 1px solid rgba(200, 148, 55, 0.18);
     background:
-      linear-gradient(180deg, rgba(200, 148, 55, 0.08), rgba(200, 148, 55, 0.02)),
+      linear-gradient(
+        180deg,
+        rgba(200, 148, 55, 0.08),
+        rgba(200, 148, 55, 0.02)
+      ),
       rgba(12, 8, 4, 0.82);
   }
 
@@ -265,8 +309,16 @@
     grid-template-columns: 2.25rem minmax(0, 1fr) auto;
     border: 1px solid rgba(226, 181, 82, 0.34);
     background:
-      radial-gradient(circle at top right, rgba(255, 218, 120, 0.16), transparent 38%),
-      linear-gradient(180deg, rgba(230, 178, 74, 0.14), rgba(200, 148, 55, 0.04)),
+      radial-gradient(
+        circle at top right,
+        rgba(255, 218, 120, 0.16),
+        transparent 38%
+      ),
+      linear-gradient(
+        180deg,
+        rgba(230, 178, 74, 0.14),
+        rgba(200, 148, 55, 0.04)
+      ),
       rgba(16, 10, 4, 0.88);
     box-shadow:
       inset 0 0 0 1px rgba(255, 216, 125, 0.08),
@@ -276,7 +328,11 @@
   .tone-warning {
     border: 1px solid rgba(214, 78, 78, 0.4);
     background:
-      radial-gradient(circle at top right, rgba(214, 78, 78, 0.14), transparent 42%),
+      radial-gradient(
+        circle at top right,
+        rgba(214, 78, 78, 0.14),
+        transparent 42%
+      ),
       linear-gradient(180deg, rgba(165, 44, 44, 0.16), rgba(114, 26, 26, 0.06)),
       rgba(16, 8, 8, 0.88);
     box-shadow: inset 0 0 0 1px rgba(255, 132, 132, 0.05);
@@ -289,7 +345,11 @@
     place-items: center;
     border: 1px solid rgba(214, 169, 84, 0.28);
     border-radius: 999px;
-    background: radial-gradient(circle at 30% 30%, rgba(232, 200, 122, 0.22), rgba(158, 92, 30, 0.14));
+    background: radial-gradient(
+      circle at 30% 30%,
+      rgba(232, 200, 122, 0.22),
+      rgba(158, 92, 30, 0.14)
+    );
     color: rgba(232, 200, 122, 0.92);
     font-family: 'Cinzel', serif;
     font-size: 0.66rem;
@@ -298,13 +358,21 @@
 
   .tone-featured .update-feature-icon {
     border-color: rgba(255, 212, 111, 0.42);
-    background: radial-gradient(circle at 30% 30%, rgba(255, 219, 129, 0.34), rgba(194, 120, 25, 0.18));
+    background: radial-gradient(
+      circle at 30% 30%,
+      rgba(255, 219, 129, 0.34),
+      rgba(194, 120, 25, 0.18)
+    );
     color: rgba(255, 226, 150, 0.98);
   }
 
   .tone-warning .update-feature-icon {
     border-color: rgba(223, 110, 110, 0.42);
-    background: radial-gradient(circle at 30% 30%, rgba(224, 112, 112, 0.28), rgba(133, 31, 31, 0.16));
+    background: radial-gradient(
+      circle at 30% 30%,
+      rgba(224, 112, 112, 0.28),
+      rgba(133, 31, 31, 0.16)
+    );
     color: rgba(255, 182, 182, 0.94);
   }
 
@@ -350,7 +418,11 @@
     border: 1px solid rgba(236, 195, 104, 0.34);
     border-radius: 14px;
     background:
-      linear-gradient(180deg, rgba(255, 221, 146, 0.12), rgba(204, 142, 40, 0.08)),
+      linear-gradient(
+        180deg,
+        rgba(255, 221, 146, 0.12),
+        rgba(204, 142, 40, 0.08)
+      ),
       rgba(28, 18, 8, 0.88);
     color: rgba(248, 230, 185, 0.96);
     text-align: left;
@@ -368,7 +440,11 @@
     transform: translateY(-1px);
     border-color: rgba(255, 214, 118, 0.52);
     background:
-      linear-gradient(180deg, rgba(255, 225, 154, 0.16), rgba(214, 152, 48, 0.1)),
+      linear-gradient(
+        180deg,
+        rgba(255, 225, 154, 0.16),
+        rgba(214, 152, 48, 0.1)
+      ),
       rgba(32, 20, 8, 0.92);
     box-shadow:
       inset 0 0 0 1px rgba(255, 229, 162, 0.06),
@@ -428,7 +504,11 @@
     position: relative;
     padding: 0.75rem;
     background:
-      radial-gradient(circle at top, rgba(255, 232, 174, 0.08), transparent 54%),
+      radial-gradient(
+        circle at top,
+        rgba(255, 232, 174, 0.08),
+        transparent 54%
+      ),
       linear-gradient(180deg, rgba(34, 20, 8, 0.96), rgba(16, 9, 4, 0.98));
     border: 1px solid rgba(200, 148, 55, 0.16);
     border-radius: 4px;
@@ -455,7 +535,11 @@
   .payment-frame {
     aspect-ratio: 1 / 1;
     padding: 0.8rem;
-    background: linear-gradient(135deg, rgba(255, 248, 231, 0.98), rgba(245, 238, 220, 0.98));
+    background: linear-gradient(
+      135deg,
+      rgba(255, 248, 231, 0.98),
+      rgba(245, 238, 220, 0.98)
+    );
     border-radius: 3px;
     box-shadow:
       inset 0 0 0 1px rgba(95, 65, 19, 0.08),

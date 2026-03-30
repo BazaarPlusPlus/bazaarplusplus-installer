@@ -12,22 +12,48 @@
 <header class="header">
   <div class="corner tl" aria-hidden="true">
     <svg width="28" height="28" viewBox="0 0 40 40" fill="none">
-      <path d="M2 2L2 16M2 2L16 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="square" />
+      <path
+        d="M2 2L2 16M2 2L16 2"
+        stroke="currentColor"
+        stroke-width="1.5"
+        stroke-linecap="square"
+      />
       <circle cx="2" cy="2" r="1.5" fill="currentColor" />
     </svg>
   </div>
   <div class="corner tr" aria-hidden="true">
     <svg width="28" height="28" viewBox="0 0 40 40" fill="none">
-      <path d="M38 2L38 16M38 2L24 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="square" />
+      <path
+        d="M38 2L38 16M38 2L24 2"
+        stroke="currentColor"
+        stroke-width="1.5"
+        stroke-linecap="square"
+      />
       <circle cx="38" cy="2" r="1.5" fill="currentColor" />
     </svg>
   </div>
 
   <div class="header-corner-links">
-    <a class="about-toggle" href="/about" title={$locale === 'zh' ? '关于' : 'About'}>
+    <a
+      class="about-toggle"
+      href="/about"
+      title={$locale === 'zh' ? '关于' : 'About'}
+    >
       <svg class="about-icon" viewBox="0 0 24 24" aria-hidden="true">
-        <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.5" fill="none" />
-        <path d="M12 11v5M12 8h.01" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+        <circle
+          cx="12"
+          cy="12"
+          r="9"
+          stroke="currentColor"
+          stroke-width="1.5"
+          fill="none"
+        />
+        <path
+          d="M12 11v5M12 8h.01"
+          stroke="currentColor"
+          stroke-width="1.5"
+          stroke-linecap="round"
+        />
       </svg>
     </a>
 
@@ -41,8 +67,24 @@
       onclick={onOpenBilibili}
     >
       <svg class="about-icon" viewBox="0 0 24 24" aria-hidden="true">
-        <rect x="4.5" y="7.5" width="15" height="10" rx="2.2" stroke="currentColor" stroke-width="1.5" fill="none" />
-        <path d="M9 5.5L7.4 3.8M15 5.5l1.6-1.7M9 11.2h1.8M13.2 11.2H15M9.3 14.1c1 .7 4.4.7 5.4 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+        <rect
+          x="4.5"
+          y="7.5"
+          width="15"
+          height="10"
+          rx="2.2"
+          stroke="currentColor"
+          stroke-width="1.5"
+          fill="none"
+        />
+        <path
+          d="M9 5.5L7.4 3.8M15 5.5l1.6-1.7M9 11.2h1.8M13.2 11.2H15M9.3 14.1c1 .7 4.4.7 5.4 0"
+          stroke="currentColor"
+          stroke-width="1.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          fill="none"
+        />
       </svg>
     </a>
   </div>
@@ -65,9 +107,28 @@
 
   <div class="sigil" aria-hidden="true">
     <svg width="32" height="32" viewBox="0 0 44 44" fill="none">
-      <polygon points="22,3 41,34 3,34" stroke="currentColor" stroke-width="1" fill="none" opacity="0.55" />
-      <polygon points="22,11 35,31 9,31" stroke="currentColor" stroke-width="0.5" fill="none" opacity="0.3" />
-      <circle cx="22" cy="22" r="5" stroke="currentColor" stroke-width="0.8" fill="none" />
+      <polygon
+        points="22,3 41,34 3,34"
+        stroke="currentColor"
+        stroke-width="1"
+        fill="none"
+        opacity="0.55"
+      />
+      <polygon
+        points="22,11 35,31 9,31"
+        stroke="currentColor"
+        stroke-width="0.5"
+        fill="none"
+        opacity="0.3"
+      />
+      <circle
+        cx="22"
+        cy="22"
+        r="5"
+        stroke="currentColor"
+        stroke-width="0.8"
+        fill="none"
+      />
       <circle cx="22" cy="22" r="2" fill="currentColor" opacity="0.75" />
     </svg>
   </div>
@@ -79,7 +140,6 @@
   <div class="rule" aria-hidden="true">
     <span></span><span class="diamond">+</span><span></span>
   </div>
-
 </header>
 
 <style>
@@ -87,18 +147,33 @@
     position: relative;
     text-align: center;
     padding: 1.45rem 1.75rem 1.15rem;
-    background: linear-gradient(175deg, rgba(38, 23, 9, 0.92), rgba(16, 10, 5, 0.88));
+    background: linear-gradient(
+      175deg,
+      rgba(38, 23, 9, 0.92),
+      rgba(16, 10, 5, 0.88)
+    );
     border: 1px solid rgba(200, 148, 55, 0.18);
     border-radius: 3px;
-    box-shadow: 0 0 0 1px rgba(200, 148, 55, 0.06) inset, 0 24px 64px rgba(0,0,0,0.5);
+    box-shadow:
+      0 0 0 1px rgba(200, 148, 55, 0.06) inset,
+      0 24px 64px rgba(0, 0, 0, 0.5);
     display: grid;
     gap: 0.15rem;
     justify-items: center;
   }
 
-  .corner { position: absolute; color: rgba(200, 148, 55, 0.42); }
-  .tl { top: 8px; left: 8px; }
-  .tr { top: 8px; right: 8px; }
+  .corner {
+    position: absolute;
+    color: rgba(200, 148, 55, 0.42);
+  }
+  .tl {
+    top: 8px;
+    left: 8px;
+  }
+  .tr {
+    top: 8px;
+    right: 8px;
+  }
 
   .header-corner-links {
     position: absolute;
@@ -117,15 +192,25 @@
     justify-content: center;
     border: 1px solid rgba(200, 148, 55, 0.24);
     border-radius: 2px;
-    background: linear-gradient(180deg, rgba(200, 148, 55, 0.12), rgba(200, 148, 55, 0.06));
+    background: linear-gradient(
+      180deg,
+      rgba(200, 148, 55, 0.12),
+      rgba(200, 148, 55, 0.06)
+    );
     color: rgba(228, 216, 191, 0.82);
     box-shadow: 0 0 0 1px rgba(255, 198, 98, 0.08) inset;
     text-decoration: none;
-    transition: background 0.15s ease, border-color 0.15s ease;
+    transition:
+      background 0.15s ease,
+      border-color 0.15s ease;
   }
 
   .about-toggle:hover {
-    background: linear-gradient(180deg, rgba(200, 148, 55, 0.2), rgba(200, 148, 55, 0.1));
+    background: linear-gradient(
+      180deg,
+      rgba(200, 148, 55, 0.2),
+      rgba(200, 148, 55, 0.1)
+    );
     border-color: rgba(200, 148, 55, 0.4);
   }
 
@@ -154,7 +239,11 @@
     padding: 0.3rem 0.55rem;
     border: 1px solid rgba(200, 148, 55, 0.24);
     border-radius: 2px;
-    background: linear-gradient(180deg, rgba(200, 148, 55, 0.12), rgba(200, 148, 55, 0.06));
+    background: linear-gradient(
+      180deg,
+      rgba(200, 148, 55, 0.12),
+      rgba(200, 148, 55, 0.06)
+    );
     color: rgba(228, 216, 191, 0.82);
     font-family: 'Cinzel', serif;
     font-size: 0.54rem;
@@ -169,7 +258,11 @@
   }
 
   .locale-toggle:hover {
-    background: linear-gradient(180deg, rgba(200, 148, 55, 0.2), rgba(200, 148, 55, 0.1));
+    background: linear-gradient(
+      180deg,
+      rgba(200, 148, 55, 0.2),
+      rgba(200, 148, 55, 0.1)
+    );
     border-color: rgba(200, 148, 55, 0.4);
   }
 
@@ -201,8 +294,12 @@
   }
 
   @keyframes slow-spin {
-    from { transform: rotate(0deg); }
-    to   { transform: rotate(360deg); }
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
   }
 
   .kicker {
@@ -247,13 +344,24 @@
   .rule span:last-child {
     flex: 1;
     height: 1px;
-    background: linear-gradient(90deg, transparent, rgba(200, 148, 55, 0.3) 40%, rgba(200, 148, 55, 0.3) 60%, transparent);
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(200, 148, 55, 0.3) 40%,
+      rgba(200, 148, 55, 0.3) 60%,
+      transparent
+    );
   }
 
-  .diamond { font-size: 0.55rem; color: rgba(205, 150, 60, 0.55); }
+  .diamond {
+    font-size: 0.55rem;
+    color: rgba(205, 150, 60, 0.55);
+  }
 
   @media (max-width: 520px) {
-    .header { padding: 1.2rem 1rem 1rem; }
+    .header {
+      padding: 1.2rem 1rem 1rem;
+    }
     .locale-toggle {
       top: 0.7rem;
       right: 0.7rem;

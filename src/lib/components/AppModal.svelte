@@ -46,11 +46,7 @@
       {#if showConfirm || showCancel}
         <div class="modal-actions">
           {#if showCancel}
-            <button
-              class="modal-cancel"
-              type="button"
-              onclick={handleCancel}
-            >
+            <button class="modal-cancel" type="button" onclick={handleCancel}>
               {cancelText}
             </button>
           {/if}
@@ -85,7 +81,11 @@
   .modal-card {
     width: min(100%, 420px);
     padding: 1.4rem 1.25rem 1.2rem;
-    background: linear-gradient(180deg, rgba(35, 22, 10, 0.98), rgba(16, 10, 5, 0.96));
+    background: linear-gradient(
+      180deg,
+      rgba(35, 22, 10, 0.98),
+      rgba(16, 10, 5, 0.96)
+    );
     border: 1px solid rgba(200, 148, 55, 0.24);
     border-radius: 4px;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.48);
@@ -139,7 +139,9 @@
     background: linear-gradient(135deg, #d4a040 0%, #9e5c1e 50%, #d4a040 100%);
     border: 1px solid rgba(210, 158, 60, 0.45);
     border-radius: 2px;
-    box-shadow: 0 0 0 1px rgba(255, 198, 98, 0.14) inset, 0 4px 22px rgba(170, 100, 25, 0.3);
+    box-shadow:
+      0 0 0 1px rgba(255, 198, 98, 0.14) inset,
+      0 4px 22px rgba(170, 100, 25, 0.3);
     cursor: pointer;
   }
 
@@ -171,14 +173,18 @@
 
   .modal-confirm:hover {
     transform: translateY(-1px);
-    box-shadow: 0 0 0 1px rgba(255, 198, 98, 0.2) inset, 0 6px 30px rgba(170, 100, 25, 0.45);
+    box-shadow:
+      0 0 0 1px rgba(255, 198, 98, 0.2) inset,
+      0 6px 30px rgba(170, 100, 25, 0.45);
   }
 
   .modal-confirm:disabled {
     opacity: 0.35;
     cursor: not-allowed;
     transform: none;
-    box-shadow: 0 0 0 1px rgba(255, 198, 98, 0.14) inset, 0 4px 22px rgba(170, 100, 25, 0.18);
+    box-shadow:
+      0 0 0 1px rgba(255, 198, 98, 0.14) inset,
+      0 4px 22px rgba(170, 100, 25, 0.18);
   }
 
   .modal-confirm:focus-visible {
@@ -192,7 +198,13 @@
   }
 
   @keyframes fade-up {
-    from { opacity: 0; transform: translateY(14px); }
-    to   { opacity: 1; transform: translateY(0); }
+    from {
+      opacity: 0;
+      transform: translateY(14px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 </style>

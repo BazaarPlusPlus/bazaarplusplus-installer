@@ -20,7 +20,9 @@
   {onConfirm}
 >
   <section class="install-impact">
-    <p class="install-impact-kicker">{$locale === 'zh' ? '使用教程' : 'How to Use It'}</p>
+    <p class="install-impact-kicker">
+      {$locale === 'zh' ? '使用教程' : 'How to Use It'}
+    </p>
     <p class="install-impact-body">
       {$locale === 'zh'
         ? '查看 B 站 BazaarPlusPlus 最新视频获取使用教程。'
@@ -38,7 +40,11 @@
   </section>
 
   <label class="install-acknowledge">
-    <input class="install-acknowledge-input" bind:checked={installAcknowledged} type="checkbox" />
+    <input
+      class="install-acknowledge-input"
+      bind:checked={installAcknowledged}
+      type="checkbox"
+    />
     <span class="install-acknowledge-box" aria-hidden="true"></span>
     <span>
       {$locale === 'zh'
@@ -63,7 +69,11 @@
     border: 1px solid rgba(200, 148, 55, 0.14);
     border-radius: 4px;
     background:
-      linear-gradient(180deg, rgba(200, 148, 55, 0.04), rgba(200, 148, 55, 0.015)),
+      linear-gradient(
+        180deg,
+        rgba(200, 148, 55, 0.04),
+        rgba(200, 148, 55, 0.015)
+      ),
       rgba(12, 8, 4, 0.78);
     box-shadow: inset 0 0 0 1px rgba(255, 198, 98, 0.03);
   }
@@ -90,18 +100,29 @@
     padding: 0.58rem 0.82rem;
     border: 1px solid rgba(214, 169, 84, 0.24);
     border-radius: 3px;
-    background: linear-gradient(180deg, rgba(200, 148, 55, 0.12), rgba(200, 148, 55, 0.06));
+    background: linear-gradient(
+      180deg,
+      rgba(200, 148, 55, 0.12),
+      rgba(200, 148, 55, 0.06)
+    );
     color: rgba(236, 225, 202, 0.88);
     text-decoration: none;
     font-family: 'Cinzel', serif;
     font-size: 0.64rem;
     letter-spacing: 0.12em;
     text-transform: uppercase;
-    transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+    transition:
+      background 0.15s ease,
+      border-color 0.15s ease,
+      transform 0.15s ease;
   }
 
   .install-impact-link:hover {
-    background: linear-gradient(180deg, rgba(200, 148, 55, 0.2), rgba(200, 148, 55, 0.1));
+    background: linear-gradient(
+      180deg,
+      rgba(200, 148, 55, 0.2),
+      rgba(200, 148, 55, 0.1)
+    );
     border-color: rgba(200, 148, 55, 0.4);
     transform: translateY(-1px);
   }
@@ -120,7 +141,11 @@
     border: 1px solid rgba(200, 148, 55, 0.18);
     border-radius: 4px;
     background:
-      linear-gradient(180deg, rgba(200, 148, 55, 0.055), rgba(200, 148, 55, 0.015)),
+      linear-gradient(
+        180deg,
+        rgba(200, 148, 55, 0.055),
+        rgba(200, 148, 55, 0.015)
+      ),
       rgba(12, 8, 4, 0.78);
     box-shadow: inset 0 0 0 1px rgba(255, 198, 98, 0.04);
     text-align: left;
@@ -142,7 +167,11 @@
     margin-top: 0.08rem;
     border: 1px solid rgba(244, 227, 188, 0.58);
     border-radius: 0.28rem;
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0.03));
+    background: linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.09),
+      rgba(255, 255, 255, 0.03)
+    );
     box-shadow:
       0 0 0 1px rgba(255, 198, 98, 0.05) inset,
       0 2px 10px rgba(0, 0, 0, 0.16);
@@ -169,7 +198,11 @@
 
   .install-acknowledge-input:checked + .install-acknowledge-box {
     border-color: rgba(240, 201, 120, 0.62);
-    background: linear-gradient(180deg, rgba(212, 160, 64, 0.28), rgba(158, 92, 30, 0.22));
+    background: linear-gradient(
+      180deg,
+      rgba(212, 160, 64, 0.28),
+      rgba(158, 92, 30, 0.22)
+    );
     box-shadow:
       0 0 0 1px rgba(255, 198, 98, 0.12) inset,
       0 4px 14px rgba(170, 100, 25, 0.24);

@@ -32,8 +32,10 @@
       supportQrTitle: 'Support BazaarPlusPlus',
       supportQrCardTitle: 'Support the Project',
       supportQrCardBody: 'Buy Bazaar++ a drink.',
-      supportQrBody: 'With your support, Bazaar++ gets to grow more good stuff.',
-      supportQrHint: 'If you want, you can leave a supporter ID in the payment note.',
+      supportQrBody:
+        'With your support, Bazaar++ gets to grow more good stuff.',
+      supportQrHint:
+        'If you want, you can leave a supporter ID in the payment note.',
       close: 'Close'
     },
     zh: {
@@ -48,8 +50,10 @@
       supportQrTitle: '\u652f\u6301 BazaarPlusPlus',
       supportQrCardTitle: '\u652f\u6301\u9879\u76ee',
       supportQrCardBody: '\u8bf7 Bazaar++ \u559d\u4e00\u676f',
-      supportQrBody: '\u6709\u4f60\u652f\u6301\uff0cBazaar++ \u4f1a\u5192\u51fa\u66f4\u591a\u597d\u4e1c\u897f',
-      supportQrHint: '\u5982\u679c\u613f\u610f\uff0c\u6b22\u8fce\u5728\u5907\u6ce8\u91cc\u7559\u4e00\u4e2a\u652f\u6301\u8005 ID',
+      supportQrBody:
+        '\u6709\u4f60\u652f\u6301\uff0cBazaar++ \u4f1a\u5192\u51fa\u66f4\u591a\u597d\u4e1c\u897f',
+      supportQrHint:
+        '\u5982\u679c\u613f\u610f\uff0c\u6b22\u8fce\u5728\u5907\u6ce8\u91cc\u7559\u4e00\u4e2a\u652f\u6301\u8005 ID',
       close: '\u5173\u95ed'
     }
   } as const;
@@ -99,7 +103,11 @@
     <div class="payment-grid">
       <article class="payment-card payment-card-wechat">
         <div class="payment-frame">
-          <img class="payment-image" src="/support/wechat-pay.svg" alt={currentCopy.wechat} />
+          <img
+            class="payment-image"
+            src="/support/wechat-pay.svg"
+            alt={currentCopy.wechat}
+          />
         </div>
 
         <div class="payment-copy">
@@ -141,7 +149,8 @@
 
     <button class="support-action" type="button" onclick={openSupporterList}>
       <span class="support-action-title">{currentCopy.supporters}</span>
-      <span class="support-action-subtitle">{currentCopy.supportersAction}</span>
+      <span class="support-action-subtitle">{currentCopy.supportersAction}</span
+      >
     </button>
   </div>
 </section>
@@ -150,7 +159,11 @@
   .support-strip {
     padding: 0.95rem 1.05rem;
     background:
-      radial-gradient(circle at top left, rgba(255, 214, 140, 0.08), transparent 42%),
+      radial-gradient(
+        circle at top left,
+        rgba(255, 214, 140, 0.08),
+        transparent 42%
+      ),
       linear-gradient(180deg, rgba(20, 12, 6, 0.96), rgba(12, 7, 4, 0.94));
     border: 1px solid rgba(200, 148, 55, 0.15);
     border-radius: 3px;
@@ -201,8 +214,11 @@
     padding: 0.7rem 0.8rem;
     border: 1px solid rgba(200, 148, 55, 0.14);
     border-radius: 3px;
-    background:
-      linear-gradient(180deg, rgba(200, 148, 55, 0.06), rgba(200, 148, 55, 0.02));
+    background: linear-gradient(
+      180deg,
+      rgba(200, 148, 55, 0.06),
+      rgba(200, 148, 55, 0.02)
+    );
     display: grid;
     gap: 0.14rem;
     text-align: left;
@@ -214,8 +230,11 @@
 
   .support-action:hover {
     border-color: rgba(220, 168, 76, 0.28);
-    background:
-      linear-gradient(180deg, rgba(200, 148, 55, 0.12), rgba(200, 148, 55, 0.05));
+    background: linear-gradient(
+      180deg,
+      rgba(200, 148, 55, 0.12),
+      rgba(200, 148, 55, 0.05)
+    );
     transform: translateY(-1px);
   }
 
@@ -276,7 +295,11 @@
     position: relative;
     padding: 0.75rem;
     background:
-      radial-gradient(circle at top, rgba(255, 232, 174, 0.08), transparent 54%),
+      radial-gradient(
+        circle at top,
+        rgba(255, 232, 174, 0.08),
+        transparent 54%
+      ),
       linear-gradient(180deg, rgba(34, 20, 8, 0.96), rgba(16, 9, 4, 0.98));
     border: 1px solid rgba(200, 148, 55, 0.16);
     border-radius: 4px;
@@ -303,7 +326,11 @@
   .payment-frame {
     aspect-ratio: 1 / 1;
     padding: 0.8rem;
-    background: linear-gradient(135deg, rgba(255, 248, 231, 0.98), rgba(245, 238, 220, 0.98));
+    background: linear-gradient(
+      135deg,
+      rgba(255, 248, 231, 0.98),
+      rgba(245, 238, 220, 0.98)
+    );
     border-radius: 3px;
     box-shadow:
       inset 0 0 0 1px rgba(95, 65, 19, 0.08),

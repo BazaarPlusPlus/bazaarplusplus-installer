@@ -41,8 +41,8 @@ export function createPageState(input: PageStateInput): PageState {
   const isBusy = input.actionBusy !== 'idle';
   const versionMismatch = Boolean(
     input.bundledBppVersion &&
-      input.installedBppVersion &&
-      input.bundledBppVersion !== input.installedBppVersion
+    input.installedBppVersion &&
+    input.bundledBppVersion !== input.installedBppVersion
   );
   const canInstall =
     !isBusy && ((input.bazaarFound && hasPath) || input.isDebugInstallPreview);

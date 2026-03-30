@@ -22,7 +22,10 @@
   export let canLaunchGame: boolean;
   export let dotnetDownloadUrl: string;
   export let effectiveGamePath: string;
-  export let t: (key: keyof typeof messages.en, params?: Record<string, string | number>) => string;
+  export let t: (
+    key: keyof typeof messages.en,
+    params?: Record<string, string | number>
+  ) => string;
   export let onPickGamePath: () => void | Promise<void>;
   export let onCheckPath: () => void | Promise<void>;
   export let onRequestInstall: () => void | Promise<void>;
@@ -44,14 +47,20 @@
 </script>
 
 <div class="steps">
-  <div class="step" class:step-found={modInstalled && !versionMismatch} class:step-error={versionMismatch}>
+  <div
+    class="step"
+    class:step-found={modInstalled && !versionMismatch}
+    class:step-error={versionMismatch}
+  >
     <div class="step-index" aria-hidden="true">I</div>
     <div class="step-body step-body-bpp">
       <div class="step-bpp-content">
         <span class="step-title">
           {t('stepBpp')}
           {#if versionMismatch}
-            <span class="tag tag-danger">{$locale === 'zh' ? '版本不一致' : 'Version mismatch'}</span>
+            <span class="tag tag-danger"
+              >{$locale === 'zh' ? '版本不一致' : 'Version mismatch'}</span
+            >
           {:else if actionBusy === 'detect'}
             <span class="tag">{t('statusChecking')}</span>
           {:else if !modInstalled}
@@ -68,23 +77,31 @@
           </div>
           <div class="mismatch-versions">
             <span class="mismatch-version">
-              <span class="mismatch-version-label">{$locale === 'zh' ? '本地已安装' : 'Installed'}</span>
+              <span class="mismatch-version-label"
+                >{$locale === 'zh' ? '本地已安装' : 'Installed'}</span
+              >
               <span class="mismatch-version-value">v{installedBppVersion}</span>
             </span>
             <span class="mismatch-version">
-              <span class="mismatch-version-label">{$locale === 'zh' ? '安装器版本' : 'Installer bundle'}</span>
+              <span class="mismatch-version-label"
+                >{$locale === 'zh' ? '安装器版本' : 'Installer bundle'}</span
+              >
               <span class="mismatch-version-value">v{bundledBppVersion}</span>
             </span>
           </div>
         {:else if modInstalled}
           <div class="mismatch-versions">
             <span class="mismatch-version mismatch-version-ok">
-              <span class="mismatch-version-label">{$locale === 'zh' ? '本地已安装' : 'Installed'}</span>
+              <span class="mismatch-version-label"
+                >{$locale === 'zh' ? '本地已安装' : 'Installed'}</span
+              >
               <span class="mismatch-version-value">v{env?.bpp_version}</span>
             </span>
           </div>
           <p class="detail-line detail-muted">
-            {$locale === 'zh' ? 'BazaarPlusPlus 当前已处于最新状态' : 'BazaarPlusPlus is already up to date'}
+            {$locale === 'zh'
+              ? 'BazaarPlusPlus 当前已处于最新状态'
+              : 'BazaarPlusPlus is already up to date'}
           </p>
         {:else}
           <p class="detail-line detail-muted">{t('detectInstalledHint')}</p>
@@ -98,7 +115,10 @@
     </div>
   </div>
 
-  <div class="step" class:step-found={bazaarFound && Boolean(effectiveGamePath)}>
+  <div
+    class="step"
+    class:step-found={bazaarFound && Boolean(effectiveGamePath)}
+  >
     <div class="step-index" aria-hidden="true">II</div>
     <div class="step-body">
       <span class="step-title">
@@ -109,11 +129,20 @@
       </span>
 
       {#if bazaarFound && effectiveGamePath}
-        <p class="detail-line detail-path" title={effectiveGamePath}>{effectiveGamePath}</p>
-        <button class="redetect-btn" onclick={onResetBazaar} type="button">{t('actionReenter')}</button>
+        <p class="detail-line detail-path" title={effectiveGamePath}>
+          {effectiveGamePath}
+        </p>
+        <button class="redetect-btn" onclick={onResetBazaar} type="button"
+          >{t('actionReenter')}</button
+        >
       {:else}
         <div class="locate-bar" class:locate-bar-invalid={bazaarInvalid}>
-          <button class="locate-browse" onclick={onPickGamePath} type="button" disabled={bazaarChecking}>
+          <button
+            class="locate-browse"
+            onclick={onPickGamePath}
+            type="button"
+            disabled={bazaarChecking}
+          >
             {t('actionBrowse')}
           </button>
           <div class="locate-input-wrap">
@@ -154,7 +183,11 @@
         <span class="step-title">{t('stepActions')}</span>
 
         {#if dotnetState === 'not_found'}
-          <button class="runtime-chip runtime-chip-button" onclick={() => openUrl(dotnetDownloadUrl)} type="button">
+          <button
+            class="runtime-chip runtime-chip-button"
+            onclick={() => openUrl(dotnetDownloadUrl)}
+            type="button"
+          >
             {t('runtimeDownload')}
           </button>
         {:else}
@@ -175,7 +208,13 @@
 
       <div class="action-row">
         <div class="action-primary">
-          <button class="install-btn" class:install-btn-danger={versionMismatch} disabled={!canInstall} onclick={onRequestInstall} type="button">
+          <button
+            class="install-btn"
+            class:install-btn-danger={versionMismatch}
+            disabled={!canInstall}
+            onclick={onRequestInstall}
+            type="button"
+          >
             {#if actionBusy === 'install'}
               <span class="spinner dark" aria-hidden="true"></span>
               {t('actionInstalling')}
@@ -199,7 +238,12 @@
             </button>
             {#if actionMenuOpen}
               <div class="action-menu">
-                <button class="menu-item" type="button" onclick={handleUninstall} disabled={isBusy}>
+                <button
+                  class="menu-item"
+                  type="button"
+                  onclick={handleUninstall}
+                  disabled={isBusy}
+                >
                   {#if actionBusy === 'uninstall'}
                     {t('actionUninstalling')}
                   {:else}
@@ -212,7 +256,12 @@
         </div>
       </div>
 
-      <button class="secondary-btn launch-btn" type="button" onclick={onLaunchGame} disabled={!canLaunchGame}>
+      <button
+        class="secondary-btn launch-btn"
+        type="button"
+        onclick={onLaunchGame}
+        disabled={!canLaunchGame}
+      >
         {$locale === 'zh' ? '启动游戏' : 'Launch Game'}
       </button>
     </div>
@@ -233,18 +282,24 @@
     background: rgba(18, 11, 5, 0.88);
     border: 1px solid rgba(180, 130, 48, 0.13);
     border-radius: 3px;
-    box-shadow: 0 6px 28px rgba(0,0,0,0.35);
-    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    box-shadow: 0 6px 28px rgba(0, 0, 0, 0.35);
+    transition:
+      border-color 0.3s ease,
+      box-shadow 0.3s ease;
   }
 
   .step-found {
     border-color: rgba(90, 200, 130, 0.25);
-    box-shadow: 0 6px 28px rgba(0,0,0,0.35), 0 0 18px rgba(90, 200, 130, 0.05);
+    box-shadow:
+      0 6px 28px rgba(0, 0, 0, 0.35),
+      0 0 18px rgba(90, 200, 130, 0.05);
   }
 
   .step-error {
     border-color: rgba(196, 98, 76, 0.28);
-    box-shadow: 0 6px 28px rgba(0,0,0,0.35), 0 0 14px rgba(196, 98, 76, 0.04);
+    box-shadow:
+      0 6px 28px rgba(0, 0, 0, 0.35),
+      0 0 14px rgba(196, 98, 76, 0.04);
   }
 
   .step-install {
@@ -324,9 +379,21 @@
     white-space: nowrap;
   }
 
-  .tag-ok   { background: rgba(80, 180, 120, 0.15); color: #6dd9a0; border: 1px solid rgba(80, 180, 120, 0.25); }
-  .tag-warn { background: rgba(200, 140, 50, 0.12); color: #c4923a; border: 1px solid rgba(200, 140, 50, 0.22); }
-  .tag-danger { background: rgba(191, 104, 81, 0.1); color: #f0b2a2; border: 1px solid rgba(191, 104, 81, 0.2); }
+  .tag-ok {
+    background: rgba(80, 180, 120, 0.15);
+    color: #6dd9a0;
+    border: 1px solid rgba(80, 180, 120, 0.25);
+  }
+  .tag-warn {
+    background: rgba(200, 140, 50, 0.12);
+    color: #c4923a;
+    border: 1px solid rgba(200, 140, 50, 0.22);
+  }
+  .tag-danger {
+    background: rgba(191, 104, 81, 0.1);
+    color: #f0b2a2;
+    border: 1px solid rgba(191, 104, 81, 0.2);
+  }
 
   .runtime-chip {
     flex: 0 0 auto;
@@ -345,7 +412,10 @@
     color: rgba(128, 176, 206, 0.82);
     border-color: rgba(100, 160, 220, 0.22);
     background: rgba(100, 160, 220, 0.08);
-    transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+    transition:
+      background 0.15s ease,
+      color 0.15s ease,
+      border-color 0.15s ease;
   }
 
   .runtime-chip-button:hover {
@@ -482,7 +552,9 @@
     border: none;
     border-right: 1px solid rgba(180, 130, 48, 0.18);
     cursor: pointer;
-    transition: background 0.15s ease, color 0.15s ease;
+    transition:
+      background 0.15s ease,
+      color 0.15s ease;
     white-space: nowrap;
   }
 
@@ -527,7 +599,9 @@
     border: none;
     border-left: 1px solid rgba(180, 130, 48, 0.18);
     cursor: pointer;
-    transition: background 0.15s ease, color 0.15s ease;
+    transition:
+      background 0.15s ease,
+      color 0.15s ease;
     white-space: nowrap;
   }
 
@@ -553,7 +627,11 @@
     animation: fade-up 0.2s ease both;
   }
 
-  button { cursor: pointer; border: none; font: inherit; }
+  button {
+    cursor: pointer;
+    border: none;
+    font: inherit;
+  }
 
   button:focus-visible,
   .path-input:focus-visible {
@@ -571,7 +649,10 @@
     background: rgba(200, 148, 55, 0.06);
     border: 1px solid rgba(180, 130, 48, 0.18);
     border-radius: 2px;
-    transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+    transition:
+      background 0.15s ease,
+      color 0.15s ease,
+      border-color 0.15s ease;
     white-space: nowrap;
     display: inline-flex;
     align-items: center;
@@ -631,7 +712,7 @@
     border: 1px solid rgba(180, 130, 48, 0.18);
     border-radius: 3px;
     background: rgba(18, 11, 5, 0.96);
-    box-shadow: 0 12px 30px rgba(0,0,0,0.35);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
     z-index: 20;
   }
 
@@ -691,7 +772,9 @@
     background-size: 200% 100%;
     border: 1px solid rgba(210, 158, 60, 0.45);
     border-radius: 2px;
-    box-shadow: 0 0 0 1px rgba(255, 198, 98, 0.14) inset, 0 4px 22px rgba(170, 100, 25, 0.3);
+    box-shadow:
+      0 0 0 1px rgba(255, 198, 98, 0.14) inset,
+      0 4px 22px rgba(170, 100, 25, 0.3);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -705,13 +788,20 @@
     content: '';
     position: absolute;
     inset: 0;
-    background: linear-gradient(180deg, rgba(255, 218, 128, 0.16) 0%, transparent 55%);
+    background: linear-gradient(
+      180deg,
+      rgba(255, 218, 128, 0.16) 0%,
+      transparent 55%
+    );
     pointer-events: none;
   }
 
   .install-btn:hover:not(:disabled) {
     background-position: 100% 0;
-    box-shadow: 0 0 0 1px rgba(255, 198, 98, 0.2) inset, 0 6px 30px rgba(170, 100, 25, 0.5), 0 0 44px rgba(205, 150, 60, 0.15);
+    box-shadow:
+      0 0 0 1px rgba(255, 198, 98, 0.2) inset,
+      0 6px 30px rgba(170, 100, 25, 0.5),
+      0 0 44px rgba(205, 150, 60, 0.15);
     transform: translateY(-1px);
   }
 
@@ -719,15 +809,24 @@
     color: #fff3ee;
     background: linear-gradient(135deg, #bf5442 0%, #842619 52%, #d46d5a 100%);
     border-color: rgba(226, 128, 110, 0.52);
-    box-shadow: 0 0 0 1px rgba(255, 181, 166, 0.16) inset, 0 4px 22px rgba(132, 38, 25, 0.34);
+    box-shadow:
+      0 0 0 1px rgba(255, 181, 166, 0.16) inset,
+      0 4px 22px rgba(132, 38, 25, 0.34);
   }
 
   .install-btn.install-btn-danger::before {
-    background: linear-gradient(180deg, rgba(255, 216, 208, 0.14) 0%, transparent 55%);
+    background: linear-gradient(
+      180deg,
+      rgba(255, 216, 208, 0.14) 0%,
+      transparent 55%
+    );
   }
 
   .install-btn.install-btn-danger:hover:not(:disabled) {
-    box-shadow: 0 0 0 1px rgba(255, 181, 166, 0.22) inset, 0 6px 30px rgba(132, 38, 25, 0.5), 0 0 40px rgba(191, 84, 66, 0.18);
+    box-shadow:
+      0 0 0 1px rgba(255, 181, 166, 0.22) inset,
+      0 6px 30px rgba(132, 38, 25, 0.5),
+      0 0 40px rgba(191, 84, 66, 0.18);
   }
 
   .install-btn:disabled {
@@ -751,10 +850,20 @@
     border-top-color: rgba(30, 15, 4, 0.7);
   }
 
-  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
   @keyframes fade-up {
-    from { opacity: 0; transform: translateY(14px); }
-    to   { opacity: 1; transform: translateY(0); }
+    from {
+      opacity: 0;
+      transform: translateY(14px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 
   @media (max-width: 520px) {

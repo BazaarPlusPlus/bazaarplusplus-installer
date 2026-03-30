@@ -11,8 +11,10 @@
   let showSupporterList = false;
   let hiddenPaymentImages: Record<string, boolean> = {};
 
-  $: t = (key: keyof typeof messages.en, params?: Record<string, string | number>): string =>
-    formatMessage($locale, key, params);
+  $: t = (
+    key: keyof typeof messages.en,
+    params?: Record<string, string | number>
+  ): string => formatMessage($locale, key, params);
 
   $: localeBadge = $locale === 'zh' ? '中' : 'EN';
   $: localeButtonLabel = $locale === 'zh' ? 'Switch to English' : '切换到中文';
@@ -29,13 +31,20 @@
 
   const inspiredBy = [
     { name: 'BazaarHelper', url: 'https://github.com/Duangi/BazaarHelper' },
-    { name: 'BazaarPlannerMod', url: 'https://github.com/oceanseth/BazaarPlannerMod' }
+    {
+      name: 'BazaarPlannerMod',
+      url: 'https://github.com/oceanseth/BazaarPlannerMod'
+    }
   ];
 
   const dataSources = [{ name: 'BazaarDB', url: 'https://bazaardb.gg' }];
 
   const projectDeps = [
-    { name: 'BepInEx', license: 'LGPL-2.1', url: 'https://github.com/BepInEx/BepInEx' }
+    {
+      name: 'BepInEx',
+      license: 'LGPL-2.1',
+      url: 'https://github.com/BepInEx/BepInEx'
+    }
   ];
 
   const frontendDeps = [
@@ -47,11 +56,27 @@
 
   const rustDeps = [
     { name: 'serde', license: 'MIT / Apache-2.0', url: 'https://serde.rs' },
-    { name: 'reqwest', license: 'MIT / Apache-2.0', url: 'https://github.com/seanmonstar/reqwest' },
+    {
+      name: 'reqwest',
+      license: 'MIT / Apache-2.0',
+      url: 'https://github.com/seanmonstar/reqwest'
+    },
     { name: 'zip', license: 'MIT', url: 'https://github.com/zip-rs/zip2' },
-    { name: 'dirs', license: 'MIT / Apache-2.0', url: 'https://github.com/dirs-dev/dirs-rs' },
-    { name: 'keyvalues-parser', license: 'MIT', url: 'https://github.com/CosmicHorrorDev/keyvalues-rs' },
-    { name: 'winreg', license: 'MIT', url: 'https://github.com/gentoo90/winreg-rs' }
+    {
+      name: 'dirs',
+      license: 'MIT / Apache-2.0',
+      url: 'https://github.com/dirs-dev/dirs-rs'
+    },
+    {
+      name: 'keyvalues-parser',
+      license: 'MIT',
+      url: 'https://github.com/CosmicHorrorDev/keyvalues-rs'
+    },
+    {
+      name: 'winreg',
+      license: 'MIT',
+      url: 'https://github.com/gentoo90/winreg-rs'
+    }
   ];
 
   locale.init();
@@ -198,7 +223,14 @@
           fill="none"
           opacity="0.3"
         />
-        <circle cx="22" cy="22" r="5" stroke="currentColor" stroke-width="0.8" fill="none" />
+        <circle
+          cx="22"
+          cy="22"
+          r="5"
+          stroke="currentColor"
+          stroke-width="0.8"
+          fill="none"
+        />
         <circle cx="22" cy="22" r="2" fill="currentColor" opacity="0.75" />
       </svg>
     </div>
@@ -234,8 +266,12 @@
         </p>
       </div>
       <button class="supporter-entry" type="button" onclick={openSupporterList}>
-        <span class="supporter-entry-title">{$locale === 'zh' ? '支持者名单' : 'Supporters'}</span>
-        <span class="supporter-entry-subtitle">{$locale === 'zh' ? '查看名单' : 'Open list'}</span>
+        <span class="supporter-entry-title"
+          >{$locale === 'zh' ? '支持者名单' : 'Supporters'}</span
+        >
+        <span class="supporter-entry-subtitle"
+          >{$locale === 'zh' ? '查看名单' : 'Open list'}</span
+        >
       </button>
     </div>
   </section>
@@ -283,9 +319,15 @@
     <h2 class="section-title">{t('aboutSupport')}</h2>
     <ul class="dep-list">
       <li>
-        <button class="dep-item dep-item-link payment-launch" type="button" onclick={openPaymentCodes}>
+        <button
+          class="dep-item dep-item-link payment-launch"
+          type="button"
+          onclick={openPaymentCodes}
+        >
           <span class="dep-name">{$locale === 'zh' ? '微信' : 'Wepay'}</span>
-          <span class="dep-link-label">{$locale === 'zh' ? '感谢支持' : 'Support'}</span>
+          <span class="dep-link-label"
+            >{$locale === 'zh' ? '感谢支持' : 'Support'}</span
+          >
         </button>
       </li>
       <li>
@@ -308,7 +350,12 @@
       {#each inspiredBy as item}
         <li class="dep-item">
           <span class="dep-name">{item.name}</span>
-          <a class="dep-link" href={item.url} target="_blank" rel="noopener noreferrer">
+          <a
+            class="dep-link"
+            href={item.url}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
             {item.url.replace('https://github.com/', '')}
           </a>
         </li>
@@ -322,7 +369,12 @@
       {#each dataSources as src}
         <li class="dep-item">
           <span class="dep-name">{src.name}</span>
-          <a class="dep-link" href={src.url} target="_blank" rel="noopener noreferrer">
+          <a
+            class="dep-link"
+            href={src.url}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
             {src.url.replace('https://', '')}
           </a>
         </li>
@@ -367,7 +419,9 @@
   </section>
 
   <footer class="footer" aria-hidden="true">
-    <div class="rule"><span></span><span class="diamond small">+</span><span></span></div>
+    <div class="rule">
+      <span></span><span class="diamond small">+</span><span></span>
+    </div>
     <p>{t('footer')}</p>
   </footer>
 </main>
@@ -384,18 +438,30 @@
   }
 
   @keyframes fade-up {
-    from { opacity: 0; transform: translateY(14px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+      opacity: 0;
+      transform: translateY(14px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 
   .header {
     position: relative;
     text-align: center;
     padding: 1.45rem 1.75rem 1.15rem;
-    background: linear-gradient(175deg, rgba(38, 23, 9, 0.92), rgba(16, 10, 5, 0.88));
+    background: linear-gradient(
+      175deg,
+      rgba(38, 23, 9, 0.92),
+      rgba(16, 10, 5, 0.88)
+    );
     border: 1px solid rgba(200, 148, 55, 0.18);
     border-radius: 3px;
-    box-shadow: 0 0 0 1px rgba(200, 148, 55, 0.06) inset, 0 24px 64px rgba(0, 0, 0, 0.5);
+    box-shadow:
+      0 0 0 1px rgba(200, 148, 55, 0.06) inset,
+      0 24px 64px rgba(0, 0, 0, 0.5);
     display: grid;
     gap: 0.15rem;
     justify-items: center;
@@ -409,7 +475,11 @@
     padding: 0.3rem 0.55rem;
     border: 1px solid rgba(200, 148, 55, 0.24);
     border-radius: 2px;
-    background: linear-gradient(180deg, rgba(200, 148, 55, 0.12), rgba(200, 148, 55, 0.06));
+    background: linear-gradient(
+      180deg,
+      rgba(200, 148, 55, 0.12),
+      rgba(200, 148, 55, 0.06)
+    );
     color: rgba(228, 216, 191, 0.82);
     font-family: 'Cinzel', serif;
     font-size: 0.54rem;
@@ -422,11 +492,17 @@
     box-shadow: 0 0 0 1px rgba(255, 198, 98, 0.08) inset;
     z-index: 2;
     text-decoration: none;
-    transition: background 0.15s ease, border-color 0.15s ease;
+    transition:
+      background 0.15s ease,
+      border-color 0.15s ease;
   }
 
   .back-btn:hover {
-    background: linear-gradient(180deg, rgba(200, 148, 55, 0.2), rgba(200, 148, 55, 0.1));
+    background: linear-gradient(
+      180deg,
+      rgba(200, 148, 55, 0.2),
+      rgba(200, 148, 55, 0.1)
+    );
     border-color: rgba(200, 148, 55, 0.4);
   }
 
@@ -451,7 +527,11 @@
     padding: 0.3rem 0.55rem;
     border: 1px solid rgba(200, 148, 55, 0.24);
     border-radius: 2px;
-    background: linear-gradient(180deg, rgba(200, 148, 55, 0.12), rgba(200, 148, 55, 0.06));
+    background: linear-gradient(
+      180deg,
+      rgba(200, 148, 55, 0.12),
+      rgba(200, 148, 55, 0.06)
+    );
     color: rgba(228, 216, 191, 0.82);
     font-family: 'Cinzel', serif;
     font-size: 0.54rem;
@@ -469,7 +549,11 @@
   }
 
   .locale-toggle:hover {
-    background: linear-gradient(180deg, rgba(200, 148, 55, 0.2), rgba(200, 148, 55, 0.1));
+    background: linear-gradient(
+      180deg,
+      rgba(200, 148, 55, 0.2),
+      rgba(200, 148, 55, 0.1)
+    );
     border-color: rgba(200, 148, 55, 0.4);
   }
 
@@ -501,8 +585,12 @@
   }
 
   @keyframes slow-spin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
   }
 
   h1 {
@@ -530,18 +618,22 @@
   .rule span:last-child {
     flex: 1;
     height: 1px;
-    background:
-      linear-gradient(
-        90deg,
-        transparent,
-        rgba(200, 148, 55, 0.3) 40%,
-        rgba(200, 148, 55, 0.3) 60%,
-        transparent
-      );
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(200, 148, 55, 0.3) 40%,
+      rgba(200, 148, 55, 0.3) 60%,
+      transparent
+    );
   }
 
-  .diamond { font-size: 0.55rem; color: rgba(205, 150, 60, 0.55); }
-  .diamond.small { font-size: 0.42rem; }
+  .diamond {
+    font-size: 0.55rem;
+    color: rgba(205, 150, 60, 0.55);
+  }
+  .diamond.small {
+    font-size: 0.42rem;
+  }
 
   .card {
     padding: 0.95rem 1.05rem;
@@ -715,7 +807,11 @@
     border-radius: 3px;
     border: 1px solid rgba(200, 148, 55, 0.2);
     background:
-      radial-gradient(circle at top, rgba(255, 224, 150, 0.08), transparent 58%),
+      radial-gradient(
+        circle at top,
+        rgba(255, 224, 150, 0.08),
+        transparent 58%
+      ),
       linear-gradient(180deg, rgba(34, 20, 8, 0.92), rgba(18, 10, 5, 0.94));
     color: inherit;
     display: grid;
@@ -723,7 +819,10 @@
     justify-items: center;
     box-shadow: inset 0 0 0 1px rgba(255, 214, 140, 0.04);
     cursor: pointer;
-    transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+    transition:
+      background 0.15s ease,
+      border-color 0.15s ease,
+      transform 0.15s ease;
     align-self: stretch;
     align-content: center;
   }
@@ -731,7 +830,11 @@
   .supporter-entry:hover {
     border-color: rgba(220, 170, 80, 0.34);
     background:
-      radial-gradient(circle at top, rgba(255, 224, 150, 0.12), transparent 58%),
+      radial-gradient(
+        circle at top,
+        rgba(255, 224, 150, 0.12),
+        transparent 58%
+      ),
       linear-gradient(180deg, rgba(40, 24, 10, 0.94), rgba(20, 12, 6, 0.96));
     transform: translateY(-1px);
   }
@@ -826,7 +929,11 @@
     position: relative;
     padding: 0.75rem;
     background:
-      radial-gradient(circle at top, rgba(255, 232, 174, 0.08), transparent 54%),
+      radial-gradient(
+        circle at top,
+        rgba(255, 232, 174, 0.08),
+        transparent 54%
+      ),
       linear-gradient(180deg, rgba(34, 20, 8, 0.96), rgba(16, 9, 4, 0.98));
     border: 1px solid rgba(200, 148, 55, 0.16);
     border-radius: 4px;
@@ -853,7 +960,11 @@
   .payment-frame {
     aspect-ratio: 1 / 1;
     padding: 0.8rem;
-    background: linear-gradient(135deg, rgba(255, 248, 231, 0.98), rgba(245, 238, 220, 0.98));
+    background: linear-gradient(
+      135deg,
+      rgba(255, 248, 231, 0.98),
+      rgba(245, 238, 220, 0.98)
+    );
     border-radius: 3px;
     box-shadow:
       inset 0 0 0 1px rgba(95, 65, 19, 0.08),
@@ -877,8 +988,15 @@
     background:
       linear-gradient(90deg, rgba(0, 0, 0, 0.05) 1px, transparent 1px),
       linear-gradient(rgba(0, 0, 0, 0.05) 1px, transparent 1px),
-      radial-gradient(circle at center, rgba(0, 0, 0, 0.08), rgba(255, 255, 255, 0.94) 62%);
-    background-size: 16px 16px, 16px 16px, cover;
+      radial-gradient(
+        circle at center,
+        rgba(0, 0, 0, 0.08),
+        rgba(255, 255, 255, 0.94) 62%
+      );
+    background-size:
+      16px 16px,
+      16px 16px,
+      cover;
     border: 1px dashed rgba(96, 74, 29, 0.28);
   }
 
@@ -932,8 +1050,12 @@
   }
 
   @media (max-width: 520px) {
-    .shell { padding: 1rem 0.85rem 1.5rem; }
-    .header { padding: 1.2rem 1rem 1rem; }
+    .shell {
+      padding: 1rem 0.85rem 1.5rem;
+    }
+    .header {
+      padding: 1.2rem 1rem 1rem;
+    }
 
     .info-card-row {
       flex-direction: column;
@@ -958,6 +1080,5 @@
     .payment-grid {
       grid-template-columns: 1fr;
     }
-
   }
 </style>

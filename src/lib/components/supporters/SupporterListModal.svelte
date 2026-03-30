@@ -11,10 +11,12 @@
     en: {
       title: 'Supporters',
       close: 'Close',
-      intro: 'Thank you for backing Bazaar++. \nYour support keeps the project moving further.',
+      intro:
+        'Thank you for backing Bazaar++. \nYour support keeps the project moving further.',
       errorPrefix: 'Failed to load supporter list:',
       empty: 'The supporter list has not been compiled yet.',
-      thanks: 'Thanks as well to everyone who supported Bazaar++ without leaving a name.',
+      thanks:
+        'Thanks as well to everyone who supported Bazaar++ without leaving a name.',
       ariaLabel: 'Supporter list'
     },
     zh: {
@@ -49,7 +51,8 @@
         supporters = payload.entries;
       } catch (error) {
         supporters = [];
-        supportersLoadError = error instanceof Error ? error.message : String(error);
+        supportersLoadError =
+          error instanceof Error ? error.message : String(error);
       } finally {
         supportersLoadPromise = null;
       }
@@ -73,11 +76,19 @@
     </div>
 
     {#if supportersLoadError}
-      <p class="supporter-state">{currentCopy.errorPrefix} {supportersLoadError}</p>
+      <p class="supporter-state">
+        {currentCopy.errorPrefix}
+        {supportersLoadError}
+      </p>
     {:else if sortedSupporters.length > 0}
-      <ul class="supporter-list supporter-list-mixed" aria-label={currentCopy.ariaLabel}>
+      <ul
+        class="supporter-list supporter-list-mixed"
+        aria-label={currentCopy.ariaLabel}
+      >
         {#each sortedSupporters as supporter}
-          <li class={`supporter-item supporter-item-tier-${supporter.tier}`}>{supporter.name}</li>
+          <li class={`supporter-item supporter-item-tier-${supporter.tier}`}>
+            {supporter.name}
+          </li>
         {/each}
       </ul>
     {:else}
@@ -104,7 +115,11 @@
     padding: 0.85rem 0.9rem 0.8rem;
     border-radius: 4px;
     background:
-      radial-gradient(circle at top, rgba(255, 224, 150, 0.12), transparent 60%),
+      radial-gradient(
+        circle at top,
+        rgba(255, 224, 150, 0.12),
+        transparent 60%
+      ),
       linear-gradient(180deg, rgba(36, 21, 8, 0.92), rgba(21, 12, 6, 0.94));
     border: 1px solid rgba(200, 148, 55, 0.16);
     box-shadow: inset 0 0 0 1px rgba(255, 214, 140, 0.04);

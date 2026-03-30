@@ -23,8 +23,16 @@
     loadPersistedCustomGamePath,
     persistCustomGamePath
   } from '$lib/installer/storage';
-  import { hasTauriRuntime, resolveInstallDebugPreview } from '$lib/installer/runtime';
-  import { createPageState, selectCustomGamePath, type ActionBusy, type StepState } from '$lib/installer/state';
+  import {
+    hasTauriRuntime,
+    resolveInstallDebugPreview
+  } from '$lib/installer/runtime';
+  import {
+    createPageState,
+    selectCustomGamePath,
+    type ActionBusy,
+    type StepState
+  } from '$lib/installer/state';
   import { detectInstallerEnvironment } from '$lib/installer/detect-flow';
 
   let env: EnvironmentInfo | null = null;
@@ -42,8 +50,10 @@
   let installAcknowledged = false;
   let pendingSteamAction: 'install' | 'uninstall' | null = null;
 
-  $: t = (key: keyof typeof messages.en, params?: Record<string, string | number>): string =>
-    formatMessage($locale, key, params);
+  $: t = (
+    key: keyof typeof messages.en,
+    params?: Record<string, string | number>
+  ): string => formatMessage($locale, key, params);
 
   const isDebugInstallPreview = resolveInstallDebugPreview({
     isDev: import.meta.env.DEV,
@@ -169,7 +179,9 @@
     await detectEnvironment();
   }
 
-  async function maybeConfirmSteamQuit(action: 'install' | 'uninstall'): Promise<boolean> {
+  async function maybeConfirmSteamQuit(
+    action: 'install' | 'uninstall'
+  ): Promise<boolean> {
     if (!hasTauriRuntime() || !env?.steam_launch_options_supported) {
       return false;
     }
@@ -195,7 +207,9 @@
     if (isDebugInstallPreview) {
       actionBusy = 'install';
       await new Promise((resolve) => window.setTimeout(resolve, 450));
-      env = env ? { ...env, bpp_version: env.bundled_bpp_version ?? 'debug-preview' } : env;
+      env = env
+        ? { ...env, bpp_version: env.bundled_bpp_version ?? 'debug-preview' }
+        : env;
       actionBusy = 'idle';
       return;
     }
@@ -205,7 +219,10 @@
       const steamPath = env?.steam_path?.trim() ?? '';
       await installBepinex(steamPath, pageState.effectiveGamePath);
       if (env?.steam_launch_options_supported) {
-        const patchResult = await patchLaunchOptions(steamPath, pageState.effectiveGamePath);
+        const patchResult = await patchLaunchOptions(
+          steamPath,
+          pageState.effectiveGamePath
+        );
         if (!patchResult.verified) {
           showLaunchOptionsWarningModal = true;
         }
@@ -220,7 +237,7 @@
   async function uninstallBpp(skipPrompt = false) {
     if (!pageState.effectiveGamePath || actionBusy !== 'idle') return;
 
-    if (!skipPrompt && await maybeConfirmSteamQuit('uninstall')) {
+    if (!skipPrompt && (await maybeConfirmSteamQuit('uninstall'))) {
       return;
     }
 
@@ -283,9 +300,10 @@
   $: isBusy = pageState.isBusy;
   $: canInstall = pageState.canInstall;
   $: canLaunchGame = pageState.canLaunchGame;
-  $: dotnetDownloadUrl = $locale === 'zh'
-    ? 'https://dotnet.microsoft.com/zh-cn/download'
-    : 'https://dotnet.microsoft.com/en-us/download';
+  $: dotnetDownloadUrl =
+    $locale === 'zh'
+      ? 'https://dotnet.microsoft.com/zh-cn/download'
+      : 'https://dotnet.microsoft.com/en-us/download';
   $: localeBadge = $locale === 'zh' ? '中' : 'EN';
   $: localeButtonLabel = $locale === 'zh' ? 'Switch to English' : '切换到中文';
   $: persistCustomGamePath(customGamePath);
@@ -357,7 +375,7 @@
     {canLaunchGame}
     {dotnetDownloadUrl}
     effectiveGamePath={pageState.effectiveGamePath}
-    t={t}
+    {t}
     onPickGamePath={pickGamePath}
     onCheckPath={checkPath}
     onRequestInstall={requestInstall}
@@ -370,7 +388,9 @@
   <InstallerSupportBar />
 
   <footer class="footer" aria-hidden="true">
-    <div class="rule"><span></span><span class="diamond small">+</span><span></span></div>
+    <div class="rule">
+      <span></span><span class="diamond small">+</span><span></span>
+    </div>
     <p>{t('footer')}</p>
   </footer>
 </main>
@@ -387,8 +407,14 @@
   }
 
   @keyframes fade-up {
-    from { opacity: 0; transform: translateY(14px); }
-    to   { opacity: 1; transform: translateY(0); }
+    from {
+      opacity: 0;
+      transform: translateY(14px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
   .rule {
     width: 100%;
@@ -402,11 +428,22 @@
   .rule span:last-child {
     flex: 1;
     height: 1px;
-    background: linear-gradient(90deg, transparent, rgba(200, 148, 55, 0.3) 40%, rgba(200, 148, 55, 0.3) 60%, transparent);
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(200, 148, 55, 0.3) 40%,
+      rgba(200, 148, 55, 0.3) 60%,
+      transparent
+    );
   }
 
-  .diamond { font-size: 0.55rem; color: rgba(205, 150, 60, 0.55); }
-  .diamond.small { font-size: 0.42rem; }
+  .diamond {
+    font-size: 0.55rem;
+    color: rgba(205, 150, 60, 0.55);
+  }
+  .diamond.small {
+    font-size: 0.42rem;
+  }
 
   .footer {
     text-align: center;
@@ -424,6 +461,8 @@
   }
 
   @media (max-width: 520px) {
-    .shell { padding: 1rem 0.85rem 1.5rem; }
+    .shell {
+      padding: 1rem 0.85rem 1.5rem;
+    }
   }
 </style>
