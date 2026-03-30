@@ -1,10 +1,9 @@
 <script lang="ts">
-  import { getVersion } from '@tauri-apps/api/app';
   import { open } from '@tauri-apps/plugin-dialog';
   import { openUrl } from '@tauri-apps/plugin-opener';
   import { onMount } from 'svelte';
   import AppModal from '$lib/components/AppModal.svelte';
-  import type { EnvironmentInfo, InstallerUpdateCheckState, InstallerUpdateInfo } from '$lib/types';
+  import type { EnvironmentInfo } from '$lib/types';
   import { locale } from '$lib/locale';
   import { formatMessage, messages } from '$lib/i18n';
   import InstallerHeader from '$lib/components/installer/InstallerHeader.svelte';
@@ -16,24 +15,16 @@
     detectEnvironment as detectEnvironmentApi,
     detectSteamRunning as detectSteamRunningApi,
     installBepinex,
-    loadMachineId,
     patchLaunchOptions,
     uninstallBpp as uninstallBppApi,
     verifyGamePath as verifyGamePathApi
   } from '$lib/installer/api';
   import {
-    getOrCreateInstallId,
-    loadLastUpdateCheckAt,
     loadPersistedCustomGamePath,
-    persistCustomGamePath,
-    persistLastUpdateCheckAt
+    persistCustomGamePath
   } from '$lib/installer/storage';
   import { hasTauriRuntime, resolveInstallDebugPreview, shouldConfirmSteamQuit, shouldPatchSteamLaunchOptions } from '$lib/installer/runtime';
   import { createPageState, selectCustomGamePath, selectEffectiveGamePath, type StepState } from '$lib/installer/state';
-  import {
-    resolveClientUpdateMetadata,
-    runInstallerUpdateCheckResult
-  } from '$lib/installer/update';
 
   let env: EnvironmentInfo | null = null;
   let dotnetState: StepState = 'idle';
@@ -49,10 +40,6 @@
   let showSteamQuitModal = false;
   let installAcknowledged = false;
   let pendingSteamAction: 'install' | 'uninstall' | null = null;
-  let updateBanner: InstallerUpdateInfo | null = null;
-  let latestUpdateInfo: InstallerUpdateInfo | null = null;
-  let updateCheckState: InstallerUpdateCheckState = 'checking';
-  const UPDATE_CHECK_URL = 'https://update-check.bazaarplusplus.com';
 
   $: t = (key: keyof typeof messages.en, params?: Record<string, string | number>): string =>
     formatMessage($locale, key, params);
@@ -104,10 +91,6 @@
   function closeSteamQuitModal() {
     showSteamQuitModal = false;
     pendingSteamAction = null;
-  }
-
-  function closeUpdateBanner() {
-    updateBanner = null;
   }
 
   async function confirmSteamQuitAndContinue() {
@@ -309,58 +292,6 @@
     }
   }
 
-  async function openUpdateWebsite() {
-    if (!latestUpdateInfo?.websiteUrl) return;
-
-    try {
-      await openUrl(latestUpdateInfo.websiteUrl);
-    } catch (error) {
-      console.error(error);
-    }
-  }
-
-  async function loadInstallerUpdate(force = false) {
-    if (!UPDATE_CHECK_URL || !hasTauriRuntime()) {
-      updateCheckState = 'failed';
-      return;
-    }
-
-    updateCheckState = 'checking';
-
-    try {
-      const result = await runInstallerUpdateCheckResult({
-        endpoint: UPDATE_CHECK_URL,
-        force,
-        getLastCheckedAt: loadLastUpdateCheckAt,
-        persistLastCheckedAt: persistLastUpdateCheckAt,
-        getAppVersion: async () => (await getVersion())?.trim() ?? null,
-        getInstallId: () => getOrCreateInstallId(),
-        getMachineId: loadMachineId,
-        getClientMetadata: resolveClientUpdateMetadata
-      });
-
-      latestUpdateInfo = result.updateInfo;
-      updateBanner = result.updateInfo;
-      updateCheckState = result.state;
-    } catch (error) {
-      updateCheckState = 'failed';
-      console.error(error);
-    }
-  }
-
-  async function handleUpdateStatusClick() {
-    if (updateCheckState === 'checking') {
-      return;
-    }
-
-    if (updateCheckState === 'available') {
-      await openUpdateWebsite();
-      return;
-    }
-
-    await loadInstallerUpdate(true);
-  }
-
   function clearBazaarInvalid() {
     bazaarInvalid = false;
   }
@@ -390,27 +321,11 @@
     : 'https://dotnet.microsoft.com/en-us/download';
   $: localeBadge = $locale === 'zh' ? '中' : 'EN';
   $: localeButtonLabel = $locale === 'zh' ? 'Switch to English' : '切换到中文';
-  $: updateStatusLabel = (
-    updateCheckState === 'available' ? t('updateStatusAvailable')
-      : updateCheckState === 'failed' ? t('updateStatusFailed')
-        : updateCheckState === 'latest' ? t('updateStatusLatest')
-          : t('updateStatusChecking')
-  );
-  $: updateStatusTitle = (
-    updateCheckState === 'available'
-      ? `${t('updateAvailableTitle')} · ${t('updateAvailableAction')}`
-      : updateCheckState === 'failed'
-        ? t('updateStatusFailed')
-        : updateCheckState === 'latest'
-          ? t('updateStatusLatest')
-          : t('updateStatusChecking')
-  );
   $: persistCustomGamePath(customGamePath);
 
   onMount(() => {
     locale.init();
     void detectEnvironment();
-    void loadInstallerUpdate();
   });
 </script>
 
@@ -419,25 +334,6 @@
 </svelte:head>
 
 <main class="shell">
-  {#if updateBanner}
-    <section class="update-banner" role="status" aria-live="polite">
-      <div class="update-banner-copy">
-        <p class="update-banner-title">{updateBanner.title ?? t('updateAvailableTitle')}</p>
-        <p class="update-banner-body">
-          {updateBanner.message ?? t('updateAvailableBody', { version: updateBanner.latestVersion })}
-        </p>
-      </div>
-      <div class="update-banner-actions">
-        <button class="update-banner-btn" type="button" onclick={openUpdateWebsite}>
-          {t('updateAvailableAction')}
-        </button>
-        <button class="update-banner-dismiss" type="button" onclick={closeUpdateBanner}>
-          {t('updateAvailableDismiss')}
-        </button>
-      </div>
-    </section>
-  {/if}
-
   <InstallerInstallPreviewModal
     open={showInstallModal}
     bind:installAcknowledged
@@ -471,11 +367,6 @@
     {localeBadge}
     {localeButtonLabel}
     bilibiliUrl={BILIBILI_URL}
-    {updateCheckState}
-    {updateStatusLabel}
-    {updateStatusTitle}
-    updateStatusDisabled={updateCheckState === 'checking'}
-    onUpdateStatusClick={handleUpdateStatusClick}
     onOpenBilibili={openBilibili}
   />
 
@@ -526,69 +417,6 @@
     animation: fade-up 0.5s ease both;
   }
 
-  .update-banner {
-    display: grid;
-    gap: 0.75rem;
-    padding: 0.95rem 1rem;
-    border: 1px solid rgba(205, 150, 60, 0.26);
-    background:
-      linear-gradient(135deg, rgba(56, 37, 16, 0.9), rgba(27, 20, 11, 0.92)),
-      radial-gradient(circle at top left, rgba(214, 169, 85, 0.18), transparent 56%);
-    box-shadow: inset 0 0 0 1px rgba(255, 227, 167, 0.04);
-  }
-
-  .update-banner-copy {
-    display: grid;
-    gap: 0.3rem;
-  }
-
-  .update-banner-title,
-  .update-banner-body {
-    margin: 0;
-  }
-
-  .update-banner-title {
-    font-family: 'Cinzel', serif;
-    font-size: 0.84rem;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: rgba(245, 220, 171, 0.96);
-  }
-
-  .update-banner-body {
-    color: rgba(227, 208, 181, 0.8);
-    line-height: 1.55;
-    font-size: 0.9rem;
-  }
-
-  .update-banner-actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.65rem;
-    align-items: center;
-  }
-
-  .update-banner-btn,
-  .update-banner-dismiss {
-    border: none;
-    cursor: pointer;
-    font: inherit;
-  }
-
-  .update-banner-btn {
-    padding: 0.58rem 0.9rem;
-    background: linear-gradient(135deg, rgba(211, 166, 77, 0.95), rgba(158, 109, 33, 0.96));
-    color: #1d1308;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-  }
-
-  .update-banner-dismiss {
-    padding: 0.4rem 0;
-    background: transparent;
-    color: rgba(227, 208, 181, 0.72);
-  }
-
   @keyframes fade-up {
     from { opacity: 0; transform: translateY(14px); }
     to   { opacity: 1; transform: translateY(0); }
@@ -628,8 +456,5 @@
 
   @media (max-width: 520px) {
     .shell { padding: 1rem 0.85rem 1.5rem; }
-    .update-banner-actions { flex-direction: column; align-items: stretch; }
-    .update-banner-btn,
-    .update-banner-dismiss { width: 100%; }
   }
 </style>

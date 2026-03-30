@@ -1,11 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import {
-  getOrCreateInstallId,
-  loadLastUpdateCheckAt,
-  persistLastUpdateCheckAt
-} from './storage.ts';
+import { loadPersistedCustomGamePath, persistCustomGamePath } from './storage.ts';
 
 function createStorage() {
   const values = new Map<string, string>();
@@ -23,31 +19,7 @@ function createStorage() {
   };
 }
 
-test('getOrCreateInstallId persists and reuses the same id', () => {
-  const originalWindow = globalThis.window;
-  const localStorage = createStorage();
-  const generatedIds = ['install-123', 'install-456'];
-
-  Object.defineProperty(globalThis, 'window', {
-    configurable: true,
-    value: { localStorage }
-  });
-
-  try {
-    const firstId = getOrCreateInstallId(() => generatedIds.shift() ?? 'unexpected-id');
-    const secondId = getOrCreateInstallId(() => generatedIds.shift() ?? 'unexpected-id');
-
-    assert.equal(firstId, 'install-123');
-    assert.equal(secondId, 'install-123');
-  } finally {
-    Object.defineProperty(globalThis, 'window', {
-      configurable: true,
-      value: originalWindow
-    });
-  }
-});
-
-test('persistLastUpdateCheckAt stores and clears the timestamp', () => {
+test('persistCustomGamePath stores and clears the selected game path', () => {
   const originalWindow = globalThis.window;
   const localStorage = createStorage();
 
@@ -57,13 +29,13 @@ test('persistLastUpdateCheckAt stores and clears the timestamp', () => {
   });
 
   try {
-    assert.equal(loadLastUpdateCheckAt(), null);
+    assert.equal(loadPersistedCustomGamePath(), '');
 
-    persistLastUpdateCheckAt(1700000000000);
-    assert.equal(loadLastUpdateCheckAt(), 1700000000000);
+    persistCustomGamePath('  /games/the-bazaar  ');
+    assert.equal(loadPersistedCustomGamePath(), '/games/the-bazaar');
 
-    persistLastUpdateCheckAt(null);
-    assert.equal(loadLastUpdateCheckAt(), null);
+    persistCustomGamePath('   ');
+    assert.equal(loadPersistedCustomGamePath(), '');
   } finally {
     Object.defineProperty(globalThis, 'window', {
       configurable: true,

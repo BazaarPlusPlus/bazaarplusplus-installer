@@ -54,15 +54,7 @@ export type MessageKey =
   | 'actionClose'
   | 'steamQuitTitle'
   | 'steamQuitBody'
-  | 'actionQuitSteam'
-  | 'updateAvailableTitle'
-  | 'updateAvailableBody'
-  | 'updateAvailableAction'
-  | 'updateAvailableDismiss'
-  | 'updateStatusChecking'
-  | 'updateStatusLatest'
-  | 'updateStatusAvailable'
-  | 'updateStatusFailed';
+  | 'actionQuitSteam';
 
 export const defaultLocale: Locale = 'zh';
 
@@ -124,14 +116,6 @@ export const messages: Record<Locale, Record<MessageKey, string>> = {
     steamQuitBody:
       'Steam is still running. BazaarPlusPlus needs Steam to close before it updates the game launch options. Continue and let the installer close Steam for you.',
     actionQuitSteam: 'Close Steam',
-    updateAvailableTitle: 'Installer update available',
-    updateAvailableBody: 'A newer installer version ({version}) is available on the official website.',
-    updateAvailableAction: 'Open website',
-    updateAvailableDismiss: 'Later',
-    updateStatusChecking: 'Checking',
-    updateStatusLatest: 'Latest',
-    updateStatusAvailable: 'Update',
-    updateStatusFailed: 'Retry',
   },
   zh: {
     htmlLang: 'zh-CN',
@@ -190,14 +174,6 @@ export const messages: Record<Locale, Record<MessageKey, string>> = {
     steamQuitBody:
       'Steam 当前仍在运行。BazaarPlusPlus 需要先关闭 Steam，才能安全更新游戏启动项。继续后，安装器会尝试为你关闭 Steam。',
     actionQuitSteam: '关闭 Steam',
-    updateAvailableTitle: '发现安装器新版本',
-    updateAvailableBody: '官网已提供更新的安装器版本（{version}），建议前往下载最新版。',
-    updateAvailableAction: '打开官网',
-    updateAvailableDismiss: '稍后',
-    updateStatusChecking: '检查中',
-    updateStatusLatest: '最新',
-    updateStatusAvailable: '更新',
-    updateStatusFailed: '重试',
   }
 };
 
