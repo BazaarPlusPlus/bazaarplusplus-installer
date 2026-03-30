@@ -146,7 +146,10 @@ export function collectVersionSnapshot(rootDir) {
 
 export function assertVersionsAreAligned(snapshot) {
   const mismatches = Object.entries(snapshot).filter(
-    ([key, value]) => key !== "packageVersion" && value !== null && value !== snapshot.packageVersion,
+    ([key, value]) =>
+      key !== "packageVersion" &&
+      value !== null &&
+      value !== snapshot.packageVersion,
   );
 
   if (mismatches.length === 0) {
