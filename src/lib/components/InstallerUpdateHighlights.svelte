@@ -44,8 +44,8 @@
     {
       icon: 'I',
       title: {
-        zh: '镜像战斗回看',
-        en: 'Mirror Battle Review'
+        zh: '镜像战斗回看 Beta',
+        en: 'Mirror Battle Review Beta'
       },
       bullets: [
         {
@@ -184,8 +184,8 @@
   <h2 class="update-title">BazaarPlusPlus</h2>
   <p class="update-summary">
     {$locale === 'zh'
-      ? '本次更新主打镜像战斗回看，补充镜像战斗数据；同时带来 History Panel 优化、鼠标快捷键绑定、升级预览 tooltip 改进，以及有限随机英雄。'
-      : 'This release headlines mirror battle review with added mirror battle data, alongside History Panel improvements, mouse binding for hotkeys, cleaner upgrade preview tooltips, and limited random heroes.'}
+      ? '本次更新主打镜像战斗回看 Beta，补充镜像战斗数据；同时带来 History Panel 优化、鼠标快捷键绑定、升级预览 tooltip 改进，以及有限随机英雄。'
+      : 'This release headlines Mirror Battle Review Beta with added mirror battle data, alongside History Panel improvements, mouse binding for hotkeys, cleaner upgrade preview tooltips, and limited random heroes.'}
   </p>
 </section>
 
