@@ -33,7 +33,10 @@ export function selectEffectiveGamePath(
 }
 
 export function createPageState(input: PageStateInput): PageState {
-  const effectiveGamePath = selectEffectiveGamePath(input.selectedGamePath, input.detectedGamePath);
+  const effectiveGamePath = selectEffectiveGamePath(
+    input.selectedGamePath,
+    input.detectedGamePath
+  );
   const hasPath = Boolean(effectiveGamePath);
   const isBusy = input.actionBusy !== 'idle';
   const versionMismatch = Boolean(
@@ -41,7 +44,8 @@ export function createPageState(input: PageStateInput): PageState {
       input.installedBppVersion &&
       input.bundledBppVersion !== input.installedBppVersion
   );
-  const canInstall = !isBusy && ((input.bazaarFound && hasPath) || input.isDebugInstallPreview);
+  const canInstall =
+    !isBusy && ((input.bazaarFound && hasPath) || input.isDebugInstallPreview);
   const canLaunchGame = !isBusy && input.bazaarFound && hasPath;
 
   return {

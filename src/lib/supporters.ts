@@ -1,10 +1,17 @@
 import { loadSupporters as loadSupportersFromTauri } from './installer/api.ts';
 import { hasTauriRuntime as detectTauriRuntime } from './installer/runtime.ts';
-import type { SupporterEntry, SupporterTierId, SupportersResponse } from './types.ts';
+import type {
+  SupporterEntry,
+  SupporterTierId,
+  SupportersResponse
+} from './types.ts';
 
 const SUPPORTER_TIERS: readonly SupporterTierId[] = [1, 2, 3, 4];
 const BUNDLED_SUPPORTERS_PATH = '/support/supporter-list.json';
-let cachedSupportersSnapshot: { key: string; response: SupportersResponse } | null = null;
+let cachedSupportersSnapshot: {
+  key: string;
+  response: SupportersResponse;
+} | null = null;
 
 type LoadSupportersDataOptions = {
   hasTauriRuntime?: boolean;
@@ -24,7 +31,12 @@ export function normalizeSupporterPayload(payload: unknown): SupporterEntry[] {
 }
 
 export function sortSupporters(entries: SupporterEntry[]): SupporterEntry[] {
-  return entries.slice().sort((left, right) => right.tier - left.tier || left.name.localeCompare(right.name));
+  return entries
+    .slice()
+    .sort(
+      (left, right) =>
+        right.tier - left.tier || left.name.localeCompare(right.name)
+    );
 }
 
 export function shuffleSupportersWithinTier(
@@ -43,20 +55,26 @@ export function shuffleSupportersWithinTier(
     shuffleInPlace(tierGroups.get(tier) ?? [], randomFn);
   }
 
-  return SUPPORTER_TIERS.slice().reverse().flatMap((tier) => tierGroups.get(tier) ?? []);
+  return SUPPORTER_TIERS.slice()
+    .reverse()
+    .flatMap((tier) => tierGroups.get(tier) ?? []);
 }
 
 export function resetSupportersDataCache(): void {
   cachedSupportersSnapshot = null;
 }
 
-export async function loadSupportersData(options: LoadSupportersDataOptions = {}): Promise<SupportersResponse> {
+export async function loadSupportersData(
+  options: LoadSupportersDataOptions = {}
+): Promise<SupportersResponse> {
   const hasTauriRuntime = options.hasTauriRuntime ?? detectTauriRuntime();
   const randomFn = options.randomFn ?? Math.random;
 
   if (hasTauriRuntime) {
     try {
-      const payload = await (options.loadFromTauri ?? loadSupportersFromTauri)();
+      const payload = await (
+        options.loadFromTauri ?? loadSupportersFromTauri
+      )();
       return finalizeSupportersResponse(payload, randomFn);
     } catch {
       return loadBundledSupporters(options.fetchImpl, randomFn);
@@ -115,7 +133,9 @@ async function loadBundledSupporters(
   return finalizeSupportersResponse(bundledResponse, randomFn);
 }
 
-function cloneSupportersResponse(payload: SupportersResponse): SupportersResponse {
+function cloneSupportersResponse(
+  payload: SupportersResponse
+): SupportersResponse {
   return {
     ...payload,
     entries: payload.entries.slice()
@@ -148,11 +168,17 @@ function finalizeSupportersResponse(
 function createSupportersSnapshotKey(payload: SupportersResponse): string {
   return JSON.stringify({
     fetchedAt: payload.fetchedAt,
-    entries: sortSupporters(payload.entries).map((entry) => [entry.name, entry.tier])
+    entries: sortSupporters(payload.entries).map((entry) => [
+      entry.name,
+      entry.tier
+    ])
   });
 }
 
-function shuffleInPlace(entries: SupporterEntry[], randomFn: () => number): void {
+function shuffleInPlace(
+  entries: SupporterEntry[],
+  randomFn: () => number
+): void {
   for (let index = entries.length - 1; index > 0; index -= 1) {
     const swapIndex = Math.floor(randomFn() * (index + 1));
     [entries[index], entries[swapIndex]] = [entries[swapIndex], entries[index]];

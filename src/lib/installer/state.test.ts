@@ -9,7 +9,10 @@ import {
 
 test('selectCustomGamePath trims and returns null for empty strings', () => {
   assert.equal(selectCustomGamePath('   '), null);
-  assert.equal(selectCustomGamePath('  C:\\Games\\The Bazaar  '), 'C:\\Games\\The Bazaar');
+  assert.equal(
+    selectCustomGamePath('  C:\\Games\\The Bazaar  '),
+    'C:\\Games\\The Bazaar'
+  );
 });
 
 test('selectEffectiveGamePath prefers custom path over detected path', () => {
@@ -20,7 +23,10 @@ test('selectEffectiveGamePath prefers custom path over detected path', () => {
 });
 
 test('selectEffectiveGamePath falls back to detected path', () => {
-  assert.equal(selectEffectiveGamePath(null, 'C:\\Detected\\Bazaar'), 'C:\\Detected\\Bazaar');
+  assert.equal(
+    selectEffectiveGamePath(null, 'C:\\Detected\\Bazaar'),
+    'C:\\Detected\\Bazaar'
+  );
   assert.equal(selectEffectiveGamePath(null, null), '');
 });
 

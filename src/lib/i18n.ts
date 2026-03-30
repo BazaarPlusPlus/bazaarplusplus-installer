@@ -55,13 +55,15 @@ export const messages: Record<Locale, Record<MessageKey, string>> = {
     stepActions: 'Actions',
     statusChecking: 'Checking...',
     statusNotInstalled: 'Not installed',
-    detectInstalledHint: 'Run detection to inspect the installed BazaarPlusPlus version.',
+    detectInstalledHint:
+      'Run detection to inspect the installed BazaarPlusPlus version.',
     statusFound: 'Found',
     actionReenter: 'Choose again',
     actionBrowse: 'Browse',
     placeholderGamePath: 'Game install path...',
     actionCheck: 'Check',
-    errorGamePath: 'The Bazaar was not found in this folder. Verify the install path.',
+    errorGamePath:
+      'The Bazaar was not found in this folder. Verify the install path.',
     actionInstalling: 'Installing...',
     actionReinstall: 'Reinstall',
     actionInstall: 'Install',
@@ -87,7 +89,7 @@ export const messages: Record<Locale, Record<MessageKey, string>> = {
     steamQuitTitle: 'Close Steam First',
     steamQuitBody:
       'Steam is still running. BazaarPlusPlus needs Steam to close before it updates the game launch options. Continue and let the installer close Steam for you.',
-    actionQuitSteam: 'Close Steam',
+    actionQuitSteam: 'Close Steam'
   },
   zh: {
     htmlLang: 'zh-CN',
@@ -131,7 +133,7 @@ export const messages: Record<Locale, Record<MessageKey, string>> = {
     steamQuitTitle: '请先关闭 Steam',
     steamQuitBody:
       'Steam 当前仍在运行。BazaarPlusPlus 需要先关闭 Steam，才能安全更新游戏启动项。继续后，安装器会尝试为你关闭 Steam。',
-    actionQuitSteam: '关闭 Steam',
+    actionQuitSteam: '关闭 Steam'
   }
 };
 

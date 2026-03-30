@@ -5,14 +5,22 @@ import { resolve } from 'node:path';
 
 const workspaceRoot = resolve(import.meta.dirname, '../../../..');
 const modalSource = readFileSync(
-  resolve(workspaceRoot, 'src/lib/components/installer/InstallerInstallPreviewModal.svelte'),
+  resolve(
+    workspaceRoot,
+    'src/lib/components/installer/InstallerInstallPreviewModal.svelte'
+  ),
   'utf8'
 );
 
 test('install preview modal points users to the latest tutorial video', () => {
-  assert.equal(modalSource.includes('查看 B 站 BazaarPlusPlus 最新视频获取使用教程。'), true);
   assert.equal(
-    modalSource.includes('Check the latest BazaarPlusPlus video on Bilibili for the usage tutorial.'),
+    modalSource.includes('查看 B 站 BazaarPlusPlus 最新视频获取使用教程。'),
+    true
+  );
+  assert.equal(
+    modalSource.includes(
+      'Check the latest BazaarPlusPlus video on Bilibili for the usage tutorial.'
+    ),
     true
   );
   assert.equal(modalSource.includes('查看最新视频'), true);
@@ -22,7 +30,10 @@ test('install preview modal points users to the latest tutorial video', () => {
 });
 
 test('install preview modal warns that installation deletes historical battle records', () => {
-  assert.equal(modalSource.includes('我已了解安装会删除历史作战记录，并准备继续'), true);
+  assert.equal(
+    modalSource.includes('我已了解安装会删除历史作战记录，并准备继续'),
+    true
+  );
   assert.equal(
     modalSource.includes(
       'I understand that this installation will delete historical battle records and I am ready to continue.'

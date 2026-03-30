@@ -4,7 +4,9 @@ import assert from 'node:assert/strict';
 import { detectInstallerEnvironment } from './detect-flow.ts';
 
 test('detectInstallerEnvironment keeps env null when environment detection fails', async () => {
-  let resolveDotnet: ((value: { dotnet_version: string; dotnet_ok: boolean }) => void) | undefined;
+  let resolveDotnet:
+    | ((value: { dotnet_version: string; dotnet_ok: boolean }) => void)
+    | undefined;
 
   const resultPromise = detectInstallerEnvironment({
     requestedGamePath: 'C:\\Games\\The Bazaar',

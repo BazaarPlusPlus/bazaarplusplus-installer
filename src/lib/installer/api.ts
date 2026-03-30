@@ -34,7 +34,10 @@ export async function uninstallBpp(steamPath: string, gamePath: string) {
 }
 
 export async function patchLaunchOptions(steamPath: string, gamePath: string) {
-  return invoke<LaunchOptionsPatchResult>('patch_launch_options', { steamPath, gamePath });
+  return invoke<LaunchOptionsPatchResult>('patch_launch_options', {
+    steamPath,
+    gamePath
+  });
 }
 
 export async function loadSupporters() {

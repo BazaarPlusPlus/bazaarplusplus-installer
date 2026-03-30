@@ -4,8 +4,17 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const workspaceRoot = resolve(import.meta.dirname, '../../../..');
-const headerSource = readFileSync(resolve(workspaceRoot, 'src/lib/components/installer/InstallerHeader.svelte'), 'utf8');
-const statusStepsSource = readFileSync(resolve(workspaceRoot, 'src/lib/components/installer/InstallerStatusSteps.svelte'), 'utf8');
+const headerSource = readFileSync(
+  resolve(workspaceRoot, 'src/lib/components/installer/InstallerHeader.svelte'),
+  'utf8'
+);
+const statusStepsSource = readFileSync(
+  resolve(
+    workspaceRoot,
+    'src/lib/components/installer/InstallerStatusSteps.svelte'
+  ),
+  'utf8'
+);
 
 test('installer header no longer renders the featured whats new card', () => {
   assert.equal(headerSource.includes('header-link-featured'), false);
@@ -35,16 +44,32 @@ test('version mismatch pills are stacked vertically', () => {
 
 test('latest-version state removes the green status frame and uses the latest-state copy', () => {
   assert.equal(
-    statusStepsSource.includes(`<span class="tag tag-ok">{t('statusInstalled')}{env?.bpp_version ? \` · v\${env?.bpp_version}\` : ''}</span>`),
+    statusStepsSource.includes(
+      `<span class="tag tag-ok">{t('statusInstalled')}{env?.bpp_version ? \` · v\${env?.bpp_version}\` : ''}</span>`
+    ),
     false
   );
   assert.equal(statusStepsSource.includes('modInstalledHint'), false);
-  assert.equal(statusStepsSource.includes('BazaarPlusPlus 当前已处于最新状态。'), false);
-  assert.equal(statusStepsSource.includes('BazaarPlusPlus 当前已处于最新状态'), true);
-  assert.equal(statusStepsSource.includes("{:else if modInstalled}"), true);
+  assert.equal(
+    statusStepsSource.includes('BazaarPlusPlus 当前已处于最新状态。'),
+    false
+  );
+  assert.equal(
+    statusStepsSource.includes('BazaarPlusPlus 当前已处于最新状态'),
+    true
+  );
+  assert.equal(statusStepsSource.includes('{:else if modInstalled}'), true);
 });
 
 test('bazaar found UI requires a non-empty effective path', () => {
-  assert.equal(statusStepsSource.includes('class:step-found={bazaarFound && Boolean(effectiveGamePath)}'), true);
-  assert.equal(statusStepsSource.includes('{#if bazaarFound && effectiveGamePath}'), true);
+  assert.equal(
+    statusStepsSource.includes(
+      'class:step-found={bazaarFound && Boolean(effectiveGamePath)}'
+    ),
+    true
+  );
+  assert.equal(
+    statusStepsSource.includes('{#if bazaarFound && effectiveGamePath}'),
+    true
+  );
 });

@@ -1,7 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { loadPersistedCustomGamePath, persistCustomGamePath } from './storage.ts';
+import {
+  loadPersistedCustomGamePath,
+  persistCustomGamePath
+} from './storage.ts';
 
 function createStorage() {
   const values = new Map<string, string>();

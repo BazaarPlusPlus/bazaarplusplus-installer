@@ -4,7 +4,8 @@ import assert from 'node:assert/strict';
 import * as supportersModule from './supporters.ts';
 import type { SupportersResponse } from './types.ts';
 
-const { loadSupportersData, normalizeSupporterPayload, sortSupporters } = supportersModule;
+const { loadSupportersData, normalizeSupporterPayload, sortSupporters } =
+  supportersModule;
 
 test('normalizeSupporterPayload drops invalid supporter entries', () => {
   const payload = normalizeSupporterPayload([
@@ -18,7 +19,10 @@ test('normalizeSupporterPayload drops invalid supporter entries', () => {
     { name: 'Alice', tier: 4 },
     { name: 'Carol', tier: 2 }
   ]);
-  assert.equal(payload.every((entry) => !('amount' in entry)), true);
+  assert.equal(
+    payload.every((entry) => !('amount' in entry)),
+    true
+  );
 });
 
 test('sortSupporters sorts by tier, then name', () => {
@@ -29,7 +33,10 @@ test('sortSupporters sorts by tier, then name', () => {
     { name: 'Cara', tier: 4, amount: 0.5 }
   ] as unknown as Parameters<typeof sortSupporters>[0]);
 
-  assert.deepEqual(payload.map((entry) => entry.name), ['Amy', 'Bob', 'Cara', 'Zed']);
+  assert.deepEqual(
+    payload.map((entry) => entry.name),
+    ['Amy', 'Bob', 'Cara', 'Zed']
+  );
 });
 
 test('shuffleSupportersWithinTier keeps tier order and shuffles within each tier', () => {
@@ -48,8 +55,14 @@ test('shuffleSupportersWithinTier keeps tier order and shuffles within each tier
     () => randomValues.shift() ?? 0.5
   );
 
-  assert.deepEqual(payload?.map((entry) => entry.tier), [4, 4, 4, 3, 3, 2]);
-  assert.deepEqual(payload?.map((entry) => entry.name), ['Bob', 'Amy', 'Cara', 'Eve', 'Dan', 'Finn']);
+  assert.deepEqual(
+    payload?.map((entry) => entry.tier),
+    [4, 4, 4, 3, 3, 2]
+  );
+  assert.deepEqual(
+    payload?.map((entry) => entry.name),
+    ['Bob', 'Amy', 'Cara', 'Eve', 'Dan', 'Finn']
+  );
 });
 
 test('loadSupportersData reuses the same shuffle for repeated bundled snapshots', async () => {
@@ -86,7 +99,10 @@ test('loadSupportersData reuses the same shuffle for repeated bundled snapshots'
       randomFn: () => 0.25
     });
 
-    assert.deepEqual(firstPayload.entries.map((entry) => entry.name), ['Bob', 'Amy', 'Eve', 'Dan']);
+    assert.deepEqual(
+      firstPayload.entries.map((entry) => entry.name),
+      ['Bob', 'Amy', 'Eve', 'Dan']
+    );
     assert.deepEqual(secondPayload.entries, firstPayload.entries);
     assert.equal(fetchMock.mock.callCount(), 2);
   } finally {
@@ -106,7 +122,9 @@ test('loadSupportersData revalidates tauri data while preserving shuffle for the
     fetchedAt: 100,
     stale: false
   };
-  const loadFromTauri = mock.fn(async (): Promise<SupportersResponse> => tauriPayload);
+  const loadFromTauri = mock.fn(
+    async (): Promise<SupportersResponse> => tauriPayload
+  );
 
   try {
     supportersModule.resetSupportersDataCache?.();
@@ -174,8 +192,14 @@ test('loadSupportersData picks up a newer tauri snapshot on a later load', async
     });
 
     assert.equal(loadFromTauri.mock.callCount(), 2);
-    assert.deepEqual(firstPayload.entries.map((entry) => entry.name), ['Bob', 'Amy']);
-    assert.deepEqual(secondPayload.entries.map((entry) => entry.name), ['Cara', 'Dan']);
+    assert.deepEqual(
+      firstPayload.entries.map((entry) => entry.name),
+      ['Bob', 'Amy']
+    );
+    assert.deepEqual(
+      secondPayload.entries.map((entry) => entry.name),
+      ['Cara', 'Dan']
+    );
     assert.equal(secondPayload.fetchedAt, 200);
   } finally {
     supportersModule.resetSupportersDataCache?.();
@@ -203,7 +227,9 @@ test('loadSupportersData falls back to bundled JSON when Tauri runtime is unavai
     assert.deepEqual(payload.entries, [{ name: 'Remote', tier: 4 }]);
     assert.equal(payload.source, 'bundled');
     assert.equal(fetchMock.mock.callCount(), 1);
-    const firstCall = fetchMock.mock.calls[0] as { arguments: unknown[] } | undefined;
+    const firstCall = fetchMock.mock.calls[0] as
+      | { arguments: unknown[] }
+      | undefined;
     assert.equal(firstCall?.arguments[0], '/support/supporter-list.json');
   } finally {
     supportersModule.resetSupportersDataCache?.();

@@ -1,5 +1,10 @@
 import { writable } from 'svelte/store';
-import { resolveInitialLocale, messages, type Locale, defaultLocale } from './i18n';
+import {
+  resolveInitialLocale,
+  messages,
+  type Locale,
+  defaultLocale
+} from './i18n';
 
 function createLocaleStore() {
   const { subscribe, set, update } = writable<Locale>(defaultLocale);
