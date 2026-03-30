@@ -23,8 +23,9 @@
     loadPersistedCustomGamePath,
     persistCustomGamePath
   } from '$lib/installer/storage';
-  import { hasTauriRuntime, resolveInstallDebugPreview, shouldConfirmSteamQuit, shouldPatchSteamLaunchOptions } from '$lib/installer/runtime';
-  import { createPageState, selectCustomGamePath, selectEffectiveGamePath, type StepState } from '$lib/installer/state';
+  import { hasTauriRuntime, resolveInstallDebugPreview } from '$lib/installer/runtime';
+  import { createPageState, selectCustomGamePath, type ActionBusy, type StepState } from '$lib/installer/state';
+  import { detectInstallerEnvironment } from '$lib/installer/detect-flow';
 
   let env: EnvironmentInfo | null = null;
   let dotnetState: StepState = 'idle';
@@ -32,7 +33,7 @@
   let bazaarChecking = false;
   let bazaarInvalid = false;
   let customGamePath = loadPersistedCustomGamePath();
-  let actionBusy: 'idle' | 'detect' | 'install' | 'uninstall' = 'idle';
+  let actionBusy: ActionBusy = 'idle';
   const STEAM_BAZAAR_URL = 'steam://rungameid/1617400';
   const BILIBILI_URL = 'https://space.bilibili.com/3546978457750467';
   let showInstallModal = false;
@@ -53,6 +54,7 @@
   function applyInstallDebugState() {
     env = {
       steam_path: 'C:\\Program Files (x86)\\Steam',
+      steam_launch_options_supported: true,
       game_path: 'C:\\Games\\The Bazaar',
       dotnet_version: '9.0.0',
       dotnet_ok: true,
@@ -63,10 +65,6 @@
     dotnetState = 'found';
     bazaarFound = true;
     bazaarInvalid = false;
-  }
-
-  function effectiveGamePath(): string {
-    return selectEffectiveGamePath(selectedPath, env?.game_path ?? null);
   }
 
   function requestInstall() {
@@ -108,25 +106,6 @@
     }
   }
 
-  async function detectDotnetRuntime() {
-    try {
-      const result = await detectDotnetRuntimeApi();
-      env = env
-        ? { ...env, ...result }
-        : {
-            steam_path: null,
-            game_path: null,
-            bpp_version: null,
-            bundled_bpp_version: null,
-            bepinex_installed: false,
-            ...result
-          };
-      dotnetState = result.dotnet_ok ? 'found' : 'not_found';
-    } catch {
-      dotnetState = 'idle';
-    }
-  }
-
   async function detectEnvironment() {
     if (actionBusy !== 'idle') return;
 
@@ -137,27 +116,18 @@
 
     actionBusy = 'detect';
     dotnetState = 'detecting';
-    const dotnetPromise = detectDotnetRuntime();
-    const requestedGamePath = selectedPath;
 
     try {
-      env = await detectEnvironmentApi(requestedGamePath ?? undefined);
-
-      if (requestedGamePath) {
-        bazaarFound = await verifyGamePathApi(requestedGamePath);
-        bazaarInvalid = !bazaarFound;
-      } else if (env.game_path) {
-        bazaarFound = await verifyGamePathApi(env.game_path);
-        bazaarInvalid = !bazaarFound;
-      } else {
-        bazaarFound = false;
-        bazaarInvalid = false;
-      }
-
-      await dotnetPromise;
-    } catch {
-      env = null;
-      dotnetState = 'idle';
+      const result = await detectInstallerEnvironment({
+        requestedGamePath: selectedPath,
+        detectEnvironment: detectEnvironmentApi,
+        detectDotnetRuntime: detectDotnetRuntimeApi,
+        verifyGamePath: verifyGamePathApi
+      });
+      env = result.env;
+      dotnetState = result.dotnetState;
+      bazaarFound = result.bazaarFound;
+      bazaarInvalid = result.bazaarInvalid;
     } finally {
       actionBusy = 'idle';
     }
@@ -171,7 +141,7 @@
   }
 
   async function checkPath() {
-    const path = effectiveGamePath();
+    const path = pageState.effectiveGamePath;
     if (!path) return;
 
     bazaarChecking = true;
@@ -200,14 +170,13 @@
   }
 
   async function maybeConfirmSteamQuit(action: 'install' | 'uninstall'): Promise<boolean> {
-    const steamPath = env?.steam_path?.trim() ?? '';
-    if (!hasTauriRuntime() || !shouldPatchSteamLaunchOptions(steamPath)) {
+    if (!hasTauriRuntime() || !env?.steam_launch_options_supported) {
       return false;
     }
 
     try {
       const steamInfo = await detectSteamRunningApi();
-      if (!shouldConfirmSteamQuit({ steamPath, steamRunning: steamInfo.running })) {
+      if (!steamInfo.running) {
         return false;
       }
     } catch (error) {
@@ -234,9 +203,9 @@
     actionBusy = 'install';
     try {
       const steamPath = env?.steam_path?.trim() ?? '';
-      await installBepinex(steamPath, effectiveGamePath());
-      if (shouldPatchSteamLaunchOptions(steamPath)) {
-        const patchResult = await patchLaunchOptions(steamPath, effectiveGamePath());
+      await installBepinex(steamPath, pageState.effectiveGamePath);
+      if (env?.steam_launch_options_supported) {
+        const patchResult = await patchLaunchOptions(steamPath, pageState.effectiveGamePath);
         if (!patchResult.verified) {
           showLaunchOptionsWarningModal = true;
         }
@@ -249,7 +218,7 @@
   }
 
   async function uninstallBpp(skipPrompt = false) {
-    if (!effectiveGamePath() || actionBusy !== 'idle') return;
+    if (!pageState.effectiveGamePath || actionBusy !== 'idle') return;
 
     if (!skipPrompt && await maybeConfirmSteamQuit('uninstall')) {
       return;
@@ -257,7 +226,7 @@
 
     actionBusy = 'uninstall';
     try {
-      await uninstallBppApi(env?.steam_path ?? '', effectiveGamePath());
+      await uninstallBppApi(env?.steam_path ?? '', pageState.effectiveGamePath);
       await refreshAfterAction();
     } catch (e) {
       console.error(e);
@@ -302,7 +271,6 @@
   $: installedBppVersion = env?.bpp_version ?? null;
   $: pageState = createPageState({
     actionBusy,
-    dotnetState,
     bazaarFound,
     selectedGamePath: selectedPath,
     detectedGamePath: env?.game_path ?? null,
@@ -313,7 +281,6 @@
   $: hasPath = pageState.hasPath;
   $: versionMismatch = pageState.versionMismatch;
   $: isBusy = pageState.isBusy;
-  $: installPrereqsMet = pageState.installPrereqsMet;
   $: canInstall = pageState.canInstall;
   $: canLaunchGame = pageState.canLaunchGame;
   $: dotnetDownloadUrl = $locale === 'zh'

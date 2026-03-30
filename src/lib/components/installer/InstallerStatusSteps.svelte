@@ -3,7 +3,7 @@
   import { messages } from '$lib/i18n';
   import { locale } from '$lib/locale';
   import type { EnvironmentInfo } from '$lib/types';
-  import type { StepState } from '$lib/installer/state';
+  import type { ActionBusy, StepState } from '$lib/installer/state';
 
   export let env: EnvironmentInfo | null;
   export let dotnetState: StepState;
@@ -17,7 +17,7 @@
   export let customGamePath: string;
   export let hasPath: boolean;
   export let isBusy: boolean;
-  export let actionBusy: 'idle' | 'detect' | 'install' | 'uninstall';
+  export let actionBusy: ActionBusy;
   export let canInstall: boolean;
   export let canLaunchGame: boolean;
   export let dotnetDownloadUrl: string;

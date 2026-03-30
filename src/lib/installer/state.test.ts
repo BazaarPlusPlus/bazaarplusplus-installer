@@ -27,7 +27,6 @@ test('selectEffectiveGamePath falls back to detected path', () => {
 test('createPageState computes install prerequisites and version mismatch', () => {
   const state = createPageState({
     actionBusy: 'idle',
-    dotnetState: 'found',
     bazaarFound: true,
     selectedGamePath: 'C:\\Games\\The Bazaar',
     detectedGamePath: null,
@@ -38,7 +37,6 @@ test('createPageState computes install prerequisites and version mismatch', () =
 
   assert.equal(state.hasPath, true);
   assert.equal(state.isBusy, false);
-  assert.equal(state.installPrereqsMet, true);
   assert.equal(state.canInstall, true);
   assert.equal(state.canLaunchGame, true);
   assert.equal(state.versionMismatch, true);
@@ -47,7 +45,6 @@ test('createPageState computes install prerequisites and version mismatch', () =
 test('createPageState allows install during debug preview without prerequisites', () => {
   const state = createPageState({
     actionBusy: 'idle',
-    dotnetState: 'idle',
     bazaarFound: false,
     selectedGamePath: null,
     detectedGamePath: null,
@@ -56,7 +53,6 @@ test('createPageState allows install during debug preview without prerequisites'
     installedBppVersion: null
   });
 
-  assert.equal(state.installPrereqsMet, false);
   assert.equal(state.canInstall, true);
   assert.equal(state.canLaunchGame, false);
 });
@@ -64,7 +60,6 @@ test('createPageState allows install during debug preview without prerequisites'
 test('createPageState allows install when dotnet runtime is missing but game path is valid', () => {
   const state = createPageState({
     actionBusy: 'idle',
-    dotnetState: 'not_found',
     bazaarFound: true,
     selectedGamePath: 'C:\\Games\\The Bazaar',
     detectedGamePath: null,
@@ -73,15 +68,13 @@ test('createPageState allows install when dotnet runtime is missing but game pat
     installedBppVersion: null
   });
 
-  assert.equal(state.installPrereqsMet, true);
   assert.equal(state.canInstall, true);
   assert.equal(state.canLaunchGame, true);
 });
 
-test('createPageState does not block install while dotnet status is idle when game path is valid', () => {
+test('createPageState does not block install when game path is valid', () => {
   const state = createPageState({
     actionBusy: 'idle',
-    dotnetState: 'idle',
     bazaarFound: true,
     selectedGamePath: 'C:\\Games\\The Bazaar',
     detectedGamePath: null,
@@ -90,7 +83,6 @@ test('createPageState does not block install while dotnet status is idle when ga
     installedBppVersion: null
   });
 
-  assert.equal(state.installPrereqsMet, true);
   assert.equal(state.canInstall, true);
   assert.equal(state.canLaunchGame, true);
 });
@@ -98,7 +90,6 @@ test('createPageState does not block install while dotnet status is idle when ga
 test('createPageState does not allow launch when Bazaar is flagged found but no path exists', () => {
   const state = createPageState({
     actionBusy: 'idle',
-    dotnetState: 'found',
     bazaarFound: true,
     selectedGamePath: null,
     detectedGamePath: null,

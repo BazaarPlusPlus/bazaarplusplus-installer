@@ -3,7 +3,6 @@ export type ActionBusy = 'idle' | 'detect' | 'install' | 'uninstall';
 
 export interface PageStateInput {
   actionBusy: ActionBusy;
-  dotnetState: StepState;
   bazaarFound: boolean;
   selectedGamePath: string | null;
   detectedGamePath: string | null;
@@ -15,7 +14,6 @@ export interface PageStateInput {
 export interface PageState {
   hasPath: boolean;
   isBusy: boolean;
-  installPrereqsMet: boolean;
   canInstall: boolean;
   canLaunchGame: boolean;
   versionMismatch: boolean;
@@ -43,14 +41,12 @@ export function createPageState(input: PageStateInput): PageState {
       input.installedBppVersion &&
       input.bundledBppVersion !== input.installedBppVersion
   );
-  const installPrereqsMet = input.bazaarFound && hasPath;
-  const canInstall = !isBusy && (installPrereqsMet || input.isDebugInstallPreview);
+  const canInstall = !isBusy && ((input.bazaarFound && hasPath) || input.isDebugInstallPreview);
   const canLaunchGame = !isBusy && input.bazaarFound && hasPath;
 
   return {
     hasPath,
     isBusy,
-    installPrereqsMet,
     canInstall,
     canLaunchGame,
     versionMismatch,

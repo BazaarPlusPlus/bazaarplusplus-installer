@@ -1,5 +1,6 @@
 export interface EnvironmentInfo {
   steam_path: string | null;
+  steam_launch_options_supported: boolean;
   game_path: string | null;
   dotnet_version: string | null;
   dotnet_ok: boolean;

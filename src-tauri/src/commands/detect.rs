@@ -13,6 +13,7 @@ const CREATE_NO_WINDOW: u32 = 0x08000000;
 #[derive(Debug, Serialize, Deserialize)]
 pub struct EnvironmentInfo {
     pub steam_path: Option<String>,
+    pub steam_launch_options_supported: bool,
     pub game_path: Option<String>,
     pub dotnet_version: Option<String>,
     pub dotnet_ok: bool,
@@ -35,6 +36,10 @@ pub fn detect_environment(
     let steam_path = get_steam_path();
     let requested_game_path = normalize_game_path(game_path);
     let game_path = resolve_game_path(steam_path.as_deref(), requested_game_path.as_deref());
+    let steam_launch_options_supported = steam_path
+        .as_deref()
+        .map(crate::commands::steam::supports_launch_option_updates)
+        .unwrap_or(false);
     let bpp_version = game_path
         .as_ref()
         .and_then(|path| read_installed_bpp_version(path));
@@ -48,6 +53,7 @@ pub fn detect_environment(
 
     Ok(EnvironmentInfo {
         steam_path: steam_path.map(|path| path.to_string_lossy().into_owned()),
+        steam_launch_options_supported,
         game_path: game_path.map(|path| path.to_string_lossy().into_owned()),
         dotnet_version: None,
         dotnet_ok: false,

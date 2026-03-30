@@ -1,5 +1,5 @@
 import { writable } from 'svelte/store';
-import { resolveInitialLocale, messages, formatMessage, type Locale, type MessageKey, defaultLocale } from './i18n';
+import { resolveInitialLocale, messages, type Locale, defaultLocale } from './i18n';
 
 function createLocaleStore() {
   const { subscribe, set, update } = writable<Locale>(defaultLocale);
@@ -35,8 +35,4 @@ export function handleLocaleToggle(event: MouseEvent) {
   event.preventDefault();
   event.stopPropagation();
   locale.toggle();
-}
-
-export function t(currentLocale: Locale, key: MessageKey, params?: Record<string, string | number>): string {
-  return formatMessage(currentLocale, key, params);
 }
