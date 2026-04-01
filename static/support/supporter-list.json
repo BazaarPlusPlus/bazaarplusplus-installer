@@ -342,5 +342,17 @@
   {
     "name": "Deng",
     "tier": 2
+  },
+  {
+    "name": "哲学博士",
+    "tier": 4
+  },
+  {
+    "name": "Erk",
+    "tier": 3
+  },
+  {
+    "name": "FOX",
+    "tier": 2
   }
 ]
