@@ -80,7 +80,7 @@
                 en: 'Experience Improvements'
             },
             sectionSummary: {
-                zh: '围绕回放体验与日常操作，进行了一轮稳定性与性能优化。',
+                zh: '围绕回放体验与日常操作，进行了一轮稳定性与性能优化',
                 en: 'A full pass on replay flow and everyday use, with better stability and lower overhead.'
             },
             title: {
@@ -89,11 +89,11 @@
             },
             bullets: [
                 {
-                    zh: '打开时再加载数据，减少常驻负担。',
+                    zh: '打开时再加载数据，减少常驻负担',
                     en: 'History now loads on demand to reduce background overhead.'
                 },
                 {
-                    zh: '支持删除 run，并优化数据采集时机。',
+                    zh: '支持删除 run，并优化数据采集时机',
                     en: 'Runs can now be deleted, and data capture timing has been tuned.'
                 }
             ]
@@ -110,7 +110,7 @@
             },
             bullets: [
                 {
-                    zh: '快捷键现在支持绑定到鼠标按键。',
+                    zh: '快捷键现在支持绑定到鼠标按键',
                     en: 'Hotkeys can now be assigned to mouse buttons.'
                 }
             ]
@@ -127,7 +127,7 @@
             },
             bullets: [
                 {
-                    zh: '合并原有双 Tooltip，信息展示更加集中清晰。',
+                    zh: '合并原有双 Tooltip，信息展示更加集中清晰',
                     en: 'The previous dual-tooltip layout has been merged into a single, clearer view.'
                 }
             ]
@@ -144,7 +144,7 @@
             },
             bullets: [
                 {
-                    zh: '新增随机英雄禁用部分英雄的选项。',
+                    zh: '新增随机英雄禁用部分英雄的选项',
                     en: 'Added an option to exclude specific heroes from random hero selection.'
                 }
             ]
