@@ -20,7 +20,8 @@ export default defineConfig(async () => ({
   server: {
     port: 1420,
     strictPort: true,
-    host: host || false,
+    // Default to a LAN-accessible dev server unless Tauri provides an explicit host.
+    host: host || '0.0.0.0',
     hmr: host
       ? {
           protocol: 'ws',
