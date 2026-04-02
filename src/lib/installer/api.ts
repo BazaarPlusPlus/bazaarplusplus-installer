@@ -2,6 +2,7 @@ import { invoke } from '@tauri-apps/api/core';
 import type {
   DotnetInfo,
   EnvironmentInfo,
+  GameRunningInfo,
   LaunchOptionsPatchResult,
   SteamRunningInfo,
   SupportersResponse
@@ -23,6 +24,10 @@ export async function detectEnvironment(gamePath?: string) {
 
 export async function detectSteamRunning() {
   return invoke<SteamRunningInfo>('detect_steam_running');
+}
+
+export async function detectBazaarRunning() {
+  return invoke<GameRunningInfo>('detect_bazaar_running');
 }
 
 export async function installBepinex(steamPath: string, gamePath: string) {

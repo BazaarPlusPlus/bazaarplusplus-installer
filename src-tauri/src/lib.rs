@@ -3,6 +3,7 @@ mod commands;
 use commands::{
     bepinex::{install_bepinex, uninstall_bpp},
     detect::{detect_dotnet_runtime, detect_environment, verify_game_path},
+    game::detect_bazaar_running,
     steam::detect_steam_running,
     supporters::load_supporters,
     vdf::patch_launch_options,
@@ -16,6 +17,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             detect_environment,
             detect_dotnet_runtime,
+            detect_bazaar_running,
             detect_steam_running,
             verify_game_path,
             install_bepinex,

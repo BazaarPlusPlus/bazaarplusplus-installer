@@ -11,6 +11,7 @@
   import InstallerStatusSteps from '$lib/components/installer/InstallerStatusSteps.svelte';
   import InstallerSupportBar from '$lib/components/installer/InstallerSupportBar.svelte';
   import {
+    detectBazaarRunning as detectBazaarRunningApi,
     detectDotnetRuntime as detectDotnetRuntimeApi,
     detectEnvironment as detectEnvironmentApi,
     detectSteamRunning as detectSteamRunningApi,
@@ -33,6 +34,11 @@
     type ActionBusy,
     type StepState
   } from '$lib/installer/state';
+  import type { InstallConfirmationStep } from '$lib/installer/install-guards';
+  import {
+    resolveInstallConfirmationStep as resolveInstallConfirmation,
+    resolveInstallContinuationAction
+  } from '$lib/installer/install-guards';
   import { detectInstallerEnvironment } from '$lib/installer/detect-flow';
 
   let env: EnvironmentInfo | null = null;
@@ -46,6 +52,7 @@
   const BILIBILI_URL = 'https://space.bilibili.com/3546978457750467';
   let showInstallModal = false;
   let showLaunchOptionsWarningModal = false;
+  let showGameQuitModal = false;
   let showSteamQuitModal = false;
   let installAcknowledged = false;
   let pendingSteamAction: 'install' | 'uninstall' | null = null;
@@ -86,10 +93,27 @@
   async function confirmInstall() {
     if (!installAcknowledged) return;
     showInstallModal = false;
-    if (await maybeConfirmSteamQuit('install')) {
+
+    const confirmationStep = await detectInstallConfirmationStep();
+    const continuationAction =
+      resolveInstallContinuationAction(confirmationStep);
+
+    if (continuationAction === 'show_game_quit_modal') {
+      showGameQuitModal = true;
       return;
     }
+
+    if (continuationAction === 'show_steam_quit_modal') {
+      pendingSteamAction = 'install';
+      showSteamQuitModal = true;
+      return;
+    }
+
     await installBundled();
+  }
+
+  function closeGameQuitModal() {
+    showGameQuitModal = false;
   }
 
   function closeLaunchOptionsWarningModal() {
@@ -114,6 +138,26 @@
     if (action === 'uninstall') {
       await uninstallBpp(true);
     }
+  }
+
+  async function confirmGameQuitAndContinue() {
+    const confirmationStep = await detectInstallConfirmationStep();
+    const continuationAction =
+      resolveInstallContinuationAction(confirmationStep);
+
+    if (continuationAction === 'show_game_quit_modal') {
+      return;
+    }
+
+    showGameQuitModal = false;
+
+    if (continuationAction === 'show_steam_quit_modal') {
+      pendingSteamAction = 'install';
+      showSteamQuitModal = true;
+      return;
+    }
+
+    await installBundled();
   }
 
   async function detectEnvironment() {
@@ -199,6 +243,37 @@
     pendingSteamAction = action;
     showSteamQuitModal = true;
     return true;
+  }
+
+  async function detectInstallConfirmationStep(): Promise<InstallConfirmationStep> {
+    if (!hasTauriRuntime()) {
+      return 'proceed';
+    }
+
+    let gameRunning = false;
+    try {
+      const gameInfo = await detectBazaarRunningApi();
+      gameRunning = gameInfo.running;
+    } catch (error) {
+      console.error(error);
+    }
+
+    let steamRunning = false;
+    if (env?.steam_launch_options_supported) {
+      try {
+        const steamInfo = await detectSteamRunningApi();
+        steamRunning = steamInfo.running;
+      } catch (error) {
+        console.error(error);
+      }
+    }
+
+    return resolveInstallConfirmation({
+      hasTauriRuntime: true,
+      gameRunning,
+      steamLaunchOptionsSupported: Boolean(env?.steam_launch_options_supported),
+      steamRunning
+    });
   }
 
   async function installBundled() {
@@ -334,6 +409,18 @@
     body={t('launchOptionsWarningBody')}
     confirmText={t('actionClose')}
     onConfirm={closeLaunchOptionsWarningModal}
+  />
+
+  <AppModal
+    open={showGameQuitModal}
+    eyebrow="BazaarPlusPlus"
+    title={t('gameQuitTitle')}
+    body={t('gameQuitBody')}
+    confirmText={t('actionGameClosed')}
+    cancelText={t('actionClose')}
+    showCancel={true}
+    onConfirm={confirmGameQuitAndContinue}
+    onCancel={closeGameQuitModal}
   />
 
   <AppModal

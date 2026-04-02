@@ -22,6 +22,10 @@ export interface SteamRunningInfo {
   running: boolean;
 }
 
+export interface GameRunningInfo {
+  running: boolean;
+}
+
 export type SupporterTierId = 1 | 2 | 3 | 4;
 
 export interface SupporterEntry {

@@ -38,6 +38,9 @@ export type MessageKey =
   | 'launchOptionsWarningTitle'
   | 'launchOptionsWarningBody'
   | 'actionClose'
+  | 'gameQuitTitle'
+  | 'gameQuitBody'
+  | 'actionGameClosed'
   | 'steamQuitTitle'
   | 'steamQuitBody'
   | 'actionQuitSteam';
@@ -86,6 +89,10 @@ export const messages: Record<Locale, Record<MessageKey, string>> = {
     launchOptionsWarningBody:
       'BazaarPlusPlus finished installing, but the installer could not confirm that Steam saved the new launch options. Please reopen Steam and verify the game launch command if the mod does not start.',
     actionClose: 'Close',
+    gameQuitTitle: 'Close The Bazaar First',
+    gameQuitBody:
+      'The Bazaar is still running. Close the game completely, then continue once it is no longer open.',
+    actionGameClosed: 'I Closed the Game',
     steamQuitTitle: 'Close Steam First',
     steamQuitBody:
       'Steam is still running. BazaarPlusPlus needs Steam to close before it updates the game launch options. Continue and let the installer close Steam for you.',
@@ -130,6 +137,10 @@ export const messages: Record<Locale, Record<MessageKey, string>> = {
     launchOptionsWarningBody:
       'BazaarPlusPlus 已完成安装，但安装器无法确认 Steam 已正确保存新的启动项。如果模组没有生效，请重新打开 Steam 后检查游戏启动命令。',
     actionClose: '关闭',
+    gameQuitTitle: '请先关闭 The Bazaar',
+    gameQuitBody:
+      '检测到 The Bazaar 当前仍在运行。请先完全关闭游戏，确认已经退出后再继续安装。',
+    actionGameClosed: '已关闭游戏',
     steamQuitTitle: '请先关闭 Steam',
     steamQuitBody:
       'Steam 当前仍在运行。BazaarPlusPlus 需要先关闭 Steam，才能安全更新游戏启动项。继续后，安装器会尝试为你关闭 Steam。',
