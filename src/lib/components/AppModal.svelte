@@ -8,13 +8,15 @@
   export let showConfirm = true;
   export let showCancel = false;
   export let confirmDisabled = false;
+  export let confirmBusy = false;
+  export let confirmBusyText = '';
   export let onConfirm: () => void = () => {};
   export let onCancel: () => void = () => {};
   export let bodyClass = '';
   export let wide = false;
 
   function handleConfirm() {
-    if (confirmDisabled) return;
+    if (confirmDisabled || confirmBusy) return;
     onConfirm();
   }
 
@@ -55,9 +57,14 @@
               class="modal-confirm"
               type="button"
               onclick={handleConfirm}
-              disabled={confirmDisabled}
+              disabled={confirmDisabled || confirmBusy}
             >
-              {confirmText}
+              {#if confirmBusy}
+                <span class="modal-spinner" aria-hidden="true"></span>
+                {confirmBusyText || confirmText}
+              {:else}
+                {confirmText}
+              {/if}
             </button>
           {/if}
         </div>
@@ -131,6 +138,10 @@
   .modal-confirm {
     min-width: 150px;
     padding: 0.72rem 1rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
     font-family: 'Cinzel', serif;
     font-size: 0.68rem;
     letter-spacing: 0.18em;
@@ -192,6 +203,15 @@
     outline-offset: 2px;
   }
 
+  .modal-spinner {
+    width: 0.9rem;
+    height: 0.9rem;
+    border: 2px solid rgba(28, 14, 3, 0.24);
+    border-top-color: rgba(28, 14, 3, 0.9);
+    border-radius: 999px;
+    animation: modal-spin 0.7s linear infinite;
+  }
+
   .modal-cancel:focus-visible {
     outline: 2px solid rgba(255, 214, 140, 0.9);
     outline-offset: 2px;
@@ -205,6 +225,15 @@
     to {
       opacity: 1;
       transform: translateY(0);
+    }
+  }
+
+  @keyframes modal-spin {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
     }
   }
 </style>

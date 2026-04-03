@@ -55,6 +55,7 @@
   let showGameQuitModal = false;
   let showSteamQuitModal = false;
   let installAcknowledged = false;
+  let installConfirmationBusy = false;
   let pendingSteamAction: 'install' | 'uninstall' | null = null;
 
   $: t = (
@@ -91,25 +92,33 @@
   }
 
   async function confirmInstall() {
-    if (!installAcknowledged) return;
-    showInstallModal = false;
+    if (!installAcknowledged || installConfirmationBusy) return;
 
-    const confirmationStep = await detectInstallConfirmationStep();
-    const continuationAction =
-      resolveInstallContinuationAction(confirmationStep);
+    installConfirmationBusy = true;
 
-    if (continuationAction === 'show_game_quit_modal') {
-      showGameQuitModal = true;
-      return;
+    try {
+      const confirmationStep = await detectInstallConfirmationStep();
+      const continuationAction =
+        resolveInstallContinuationAction(confirmationStep);
+
+      if (continuationAction === 'show_game_quit_modal') {
+        showInstallModal = false;
+        showGameQuitModal = true;
+        return;
+      }
+
+      if (continuationAction === 'show_steam_quit_modal') {
+        showInstallModal = false;
+        pendingSteamAction = 'install';
+        showSteamQuitModal = true;
+        return;
+      }
+
+      showInstallModal = false;
+      await installBundled();
+    } finally {
+      installConfirmationBusy = false;
     }
-
-    if (continuationAction === 'show_steam_quit_modal') {
-      pendingSteamAction = 'install';
-      showSteamQuitModal = true;
-      return;
-    }
-
-    await installBundled();
   }
 
   function closeGameQuitModal() {
@@ -397,6 +406,7 @@
   <InstallerInstallPreviewModal
     open={showInstallModal}
     bind:installAcknowledged
+    confirming={installConfirmationBusy}
     bilibiliUrl={BILIBILI_URL}
     onOpenBilibili={openBilibili}
     onConfirm={confirmInstall}

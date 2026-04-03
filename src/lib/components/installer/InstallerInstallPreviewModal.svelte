@@ -4,6 +4,7 @@
 
   export let open: boolean;
   export let installAcknowledged: boolean;
+  export let confirming = false;
   export let bilibiliUrl: string;
   export let onOpenBilibili: (event?: MouseEvent) => void;
   export let onConfirm: () => void | Promise<void>;
@@ -15,7 +16,9 @@
   title={$locale === 'zh' ? '安装 BazaarPlusPlus' : 'Install BazaarPlusPlus'}
   bodyClass="install-preview"
   confirmText={$locale === 'zh' ? '确认安装' : 'Install'}
-  confirmDisabled={!installAcknowledged}
+  confirmBusy={confirming}
+  confirmBusyText={$locale === 'zh' ? '检查中...' : 'Checking...'}
+  confirmDisabled={!installAcknowledged || confirming}
   wide={true}
   {onConfirm}
 >
