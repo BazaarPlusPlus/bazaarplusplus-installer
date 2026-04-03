@@ -12,7 +12,7 @@ Usage:
 
   ./build.sh --prod
       Build release artifacts for the current host platform.
-      On macOS this produces a universal app bundle.
+      On macOS this produces an arm64 app bundle.
 
   ./build.sh --prod --clean-deps
       Reinstall npm dependencies before building.
@@ -84,7 +84,7 @@ required_rust_targets_for_platform() {
 
     case "$platform" in
         macos)
-            printf '%s\n' aarch64-apple-darwin x86_64-apple-darwin
+            printf '%s\n' aarch64-apple-darwin
             ;;
         *)
             ;;
@@ -113,6 +113,7 @@ build_prod() {
     local resource_zip=""
     local bundle_target=""
     local bundle_output=""
+    local bundle_cleanup_path=""
     local release_binary=""
     local tauri_target=""
     local -a build_command
@@ -124,15 +125,17 @@ build_prod() {
             resource_zip="$WINDOWS_ZIP"
             bundle_target="nsis"
             bundle_output="$SCRIPT_DIR/src-tauri/target/release/bundle/nsis"
+            bundle_cleanup_path="$bundle_output"
             release_binary="$SCRIPT_DIR/src-tauri/target/release/bppinstaller.exe"
             ;;
         macos)
             config="$MACOS_CONFIG"
             resource_zip="$MACOS_ZIP"
             bundle_target="dmg"
-            bundle_output="$SCRIPT_DIR/src-tauri/target/universal-apple-darwin/release/bundle/dmg"
-            release_binary="$SCRIPT_DIR/src-tauri/target/universal-apple-darwin/release/bppinstaller"
-            tauri_target="universal-apple-darwin"
+            bundle_output="$SCRIPT_DIR/src-tauri/target/aarch64-apple-darwin/release/bundle/dmg"
+            bundle_cleanup_path="$SCRIPT_DIR/src-tauri/target/aarch64-apple-darwin/release/bundle"
+            release_binary="$SCRIPT_DIR/src-tauri/target/aarch64-apple-darwin/release/bppinstaller"
+            tauri_target="aarch64-apple-darwin"
             ;;
         *)
             echo "Error: Unsupported platform: $platform" >&2
@@ -143,8 +146,8 @@ build_prod() {
     assert_file "$config" "$platform Tauri config"
     assert_file "$resource_zip" "$platform resource zip"
 
-    if [ -d "$bundle_output" ]; then
-        invoke_step "Removing stale $platform bundle artifacts" rm -rf "$bundle_output"
+    if [ -d "$bundle_cleanup_path" ]; then
+        invoke_step "Removing stale $platform bundle artifacts" rm -rf "$bundle_cleanup_path"
     fi
 
     build_command=(
@@ -214,7 +217,7 @@ main() {
     fi
 
     if [ "$PLATFORM" = "macos" ]; then
-        assert_command rustup "Install rustup first so universal Rust targets can be managed."
+        assert_command rustup "Install rustup first so the macOS Rust target can be managed."
     fi
     ensure_required_rust_targets "$PLATFORM"
 

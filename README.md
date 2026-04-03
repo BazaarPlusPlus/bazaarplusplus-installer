@@ -30,11 +30,11 @@ Build the desktop bundle:
 ./build.sh --prod
 ```
 
-On macOS, this now builds a universal app bundle. The local Rust toolchain must
-have both Apple targets installed:
+On macOS, this builds an arm64 app bundle. The local Rust toolchain must have
+the Apple Silicon target installed:
 
 ```bash
-rustup target add aarch64-apple-darwin x86_64-apple-darwin
+rustup target add aarch64-apple-darwin
 ```
 
 If you need a clean dependency reinstall first:
@@ -44,7 +44,7 @@ If you need a clean dependency reinstall first:
 ```
 
 Artifacts are written under `src-tauri/target/release/` on Windows and
-`src-tauri/target/universal-apple-darwin/release/` on macOS.
+`src-tauri/target/aarch64-apple-darwin/release/` on macOS.
 
 ## Structure
 
