@@ -121,14 +121,25 @@ fn ensure_valid_game_path(game_path: &Path) -> Result<(), String> {
 
 fn prepare_install_target(game_path: &Path) -> Result<(), String> {
     ensure_valid_game_path(game_path)?;
+    cleanup_bazaarplusplus_directory_for_installed_version(game_path)?;
     uninstall_payload(game_path)
 }
 
-fn cleanup_bazaarplusplus_directory_for_installer_version(
-    game_path: &Path,
-    installer_version: &str,
-) -> Result<(), String> {
-    if installer_version.trim() != "2.0.0" {
+fn parse_major_version(version: &str) -> Option<u64> {
+    version.trim().split('.').next()?.parse().ok()
+}
+
+fn cleanup_bazaarplusplus_directory_for_installed_version(game_path: &Path) -> Result<(), String> {
+    let Some(installed_version) = crate::commands::detect::read_installed_bpp_version(game_path)
+    else {
+        return Ok(());
+    };
+
+    let Some(installed_major) = parse_major_version(&installed_version) else {
+        return Ok(());
+    };
+
+    if installed_major >= 2 {
         return Ok(());
     }
 
@@ -145,10 +156,6 @@ pub fn install_bepinex(
     #[cfg(target_os = "macos")]
     crate::commands::steam::prepare_steam_for_launch_option_update(Path::new(&steam_path))?;
     prepare_install_target(game_path)?;
-    cleanup_bazaarplusplus_directory_for_installer_version(
-        game_path,
-        &app.package_info().version.to_string(),
-    )?;
 
     debug_log!("Reading bundled BepInEx.zip...");
     let relative_zip_path = bundled_zip_relative_path();
@@ -275,6 +282,36 @@ mod tests {
     }
 
     #[test]
+    fn test_prepare_install_target_removes_legacy_directory_for_installed_v1_before_uninstall() {
+        let tmp = tempfile::tempdir().unwrap();
+        let plugins_dir = tmp.path().join("BepInEx/plugins");
+        let legacy_dir = tmp.path().join("BazaarPlusPlus");
+
+        #[cfg(target_os = "macos")]
+        {
+            std::fs::create_dir_all(tmp.path().join("TheBazaar.app")).unwrap();
+            std::fs::write(tmp.path().join("run_bepinex.sh"), b"#!/bin/sh\n").unwrap();
+            std::fs::write(tmp.path().join("libdoorstop.dylib"), b"dylib").unwrap();
+        }
+
+        #[cfg(target_os = "windows")]
+        {
+            std::fs::write(tmp.path().join("TheBazaar.exe"), b"exe").unwrap();
+            std::fs::write(tmp.path().join("doorstop_config.ini"), b"cfg").unwrap();
+            std::fs::write(tmp.path().join("winhttp.dll"), b"dll").unwrap();
+        }
+
+        std::fs::create_dir_all(&plugins_dir).unwrap();
+        std::fs::create_dir_all(&legacy_dir).unwrap();
+        std::fs::write(plugins_dir.join("BazaarPlusPlus.version"), b"1.9.0").unwrap();
+        std::fs::write(legacy_dir.join("legacy.dll"), b"dll").unwrap();
+
+        prepare_install_target(tmp.path()).unwrap();
+
+        assert!(!legacy_dir.exists());
+    }
+
+    #[test]
     fn test_uninstall_payload_removes_platform_files() {
         let tmp = tempfile::tempdir().unwrap();
         std::fs::create_dir_all(tmp.path().join("BepInEx/plugins")).unwrap();
@@ -312,25 +349,67 @@ mod tests {
     }
 
     #[test]
-    fn test_cleanup_bazaarplusplus_directory_removes_directory_for_installer_2_0_0() {
+    fn test_parse_major_version_returns_major_component() {
+        assert_eq!(parse_major_version("1.9.0"), Some(1));
+        assert_eq!(parse_major_version("1.9.0.abcdef"), Some(1));
+        assert_eq!(parse_major_version("2"), Some(2));
+        assert_eq!(parse_major_version(" 3.0.0 \n"), Some(3));
+        assert_eq!(parse_major_version("invalid"), None);
+    }
+
+    #[test]
+    fn test_cleanup_bazaarplusplus_directory_removes_directory_for_installed_v1() {
         let tmp = tempfile::tempdir().unwrap();
+        let plugins_dir = tmp.path().join("BepInEx/plugins");
         let legacy_dir = tmp.path().join("BazaarPlusPlus");
+        std::fs::create_dir_all(&plugins_dir).unwrap();
         std::fs::create_dir_all(&legacy_dir).unwrap();
+        std::fs::write(plugins_dir.join("BazaarPlusPlus.version"), b"1.9.0").unwrap();
         std::fs::write(legacy_dir.join("legacy.dll"), b"dll").unwrap();
 
-        cleanup_bazaarplusplus_directory_for_installer_version(tmp.path(), "2.0.0").unwrap();
+        cleanup_bazaarplusplus_directory_for_installed_version(tmp.path()).unwrap();
 
         assert!(!legacy_dir.exists());
     }
 
     #[test]
-    fn test_cleanup_bazaarplusplus_directory_keeps_directory_for_other_versions() {
+    fn test_cleanup_bazaarplusplus_directory_keeps_directory_for_installed_v2() {
+        let tmp = tempfile::tempdir().unwrap();
+        let plugins_dir = tmp.path().join("BepInEx/plugins");
+        let legacy_dir = tmp.path().join("BazaarPlusPlus");
+        std::fs::create_dir_all(&plugins_dir).unwrap();
+        std::fs::create_dir_all(&legacy_dir).unwrap();
+        std::fs::write(plugins_dir.join("BazaarPlusPlus.version"), b"2.0.1").unwrap();
+        std::fs::write(legacy_dir.join("legacy.dll"), b"dll").unwrap();
+
+        cleanup_bazaarplusplus_directory_for_installed_version(tmp.path()).unwrap();
+
+        assert!(legacy_dir.exists());
+    }
+
+    #[test]
+    fn test_cleanup_bazaarplusplus_directory_keeps_directory_when_version_missing() {
         let tmp = tempfile::tempdir().unwrap();
         let legacy_dir = tmp.path().join("BazaarPlusPlus");
         std::fs::create_dir_all(&legacy_dir).unwrap();
         std::fs::write(legacy_dir.join("legacy.dll"), b"dll").unwrap();
 
-        cleanup_bazaarplusplus_directory_for_installer_version(tmp.path(), "2.0.1").unwrap();
+        cleanup_bazaarplusplus_directory_for_installed_version(tmp.path()).unwrap();
+
+        assert!(legacy_dir.exists());
+    }
+
+    #[test]
+    fn test_cleanup_bazaarplusplus_directory_keeps_directory_when_version_is_invalid() {
+        let tmp = tempfile::tempdir().unwrap();
+        let plugins_dir = tmp.path().join("BepInEx/plugins");
+        let legacy_dir = tmp.path().join("BazaarPlusPlus");
+        std::fs::create_dir_all(&plugins_dir).unwrap();
+        std::fs::create_dir_all(&legacy_dir).unwrap();
+        std::fs::write(plugins_dir.join("BazaarPlusPlus.version"), b"not-a-version").unwrap();
+        std::fs::write(legacy_dir.join("legacy.dll"), b"dll").unwrap();
+
+        cleanup_bazaarplusplus_directory_for_installed_version(tmp.path()).unwrap();
 
         assert!(legacy_dir.exists());
     }
