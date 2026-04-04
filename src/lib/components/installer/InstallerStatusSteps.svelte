@@ -45,11 +45,6 @@
     actionMenuOpen = false;
     await onUninstall();
   }
-
-  async function handleRepair() {
-    actionMenuOpen = false;
-    await onRepair();
-  }
 </script>
 
 <div class="steps">
@@ -232,6 +227,18 @@
               ✦ {t('actionInstall')}
             {/if}
           </button>
+          <button
+            class="secondary-btn repair-btn"
+            type="button"
+            onclick={onRepair}
+            disabled={isBusy}
+          >
+            {#if actionBusy === 'repair'}
+              {t('actionRepairing')}
+            {:else}
+              {t('actionRepair')}
+            {/if}
+          </button>
           <div class="menu-wrap">
             <button
               class="secondary-btn menu-trigger"
@@ -244,18 +251,6 @@
             </button>
             {#if actionMenuOpen}
               <div class="action-menu">
-                <button
-                  class="menu-item"
-                  type="button"
-                  onclick={handleRepair}
-                  disabled={isBusy}
-                >
-                  {#if actionBusy === 'repair'}
-                    {t('actionRepairing')}
-                  {:else}
-                    {t('actionRepair')}
-                  {/if}
-                </button>
                 <button
                   class="menu-item"
                   type="button"
@@ -690,19 +685,21 @@
   }
 
   .action-row {
-    display: flex;
-    align-items: stretch;
+    display: grid;
     gap: 0.75rem;
   }
 
   .action-primary {
-    flex: 1;
     min-width: 0;
     display: flex;
     flex-wrap: wrap;
     align-items: stretch;
     gap: 0.5rem;
     position: relative;
+  }
+
+  .repair-btn {
+    white-space: nowrap;
   }
 
   .launch-btn {
@@ -889,7 +886,6 @@
       align-items: flex-start;
     }
 
-    .action-row,
     .action-primary {
       flex-direction: column;
     }

@@ -1,3 +1,4 @@
+use serde::Serialize;
 use std::io::{Cursor, Read};
 use std::path::Path;
 use tauri::Manager;
@@ -21,6 +22,12 @@ pub fn bundled_zip_relative_path() -> &'static str {
 }
 
 const BPP_CONFIG_RELATIVE_PATH: &str = "BepInEx/config/BazaarPlusPlus.cfg";
+const LEGACY_RECORD_DIRECTORY: &str = "BazaarPlusPlus";
+
+#[derive(Debug, Serialize)]
+pub struct LegacyRecordDirectoryInfo {
+    pub total_bytes: u64,
+}
 
 struct PreservedFile {
     relative_path: &'static str,
@@ -140,8 +147,8 @@ fn preserve_file_if_exists(
         return Ok(None);
     }
 
-    let contents = std::fs::read(&path)
-        .map_err(|err| format!("Cannot preserve {}: {err}", path.display()))?;
+    let contents =
+        std::fs::read(&path).map_err(|err| format!("Cannot preserve {}: {err}", path.display()))?;
 
     Ok(Some(PreservedFile {
         relative_path,
@@ -160,25 +167,34 @@ fn restore_preserved_file(base_dir: &Path, preserved: &PreservedFile) -> Result<
         .map_err(|err| format!("Cannot restore {}: {err}", path.display()))
 }
 
-fn parse_major_version(version: &str) -> Option<u64> {
-    version.trim().split('.').next()?.parse().ok()
+fn cleanup_legacy_record_directory(game_path: &Path) -> Result<(), String> {
+    remove_path_if_exists(&game_path.join(LEGACY_RECORD_DIRECTORY))
 }
 
-fn cleanup_bazaarplusplus_directory_for_installed_version(game_path: &Path) -> Result<(), String> {
-    let Some(installed_version) = crate::commands::detect::read_installed_bpp_version(game_path)
-    else {
-        return Ok(());
-    };
+fn legacy_record_directory_size_bytes(game_path: &Path) -> Result<u64, String> {
+    fn collect_size(path: &Path) -> Result<u64, String> {
+        if !path.exists() {
+            return Ok(0);
+        }
 
-    let Some(installed_major) = parse_major_version(&installed_version) else {
-        return Ok(());
-    };
+        let metadata = std::fs::metadata(path)
+            .map_err(|err| format!("Cannot read metadata for {}: {err}", path.display()))?;
+        if metadata.is_file() {
+            return Ok(metadata.len());
+        }
 
-    if installed_major >= 2 {
-        return Ok(());
+        let mut total = 0;
+        let entries = std::fs::read_dir(path)
+            .map_err(|err| format!("Cannot read directory {}: {err}", path.display()))?;
+        for entry in entries {
+            let entry = entry.map_err(|err| err.to_string())?;
+            total += collect_size(&entry.path())?;
+        }
+
+        Ok(total)
     }
 
-    remove_path_if_exists(&game_path.join("BazaarPlusPlus"))
+    collect_size(&game_path.join(LEGACY_RECORD_DIRECTORY))
 }
 
 #[tauri::command]
@@ -186,10 +202,22 @@ pub fn repair_bpp(game_path: String) -> Result<(), String> {
     let game_path = Path::new(&game_path);
     ensure_valid_game_path(game_path)?;
 
-    cleanup_bazaarplusplus_directory_for_installed_version(game_path)?;
+    cleanup_legacy_record_directory(game_path)?;
 
     debug_log!("Repaired BazaarPlusPlus payload at {}", game_path.display());
     Ok(())
+}
+
+#[tauri::command]
+pub fn get_legacy_record_directory_info(
+    game_path: String,
+) -> Result<LegacyRecordDirectoryInfo, String> {
+    let game_path = Path::new(&game_path);
+    ensure_valid_game_path(game_path)?;
+
+    Ok(LegacyRecordDirectoryInfo {
+        total_bytes: legacy_record_directory_size_bytes(game_path)?,
+    })
 }
 
 #[tauri::command]
@@ -414,76 +442,21 @@ mod tests {
     }
 
     #[test]
-    fn test_parse_major_version_returns_major_component() {
-        assert_eq!(parse_major_version("1.9.0"), Some(1));
-        assert_eq!(parse_major_version("1.9.0.abcdef"), Some(1));
-        assert_eq!(parse_major_version("2"), Some(2));
-        assert_eq!(parse_major_version(" 3.0.0 \n"), Some(3));
-        assert_eq!(parse_major_version("invalid"), None);
-    }
-
-    #[test]
-    fn test_cleanup_bazaarplusplus_directory_removes_directory_for_installed_v1() {
+    fn test_cleanup_legacy_record_directory_removes_bazaarplusplus_directory() {
         let tmp = tempfile::tempdir().unwrap();
-        let plugins_dir = tmp.path().join("BepInEx/plugins");
-        let legacy_dir = tmp.path().join("BazaarPlusPlus");
-        std::fs::create_dir_all(&plugins_dir).unwrap();
+        let legacy_dir = tmp.path().join(LEGACY_RECORD_DIRECTORY);
         std::fs::create_dir_all(&legacy_dir).unwrap();
-        std::fs::write(plugins_dir.join("BazaarPlusPlus.version"), b"1.9.0").unwrap();
         std::fs::write(legacy_dir.join("legacy.dll"), b"dll").unwrap();
 
-        cleanup_bazaarplusplus_directory_for_installed_version(tmp.path()).unwrap();
+        cleanup_legacy_record_directory(tmp.path()).unwrap();
 
         assert!(!legacy_dir.exists());
     }
 
     #[test]
-    fn test_cleanup_bazaarplusplus_directory_keeps_directory_for_installed_v2() {
-        let tmp = tempfile::tempdir().unwrap();
-        let plugins_dir = tmp.path().join("BepInEx/plugins");
-        let legacy_dir = tmp.path().join("BazaarPlusPlus");
-        std::fs::create_dir_all(&plugins_dir).unwrap();
-        std::fs::create_dir_all(&legacy_dir).unwrap();
-        std::fs::write(plugins_dir.join("BazaarPlusPlus.version"), b"2.0.1").unwrap();
-        std::fs::write(legacy_dir.join("legacy.dll"), b"dll").unwrap();
-
-        cleanup_bazaarplusplus_directory_for_installed_version(tmp.path()).unwrap();
-
-        assert!(legacy_dir.exists());
-    }
-
-    #[test]
-    fn test_cleanup_bazaarplusplus_directory_keeps_directory_when_version_missing() {
-        let tmp = tempfile::tempdir().unwrap();
-        let legacy_dir = tmp.path().join("BazaarPlusPlus");
-        std::fs::create_dir_all(&legacy_dir).unwrap();
-        std::fs::write(legacy_dir.join("legacy.dll"), b"dll").unwrap();
-
-        cleanup_bazaarplusplus_directory_for_installed_version(tmp.path()).unwrap();
-
-        assert!(legacy_dir.exists());
-    }
-
-    #[test]
-    fn test_cleanup_bazaarplusplus_directory_keeps_directory_when_version_is_invalid() {
-        let tmp = tempfile::tempdir().unwrap();
-        let plugins_dir = tmp.path().join("BepInEx/plugins");
-        let legacy_dir = tmp.path().join("BazaarPlusPlus");
-        std::fs::create_dir_all(&plugins_dir).unwrap();
-        std::fs::create_dir_all(&legacy_dir).unwrap();
-        std::fs::write(plugins_dir.join("BazaarPlusPlus.version"), b"not-a-version").unwrap();
-        std::fs::write(legacy_dir.join("legacy.dll"), b"dll").unwrap();
-
-        cleanup_bazaarplusplus_directory_for_installed_version(tmp.path()).unwrap();
-
-        assert!(legacy_dir.exists());
-    }
-
-    #[test]
     fn test_repair_bpp_removes_legacy_directory_for_installed_v1() {
         let tmp = tempfile::tempdir().unwrap();
-        let plugins_dir = tmp.path().join("BepInEx/plugins");
-        let legacy_dir = tmp.path().join("BazaarPlusPlus");
+        let legacy_dir = tmp.path().join(LEGACY_RECORD_DIRECTORY);
 
         #[cfg(target_os = "macos")]
         {
@@ -495,14 +468,34 @@ mod tests {
             std::fs::write(tmp.path().join("TheBazaar.exe"), b"exe").unwrap();
         }
 
-        std::fs::create_dir_all(&plugins_dir).unwrap();
         std::fs::create_dir_all(&legacy_dir).unwrap();
-        std::fs::write(plugins_dir.join("BazaarPlusPlus.version"), b"1.9.0").unwrap();
         std::fs::write(legacy_dir.join("legacy.dll"), b"dll").unwrap();
 
         repair_bpp(tmp.path().to_string_lossy().into_owned()).unwrap();
 
         assert!(!legacy_dir.exists());
+    }
+
+    #[test]
+    fn test_legacy_record_directory_size_bytes_sums_nested_files() {
+        let tmp = tempfile::tempdir().unwrap();
+        let legacy_dir = tmp.path().join(LEGACY_RECORD_DIRECTORY);
+        std::fs::create_dir_all(legacy_dir.join("nested")).unwrap();
+        std::fs::write(legacy_dir.join("a.bin"), [0_u8; 3]).unwrap();
+        std::fs::write(legacy_dir.join("nested").join("b.bin"), [0_u8; 5]).unwrap();
+
+        let total = legacy_record_directory_size_bytes(tmp.path()).unwrap();
+
+        assert_eq!(total, 8);
+    }
+
+    #[test]
+    fn test_legacy_record_directory_size_bytes_returns_zero_when_missing() {
+        let tmp = tempfile::tempdir().unwrap();
+
+        let total = legacy_record_directory_size_bytes(tmp.path()).unwrap();
+
+        assert_eq!(total, 0);
     }
 
     #[test]

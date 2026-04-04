@@ -9,6 +9,7 @@
   import { formatMessage, messages } from '$lib/i18n';
   import InstallerHeader from '$lib/components/installer/InstallerHeader.svelte';
   import InstallerInstallPreviewModal from '$lib/components/installer/InstallerInstallPreviewModal.svelte';
+  import InstallerResetHistoryModal from '$lib/components/installer/InstallerResetHistoryModal.svelte';
   import InstallerStatusSteps from '$lib/components/installer/InstallerStatusSteps.svelte';
   import InstallerSupportBar from '$lib/components/installer/InstallerSupportBar.svelte';
   import {
@@ -16,6 +17,7 @@
     detectDotnetRuntime as detectDotnetRuntimeApi,
     detectEnvironment as detectEnvironmentApi,
     detectSteamRunning as detectSteamRunningApi,
+    getLegacyRecordDirectoryInfo as getLegacyRecordDirectoryInfoApi,
     installBepinex,
     patchLaunchOptions,
     repairBpp as repairBppApi,
@@ -61,6 +63,9 @@
   const STEAM_BAZAAR_URL = 'steam://rungameid/1617400';
   const BILIBILI_URL = 'https://space.bilibili.com/3546978457750467';
   let showInstallModal = false;
+  let showRepairModal = false;
+  let repairAcknowledged = false;
+  let repairModalBody = '';
   let showLaunchOptionsWarningModal = false;
   let showGameQuitModal = false;
   let showSteamQuitModal = false;
@@ -86,6 +91,23 @@
     search: typeof window !== 'undefined' ? window.location.search : '',
     hasTauriRuntime: hasTauriRuntime()
   });
+
+  function formatBytes(bytes: number): string {
+    if (bytes < 1024) {
+      return `${bytes} B`;
+    }
+
+    const units = ['KB', 'MB', 'GB'];
+    let value = bytes / 1024;
+    let unitIndex = 0;
+
+    while (value >= 1024 && unitIndex < units.length - 1) {
+      value /= 1024;
+      unitIndex += 1;
+    }
+
+    return `${value.toFixed(value >= 10 ? 0 : 1)} ${units[unitIndex]}`;
+  }
 
   function applyInstallDebugState() {
     env = {
@@ -145,6 +167,28 @@
 
   function closeLaunchOptionsWarningModal() {
     showLaunchOptionsWarningModal = false;
+  }
+
+  async function requestRepair() {
+    if (!pageState.effectiveGamePath || actionBusy !== 'idle') return;
+
+    let sizeLabel = '0 B';
+    try {
+      const info = await getLegacyRecordDirectoryInfoApi(pageState.effectiveGamePath);
+      sizeLabel = formatBytes(info.total_bytes);
+    } catch (e) {
+      console.error(e);
+    }
+
+    repairModalBody = t('resetHistoryBody', { size: sizeLabel });
+    repairAcknowledged = false;
+    showRepairModal = true;
+  }
+
+  function closeRepairModal() {
+    if (actionBusy === 'repair') return;
+    repairAcknowledged = false;
+    showRepairModal = false;
   }
 
   function closeSteamQuitModal() {
@@ -469,6 +513,7 @@
   async function repairBpp() {
     if (!pageState.effectiveGamePath || actionBusy !== 'idle') return;
 
+    showRepairModal = false;
     actionBusy = 'repair';
     try {
       await repairBppApi(pageState.effectiveGamePath);
@@ -650,6 +695,15 @@
     onConfirm={confirmInstall}
   />
 
+  <InstallerResetHistoryModal
+    open={showRepairModal}
+    body={repairModalBody}
+    bind:acknowledged={repairAcknowledged}
+    confirming={actionBusy === 'repair'}
+    onConfirm={repairBpp}
+    onCancel={closeRepairModal}
+  />
+
   <AppModal
     open={showLaunchOptionsWarningModal}
     eyebrow="BazaarPlusPlus"
@@ -744,7 +798,7 @@
     onPickGamePath={pickGamePath}
     onCheckPath={checkPath}
     onRequestInstall={requestInstall}
-    onRepair={repairBpp}
+    onRepair={requestRepair}
     onUninstall={uninstallBpp}
     onLaunchGame={launchGame}
     onResetBazaar={resetBazaar}

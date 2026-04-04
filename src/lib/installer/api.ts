@@ -3,6 +3,7 @@ import type {
   DotnetInfo,
   EnvironmentInfo,
   GameRunningInfo,
+  LegacyRecordDirectoryInfo,
   LaunchOptionsPatchResult,
   SteamRunningInfo,
   SupportersResponse
@@ -40,6 +41,10 @@ export async function uninstallBpp(steamPath: string, gamePath: string) {
 
 export async function repairBpp(gamePath: string) {
   return invoke('repair_bpp', { gamePath });
+}
+
+export async function getLegacyRecordDirectoryInfo(gamePath: string) {
+  return invoke<LegacyRecordDirectoryInfo>('get_legacy_record_directory_info', { gamePath });
 }
 
 export async function patchLaunchOptions(steamPath: string, gamePath: string) {

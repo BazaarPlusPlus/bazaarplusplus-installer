@@ -26,6 +26,10 @@ export interface GameRunningInfo {
   running: boolean;
 }
 
+export interface LegacyRecordDirectoryInfo {
+  total_bytes: number;
+}
+
 export type SupporterTierId = 1 | 2 | 3 | 4;
 
 export interface SupporterEntry {

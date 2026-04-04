@@ -56,8 +56,8 @@
     <span class="install-acknowledge-box" aria-hidden="true"></span>
     <span>
       {$locale === 'zh'
-        ? '我已了解安装会删除历史作战记录，并准备继续'
-        : 'I understand that this installation will delete historical battle records and I am ready to continue.'}
+        ? '我确认安装插件存在风险，并愿意自行承担相关责任'
+        : 'I understand that installing this plugin involves risk, and I accept responsibility for proceeding.'}
     </span>
   </label>
 </AppModal>

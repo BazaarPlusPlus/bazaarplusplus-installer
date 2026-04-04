@@ -29,14 +29,14 @@ test('install preview modal points users to the latest tutorial video', () => {
   assert.equal(modalSource.includes('onclick={onOpenBilibili}'), true);
 });
 
-test('install preview modal warns that installation deletes historical battle records', () => {
+test('install preview modal shows an installation risk disclaimer', () => {
   assert.equal(
-    modalSource.includes('我已了解安装会删除历史作战记录，并准备继续'),
+    modalSource.includes('我确认安装插件存在风险，并愿意自行承担相关责任'),
     true
   );
   assert.equal(
     modalSource.includes(
-      'I understand that this installation will delete historical battle records and I am ready to continue.'
+      'I understand that installing this plugin involves risk, and I accept responsibility for proceeding.'
     ),
     true
   );

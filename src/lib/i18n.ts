@@ -22,6 +22,8 @@ export type MessageKey =
   | 'actionInstall'
   | 'actionRepairing'
   | 'actionRepair'
+  | 'resetHistoryTitle'
+  | 'resetHistoryBody'
   | 'actionUninstalling'
   | 'actionUninstall'
   | 'footer'
@@ -94,8 +96,11 @@ export const messages: Record<Locale, Record<MessageKey, string>> = {
     actionInstalling: 'Installing...',
     actionReinstall: 'Reinstall',
     actionInstall: 'Install',
-    actionRepairing: 'Repairing...',
-    actionRepair: 'Repair',
+    actionRepairing: 'Resetting match history...',
+    actionRepair: 'Reset Match History',
+    resetHistoryTitle: 'Reset Match History',
+    resetHistoryBody:
+      'Current match history size: {size}\nAfter confirmation, all current match history will be permanently deleted.\nThe installer will also try to recover match history if it is currently broken.',
     actionUninstalling: 'Uninstalling...',
     actionUninstall: 'Uninstall',
     footer: 'BazaarPlusPlus · Born of Passion',
@@ -169,8 +174,11 @@ export const messages: Record<Locale, Record<MessageKey, string>> = {
     actionInstalling: '安装中...',
     actionReinstall: '重新安装',
     actionInstall: '安装',
-    actionRepairing: '修复中...',
-    actionRepair: '修复',
+    actionRepairing: '重置战绩记录中...',
+    actionRepair: '重置战绩记录',
+    resetHistoryTitle: '重置战绩记录',
+    resetHistoryBody:
+      '当前战绩记录占用空间：{size}\n确认后将永久删除当前所有战绩记录。\n如果战绩记录已出现异常，安装器也会尝试将其恢复正常。',
     actionUninstalling: '卸载中...',
     actionUninstall: '卸载',
     footer: 'BazaarPlusPlus · 因热爱而生',
