@@ -1,5 +1,5 @@
 export type StepState = 'idle' | 'detecting' | 'found' | 'not_found';
-export type ActionBusy = 'idle' | 'detect' | 'install' | 'uninstall';
+export type ActionBusy = 'idle' | 'detect' | 'install' | 'repair' | 'uninstall';
 
 export interface PageStateInput {
   actionBusy: ActionBusy;

@@ -20,6 +20,8 @@ export type MessageKey =
   | 'actionInstalling'
   | 'actionReinstall'
   | 'actionInstall'
+  | 'actionRepairing'
+  | 'actionRepair'
   | 'actionUninstalling'
   | 'actionUninstall'
   | 'footer'
@@ -92,6 +94,8 @@ export const messages: Record<Locale, Record<MessageKey, string>> = {
     actionInstalling: 'Installing...',
     actionReinstall: 'Reinstall',
     actionInstall: 'Install',
+    actionRepairing: 'Repairing...',
+    actionRepair: 'Repair',
     actionUninstalling: 'Uninstalling...',
     actionUninstall: 'Uninstall',
     footer: 'BazaarPlusPlus · Born of Passion',
@@ -113,7 +117,7 @@ export const messages: Record<Locale, Record<MessageKey, string>> = {
     actionClose: 'Close',
     gameQuitTitle: 'Close The Bazaar First',
     gameQuitBody:
-      'The Bazaar is still running. Close the game completely, then continue once it is no longer open.',
+      'The Bazaar is still running.\nClose the game completely, then continue once it has fully exited.\nIf installation still fails after closing it, try restarting your PC.',
     actionGameClosed: 'I Closed the Game',
     steamQuitTitle: 'Close Steam First',
     steamQuitBody:
@@ -137,8 +141,7 @@ export const messages: Record<Locale, Record<MessageKey, string>> = {
     updaterReadyBody:
       'Version {version} is available. Select Update to download and install it, then restart the app.',
     updaterReviewTitle: 'Ready to Install',
-    updaterReviewBody:
-      'Version {version} is ready to install.',
+    updaterReviewBody: 'Version {version} is ready to install.',
     updaterReviewConfirm: 'Update Now',
     updaterReviewCancel: 'Later',
     updaterInstalling: 'Installing update...',
@@ -166,6 +169,8 @@ export const messages: Record<Locale, Record<MessageKey, string>> = {
     actionInstalling: '安装中...',
     actionReinstall: '重新安装',
     actionInstall: '安装',
+    actionRepairing: '修复中...',
+    actionRepair: '修复',
     actionUninstalling: '卸载中...',
     actionUninstall: '卸载',
     footer: 'BazaarPlusPlus · 因热爱而生',
@@ -187,7 +192,7 @@ export const messages: Record<Locale, Record<MessageKey, string>> = {
     actionClose: '关闭',
     gameQuitTitle: '请先关闭 The Bazaar',
     gameQuitBody:
-      '检测到 The Bazaar 当前仍在运行。请先完全关闭游戏，确认已经退出后再继续安装。',
+      '检测到 The Bazaar 仍在运行。\n请先完全关闭游戏，确认退出后再继续安装。\n如果关闭后仍无法安装，请尝试重启电脑。',
     actionGameClosed: '已关闭游戏',
     steamQuitTitle: '请先关闭 Steam',
     steamQuitBody:
@@ -203,22 +208,19 @@ export const messages: Record<Locale, Record<MessageKey, string>> = {
     updaterRetry: '重试更新',
     updaterErrorState: '更新失败',
     updaterErrorTitle: '暂时无法完成更新',
-    updaterErrorBody:
-      '这次更新没有成功完成，请稍后再试。\n\n详情：{message}',
+    updaterErrorBody: '这次更新没有成功完成，请稍后再试。\n\n详情：{message}',
     updaterCurrentTitle: '当前已是最新版本',
     updaterCurrentBody: '你当前使用的已经是最新版本。',
     updaterReadyTitle: '发现新版本',
     updaterReadyBody:
       '发现新版本 {version}。点击“更新”即可下载并安装，完成后重启应用。',
     updaterReviewTitle: '准备安装更新',
-    updaterReviewBody:
-      '新版本 {version} 已准备好，可以开始安装。',
+    updaterReviewBody: '新版本 {version} 已准备好，可以开始安装。',
     updaterReviewConfirm: '立即更新',
     updaterReviewCancel: '稍后再说',
     updaterInstalling: '正在安装更新...',
     updaterInstalledTitle: '更新已准备就绪',
-    updaterInstalledBody:
-      '新版本 {version} 已安装完成。重启应用后即可生效。'
+    updaterInstalledBody: '新版本 {version} 已安装完成。重启应用后即可生效。'
   }
 };
 

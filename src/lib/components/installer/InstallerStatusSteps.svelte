@@ -29,6 +29,7 @@
   export let onPickGamePath: () => void | Promise<void>;
   export let onCheckPath: () => void | Promise<void>;
   export let onRequestInstall: () => void | Promise<void>;
+  export let onRepair: () => void | Promise<void>;
   export let onUninstall: () => void | Promise<void>;
   export let onLaunchGame: () => void | Promise<void>;
   export let onResetBazaar: () => void | Promise<void>;
@@ -43,6 +44,11 @@
   async function handleUninstall() {
     actionMenuOpen = false;
     await onUninstall();
+  }
+
+  async function handleRepair() {
+    actionMenuOpen = false;
+    await onRepair();
   }
 </script>
 
@@ -238,6 +244,18 @@
             </button>
             {#if actionMenuOpen}
               <div class="action-menu">
+                <button
+                  class="menu-item"
+                  type="button"
+                  onclick={handleRepair}
+                  disabled={isBusy}
+                >
+                  {#if actionBusy === 'repair'}
+                    {t('actionRepairing')}
+                  {:else}
+                    {t('actionRepair')}
+                  {/if}
+                </button>
                 <button
                   class="menu-item"
                   type="button"

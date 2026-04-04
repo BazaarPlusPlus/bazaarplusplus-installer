@@ -38,6 +38,10 @@ export async function uninstallBpp(steamPath: string, gamePath: string) {
   return invoke('uninstall_bpp', { steamPath, gamePath });
 }
 
+export async function repairBpp(gamePath: string) {
+  return invoke('repair_bpp', { gamePath });
+}
+
 export async function patchLaunchOptions(steamPath: string, gamePath: string) {
   return invoke<LaunchOptionsPatchResult>('patch_launch_options', {
     steamPath,

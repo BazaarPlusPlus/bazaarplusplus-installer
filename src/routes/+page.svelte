@@ -18,6 +18,7 @@
     detectSteamRunning as detectSteamRunningApi,
     installBepinex,
     patchLaunchOptions,
+    repairBpp as repairBppApi,
     uninstallBpp as uninstallBppApi,
     verifyGamePath as verifyGamePathApi
   } from '$lib/installer/api';
@@ -465,6 +466,19 @@
     }
   }
 
+  async function repairBpp() {
+    if (!pageState.effectiveGamePath || actionBusy !== 'idle') return;
+
+    actionBusy = 'repair';
+    try {
+      await repairBppApi(pageState.effectiveGamePath);
+      await refreshAfterAction();
+    } catch (e) {
+      console.error(e);
+      actionBusy = 'idle';
+    }
+  }
+
   async function confirmUpdaterReview() {
     if (!pendingUpdate || updaterReviewBusy) {
       return;
@@ -730,6 +744,7 @@
     onPickGamePath={pickGamePath}
     onCheckPath={checkPath}
     onRequestInstall={requestInstall}
+    onRepair={repairBpp}
     onUninstall={uninstallBpp}
     onLaunchGame={launchGame}
     onResetBazaar={resetBazaar}

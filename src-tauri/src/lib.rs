@@ -1,7 +1,7 @@
 mod commands;
 
 use commands::{
-    bepinex::{install_bepinex, uninstall_bpp},
+    bepinex::{install_bepinex, repair_bpp, uninstall_bpp},
     detect::{detect_dotnet_runtime, detect_environment, verify_game_path},
     game::detect_bazaar_running,
     steam::detect_steam_running,
@@ -22,6 +22,7 @@ pub fn run() {
             detect_steam_running,
             verify_game_path,
             install_bepinex,
+            repair_bpp,
             uninstall_bpp,
             patch_launch_options,
             load_supporters,

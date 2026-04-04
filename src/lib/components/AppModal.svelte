@@ -16,6 +16,8 @@
   export let wide = false;
   export let extraWide = false;
 
+  $: bodyLines = body.split('\n');
+
   function handleConfirm() {
     if (confirmDisabled || confirmBusy) return;
     onConfirm();
@@ -41,7 +43,12 @@
       {/if}
       <h2 id="app-modal-title">{title}</h2>
       {#if body}
-        <p class={`modal-body ${bodyClass}`.trim()}>{body}</p>
+        <p class={`modal-body ${bodyClass}`.trim()}>
+          {#each bodyLines as line, index}
+            {line}
+            {#if index < bodyLines.length - 1}<br />{/if}
+          {/each}
+        </p>
       {:else}
         <div class={`modal-body ${bodyClass}`.trim()}>
           <slot />

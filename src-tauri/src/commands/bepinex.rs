@@ -121,7 +121,6 @@ fn ensure_valid_game_path(game_path: &Path) -> Result<(), String> {
 
 fn prepare_install_target(game_path: &Path) -> Result<(), String> {
     ensure_valid_game_path(game_path)?;
-    cleanup_bazaarplusplus_directory_for_installed_version(game_path)?;
     uninstall_payload(game_path)
 }
 
@@ -144,6 +143,17 @@ fn cleanup_bazaarplusplus_directory_for_installed_version(game_path: &Path) -> R
     }
 
     remove_path_if_exists(&game_path.join("BazaarPlusPlus"))
+}
+
+#[tauri::command]
+pub fn repair_bpp(game_path: String) -> Result<(), String> {
+    let game_path = Path::new(&game_path);
+    ensure_valid_game_path(game_path)?;
+
+    cleanup_bazaarplusplus_directory_for_installed_version(game_path)?;
+
+    debug_log!("Repaired BazaarPlusPlus payload at {}", game_path.display());
+    Ok(())
 }
 
 #[tauri::command]
@@ -282,7 +292,7 @@ mod tests {
     }
 
     #[test]
-    fn test_prepare_install_target_removes_legacy_directory_for_installed_v1_before_uninstall() {
+    fn test_prepare_install_target_keeps_legacy_directory_for_installed_v1() {
         let tmp = tempfile::tempdir().unwrap();
         let plugins_dir = tmp.path().join("BepInEx/plugins");
         let legacy_dir = tmp.path().join("BazaarPlusPlus");
@@ -308,7 +318,7 @@ mod tests {
 
         prepare_install_target(tmp.path()).unwrap();
 
-        assert!(!legacy_dir.exists());
+        assert!(legacy_dir.exists());
     }
 
     #[test]
@@ -412,5 +422,31 @@ mod tests {
         cleanup_bazaarplusplus_directory_for_installed_version(tmp.path()).unwrap();
 
         assert!(legacy_dir.exists());
+    }
+
+    #[test]
+    fn test_repair_bpp_removes_legacy_directory_for_installed_v1() {
+        let tmp = tempfile::tempdir().unwrap();
+        let plugins_dir = tmp.path().join("BepInEx/plugins");
+        let legacy_dir = tmp.path().join("BazaarPlusPlus");
+
+        #[cfg(target_os = "macos")]
+        {
+            std::fs::create_dir_all(tmp.path().join("TheBazaar.app")).unwrap();
+        }
+
+        #[cfg(target_os = "windows")]
+        {
+            std::fs::write(tmp.path().join("TheBazaar.exe"), b"exe").unwrap();
+        }
+
+        std::fs::create_dir_all(&plugins_dir).unwrap();
+        std::fs::create_dir_all(&legacy_dir).unwrap();
+        std::fs::write(plugins_dir.join("BazaarPlusPlus.version"), b"1.9.0").unwrap();
+        std::fs::write(legacy_dir.join("legacy.dll"), b"dll").unwrap();
+
+        repair_bpp(tmp.path().to_string_lossy().into_owned()).unwrap();
+
+        assert!(!legacy_dir.exists());
     }
 }
