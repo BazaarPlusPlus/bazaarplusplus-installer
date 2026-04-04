@@ -40,7 +40,9 @@ fn is_bazaar_running() -> Result<bool, String> {
     if stderr.is_empty() {
         Err("Failed to inspect The Bazaar process state.".to_string())
     } else {
-        Err(format!("Failed to inspect The Bazaar process state: {stderr}"))
+        Err(format!(
+            "Failed to inspect The Bazaar process state: {stderr}"
+        ))
     }
 }
 

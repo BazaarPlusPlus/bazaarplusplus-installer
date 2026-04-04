@@ -14,6 +14,7 @@
   export let onCancel: () => void = () => {};
   export let bodyClass = '';
   export let wide = false;
+  export let extraWide = false;
 
   function handleConfirm() {
     if (confirmDisabled || confirmBusy) return;
@@ -30,6 +31,7 @@
     <div
       class="modal-card"
       class:wide
+      class:extraWide
       role="dialog"
       aria-modal="true"
       aria-labelledby="app-modal-title"
@@ -104,6 +106,10 @@
 
   .modal-card.wide {
     width: min(100%, 560px);
+  }
+
+  .modal-card.extraWide {
+    width: min(100%, 760px);
   }
 
   .modal-card :global(*) {

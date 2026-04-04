@@ -114,3 +114,42 @@ test('macOS production build requires the arm64 Rust target', () => {
   assert.match(output, /rustup target add aarch64-apple-darwin/);
   assert.match(output, /exit:1/);
 });
+
+test('Windows upload uses installer and updater R2 paths under the version directory', () => {
+  const bundleDir = '/Users/yxinyu/codes/bpp_codes/bazaarplusplus-installer/src-tauri/target/release/bundle/nsis';
+  const installerFile = `${bundleDir}/BazaarPlusPlus Installer_2.1.0_x64-setup.exe`;
+  const signatureFile = `${installerFile}.sig`;
+
+  mkdirSync(bundleDir, { recursive: true });
+  writeFileSync(installerFile, 'installer');
+  writeFileSync(signatureFile, 'signature');
+
+  try {
+    const output = runShell(`
+      set -euo pipefail
+      source ./build.sh
+      assert_file() { :; }
+      invoke_step() {
+        local label="$1"
+        shift
+        printf '%s|%s\\n' "$label" "$*"
+      }
+      upload_release_assets windows 2.1.0 windows-x86_64 https://bppinstaller.bazaarplusplus.com
+    `);
+
+    assert.match(
+      output,
+      /Uploading BazaarPlusPlus Installer_2\.1\.0_x64-setup\.exe to 2\.1\.0\/windows-x86_64\/installer\/BazaarPlusPlus Installer_2\.1\.0_x64-setup\.exe\|npx wrangler r2 object put bppinstaller\/2\.1\.0\/windows-x86_64\/installer\/BazaarPlusPlus Installer_2\.1\.0_x64-setup\.exe --file .*BazaarPlusPlus Installer_2\.1\.0_x64-setup\.exe/
+    );
+    assert.match(
+      output,
+      /Uploading BazaarPlusPlus Installer_2\.1\.0_x64-setup\.exe to 2\.1\.0\/windows-x86_64\/updater\/BazaarPlusPlus Installer_2\.1\.0_x64-setup\.exe\|npx wrangler r2 object put bppinstaller\/2\.1\.0\/windows-x86_64\/updater\/BazaarPlusPlus Installer_2\.1\.0_x64-setup\.exe --file .*BazaarPlusPlus Installer_2\.1\.0_x64-setup\.exe/
+    );
+    assert.match(
+      output,
+      /Uploading BazaarPlusPlus Installer_2\.1\.0_x64-setup\.exe\.sig to 2\.1\.0\/windows-x86_64\/updater\/BazaarPlusPlus Installer_2\.1\.0_x64-setup\.exe\.sig\|npx wrangler r2 object put bppinstaller\/2\.1\.0\/windows-x86_64\/updater\/BazaarPlusPlus Installer_2\.1\.0_x64-setup\.exe\.sig --file .*BazaarPlusPlus Installer_2\.1\.0_x64-setup\.exe\.sig/
+    );
+  } finally {
+    rmSync(bundleDir, { force: true, recursive: true });
+  }
+});

@@ -2,6 +2,7 @@
   import { open } from '@tauri-apps/plugin-dialog';
   import { openUrl } from '@tauri-apps/plugin-opener';
   import { onMount } from 'svelte';
+  import type { Update } from '@tauri-apps/plugin-updater';
   import AppModal from '$lib/components/AppModal.svelte';
   import type { EnvironmentInfo } from '$lib/types';
   import { locale } from '$lib/locale';
@@ -28,6 +29,14 @@
     hasTauriRuntime,
     resolveInstallDebugPreview
   } from '$lib/installer/runtime';
+  import {
+    checkForAppUpdate,
+    createInitialUpdaterSnapshot,
+    createProgressLabel,
+    downloadAndInstallUpdate,
+    formatUpdaterError,
+    type UpdaterSnapshot
+  } from '$lib/updater';
   import {
     createPageState,
     selectCustomGamePath,
@@ -57,6 +66,14 @@
   let installAcknowledged = false;
   let installConfirmationBusy = false;
   let pendingSteamAction: 'install' | 'uninstall' | null = null;
+  let updaterSnapshot: UpdaterSnapshot = createInitialUpdaterSnapshot();
+  let pendingUpdate: Update | null = null;
+  let showUpdaterModal = false;
+  let updaterModalTitle = '';
+  let updaterModalBody = '';
+  let showUpdaterReviewModal = false;
+  let updaterReviewBusy = false;
+  let updaterCheckRequestId = 0;
 
   $: t = (
     key: keyof typeof messages.en,
@@ -194,6 +211,24 @@
     } finally {
       actionBusy = 'idle';
     }
+  }
+
+  async function checkForUpdatesOnStartup() {
+    const requestId = ++updaterCheckRequestId;
+
+    updaterSnapshot = {
+      ...updaterSnapshot,
+      status: hasTauriRuntime() ? 'checking' : 'unsupported',
+      errorMessage: null
+    };
+
+    const result = await checkForAppUpdate();
+    if (requestId !== updaterCheckRequestId || updaterSnapshot.status !== 'checking') {
+      return;
+    }
+
+    updaterSnapshot = result.snapshot;
+    pendingUpdate = result.update;
   }
 
   async function pickGamePath() {
@@ -362,6 +397,157 @@
     }
   }
 
+  function openUpdaterModal(title: string, body: string) {
+    updaterModalTitle = title;
+    updaterModalBody = body;
+    showUpdaterModal = true;
+  }
+
+  function closeUpdaterModal() {
+    showUpdaterModal = false;
+  }
+
+  function openUpdaterReviewModal() {
+    showUpdaterReviewModal = true;
+  }
+
+  function closeUpdaterReviewModal() {
+    if (updaterReviewBusy) {
+      return;
+    }
+
+    showUpdaterReviewModal = false;
+  }
+
+  async function startPendingUpdateDownload(update: Update) {
+    updaterSnapshot = {
+      ...updaterSnapshot,
+      status: 'downloading',
+      errorMessage: null,
+      progress: {
+        downloadedBytes: 0,
+        totalBytes: null
+      }
+    };
+
+    try {
+      await downloadAndInstallUpdate(update, (progress) => {
+        updaterSnapshot = {
+          ...updaterSnapshot,
+          status: 'downloading',
+          progress
+        };
+      });
+
+      updaterSnapshot = {
+        ...updaterSnapshot,
+        status: 'installed'
+      };
+      openUpdaterModal(
+        t('updaterInstalledTitle'),
+        t('updaterInstalledBody', {
+          version: updaterSnapshot.availableVersion ?? update.version
+        })
+      );
+    } catch (error) {
+      const errorMessage = formatUpdaterError(error);
+      updaterSnapshot = {
+        ...updaterSnapshot,
+        status: 'error',
+        errorMessage: errorMessage,
+        progress: {
+          downloadedBytes: 0,
+          totalBytes: null
+        }
+      };
+
+      openUpdaterModal(t('updaterErrorTitle'), t('updaterErrorBody', { message: errorMessage }));
+    }
+  }
+
+  async function confirmUpdaterReview() {
+    if (!pendingUpdate || updaterReviewBusy) {
+      return;
+    }
+
+    updaterReviewBusy = true;
+    try {
+      await startPendingUpdateDownload(pendingUpdate);
+      showUpdaterReviewModal = false;
+    } finally {
+      updaterReviewBusy = false;
+    }
+  }
+
+  async function handleUpdaterAction() {
+    if (updaterSnapshot.status === 'checking' || updaterSnapshot.status === 'downloading') {
+      return;
+    }
+
+    if (!hasTauriRuntime()) {
+      openUpdaterModal(
+        t('updaterErrorTitle'),
+        t('updaterErrorBody', { message: t('updaterUnsupported') })
+      );
+      return;
+    }
+
+    if (updaterSnapshot.status === 'available' && pendingUpdate) {
+      openUpdaterReviewModal();
+      return;
+    }
+
+    if (updaterSnapshot.status === 'installed') {
+      openUpdaterModal(
+        t('updaterInstalledTitle'),
+        t('updaterInstalledBody', {
+          version: updaterSnapshot.availableVersion ?? updaterSnapshot.currentVersion ?? 'unknown'
+        })
+      );
+      return;
+    }
+
+    if (updaterSnapshot.status === 'error') {
+      if (pendingUpdate) {
+        openUpdaterReviewModal();
+        return;
+      }
+
+      openUpdaterModal(
+        t('updaterErrorTitle'),
+        t('updaterErrorBody', {
+          message: updaterSnapshot.errorMessage ?? t('updaterUnsupported')
+        })
+      );
+      return;
+    }
+
+    if (updaterSnapshot.status === 'up-to-date') {
+      openUpdaterModal(t('updaterCurrentTitle'), t('updaterCurrentBody'));
+      return;
+    }
+
+    if (updaterSnapshot.status === 'idle') {
+      await checkForUpdatesOnStartup();
+      return;
+    }
+
+    if (updaterSnapshot.status === 'unsupported') {
+      openUpdaterModal(
+        t('updaterErrorTitle'),
+        t('updaterErrorBody', { message: t('updaterUnsupported') })
+      );
+      return;
+    }
+
+    openUpdaterModal(
+      t('updaterReadyTitle'),
+      t('updaterReadyBody', {
+        version: updaterSnapshot.availableVersion ?? 'unknown'
+      })
+    );
+  }
+
   function clearBazaarInvalid() {
     bazaarInvalid = false;
   }
@@ -390,11 +576,49 @@
       : 'https://dotnet.microsoft.com/en-us/download';
   $: localeBadge = $locale === 'zh' ? '中' : 'EN';
   $: localeButtonLabel = $locale === 'zh' ? 'Switch to English' : '切换到中文';
+  $: updaterProgressLabel = createProgressLabel(updaterSnapshot.progress);
+  $: updaterButtonLabel =
+    updaterSnapshot.status === 'checking'
+      ? t('updaterChecking')
+      : updaterSnapshot.status === 'available'
+        ? t('updaterReady', {
+            version: updaterSnapshot.availableVersion ?? '...'
+          })
+        : updaterSnapshot.status === 'downloading'
+          ? t('updaterDownloading', {
+              progress: updaterProgressLabel ?? '...'
+            })
+          : updaterSnapshot.status === 'installed'
+            ? t('updaterInstallReady', {
+                version: updaterSnapshot.availableVersion ?? '...'
+              })
+            : updaterSnapshot.status === 'error'
+              ? pendingUpdate
+                ? t('updaterRetry')
+                : t('updaterErrorState')
+            : updaterSnapshot.status === 'unsupported'
+              ? t('updaterUnsupported')
+              : t('updaterCurrent');
+  $: updaterButtonTitle =
+    updaterSnapshot.status === 'available'
+      ? t('updaterReadyTitle')
+      : updaterSnapshot.status === 'downloading'
+        ? t('updaterInstalling')
+        : updaterSnapshot.status === 'installed'
+          ? t('updaterInstalledTitle')
+          : updaterSnapshot.status === 'error'
+            ? t('updaterErrorTitle')
+            : updaterButtonLabel;
+  $: updaterButtonDisabled =
+    updaterSnapshot.status === 'checking' || updaterSnapshot.status === 'downloading';
+  $: updaterButtonHighlighted =
+    updaterSnapshot.status === 'available' || updaterSnapshot.status === 'installed';
   $: persistCustomGamePath(customGamePath);
 
   onMount(() => {
     locale.init();
     void detectEnvironment();
+    void checkForUpdatesOnStartup();
   });
 </script>
 
@@ -445,6 +669,31 @@
     onCancel={closeSteamQuitModal}
   />
 
+  <AppModal
+    open={showUpdaterReviewModal}
+    eyebrow="BazaarPlusPlus"
+    title={t('updaterReviewTitle')}
+    body={t('updaterReviewBody', {
+      version: updaterSnapshot.availableVersion ?? pendingUpdate?.version ?? 'unknown'
+    })}
+    confirmText={t('updaterReviewConfirm')}
+    cancelText={t('updaterReviewCancel')}
+    showCancel={true}
+    confirmBusy={updaterReviewBusy}
+    confirmBusyText={t('updaterInstalling')}
+    onConfirm={confirmUpdaterReview}
+    onCancel={closeUpdaterReviewModal}
+  />
+
+  <AppModal
+    open={showUpdaterModal}
+    eyebrow="BazaarPlusPlus"
+    title={updaterModalTitle}
+    body={updaterModalBody}
+    confirmText={t('actionClose')}
+    onConfirm={closeUpdaterModal}
+  />
+
   <InstallerHeader
     kicker={t('kicker')}
     subtitle={t('subtitle')}
@@ -452,6 +701,11 @@
     {localeButtonLabel}
     bilibiliUrl={BILIBILI_URL}
     onOpenBilibili={openBilibili}
+    {updaterButtonLabel}
+    {updaterButtonTitle}
+    {updaterButtonDisabled}
+    {updaterButtonHighlighted}
+    onOpenUpdater={handleUpdaterAction}
   />
 
   <InstallerStatusSteps

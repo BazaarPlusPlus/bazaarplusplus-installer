@@ -43,7 +43,29 @@ export type MessageKey =
   | 'actionGameClosed'
   | 'steamQuitTitle'
   | 'steamQuitBody'
-  | 'actionQuitSteam';
+  | 'actionQuitSteam'
+  | 'updaterButton'
+  | 'updaterChecking'
+  | 'updaterReady'
+  | 'updaterCurrent'
+  | 'updaterDownloading'
+  | 'updaterInstallReady'
+  | 'updaterUnsupported'
+  | 'updaterRetry'
+  | 'updaterErrorState'
+  | 'updaterErrorTitle'
+  | 'updaterErrorBody'
+  | 'updaterCurrentTitle'
+  | 'updaterCurrentBody'
+  | 'updaterReadyTitle'
+  | 'updaterReadyBody'
+  | 'updaterReviewTitle'
+  | 'updaterReviewBody'
+  | 'updaterReviewConfirm'
+  | 'updaterReviewCancel'
+  | 'updaterInstalling'
+  | 'updaterInstalledTitle'
+  | 'updaterInstalledBody';
 
 export const defaultLocale: Locale = 'zh';
 
@@ -96,7 +118,33 @@ export const messages: Record<Locale, Record<MessageKey, string>> = {
     steamQuitTitle: 'Close Steam First',
     steamQuitBody:
       'Steam is still running. BazaarPlusPlus needs Steam to close before it updates the game launch options. Continue and let the installer close Steam for you.',
-    actionQuitSteam: 'Close Steam'
+    actionQuitSteam: 'Close Steam',
+    updaterButton: 'Update',
+    updaterChecking: 'Checking for updates...',
+    updaterReady: 'Update {version}',
+    updaterCurrent: 'Up to Date',
+    updaterDownloading: 'Downloading {progress}',
+    updaterInstallReady: 'Restart to apply {version}',
+    updaterUnsupported: 'Auto-update unavailable',
+    updaterRetry: 'Retry Update',
+    updaterErrorState: 'Update Failed',
+    updaterErrorTitle: 'Unable to Update Right Now',
+    updaterErrorBody:
+      'The update did not finish successfully. Please try again in a moment.\n\nDetails: {message}',
+    updaterCurrentTitle: 'You’re Up to Date',
+    updaterCurrentBody: 'You already have the latest version.',
+    updaterReadyTitle: 'Update Available',
+    updaterReadyBody:
+      'Version {version} is available. Select Update to download and install it, then restart the app.',
+    updaterReviewTitle: 'Ready to Install',
+    updaterReviewBody:
+      'Version {version} is ready to install.',
+    updaterReviewConfirm: 'Update Now',
+    updaterReviewCancel: 'Later',
+    updaterInstalling: 'Installing update...',
+    updaterInstalledTitle: 'Update Ready to Apply',
+    updaterInstalledBody:
+      'Version {version} is installed. Restart the app to apply it.'
   },
   zh: {
     htmlLang: 'zh-CN',
@@ -144,7 +192,33 @@ export const messages: Record<Locale, Record<MessageKey, string>> = {
     steamQuitTitle: '请先关闭 Steam',
     steamQuitBody:
       'Steam 当前仍在运行。BazaarPlusPlus 需要先关闭 Steam，才能安全更新游戏启动项。继续后，安装器会尝试为你关闭 Steam。',
-    actionQuitSteam: '关闭 Steam'
+    actionQuitSteam: '关闭 Steam',
+    updaterButton: '更新',
+    updaterChecking: '正在检查更新...',
+    updaterReady: '更新到 {version}',
+    updaterCurrent: '已是最新',
+    updaterDownloading: '下载中 {progress}',
+    updaterInstallReady: '重启以应用 {version}',
+    updaterUnsupported: '暂不支持自动更新',
+    updaterRetry: '重试更新',
+    updaterErrorState: '更新失败',
+    updaterErrorTitle: '暂时无法完成更新',
+    updaterErrorBody:
+      '这次更新没有成功完成，请稍后再试。\n\n详情：{message}',
+    updaterCurrentTitle: '当前已是最新版本',
+    updaterCurrentBody: '你当前使用的已经是最新版本。',
+    updaterReadyTitle: '发现新版本',
+    updaterReadyBody:
+      '发现新版本 {version}。点击“更新”即可下载并安装，完成后重启应用。',
+    updaterReviewTitle: '准备安装更新',
+    updaterReviewBody:
+      '新版本 {version} 已准备好，可以开始安装。',
+    updaterReviewConfirm: '立即更新',
+    updaterReviewCancel: '稍后再说',
+    updaterInstalling: '正在安装更新...',
+    updaterInstalledTitle: '更新已准备就绪',
+    updaterInstalledBody:
+      '新版本 {version} 已安装完成。重启应用后即可生效。'
   }
 };
 

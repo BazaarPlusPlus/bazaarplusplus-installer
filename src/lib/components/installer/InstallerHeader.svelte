@@ -7,6 +7,11 @@
   export let localeButtonLabel: string;
   export let bilibiliUrl: string;
   export let onOpenBilibili: (event?: MouseEvent) => void;
+  export let updaterButtonLabel: string;
+  export let updaterButtonTitle: string;
+  export let updaterButtonDisabled = false;
+  export let updaterButtonHighlighted = false;
+  export let onOpenUpdater: () => void;
 </script>
 
 <header class="header">
@@ -87,6 +92,28 @@
         />
       </svg>
     </a>
+
+    <button
+      class="about-toggle updater-toggle"
+      class:is-highlighted={updaterButtonHighlighted}
+      type="button"
+      title={updaterButtonTitle}
+      aria-label={updaterButtonTitle}
+      disabled={updaterButtonDisabled}
+      onclick={onOpenUpdater}
+    >
+      <svg class="about-icon" viewBox="0 0 24 24" aria-hidden="true">
+        <path
+          d="M12 4v9m0 0l-3.2-3.2M12 13l3.2-3.2M5.5 16.8h13"
+          stroke="currentColor"
+          stroke-width="1.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          fill="none"
+        />
+      </svg>
+      <span class="updater-label">{updaterButtonLabel}</span>
+    </button>
   </div>
 
   <button
@@ -228,6 +255,40 @@
   .social-toggle {
     padding: 0;
     cursor: pointer;
+  }
+
+  .updater-toggle {
+    width: auto;
+    min-width: 2rem;
+    padding: 0 0.45rem;
+    gap: 0.32rem;
+    cursor: pointer;
+    font-family: 'Cinzel', serif;
+    font-size: 0.5rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .updater-toggle.is-highlighted {
+    color: #f3d38d;
+    border-color: rgba(232, 200, 122, 0.68);
+    background: linear-gradient(
+      180deg,
+      rgba(232, 200, 122, 0.24),
+      rgba(200, 148, 55, 0.12)
+    );
+    box-shadow:
+      0 0 0 1px rgba(255, 214, 140, 0.14) inset,
+      0 0 18px rgba(232, 200, 122, 0.12);
+  }
+
+  .updater-toggle:disabled {
+    opacity: 0.55;
+    cursor: wait;
+  }
+
+  .updater-label {
+    white-space: nowrap;
   }
 
   .locale-toggle {
