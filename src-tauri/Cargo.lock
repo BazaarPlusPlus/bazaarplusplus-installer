@@ -297,7 +297,7 @@ dependencies = [
 
 [[package]]
 name = "bppinstaller"
-version = "2.2.2"
+version = "2.3.3"
 dependencies = [
  "dirs",
  "keyvalues-parser",

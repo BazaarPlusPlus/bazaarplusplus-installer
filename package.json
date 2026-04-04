@@ -1,6 +1,6 @@
 {
   "name": "bppinstaller",
-  "version": "2.2.2",
+  "version": "2.3.3",
   "description": "BazaarPlusPlus Mod Installer",
   "type": "module",
   "scripts": {
