@@ -20,6 +20,13 @@ pub fn bundled_zip_relative_path() -> &'static str {
     "BepInExSource/BepInEx.zip"
 }
 
+const BPP_CONFIG_RELATIVE_PATH: &str = "BepInEx/config/BazaarPlusPlus.cfg";
+
+struct PreservedFile {
+    relative_path: &'static str,
+    contents: Vec<u8>,
+}
+
 pub fn read_bundled_bpp_version(app: &tauri::AppHandle) -> Result<Option<String>, String> {
     let resource_path = app
         .path()
@@ -124,6 +131,35 @@ fn prepare_install_target(game_path: &Path) -> Result<(), String> {
     uninstall_payload(game_path)
 }
 
+fn preserve_file_if_exists(
+    base_dir: &Path,
+    relative_path: &'static str,
+) -> Result<Option<PreservedFile>, String> {
+    let path = base_dir.join(relative_path);
+    if !path.exists() {
+        return Ok(None);
+    }
+
+    let contents = std::fs::read(&path)
+        .map_err(|err| format!("Cannot preserve {}: {err}", path.display()))?;
+
+    Ok(Some(PreservedFile {
+        relative_path,
+        contents,
+    }))
+}
+
+fn restore_preserved_file(base_dir: &Path, preserved: &PreservedFile) -> Result<(), String> {
+    let path = base_dir.join(preserved.relative_path);
+    if let Some(parent) = path.parent() {
+        std::fs::create_dir_all(parent)
+            .map_err(|err| format!("Cannot recreate {}: {err}", parent.display()))?;
+    }
+
+    std::fs::write(&path, &preserved.contents)
+        .map_err(|err| format!("Cannot restore {}: {err}", path.display()))
+}
+
 fn parse_major_version(version: &str) -> Option<u64> {
     version.trim().split('.').next()?.parse().ok()
 }
@@ -163,27 +199,46 @@ pub fn install_bepinex(
     game_path: String,
 ) -> Result<(), String> {
     let game_path = Path::new(&game_path);
+    let preserved_bpp_config = preserve_file_if_exists(game_path, BPP_CONFIG_RELATIVE_PATH)?;
+    #[cfg(not(target_os = "macos"))]
+    let _ = &steam_path;
     #[cfg(target_os = "macos")]
     crate::commands::steam::prepare_steam_for_launch_option_update(Path::new(&steam_path))?;
     prepare_install_target(game_path)?;
 
-    debug_log!("Reading bundled BepInEx.zip...");
-    let relative_zip_path = bundled_zip_relative_path();
-    let resource_path = app
-        .path()
-        .resource_dir()
-        .map_err(|err| err.to_string())?
-        .join(relative_zip_path);
-    let zip_bytes = std::fs::read(&resource_path).map_err(|err| {
-        debug_error!("Cannot read bundled BepInEx.zip: {err}");
-        format!("Cannot read bundled BepInEx.zip: {err}")
-    })?;
+    let install_result = (|| -> Result<(), String> {
+        debug_log!("Reading bundled BepInEx.zip...");
+        let relative_zip_path = bundled_zip_relative_path();
+        let resource_path = app
+            .path()
+            .resource_dir()
+            .map_err(|err| err.to_string())?
+            .join(relative_zip_path);
+        let zip_bytes = std::fs::read(&resource_path).map_err(|err| {
+            debug_error!("Cannot read bundled BepInEx.zip: {err}");
+            format!("Cannot read bundled BepInEx.zip: {err}")
+        })?;
 
-    debug_log!("Extracting BepInEx...");
-    let _extracted = extract_zip(&zip_bytes, game_path)?;
-    debug_log!("Extracted {} files.", _extracted.len());
+        debug_log!("Extracting BepInEx...");
+        let extracted = extract_zip(&zip_bytes, game_path)?;
+        debug_log!("Extracted {} files.", extracted.len());
 
-    Ok(())
+        Ok(())
+    })();
+
+    let restore_result = preserved_bpp_config
+        .as_ref()
+        .map(|preserved| restore_preserved_file(game_path, preserved))
+        .transpose();
+
+    match (install_result, restore_result) {
+        (Ok(()), Ok(_)) => Ok(()),
+        (Err(install_err), Ok(_)) => Err(install_err),
+        (Ok(()), Err(restore_err)) => Err(restore_err),
+        (Err(install_err), Err(restore_err)) => Err(format!(
+            "{install_err}; additionally failed to restore preserved config: {restore_err}"
+        )),
+    }
 }
 
 #[tauri::command]
@@ -448,5 +503,36 @@ mod tests {
         repair_bpp(tmp.path().to_string_lossy().into_owned()).unwrap();
 
         assert!(!legacy_dir.exists());
+    }
+
+    #[test]
+    fn test_preserve_file_if_exists_reads_existing_file() {
+        let tmp = tempfile::tempdir().unwrap();
+        let config_path = tmp.path().join(BPP_CONFIG_RELATIVE_PATH);
+        std::fs::create_dir_all(config_path.parent().unwrap()).unwrap();
+        std::fs::write(&config_path, b"user-config").unwrap();
+
+        let preserved = preserve_file_if_exists(tmp.path(), BPP_CONFIG_RELATIVE_PATH)
+            .unwrap()
+            .expect("expected preserved config");
+
+        assert_eq!(preserved.relative_path, BPP_CONFIG_RELATIVE_PATH);
+        assert_eq!(preserved.contents, b"user-config");
+    }
+
+    #[test]
+    fn test_restore_preserved_file_recreates_parent_directory() {
+        let tmp = tempfile::tempdir().unwrap();
+        let preserved = PreservedFile {
+            relative_path: BPP_CONFIG_RELATIVE_PATH,
+            contents: b"user-config".to_vec(),
+        };
+
+        restore_preserved_file(tmp.path(), &preserved).unwrap();
+
+        assert_eq!(
+            std::fs::read(tmp.path().join(BPP_CONFIG_RELATIVE_PATH)).unwrap(),
+            b"user-config"
+        );
     }
 }
