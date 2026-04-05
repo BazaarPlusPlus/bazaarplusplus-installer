@@ -183,7 +183,8 @@ install_dependencies() {
     if [ "$CLEAN_DEPS" = false ] \
         && [ -d "$SCRIPT_DIR/node_modules" ] \
         && [ -d "$SCRIPT_DIR/node_modules/@tauri-apps/cli" ] \
-        && { [ -f "$SCRIPT_DIR/node_modules/.bin/tauri" ] || [ -f "$SCRIPT_DIR/node_modules/.bin/tauri.cmd" ]; }; then
+        && { [ -f "$SCRIPT_DIR/node_modules/.bin/tauri" ] || [ -f "$SCRIPT_DIR/node_modules/.bin/tauri.cmd" ]; } \
+        && npm ls --depth=0 >/dev/null 2>&1; then
         echo "==> Reusing existing npm dependencies"
         echo "    Remove node_modules or rerun with --clean-deps to force a reinstall."
         return
@@ -246,8 +247,12 @@ load_updater_signing_env() {
         echo "==> Loading TAURI_SIGNING_PRIVATE_KEY_PASSWORD from signing-secrets"
         TAURI_SIGNING_PRIVATE_KEY_PASSWORD="$(<"$SIGNING_KEY_PASSWORD_PATH")"
         TAURI_SIGNING_PRIVATE_KEY_PASSWORD="$(trim_trailing_newlines "$TAURI_SIGNING_PRIVATE_KEY_PASSWORD")"
-        export TAURI_SIGNING_PRIVATE_KEY_PASSWORD
+    else
+        echo "==> No updater key password configured; using empty password"
+        TAURI_SIGNING_PRIVATE_KEY_PASSWORD=""
     fi
+
+    export TAURI_SIGNING_PRIVATE_KEY_PASSWORD
 }
 
 run_release_prechecks() {
@@ -469,7 +474,7 @@ build_prod() {
         macos)
             config="$MACOS_CONFIG"
             resource_zip="$MACOS_ZIP"
-            bundle_target="dmg"
+            bundle_target="app,dmg"
             bundle_output="$SCRIPT_DIR/src-tauri/target/aarch64-apple-darwin/release/bundle/dmg"
             bundle_cleanup_path="$SCRIPT_DIR/src-tauri/target/aarch64-apple-darwin/release/bundle"
             release_binary="$SCRIPT_DIR/src-tauri/target/aarch64-apple-darwin/release/bppinstaller"
