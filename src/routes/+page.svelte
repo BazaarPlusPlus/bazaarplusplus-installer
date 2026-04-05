@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { goto } from '$app/navigation';
+  import { getVersion } from '@tauri-apps/api/app';
   import { open } from '@tauri-apps/plugin-dialog';
   import { openUrl } from '@tauri-apps/plugin-opener';
   import { onMount } from 'svelte';
@@ -32,6 +34,11 @@
     hasTauriRuntime,
     resolveInstallDebugPreview
   } from '$lib/installer/runtime';
+  import {
+    clearPendingWhatsNewLaunch,
+    loadPendingWhatsNewLaunch,
+    markPendingWhatsNewLaunch
+  } from '$lib/post-update';
   import {
     checkForAppUpdate,
     createInitialUpdaterSnapshot,
@@ -276,6 +283,32 @@
     pendingUpdate = result.update;
   }
 
+  async function maybeOpenWhatsNewAfterAutoUpdate(): Promise<boolean> {
+    if (!hasTauriRuntime()) {
+      return false;
+    }
+
+    const pendingLaunch = loadPendingWhatsNewLaunch();
+    if (!pendingLaunch) {
+      return false;
+    }
+
+    try {
+      const currentVersion = (await getVersion()).trim();
+
+      if (currentVersion !== pendingLaunch.toVersion) {
+        return false;
+      }
+    } catch (error) {
+      console.error(error);
+      return false;
+    }
+
+    clearPendingWhatsNewLaunch();
+    await goto(`/whats-new?version=${encodeURIComponent(pendingLaunch.toVersion)}`);
+    return true;
+  }
+
   async function pickGamePath() {
     const selected = await open({ directory: true, multiple: false });
     if (typeof selected === 'string') {
@@ -484,6 +517,12 @@
         };
       });
 
+      markPendingWhatsNewLaunch({
+        reason: 'auto-update',
+        fromVersion: update.currentVersion,
+        toVersion: update.version
+      });
+
       updaterSnapshot = {
         ...updaterSnapshot,
         status: 'installed'
@@ -676,8 +715,14 @@
 
   onMount(() => {
     locale.init();
-    void detectEnvironment();
-    void checkForUpdatesOnStartup();
+    void (async () => {
+      if (await maybeOpenWhatsNewAfterAutoUpdate()) {
+        return;
+      }
+
+      await detectEnvironment();
+      await checkForUpdatesOnStartup();
+    })();
   });
 </script>
 

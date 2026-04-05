@@ -109,7 +109,10 @@
         {/if}
       </div>
       <div class="step-bpp-action">
-        <a class="secondary-btn mismatch-link-button" href="/whats-new">
+        <a
+          class="secondary-btn mismatch-link-button"
+          href={bundledBppVersion ? `/whats-new?version=${encodeURIComponent(bundledBppVersion)}` : '/whats-new'}
+        >
           {$locale === 'zh' ? "What's New" : "What's New"}
         </a>
       </div>

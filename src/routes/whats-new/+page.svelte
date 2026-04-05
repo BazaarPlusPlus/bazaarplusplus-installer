@@ -1,8 +1,43 @@
 <script lang="ts">
+  import { getVersion } from '@tauri-apps/api/app';
+  import { onMount } from 'svelte';
   import InstallerUpdateHighlights from '$lib/components/InstallerUpdateHighlights.svelte';
   import { locale, handleLocaleToggle } from '$lib/locale';
+  import { hasTauriRuntime } from '$lib/installer/runtime';
+  import { resolveWhatsNewRelease } from '$lib/whats-new';
 
   locale.init();
+
+  let displayVersion = '';
+  $: release = resolveWhatsNewRelease(displayVersion);
+
+  onMount(() => {
+    void loadReleaseVersion();
+  });
+
+  async function loadReleaseVersion() {
+    const versionFromQuery =
+      typeof window !== 'undefined'
+        ? new URLSearchParams(window.location.search).get('version')?.trim() ?? ''
+        : '';
+
+    if (versionFromQuery) {
+      displayVersion = versionFromQuery;
+      return;
+    }
+
+    if (!hasTauriRuntime()) {
+      displayVersion = '';
+      return;
+    }
+
+    try {
+      const version = await getVersion();
+      displayVersion = version?.trim() ?? '';
+    } catch {
+      displayVersion = '';
+    }
+  }
 </script>
 
 <svelte:head>
@@ -40,7 +75,7 @@
   </header>
 
   <section class="content-card">
-    <InstallerUpdateHighlights />
+    <InstallerUpdateHighlights {release} />
   </section>
 </main>
 

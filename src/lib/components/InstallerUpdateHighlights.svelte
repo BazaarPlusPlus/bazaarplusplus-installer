@@ -1,27 +1,10 @@
 <script lang="ts">
     import AppModal from '$lib/components/AppModal.svelte';
     import { locale } from '$lib/locale';
-
-    type LocalizedText = {
-        zh: string;
-        en: string;
-    };
-
-    type HighlightTone = 'default' | 'featured' | 'warning';
-
-    type HighlightSection = {
-        icon: string;
-        sectionTitle?: LocalizedText;
-        sectionSummary?: LocalizedText;
-        title: LocalizedText;
-        bullets: LocalizedText[];
-        tone?: HighlightTone;
-        badge?: LocalizedText;
-        actionLead?: LocalizedText;
-        actionLabel?: LocalizedText;
-    };
+    import type { WhatsNewRelease } from '$lib/whats-new';
 
     let showSupportQr = false;
+    export let release: WhatsNewRelease;
 
     const supportQrCopy = {
         zh: {
@@ -42,114 +25,24 @@
         }
     } as const;
 
-    const sections: HighlightSection[] = [
-        {
-            icon: 'I',
-            sectionTitle: {
-                zh: '主打功能',
-                en: 'Featured'
-            },
-            title: {
-                zh: '镜像战斗回放',
-                en: 'Ghost Battle Replay'
-            },
-            bullets: [
-                {
-                    zh: '你的构筑，不止属于你这一局',
-                    en: 'Your build no longer belongs to just one run.'
-                }
-            ],
-            tone: 'featured',
-            badge: {
-                zh: '主打功能',
-                en: 'Featured Update'
-            },
-            actionLead: {
-                zh: '太牛了',
-                en: 'Love It'
-            },
-            actionLabel: {
-                zh: '支持作者',
-                en: 'Support Author'
-            }
-        },
-        {
-            icon: 'II',
-            sectionTitle: {
-                zh: '体验优化',
-                en: 'Experience Improvements'
-            },
-            sectionSummary: {
-                zh: '围绕回放体验与日常操作，进行了一轮稳定性与性能优化',
-                en: 'A full pass on replay flow and everyday use, with better stability and lower overhead.'
-            },
-            title: {
-                zh: '优化 History Panel',
-                en: 'History Panel Improvements'
-            },
-            bullets: [
-                {
-                    zh: '打开时再加载数据，减少常驻负担',
-                    en: 'History now loads on demand to reduce background overhead.'
-                },
-                {
-                    zh: '支持删除 run，并优化数据采集时机',
-                    en: 'Runs can now be deleted, and data capture timing has been tuned.'
-                }
-            ]
-        },
-        {
-            icon: 'III',
-            sectionTitle: {
-                zh: '操作优化',
-                en: 'Controls'
-            },
-            title: {
-                zh: '快捷键支持鼠标绑定',
-                en: 'Mouse Button Hotkeys'
-            },
-            bullets: [
-                {
-                    zh: '快捷键现在支持绑定到鼠标按键',
-                    en: 'Hotkeys can now be assigned to mouse buttons.'
-                }
-            ]
-        },
-        {
-            icon: 'IV',
-            sectionTitle: {
-                zh: '信息展示优化',
-                en: 'Display Improvements'
-            },
-            title: {
-                zh: 'Tooltip 预览升级',
-                en: 'Tooltip Preview Upgrade'
-            },
-            bullets: [
-                {
-                    zh: '合并原有双 Tooltip，信息展示更加集中清晰',
-                    en: 'The previous dual-tooltip layout has been merged into a single, clearer view.'
-                }
-            ]
-        },
-        {
-            icon: 'V',
-            sectionTitle: {
-                zh: '内容补充',
-                en: 'Content'
-            },
-            title: {
-                zh: '随机英雄禁用',
-                en: 'Random Hero Restrictions'
-            },
-            bullets: [
-                {
-                    zh: '新增随机英雄禁用部分英雄的选项',
-                    en: 'Added an option to exclude specific heroes from random hero selection.'
-                }
-            ]
-        }
-    ];
+    function escapeHtml(value: string): string {
+        return value
+            .replaceAll('&', '&amp;')
+            .replaceAll('<', '&lt;')
+            .replaceAll('>', '&gt;')
+            .replaceAll('"', '&quot;')
+            .replaceAll("'", '&#39;');
+    }
+
+    function formatBulletText(value: string): string {
+        const escaped = escapeHtml(value);
+
+        return escaped.replace(
+            /\b(F\d{1,2}|Tab|Shift|Ctrl|Alt|Enter|Esc)\b/g,
+            '<kbd class="update-key">$1</kbd>'
+        );
+    }
+
 </script>
 
 <AppModal
@@ -201,23 +94,20 @@
 
 <section class="update-hero">
     <p class="update-kicker">
-        {$locale === 'zh'
-            ? '当前版本 · 更新亮点'
-            : "Current Build · What's New"}
+        {$locale === 'zh' ? release.kicker.zh : release.kicker.en}
     </p>
     <h2 class="update-title">BazaarPlusPlus</h2>
+    <p class="update-version-tag">v{release.version}</p>
     <p class="update-release-label">
-        {$locale === 'zh' ? '更新概览' : 'Release Overview'}
+        {$locale === 'zh' ? release.releaseLabel.zh : release.releaseLabel.en}
     </p>
     <p class="update-summary">
-        {$locale === 'zh'
-            ? '本次更新以「镜像战斗回放」为核心，补齐相关数据能力。\n同时对 History Panel、操作绑定及信息展示进行了整体优化与整理。'
-            : 'This release centers on Mirror Battle Replay and the data support behind it, with the rest of the update focused on polishing History Panel, control bindings, and information display.'}
+        {$locale === 'zh' ? release.summary.zh : release.summary.en}
     </p>
 </section>
 
 <div class="update-group-list">
-    {#each sections as section}
+    {#each release.sections as section}
         <section class="update-group">
             <header class="update-group-header">
                 <p class="update-group-kicker">
@@ -252,7 +142,11 @@
                     </h3>
                     <ul class="update-feature-points">
                         {#each section.bullets as bullet}
-                            <li>{$locale === 'zh' ? bullet.zh : bullet.en}</li>
+                            <li>
+                                {@html formatBulletText(
+                                    $locale === 'zh' ? bullet.zh : bullet.en
+                                )}
+                            </li>
                         {/each}
                     </ul>
                 </div>
@@ -327,6 +221,13 @@
         font-size: 0.9rem;
         line-height: 1.65;
         color: rgba(233, 222, 198, 0.84);
+    }
+
+    .update-version-tag {
+        margin: -0.1rem 0 0;
+        font-family: 'Fira Code', monospace;
+        font-size: 0.72rem;
+        color: rgba(232, 200, 122, 0.8);
     }
 
     .update-release-label {
@@ -693,6 +594,33 @@
 
     .update-feature-points li::marker {
         color: rgba(232, 200, 122, 0.72);
+    }
+
+    :global(.update-key) {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 2.1rem;
+        margin: 0 0.15rem;
+        padding: 0.08rem 0.42rem;
+        border: 1px solid rgba(238, 201, 117, 0.34);
+        border-radius: 0.45rem;
+        background:
+            linear-gradient(
+                180deg,
+                rgba(255, 228, 160, 0.16),
+                rgba(169, 110, 28, 0.1)
+            ),
+            rgba(28, 18, 8, 0.92);
+        box-shadow:
+            inset 0 1px 0 rgba(255, 236, 190, 0.18),
+            0 2px 8px rgba(0, 0, 0, 0.18);
+        color: rgba(255, 231, 180, 0.96);
+        font-family: 'Fira Code', monospace;
+        font-size: 0.8em;
+        font-weight: 600;
+        line-height: 1.2;
+        vertical-align: baseline;
     }
 
     .tone-warning .update-feature-points li::marker {
