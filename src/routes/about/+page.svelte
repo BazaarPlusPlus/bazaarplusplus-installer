@@ -255,7 +255,6 @@
           >
             BazaarPlusPlus
           </a>
-          <span>Installer</span>
         </p>
         <p class="info-meta-line">
           <span class="version-label">Version</span>

@@ -1,6 +1,6 @@
-# BazaarPlusPlus Installer
+# BazaarPlusPlus
 
-Desktop installer for BazaarPlusPlus, built with Tauri, SvelteKit, and TypeScript.
+Desktop app for BazaarPlusPlus, built with Tauri, SvelteKit, and TypeScript.
 
 ## Development
 

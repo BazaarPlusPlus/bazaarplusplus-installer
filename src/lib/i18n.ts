@@ -76,7 +76,7 @@ export const defaultLocale: Locale = 'zh';
 export const messages: Record<Locale, Record<MessageKey, string>> = {
   en: {
     htmlLang: 'en',
-    pageTitle: 'BazaarPlusPlus Installer',
+    pageTitle: 'BazaarPlusPlus',
     kicker: 'Born of Passion',
     subtitle: 'Mod Installation',
     stepBpp: 'BazaarPlusPlus',
@@ -156,7 +156,7 @@ export const messages: Record<Locale, Record<MessageKey, string>> = {
   },
   zh: {
     htmlLang: 'zh-CN',
-    pageTitle: 'BazaarPlusPlus 安装器',
+    pageTitle: 'BazaarPlusPlus',
     kicker: '因热爱而生',
     subtitle: '模组安装',
     stepBpp: 'BazaarPlusPlus',

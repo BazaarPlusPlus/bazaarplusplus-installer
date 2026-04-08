@@ -44,7 +44,7 @@ test('macOS production build targets arm64 artifacts', () => {
 test('macOS production build removes the entire bundle directory before rebundling', () => {
   const bundleDir = '/Users/yxinyu/codes/bpp_codes/bazaarplusplus-installer/src-tauri/target/aarch64-apple-darwin/release/bundle';
   const staleDir = `${bundleDir}/macos`;
-  const staleFile = `${staleDir}/rw.test.BazaarPlusPlus Installer_2.0.0_aarch64.dmg`;
+  const staleFile = `${staleDir}/rw.test.BazaarPlusPlus_2.0.0_aarch64.dmg`;
 
   mkdirSync(staleDir, { recursive: true });
   writeFileSync(staleFile, 'stale dmg');
@@ -117,7 +117,7 @@ test('macOS production build requires the arm64 Rust target', () => {
 
 test('Windows upload uses installer and updater R2 paths under the version directory', () => {
   const bundleDir = '/Users/yxinyu/codes/bpp_codes/bazaarplusplus-installer/src-tauri/target/release/bundle/nsis';
-  const installerFile = `${bundleDir}/BazaarPlusPlus Installer_2.1.0_x64-setup.exe`;
+  const installerFile = `${bundleDir}/BazaarPlusPlus_2.1.0_x64-setup.exe`;
   const signatureFile = `${installerFile}.sig`;
 
   mkdirSync(bundleDir, { recursive: true });
@@ -139,15 +139,15 @@ test('Windows upload uses installer and updater R2 paths under the version direc
 
     assert.match(
       output,
-      /Uploading BazaarPlusPlus Installer_2\.1\.0_x64-setup\.exe to 2\.1\.0\/windows-x86_64\/installer\/BazaarPlusPlus Installer_2\.1\.0_x64-setup\.exe\|npx wrangler r2 object put bppinstaller\/2\.1\.0\/windows-x86_64\/installer\/BazaarPlusPlus Installer_2\.1\.0_x64-setup\.exe --file .*BazaarPlusPlus Installer_2\.1\.0_x64-setup\.exe/
+      /Uploading BazaarPlusPlus_2\.1\.0_x64-setup\.exe to 2\.1\.0\/windows-x86_64\/installer\/BazaarPlusPlus_2\.1\.0_x64-setup\.exe\|npx wrangler r2 object put bppinstaller\/2\.1\.0\/windows-x86_64\/installer\/BazaarPlusPlus_2\.1\.0_x64-setup\.exe --file .*BazaarPlusPlus_2\.1\.0_x64-setup\.exe/
     );
     assert.match(
       output,
-      /Uploading BazaarPlusPlus Installer_2\.1\.0_x64-setup\.exe to 2\.1\.0\/windows-x86_64\/updater\/BazaarPlusPlus Installer_2\.1\.0_x64-setup\.exe\|npx wrangler r2 object put bppinstaller\/2\.1\.0\/windows-x86_64\/updater\/BazaarPlusPlus Installer_2\.1\.0_x64-setup\.exe --file .*BazaarPlusPlus Installer_2\.1\.0_x64-setup\.exe/
+      /Uploading BazaarPlusPlus_2\.1\.0_x64-setup\.exe to 2\.1\.0\/windows-x86_64\/updater\/BazaarPlusPlus_2\.1\.0_x64-setup\.exe\|npx wrangler r2 object put bppinstaller\/2\.1\.0\/windows-x86_64\/updater\/BazaarPlusPlus_2\.1\.0_x64-setup\.exe --file .*BazaarPlusPlus_2\.1\.0_x64-setup\.exe/
     );
     assert.match(
       output,
-      /Uploading BazaarPlusPlus Installer_2\.1\.0_x64-setup\.exe\.sig to 2\.1\.0\/windows-x86_64\/updater\/BazaarPlusPlus Installer_2\.1\.0_x64-setup\.exe\.sig\|npx wrangler r2 object put bppinstaller\/2\.1\.0\/windows-x86_64\/updater\/BazaarPlusPlus Installer_2\.1\.0_x64-setup\.exe\.sig --file .*BazaarPlusPlus Installer_2\.1\.0_x64-setup\.exe\.sig/
+      /Uploading BazaarPlusPlus_2\.1\.0_x64-setup\.exe\.sig to 2\.1\.0\/windows-x86_64\/updater\/BazaarPlusPlus_2\.1\.0_x64-setup\.exe\.sig\|npx wrangler r2 object put bppinstaller\/2\.1\.0\/windows-x86_64\/updater\/BazaarPlusPlus_2\.1\.0_x64-setup\.exe\.sig --file .*BazaarPlusPlus_2\.1\.0_x64-setup\.exe\.sig/
     );
   } finally {
     rmSync(bundleDir, { force: true, recursive: true });

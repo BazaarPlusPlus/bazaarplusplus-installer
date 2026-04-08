@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "BazaarPlusPlus Installer",
+  "productName": "BazaarPlusPlus",
   "version": "2.3.7",
   "identifier": "com.bazaarplusplus.bppinstaller",
   "build": {
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "BazaarPlusPlus Installer",
+        "title": "BazaarPlusPlus",
         "width": 680,
         "height": 820
       }

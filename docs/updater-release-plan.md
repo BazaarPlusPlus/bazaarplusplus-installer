@@ -144,10 +144,10 @@ bppinstaller/
         bppinstaller.nsis.zip.sig
     darwin-aarch64/
       installer/
-        BazaarPlusPlus Installer.dmg
+        BazaarPlusPlus.dmg
       updater/
-        BazaarPlusPlus Installer.app.tar.gz
-        BazaarPlusPlus Installer.app.tar.gz.sig
+        BazaarPlusPlus.app.tar.gz
+        BazaarPlusPlus.app.tar.gz.sig
 ```
 
 The exact filenames may vary based on Tauri output. The important part is:
@@ -475,7 +475,7 @@ Expected structure:
       "signature": "..."
     },
     "darwin-aarch64": {
-      "url": "https://downloads.example.com/bppinstaller/2.2.0/darwin-aarch64/updater/BazaarPlusPlus Installer.app.tar.gz",
+      "url": "https://downloads.example.com/bppinstaller/2.2.0/darwin-aarch64/updater/BazaarPlusPlus.app.tar.gz",
       "signature": "..."
     }
   }

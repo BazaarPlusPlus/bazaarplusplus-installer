@@ -1,7 +1,7 @@
 [package]
 name = "bppinstaller"
 version = "2.3.7"
-description = "BazaarPlusPlus Mod Installer"
+description = "BazaarPlusPlus Desktop App"
 authors = ["cauyxy <cauyxy@gmail.com>"]
 edition = "2021"
 
