@@ -27,12 +27,20 @@ export async function detectSteamRunning() {
   return invoke<SteamRunningInfo>('detect_steam_running');
 }
 
+export async function closeSteam() {
+  return invoke('close_steam');
+}
+
 export async function detectBazaarRunning() {
   return invoke<GameRunningInfo>('detect_bazaar_running');
 }
 
-export async function installBepinex(steamPath: string, gamePath: string) {
-  return invoke('install_bepinex', { steamPath, gamePath });
+export async function installBepinex(
+  steamPath: string,
+  gamePath: string,
+  skipSteamShutdown = false
+) {
+  return invoke('install_bepinex', { steamPath, gamePath, skipSteamShutdown });
 }
 
 export async function uninstallBpp(steamPath: string, gamePath: string) {
@@ -47,10 +55,15 @@ export async function getLegacyRecordDirectoryInfo(gamePath: string) {
   return invoke<LegacyRecordDirectoryInfo>('get_legacy_record_directory_info', { gamePath });
 }
 
-export async function patchLaunchOptions(steamPath: string, gamePath: string) {
+export async function patchLaunchOptions(
+  steamPath: string,
+  gamePath: string,
+  skipSteamShutdown = false
+) {
   return invoke<LaunchOptionsPatchResult>('patch_launch_options', {
     steamPath,
-    gamePath
+    gamePath,
+    skipSteamShutdown
   });
 }
 

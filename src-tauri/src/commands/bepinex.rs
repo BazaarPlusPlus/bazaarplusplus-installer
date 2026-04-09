@@ -225,13 +225,17 @@ pub fn install_bepinex(
     app: tauri::AppHandle,
     steam_path: String,
     game_path: String,
+    skip_steam_shutdown: bool,
 ) -> Result<(), String> {
     let game_path = Path::new(&game_path);
     let preserved_bpp_config = preserve_file_if_exists(game_path, BPP_CONFIG_RELATIVE_PATH)?;
     #[cfg(not(target_os = "macos"))]
-    let _ = &steam_path;
+    let _ = (&steam_path, skip_steam_shutdown);
     #[cfg(target_os = "macos")]
-    crate::commands::steam::prepare_steam_for_launch_option_update(Path::new(&steam_path))?;
+    crate::commands::steam::prepare_steam_for_launch_option_update(
+        Path::new(&steam_path),
+        skip_steam_shutdown,
+    )?;
     prepare_install_target(game_path)?;
 
     let install_result = (|| -> Result<(), String> {
@@ -279,7 +283,10 @@ pub fn uninstall_bpp(
     ensure_valid_game_path(game_path)?;
 
     #[cfg(target_os = "macos")]
-    crate::commands::steam::prepare_steam_for_launch_option_update(Path::new(&_steam_path))?;
+    crate::commands::steam::prepare_steam_for_launch_option_update(
+        Path::new(&_steam_path),
+        false,
+    )?;
 
     uninstall_payload(game_path)?;
 

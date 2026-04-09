@@ -2,57 +2,58 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
-  resolveInstallConfirmationStep,
-  resolveInstallContinuationAction
+  getInstallRuntimeRisks,
+  shouldShowInstallRiskModal
 } from './install-guards.ts';
 
-test('resolveInstallConfirmationStep prioritizes closing the game before Steam', () => {
-  const step = resolveInstallConfirmationStep({
+test('getInstallRuntimeRisks only returns the Steam risk when Steam is running', () => {
+  const risks = getInstallRuntimeRisks({
     hasTauriRuntime: true,
-    gameRunning: true,
     steamLaunchOptionsSupported: true,
     steamRunning: true
   });
 
-  assert.equal(step, 'confirm_game_quit');
+  assert.deepEqual(risks, ['steam_running']);
 });
 
-test('resolveInstallConfirmationStep falls back to Steam confirmation when the game is closed', () => {
-  const step = resolveInstallConfirmationStep({
+test('getInstallRuntimeRisks does not depend on game state', () => {
+  const risks = getInstallRuntimeRisks({
     hasTauriRuntime: true,
-    gameRunning: false,
     steamLaunchOptionsSupported: true,
     steamRunning: true
   });
 
-  assert.equal(step, 'confirm_steam_quit');
+  assert.deepEqual(risks, ['steam_running']);
 });
 
-test('resolveInstallConfirmationStep proceeds immediately outside Tauri', () => {
-  const step = resolveInstallConfirmationStep({
+test('getInstallRuntimeRisks suppresses all warnings outside Tauri', () => {
+  const risks = getInstallRuntimeRisks({
     hasTauriRuntime: false,
-    gameRunning: true,
     steamLaunchOptionsSupported: true,
     steamRunning: true
   });
 
-  assert.equal(step, 'proceed');
+  assert.deepEqual(risks, []);
 });
 
-test('resolveInstallContinuationAction shows the game quit modal before Steam confirmation', () => {
-  const action = resolveInstallContinuationAction('confirm_game_quit');
+test('getInstallRuntimeRisks ignores Steam when launch option updates are unsupported', () => {
+  const risks = getInstallRuntimeRisks({
+    hasTauriRuntime: true,
+    steamLaunchOptionsSupported: false,
+    steamRunning: true
+  });
 
-  assert.equal(action, 'show_game_quit_modal');
+  assert.deepEqual(risks, []);
 });
 
-test('resolveInstallContinuationAction shows the Steam quit modal after the game is closed', () => {
-  const action = resolveInstallContinuationAction('confirm_steam_quit');
+test('shouldShowInstallRiskModal returns true when any runtime risk is present', () => {
+  const shouldShow = shouldShowInstallRiskModal(['steam_running']);
 
-  assert.equal(action, 'show_steam_quit_modal');
+  assert.equal(shouldShow, true);
 });
 
-test('resolveInstallContinuationAction installs immediately when no confirmation is needed', () => {
-  const action = resolveInstallContinuationAction('proceed');
+test('shouldShowInstallRiskModal returns false when there are no runtime risks', () => {
+  const shouldShow = shouldShowInstallRiskModal([]);
 
-  assert.equal(action, 'install');
+  assert.equal(shouldShow, false);
 });

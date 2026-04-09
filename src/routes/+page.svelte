@@ -15,7 +15,7 @@
   import InstallerStatusSteps from '$lib/components/installer/InstallerStatusSteps.svelte';
   import InstallerSupportBar from '$lib/components/installer/InstallerSupportBar.svelte';
   import {
-    detectBazaarRunning as detectBazaarRunningApi,
+    closeSteam as closeSteamApi,
     detectDotnetRuntime as detectDotnetRuntimeApi,
     detectEnvironment as detectEnvironmentApi,
     detectSteamRunning as detectSteamRunningApi,
@@ -53,10 +53,10 @@
     type ActionBusy,
     type StepState
   } from '$lib/installer/state';
-  import type { InstallConfirmationStep } from '$lib/installer/install-guards';
   import {
-    resolveInstallConfirmationStep as resolveInstallConfirmation,
-    resolveInstallContinuationAction
+    getInstallRuntimeRisks,
+    shouldShowInstallRiskModal,
+    type InstallRuntimeRisk
   } from '$lib/installer/install-guards';
   import { detectInstallerEnvironment } from '$lib/installer/detect-flow';
 
@@ -74,11 +74,11 @@
   let repairAcknowledged = false;
   let repairModalBody = '';
   let showLaunchOptionsWarningModal = false;
-  let showGameQuitModal = false;
   let showSteamQuitModal = false;
   let installAcknowledged = false;
   let installConfirmationBusy = false;
   let pendingSteamAction: 'install' | 'uninstall' | null = null;
+  let steamActionBusy = false;
   let updaterSnapshot: UpdaterSnapshot = createInitialUpdaterSnapshot();
   let pendingUpdate: Update | null = null;
   let showUpdaterModal = false;
@@ -144,17 +144,8 @@
     installConfirmationBusy = true;
 
     try {
-      const confirmationStep = await detectInstallConfirmationStep();
-      const continuationAction =
-        resolveInstallContinuationAction(confirmationStep);
-
-      if (continuationAction === 'show_game_quit_modal') {
-        showInstallModal = false;
-        showGameQuitModal = true;
-        return;
-      }
-
-      if (continuationAction === 'show_steam_quit_modal') {
+      const runtimeRisks = await detectInstallRuntimeRisks();
+      if (shouldShowInstallRiskModal(runtimeRisks)) {
         showInstallModal = false;
         pendingSteamAction = 'install';
         showSteamQuitModal = true;
@@ -162,14 +153,10 @@
       }
 
       showInstallModal = false;
-      await installBundled();
+      await installBundled(false);
     } finally {
       installConfirmationBusy = false;
     }
-  }
-
-  function closeGameQuitModal() {
-    showGameQuitModal = false;
   }
 
   function closeLaunchOptionsWarningModal() {
@@ -199,43 +186,48 @@
   }
 
   function closeSteamQuitModal() {
+    if (steamActionBusy) return;
     showSteamQuitModal = false;
     pendingSteamAction = null;
   }
 
   async function confirmSteamQuitAndContinue() {
     const action = pendingSteamAction;
-    showSteamQuitModal = false;
-    pendingSteamAction = null;
+    if (!action || steamActionBusy) return;
 
-    if (action === 'install') {
-      await installBundled();
-      return;
-    }
+    steamActionBusy = true;
 
-    if (action === 'uninstall') {
-      await uninstallBpp(true);
+    try {
+      await closeSteamApi();
+      showSteamQuitModal = false;
+      pendingSteamAction = null;
+
+      if (action === 'install') {
+        await installBundled(false);
+        return;
+      }
+
+      if (action === 'uninstall') {
+        await uninstallBpp(true);
+      }
+    } catch (error) {
+      console.error(error);
+    } finally {
+      steamActionBusy = false;
     }
   }
 
-  async function confirmGameQuitAndContinue() {
-    const confirmationStep = await detectInstallConfirmationStep();
-    const continuationAction =
-      resolveInstallContinuationAction(confirmationStep);
+  async function handleSteamQuitModalCancel() {
+    if (steamActionBusy) return;
 
-    if (continuationAction === 'show_game_quit_modal') {
+    if (pendingSteamAction === 'install') {
+      showSteamQuitModal = false;
+      pendingSteamAction = null;
+      await installBundled(true);
       return;
     }
 
-    showGameQuitModal = false;
-
-    if (continuationAction === 'show_steam_quit_modal') {
-      pendingSteamAction = 'install';
-      showSteamQuitModal = true;
-      return;
-    }
-
-    await installBundled();
+    closeSteamQuitModal();
   }
 
   async function detectEnvironment() {
@@ -346,7 +338,7 @@
   }
 
   async function maybeConfirmSteamQuit(
-    action: 'install' | 'uninstall'
+    action: 'uninstall'
   ): Promise<boolean> {
     if (!hasTauriRuntime() || !env?.steam_launch_options_supported) {
       return false;
@@ -367,17 +359,9 @@
     return true;
   }
 
-  async function detectInstallConfirmationStep(): Promise<InstallConfirmationStep> {
+  async function detectInstallRuntimeRisks(): Promise<InstallRuntimeRisk[]> {
     if (!hasTauriRuntime()) {
-      return 'proceed';
-    }
-
-    let gameRunning = false;
-    try {
-      const gameInfo = await detectBazaarRunningApi();
-      gameRunning = gameInfo.running;
-    } catch (error) {
-      console.error(error);
+      return [];
     }
 
     let steamRunning = false;
@@ -390,15 +374,14 @@
       }
     }
 
-    return resolveInstallConfirmation({
+    return getInstallRuntimeRisks({
       hasTauriRuntime: true,
-      gameRunning,
       steamLaunchOptionsSupported: Boolean(env?.steam_launch_options_supported),
       steamRunning
     });
   }
 
-  async function installBundled() {
+  async function installBundled(skipSteamShutdown = false) {
     if (!canInstall) return;
 
     if (isDebugInstallPreview) {
@@ -414,11 +397,12 @@
     actionBusy = 'install';
     try {
       const steamPath = env?.steam_path?.trim() ?? '';
-      await installBepinex(steamPath, pageState.effectiveGamePath);
+      await installBepinex(steamPath, pageState.effectiveGamePath, skipSteamShutdown);
       if (env?.steam_launch_options_supported) {
         const patchResult = await patchLaunchOptions(
           steamPath,
-          pageState.effectiveGamePath
+          pageState.effectiveGamePath,
+          skipSteamShutdown
         );
         if (!patchResult.verified) {
           showLaunchOptionsWarningModal = true;
@@ -711,6 +695,14 @@
     updaterSnapshot.status === 'checking' || updaterSnapshot.status === 'downloading';
   $: updaterButtonHighlighted =
     updaterSnapshot.status === 'available' || updaterSnapshot.status === 'installed';
+  $: steamModalTitle =
+    pendingSteamAction === 'install' ? t('installRiskTitle') : t('steamQuitTitle');
+  $: steamModalBody =
+    pendingSteamAction === 'install'
+      ? `${t('installRiskSteamDetected')}\n\n${t('installRiskBody')}`
+      : t('steamQuitBody');
+  $: steamModalCancelText =
+    pendingSteamAction === 'install' ? t('actionContinueInstall') : t('actionClose');
   $: persistCustomGamePath(customGamePath);
 
   onMount(() => {
@@ -759,27 +751,17 @@
   />
 
   <AppModal
-    open={showGameQuitModal}
-    eyebrow="BazaarPlusPlus"
-    title={t('gameQuitTitle')}
-    body={t('gameQuitBody')}
-    confirmText={t('actionGameClosed')}
-    cancelText={t('actionClose')}
-    showCancel={true}
-    onConfirm={confirmGameQuitAndContinue}
-    onCancel={closeGameQuitModal}
-  />
-
-  <AppModal
     open={showSteamQuitModal}
     eyebrow="BazaarPlusPlus"
-    title={t('steamQuitTitle')}
-    body={t('steamQuitBody')}
+    title={steamModalTitle}
+    body={steamModalBody}
     confirmText={t('actionQuitSteam')}
-    cancelText={t('actionClose')}
+    cancelText={steamModalCancelText}
     showCancel={true}
+    confirmBusy={steamActionBusy}
+    confirmBusyText={t('actionQuitSteam')}
     onConfirm={confirmSteamQuitAndContinue}
-    onCancel={closeSteamQuitModal}
+    onCancel={handleSteamQuitModalCancel}
   />
 
   <AppModal

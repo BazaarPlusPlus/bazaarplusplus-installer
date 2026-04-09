@@ -4,7 +4,7 @@ use commands::{
     bepinex::{get_legacy_record_directory_info, install_bepinex, repair_bpp, uninstall_bpp},
     detect::{detect_dotnet_runtime, detect_environment, verify_game_path},
     game::detect_bazaar_running,
-    steam::detect_steam_running,
+    steam::{close_steam, detect_steam_running},
     supporters::load_supporters,
     vdf::patch_launch_options,
 };
@@ -20,6 +20,7 @@ pub fn run() {
             detect_dotnet_runtime,
             detect_bazaar_running,
             detect_steam_running,
+            close_steam,
             verify_game_path,
             install_bepinex,
             repair_bpp,
