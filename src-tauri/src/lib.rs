@@ -11,6 +11,10 @@ use commands::{
     bepinex::{get_legacy_record_directory_info, install_bepinex, repair_bpp, uninstall_bpp},
     detect::{detect_dotnet_runtime, detect_environment, verify_game_path},
     game::detect_bazaar_running,
+    identity::{
+        read_installation_private_key, read_installation_record, read_player_observation,
+        write_installation_private_key, write_installation_record,
+    },
     steam::{close_steam, detect_steam_running},
     stream::{
         get_stream_service_status, start_stream_service, stop_stream_service,
@@ -52,6 +56,11 @@ pub fn run() {
             detect_steam_running,
             close_steam,
             verify_game_path,
+            read_player_observation,
+            read_installation_record,
+            read_installation_private_key,
+            write_installation_record,
+            write_installation_private_key,
             install_bepinex,
             repair_bpp,
             get_legacy_record_directory_info,

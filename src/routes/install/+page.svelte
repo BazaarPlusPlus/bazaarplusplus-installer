@@ -59,6 +59,12 @@
     type InstallRuntimeRisk
   } from '$lib/installer/install-guards';
   import { detectInstallerEnvironment } from '$lib/installer/detect-flow';
+  import { createIdentityApi } from '$lib/identity/api';
+  import { createIdentityState } from '$lib/identity/state';
+  import type {
+    InstallationRecordPayload,
+    PlayerObservationPayload
+  } from '$lib/identity/types';
 
   let env: EnvironmentInfo | null = null;
   let dotnetState: StepState = 'idle';
@@ -88,6 +94,18 @@
   let updaterReviewBusy = false;
   let updaterCheckRequestId = 0;
   let showStreamMode = false;
+  const identityApi = createIdentityApi();
+  let playerObservation: PlayerObservationPayload | null = null;
+  let installationRecord: InstallationRecordPayload | null = null;
+  let hasInstallationPrivateKey = false;
+  let identityLoadState: 'idle' | 'loading' = 'idle';
+  let identityActionBusy: 'idle' | 'activating' | 'logging_in' = 'idle';
+  let identityPassword = '';
+  let identityConfirmed = false;
+  let identityError = '';
+  let identitySuccess = '';
+  let identityLoadedGamePath = '';
+  let identityLoadRequestId = 0;
 
   $: t = (
     key: keyof typeof messages.en,
@@ -99,6 +117,50 @@
     search: typeof window !== 'undefined' ? window.location.search : '',
     hasTauriRuntime: hasTauriRuntime()
   });
+
+  function localized(zh: string, en: string): string {
+    return $locale === 'zh' ? zh : en;
+  }
+
+  function resetIdentitySnapshot() {
+    playerObservation = null;
+    installationRecord = null;
+    hasInstallationPrivateKey = false;
+    identityError = '';
+    identitySuccess = '';
+  }
+
+  function formatIdentityError(error: unknown): string {
+    const code = error instanceof Error ? error.message : String(error);
+
+    switch (code) {
+      case 'invalid_credentials':
+        return localized('用户名或密码不正确。', 'Username or password is incorrect.');
+      case 'player_account_id_claimed':
+        return localized(
+          '这个游戏账号已经注册过，请使用登录入口。',
+          'This observed game account already exists. Use the login path instead.'
+        );
+      case 'player_account_mismatch':
+      case 'observed_player_account_mismatch':
+        return localized(
+          '当前登录账号和游戏里观察到的账号不一致。',
+          'The logged-in account does not match the observed in-game account.'
+        );
+      case 'invalid_installer_session':
+        return localized(
+          '登录会话已经失效，请重新输入密码。',
+          'The installer session expired. Enter your password again.'
+        );
+      case 'webcrypto_unavailable':
+        return localized(
+          '当前运行环境不支持生成 installation 密钥。',
+          'This runtime cannot generate installation keys.'
+        );
+      default:
+        return code;
+    }
+  }
 
   function formatBytes(bytes: number): string {
     if (bytes < 1024) {
@@ -257,6 +319,115 @@
       bazaarInvalid = result.bazaarInvalid;
     } finally {
       actionBusy = 'idle';
+    }
+  }
+
+  async function refreshIdentity(gameRoot = pageState.effectiveGamePath) {
+    if (!hasTauriRuntime() || !gameRoot) {
+      identityLoadedGamePath = '';
+      resetIdentitySnapshot();
+      return;
+    }
+
+    const requestId = ++identityLoadRequestId;
+    identityLoadState = 'loading';
+
+    try {
+      const snapshot = await identityApi.loadLocalIdentity(gameRoot);
+      if (requestId !== identityLoadRequestId) {
+        return;
+      }
+
+      playerObservation = snapshot.observation;
+      installationRecord = snapshot.installation;
+      hasInstallationPrivateKey = Boolean(
+        snapshot.installationPrivateKeyPkcs8B64
+      );
+      identityLoadedGamePath = gameRoot;
+    } catch (error) {
+      if (requestId !== identityLoadRequestId) {
+        return;
+      }
+
+      resetIdentitySnapshot();
+      identityError = formatIdentityError(error);
+    } finally {
+      if (requestId === identityLoadRequestId) {
+        identityLoadState = 'idle';
+      }
+    }
+  }
+
+  function resetIdentityMessages() {
+    identityError = '';
+    identitySuccess = '';
+  }
+
+  async function activateObservedAccount() {
+    if (
+      !pageState.effectiveGamePath ||
+      !playerObservation ||
+      !identityConfirmed ||
+      !identityPassword.trim() ||
+      identityActionBusy !== 'idle'
+    ) {
+      return;
+    }
+
+    identityActionBusy = 'activating';
+    resetIdentityMessages();
+
+    try {
+      await identityApi.activateFirstAccount({
+        gameRoot: pageState.effectiveGamePath,
+        observation: playerObservation,
+        password: identityPassword.trim()
+      });
+      identityPassword = '';
+      identityConfirmed = false;
+      identitySuccess = localized(
+        '新的 installation 身份已写入本地共享目录。',
+        'A new installation identity was written to the shared local directory.'
+      );
+      await refreshIdentity(pageState.effectiveGamePath);
+    } catch (error) {
+      identityError = formatIdentityError(error);
+    } finally {
+      identityActionBusy = 'idle';
+    }
+  }
+
+  async function loginAndRefreshInstallation() {
+    if (
+      !pageState.effectiveGamePath ||
+      !playerObservation ||
+      !identityConfirmed ||
+      !identityPassword.trim() ||
+      identityActionBusy !== 'idle'
+    ) {
+      return;
+    }
+
+    identityActionBusy = 'logging_in';
+    resetIdentityMessages();
+
+    try {
+      await identityApi.loginAndCreateInstallation({
+        gameRoot: pageState.effectiveGamePath,
+        observation: playerObservation,
+        password: identityPassword.trim()
+      });
+      identityPassword = '';
+      identityConfirmed = false;
+      identitySuccess = localized(
+        'installation 材料已经按当前观察到的账号重新生成。',
+        'Installation material was regenerated for the currently observed account.'
+      );
+      await refreshIdentity(pageState.effectiveGamePath);
+    } catch (error) {
+      identityError = formatIdentityError(error);
+    } finally {
+      identityActionBusy = 'idle';
     }
   }
 
@@ -733,6 +904,25 @@
       ? t('actionContinueInstall')
       : t('actionClose');
   $: persistCustomGamePath(customGamePath);
+  $: identityState = createIdentityState({
+    observation: playerObservation,
+    installation: installationRecord,
+    hasInstallationPrivateKey
+  });
+  $: identityBusy =
+    identityLoadState === 'loading' || identityActionBusy !== 'idle';
+  $: canSubmitIdentity =
+    Boolean(pageState.effectiveGamePath) &&
+    Boolean(playerObservation) &&
+    Boolean(identityPassword.trim()) &&
+    identityConfirmed &&
+    !identityBusy;
+  $: if (!hasTauriRuntime() || !pageState.effectiveGamePath) {
+    identityLoadedGamePath = '';
+    resetIdentitySnapshot();
+  } else if (pageState.effectiveGamePath !== identityLoadedGamePath) {
+    void refreshIdentity(pageState.effectiveGamePath);
+  }
 
   onMount(() => {
     locale.init();
@@ -836,6 +1026,146 @@
     onToggleStreamMode={toggleStreamMode}
   />
 
+  {#if hasTauriRuntime() && hasPath}
+    <section class="identity-card">
+      <div class="identity-header">
+        <p class="identity-kicker">
+          {localized('身份状态', 'Identity Status')}
+        </p>
+        <h2>
+          {identityState.kind === 'observation_required'
+            ? localized('等待游戏写入 observation', 'Waiting for observation')
+            : identityState.kind === 'activate_first_account'
+              ? localized('可以开始激活或登录', 'Ready to activate or log in')
+              : identityState.kind === 'relogin_required'
+                ? localized('检测到游戏账号已切换', 'Observed game account changed')
+                : localized('本地 installation 已就绪', 'Local installation is ready')}
+        </h2>
+      </div>
+
+      {#if identityLoadState === 'loading'}
+        <p class="identity-note">
+          {localized('正在读取共享 identity 文件…', 'Reading shared identity files...')}
+        </p>
+      {:else}
+        {#if identityState.kind === 'observation_required'}
+          <p class="identity-note">
+            {localized(
+              '先启动带 mod 的游戏，让它在 BazaarPlusPlus/Identity 里写出 player-observation.bpp。',
+              'Launch the modded game first so it can write player-observation.bpp into BazaarPlusPlus/Identity.'
+            )}
+          </p>
+        {:else if identityState.kind === 'activate_first_account'}
+          <p class="identity-note">
+            {localized(
+              `当前观察到 ${identityState.observation.player_username}（${identityState.observation.player_account_id}）。如果这是第一次注册，用下面的激活按钮；如果账号已经注册过，直接登录并生成新的 installation。`,
+              `Observed ${identityState.observation.player_username} (${identityState.observation.player_account_id}). Create the first account below, or log in to an existing account and mint a new installation.`
+            )}
+          </p>
+        {:else if identityState.kind === 'relogin_required'}
+          <p class="identity-note">
+            {localized(
+              `本地 installation 属于 ${identityState.installation.player_account_id}，但游戏当前观察到的是 ${identityState.observation.player_account_id}。重新登录后才会覆盖本地 installation。`,
+              `The local installation belongs to ${identityState.installation.player_account_id}, but the game currently reports ${identityState.observation.player_account_id}. Re-login is required before replacing the local installation.`
+            )}
+          </p>
+        {:else}
+          <dl class="identity-summary">
+            <div>
+              <dt>{localized('玩家账号', 'Player account')}</dt>
+              <dd>{identityState.installation.player_account_id}</dd>
+            </div>
+            <div>
+              <dt>{localized('Installation ID', 'Installation ID')}</dt>
+              <dd>{identityState.installation.installation_id}</dd>
+            </div>
+            <div>
+              <dt>{localized('状态', 'Status')}</dt>
+              <dd>{identityState.installation.status}</dd>
+            </div>
+          </dl>
+          <p class="identity-note">
+            {identityState.observation
+              ? localized(
+                  `最近一次 observation 指向 ${identityState.observation.player_username}，和当前 installation 一致。`,
+                  `The latest observation points to ${identityState.observation.player_username}, which matches the current installation.`
+                )
+              : localized(
+                  '当前没有新的 observation，本地 installation 仍然可供 mod 使用。',
+                  'There is no new observation right now. The local installation is still usable by the mod.'
+                )}
+          </p>
+        {/if}
+
+        {#if identityState.kind !== 'observation_required' && identityState.kind !== 'ready'}
+          <label class="identity-field">
+            <span>{localized('账号密码', 'Account password')}</span>
+            <input
+              bind:value={identityPassword}
+              type="password"
+              autocomplete="current-password"
+              placeholder={localized('输入当前账号密码', 'Enter the current account password')}
+            />
+          </label>
+
+          <label class="identity-confirm">
+            <input bind:checked={identityConfirmed} type="checkbox" />
+            <span>
+              {localized(
+                '我确认 installer 将以当前 observation 代表的游戏账号写入新的 installation 材料。',
+                'I confirm the installer will write new installation material for the currently observed game account.'
+              )}
+            </span>
+          </label>
+
+          <div class="identity-actions">
+            {#if identityState.kind === 'activate_first_account'}
+              <button
+                type="button"
+                class="identity-button primary"
+                on:click={activateObservedAccount}
+                disabled={!canSubmitIdentity}
+              >
+                {identityActionBusy === 'activating'
+                  ? localized('正在激活…', 'Activating...')
+                  : localized('首次激活', 'Create first account')}
+              </button>
+              <button
+                type="button"
+                class="identity-button"
+                on:click={loginAndRefreshInstallation}
+                disabled={!canSubmitIdentity}
+              >
+                {identityActionBusy === 'logging_in'
+                  ? localized('正在登录…', 'Logging in...')
+                  : localized('已有账号登录', 'Log in existing account')}
+              </button>
+            {:else if identityState.kind === 'relogin_required'}
+              <button
+                type="button"
+                class="identity-button primary"
+                on:click={loginAndRefreshInstallation}
+                disabled={!canSubmitIdentity}
+              >
+                {identityActionBusy === 'logging_in'
+                  ? localized('正在重新登录…', 'Re-logging in...')
+                  : localized('重新登录并刷新 installation', 'Re-login and refresh installation')}
+              </button>
+            {/if}
+          </div>
+        {/if}
+      {/if}
+
+      {#if identityError}
+        <p class="identity-error">{identityError}</p>
+      {/if}
+
+      {#if identitySuccess}
+        <p class="identity-success">{identitySuccess}</p>
+      {/if}
+    </section>
+  {/if}
+
   {#if showStreamMode}
     <section class="embedded-stream-shell">
       <StreamModePanel
@@ -910,6 +1240,161 @@
       inset 0 0 0 1px rgba(255, 214, 140, 0.04);
   }
 
+  .identity-card {
+    padding: 1rem 1.05rem;
+    display: grid;
+    gap: 0.85rem;
+    border-radius: 3px;
+    border: 1px solid rgba(200, 148, 55, 0.18);
+    background:
+      radial-gradient(
+        circle at top left,
+        rgba(255, 214, 140, 0.09),
+        transparent 38%
+      ),
+      linear-gradient(180deg, rgba(24, 14, 8, 0.97), rgba(14, 8, 5, 0.95));
+    box-shadow:
+      0 8px 26px rgba(0, 0, 0, 0.28),
+      inset 0 0 0 1px rgba(255, 214, 140, 0.04);
+  }
+
+  .identity-header {
+    display: grid;
+    gap: 0.25rem;
+  }
+
+  .identity-kicker {
+    margin: 0;
+    font-size: 0.62rem;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    color: rgba(216, 182, 109, 0.72);
+  }
+
+  .identity-header h2 {
+    margin: 0;
+    font-family: 'Cinzel', serif;
+    font-size: 1.1rem;
+    color: rgba(248, 232, 196, 0.95);
+  }
+
+  .identity-note,
+  .identity-error,
+  .identity-success {
+    margin: 0;
+    line-height: 1.55;
+    font-size: 0.92rem;
+  }
+
+  .identity-note {
+    color: rgba(240, 222, 188, 0.78);
+  }
+
+  .identity-error {
+    color: rgba(255, 162, 142, 0.92);
+  }
+
+  .identity-success {
+    color: rgba(169, 223, 161, 0.92);
+  }
+
+  .identity-summary {
+    margin: 0;
+    display: grid;
+    gap: 0.7rem;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  }
+
+  .identity-summary div {
+    display: grid;
+    gap: 0.2rem;
+  }
+
+  .identity-summary dt {
+    font-size: 0.68rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: rgba(205, 177, 118, 0.62);
+  }
+
+  .identity-summary dd {
+    margin: 0;
+    font-size: 0.9rem;
+    color: rgba(249, 236, 211, 0.94);
+    word-break: break-word;
+  }
+
+  .identity-field {
+    display: grid;
+    gap: 0.4rem;
+  }
+
+  .identity-field span {
+    font-size: 0.74rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: rgba(205, 177, 118, 0.7);
+  }
+
+  .identity-field input {
+    width: 100%;
+    padding: 0.72rem 0.82rem;
+    border-radius: 2px;
+    border: 1px solid rgba(200, 148, 55, 0.24);
+    background: rgba(10, 6, 4, 0.72);
+    color: rgba(251, 240, 220, 0.96);
+    font-size: 0.95rem;
+  }
+
+  .identity-field input::placeholder {
+    color: rgba(208, 181, 127, 0.42);
+  }
+
+  .identity-confirm {
+    display: flex;
+    gap: 0.55rem;
+    align-items: flex-start;
+    color: rgba(240, 222, 188, 0.82);
+    font-size: 0.85rem;
+    line-height: 1.45;
+  }
+
+  .identity-confirm input {
+    margin-top: 0.18rem;
+  }
+
+  .identity-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.65rem;
+  }
+
+  .identity-button {
+    border: 1px solid rgba(208, 170, 94, 0.32);
+    background: rgba(31, 18, 10, 0.84);
+    color: rgba(251, 240, 220, 0.95);
+    padding: 0.72rem 0.95rem;
+    font-family: 'Cinzel', serif;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-size: 0.72rem;
+    cursor: pointer;
+  }
+
+  .identity-button.primary {
+    background: linear-gradient(
+      180deg,
+      rgba(188, 141, 57, 0.92),
+      rgba(136, 89, 28, 0.95)
+    );
+    color: rgba(18, 10, 4, 0.95);
+  }
+
+  .identity-button:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+
   @keyframes fade-up {
     from {
       opacity: 0;
@@ -967,6 +1452,10 @@
   @media (max-width: 520px) {
     .shell {
       padding: 1rem 0.85rem 1.5rem;
+    }
+
+    .identity-actions {
+      flex-direction: column;
     }
   }
 </style>

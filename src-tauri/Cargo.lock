@@ -364,6 +364,7 @@ name = "bppinstaller"
 version = "2.3.7"
 dependencies = [
  "axum",
+ "base64 0.22.1",
  "chrono",
  "dirs",
  "keyvalues-parser",
