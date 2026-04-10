@@ -17,7 +17,9 @@
   confirmText={$locale === 'zh' ? '确认重置' : 'Confirm Reset'}
   cancelText={$locale === 'zh' ? '关闭' : 'Close'}
   confirmBusy={confirming}
-  confirmBusyText={$locale === 'zh' ? '重置战绩记录中...' : 'Resetting match history...'}
+  confirmBusyText={$locale === 'zh'
+    ? '重置战绩记录中...'
+    : 'Resetting match history...'}
   confirmDisabled={!acknowledged || confirming}
   showCancel={true}
   bodyClass="reset-history"
@@ -33,7 +35,11 @@
   </section>
 
   <label class="reset-history-acknowledge">
-    <input class="reset-history-acknowledge-input" bind:checked={acknowledged} type="checkbox" />
+    <input
+      class="reset-history-acknowledge-input"
+      bind:checked={acknowledged}
+      type="checkbox"
+    />
     <span class="reset-history-acknowledge-box" aria-hidden="true"></span>
     <span>
       {$locale === 'zh'
@@ -154,7 +160,8 @@
       0 4px 14px rgba(170, 100, 25, 0.24);
   }
 
-  .reset-history-acknowledge-input:checked + .reset-history-acknowledge-box::after {
+  .reset-history-acknowledge-input:checked
+    + .reset-history-acknowledge-box::after {
     border-color: #fff2ca;
   }
 
@@ -163,7 +170,8 @@
     transform: translateY(-1px);
   }
 
-  .reset-history-acknowledge-input:focus-visible + .reset-history-acknowledge-box {
+  .reset-history-acknowledge-input:focus-visible
+    + .reset-history-acknowledge-box {
     outline: 2px solid rgba(255, 214, 140, 0.9);
     outline-offset: 2px;
   }

@@ -18,7 +18,8 @@
   async function loadReleaseVersion() {
     const versionFromQuery =
       typeof window !== 'undefined'
-        ? new URLSearchParams(window.location.search).get('version')?.trim() ?? ''
+        ? (new URLSearchParams(window.location.search).get('version')?.trim() ??
+          '')
         : '';
 
     if (versionFromQuery) {

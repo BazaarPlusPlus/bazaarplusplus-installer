@@ -177,7 +177,7 @@
 
 <main class="shell">
   <header class="header">
-    <a class="back-btn" href="/">
+    <a class="back-btn" href="/install">
       <svg class="back-icon" viewBox="0 0 24 24" aria-hidden="true">
         <path
           d="M15 18l-6-6 6-6"

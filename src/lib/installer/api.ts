@@ -52,7 +52,9 @@ export async function repairBpp(gamePath: string) {
 }
 
 export async function getLegacyRecordDirectoryInfo(gamePath: string) {
-  return invoke<LegacyRecordDirectoryInfo>('get_legacy_record_directory_info', { gamePath });
+  return invoke<LegacyRecordDirectoryInfo>('get_legacy_record_directory_info', {
+    gamePath
+  });
 }
 
 export async function patchLaunchOptions(

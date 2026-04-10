@@ -13,7 +13,7 @@
   import InstallerInstallPreviewModal from '$lib/components/installer/InstallerInstallPreviewModal.svelte';
   import InstallerResetHistoryModal from '$lib/components/installer/InstallerResetHistoryModal.svelte';
   import InstallerStatusSteps from '$lib/components/installer/InstallerStatusSteps.svelte';
-  import InstallerSupportBar from '$lib/components/installer/InstallerSupportBar.svelte';
+  import StreamModePanel from '$lib/components/stream/StreamModePanel.svelte';
   import {
     closeSteam as closeSteamApi,
     detectDotnetRuntime as detectDotnetRuntimeApi,
@@ -87,6 +87,7 @@
   let showUpdaterReviewModal = false;
   let updaterReviewBusy = false;
   let updaterCheckRequestId = 0;
+  let showStreamMode = false;
 
   $: t = (
     key: keyof typeof messages.en,
@@ -168,7 +169,9 @@
 
     let sizeLabel = '0 B';
     try {
-      const info = await getLegacyRecordDirectoryInfoApi(pageState.effectiveGamePath);
+      const info = await getLegacyRecordDirectoryInfoApi(
+        pageState.effectiveGamePath
+      );
       sizeLabel = formatBytes(info.total_bytes);
     } catch (e) {
       console.error(e);
@@ -267,7 +270,10 @@
     };
 
     const result = await checkForAppUpdate();
-    if (requestId !== updaterCheckRequestId || updaterSnapshot.status !== 'checking') {
+    if (
+      requestId !== updaterCheckRequestId ||
+      updaterSnapshot.status !== 'checking'
+    ) {
       return;
     }
 
@@ -297,7 +303,9 @@
     }
 
     clearPendingWhatsNewLaunch();
-    await goto(`/whats-new?version=${encodeURIComponent(pendingLaunch.toVersion)}`);
+    await goto(
+      `/whats-new?version=${encodeURIComponent(pendingLaunch.toVersion)}`
+    );
     return true;
   }
 
@@ -337,9 +345,7 @@
     await detectEnvironment();
   }
 
-  async function maybeConfirmSteamQuit(
-    action: 'uninstall'
-  ): Promise<boolean> {
+  async function maybeConfirmSteamQuit(action: 'uninstall'): Promise<boolean> {
     if (!hasTauriRuntime() || !env?.steam_launch_options_supported) {
       return false;
     }
@@ -397,7 +403,11 @@
     actionBusy = 'install';
     try {
       const steamPath = env?.steam_path?.trim() ?? '';
-      await installBepinex(steamPath, pageState.effectiveGamePath, skipSteamShutdown);
+      await installBepinex(
+        steamPath,
+        pageState.effectiveGamePath,
+        skipSteamShutdown
+      );
       if (env?.steam_launch_options_supported) {
         const patchResult = await patchLaunchOptions(
           steamPath,
@@ -529,7 +539,10 @@
         }
       };
 
-      openUpdaterModal(t('updaterErrorTitle'), t('updaterErrorBody', { message: errorMessage }));
+      openUpdaterModal(
+        t('updaterErrorTitle'),
+        t('updaterErrorBody', { message: errorMessage })
+      );
     }
   }
 
@@ -562,7 +575,10 @@
   }
 
   async function handleUpdaterAction() {
-    if (updaterSnapshot.status === 'checking' || updaterSnapshot.status === 'downloading') {
+    if (
+      updaterSnapshot.status === 'checking' ||
+      updaterSnapshot.status === 'downloading'
+    ) {
       return;
     }
 
@@ -583,7 +599,10 @@
       openUpdaterModal(
         t('updaterInstalledTitle'),
         t('updaterInstalledBody', {
-          version: updaterSnapshot.availableVersion ?? updaterSnapshot.currentVersion ?? 'unknown'
+          version:
+            updaterSnapshot.availableVersion ??
+            updaterSnapshot.currentVersion ??
+            'unknown'
         })
       );
       return;
@@ -634,6 +653,10 @@
     bazaarInvalid = false;
   }
 
+  function toggleStreamMode() {
+    showStreamMode = !showStreamMode;
+  }
+
   $: selectedPath = selectCustomGamePath(customGamePath);
   $: modInstalled = Boolean(env?.bpp_version);
   $: bundledBppVersion = env?.bundled_bpp_version ?? null;
@@ -678,9 +701,9 @@
               ? pendingUpdate
                 ? t('updaterRetry')
                 : t('updaterErrorState')
-            : updaterSnapshot.status === 'unsupported'
-              ? t('updaterUnsupported')
-              : t('updaterCurrent');
+              : updaterSnapshot.status === 'unsupported'
+                ? t('updaterUnsupported')
+                : t('updaterCurrent');
   $: updaterButtonTitle =
     updaterSnapshot.status === 'available'
       ? t('updaterReadyTitle')
@@ -692,17 +715,23 @@
             ? t('updaterErrorTitle')
             : updaterButtonLabel;
   $: updaterButtonDisabled =
-    updaterSnapshot.status === 'checking' || updaterSnapshot.status === 'downloading';
+    updaterSnapshot.status === 'checking' ||
+    updaterSnapshot.status === 'downloading';
   $: updaterButtonHighlighted =
-    updaterSnapshot.status === 'available' || updaterSnapshot.status === 'installed';
+    updaterSnapshot.status === 'available' ||
+    updaterSnapshot.status === 'installed';
   $: steamModalTitle =
-    pendingSteamAction === 'install' ? t('installRiskTitle') : t('steamQuitTitle');
+    pendingSteamAction === 'install'
+      ? t('installRiskTitle')
+      : t('steamQuitTitle');
   $: steamModalBody =
     pendingSteamAction === 'install'
       ? `${t('installRiskSteamDetected')}\n\n${t('installRiskBody')}`
       : t('steamQuitBody');
   $: steamModalCancelText =
-    pendingSteamAction === 'install' ? t('actionContinueInstall') : t('actionClose');
+    pendingSteamAction === 'install'
+      ? t('actionContinueInstall')
+      : t('actionClose');
   $: persistCustomGamePath(customGamePath);
 
   onMount(() => {
@@ -769,7 +798,8 @@
     eyebrow="BazaarPlusPlus"
     title={t('updaterReviewTitle')}
     body={t('updaterReviewBody', {
-      version: updaterSnapshot.availableVersion ?? pendingUpdate?.version ?? 'unknown'
+      version:
+        updaterSnapshot.availableVersion ?? pendingUpdate?.version ?? 'unknown'
     })}
     confirmText={t('updaterReviewConfirm')}
     cancelText={t('updaterReviewCancel')}
@@ -801,38 +831,49 @@
     {updaterButtonDisabled}
     {updaterButtonHighlighted}
     onOpenUpdater={handleUpdaterAction}
+    streamModeActive={showStreamMode}
+    streamModeLabel={$locale === 'zh' ? '直播模式' : 'Stream Mode'}
+    onToggleStreamMode={toggleStreamMode}
   />
 
-  <InstallerStatusSteps
-    {env}
-    {dotnetState}
-    {modInstalled}
-    {versionMismatch}
-    {bundledBppVersion}
-    {installedBppVersion}
-    {bazaarFound}
-    {bazaarChecking}
-    {bazaarInvalid}
-    bind:customGamePath
-    {hasPath}
-    {isBusy}
-    {actionBusy}
-    {canInstall}
-    {canLaunchGame}
-    {dotnetDownloadUrl}
-    effectiveGamePath={pageState.effectiveGamePath}
-    {t}
-    onPickGamePath={pickGamePath}
-    onCheckPath={checkPath}
-    onRequestInstall={requestInstall}
-    onRepair={requestRepair}
-    onUninstall={uninstallBpp}
-    onLaunchGame={launchGame}
-    onResetBazaar={resetBazaar}
-    onCustomGamePathInput={clearBazaarInvalid}
-  />
-
-  <InstallerSupportBar />
+  {#if showStreamMode}
+    <section class="embedded-stream-shell">
+      <StreamModePanel
+        eyebrow={$locale === 'zh' ? '直播模式' : 'Stream Mode'}
+        title={$locale === 'zh' ? '直播模式' : 'Stream Mode'}
+        intro={t('streamIntro')}
+      />
+    </section>
+  {:else}
+    <InstallerStatusSteps
+      {env}
+      {dotnetState}
+      {modInstalled}
+      {versionMismatch}
+      {bundledBppVersion}
+      {installedBppVersion}
+      {bazaarFound}
+      {bazaarChecking}
+      {bazaarInvalid}
+      bind:customGamePath
+      {hasPath}
+      {isBusy}
+      {actionBusy}
+      {canInstall}
+      {canLaunchGame}
+      {dotnetDownloadUrl}
+      effectiveGamePath={pageState.effectiveGamePath}
+      {t}
+      onPickGamePath={pickGamePath}
+      onCheckPath={checkPath}
+      onRequestInstall={requestInstall}
+      onRepair={requestRepair}
+      onUninstall={uninstallBpp}
+      onLaunchGame={launchGame}
+      onResetBazaar={resetBazaar}
+      onCustomGamePathInput={clearBazaarInvalid}
+    />
+  {/if}
 
   <footer class="footer" aria-hidden="true">
     <div class="rule">
@@ -851,6 +892,22 @@
     display: grid;
     gap: 0.85rem;
     animation: fade-up 0.5s ease both;
+  }
+
+  .embedded-stream-shell {
+    padding: 0.95rem 1.05rem;
+    background:
+      radial-gradient(
+        circle at top left,
+        rgba(255, 214, 140, 0.08),
+        transparent 42%
+      ),
+      linear-gradient(180deg, rgba(20, 12, 6, 0.96), rgba(12, 7, 4, 0.94));
+    border: 1px solid rgba(200, 148, 55, 0.15);
+    border-radius: 3px;
+    box-shadow:
+      0 8px 28px rgba(0, 0, 0, 0.3),
+      inset 0 0 0 1px rgba(255, 214, 140, 0.04);
   }
 
   @keyframes fade-up {

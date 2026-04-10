@@ -22,6 +22,8 @@ export function getInstallRuntimeRisks(
   return risks;
 }
 
-export function shouldShowInstallRiskModal(risks: InstallRuntimeRisk[]): boolean {
+export function shouldShowInstallRiskModal(
+  risks: InstallRuntimeRisk[]
+): boolean {
   return risks.length > 0;
 }

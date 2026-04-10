@@ -273,7 +273,9 @@ export const whatsNewReleases: WhatsNewRelease[] = [
   }
 ];
 
-export function resolveWhatsNewRelease(version: string | null): WhatsNewRelease {
+export function resolveWhatsNewRelease(
+  version: string | null
+): WhatsNewRelease {
   const normalizedVersion = version?.trim() ?? '';
   return (
     whatsNewReleases.find((release) => release.version === normalizedVersion) ??

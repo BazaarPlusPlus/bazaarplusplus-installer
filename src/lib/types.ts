@@ -45,3 +45,24 @@ export interface SupportersResponse {
   fetchedAt: number | null;
   stale: boolean;
 }
+
+export interface StreamServiceStatus {
+  running: boolean;
+  host: string;
+  port: number | null;
+  overlay_url: string | null;
+  using_fallback_port: boolean;
+  last_error: string | null;
+  manual_from: string | null;
+  started_at: string | null;
+  effective_from: string | null;
+  max_records: number;
+}
+
+export interface StreamRecordSummary {
+  id: string;
+  title: string;
+  subtitle: string;
+  captured_at: string;
+  image_url?: string | null;
+}

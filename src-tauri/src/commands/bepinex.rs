@@ -283,10 +283,7 @@ pub fn uninstall_bpp(
     ensure_valid_game_path(game_path)?;
 
     #[cfg(target_os = "macos")]
-    crate::commands::steam::prepare_steam_for_launch_option_update(
-        Path::new(&_steam_path),
-        false,
-    )?;
+    crate::commands::steam::prepare_steam_for_launch_option_update(Path::new(&_steam_path), false)?;
 
     uninstall_payload(game_path)?;
 

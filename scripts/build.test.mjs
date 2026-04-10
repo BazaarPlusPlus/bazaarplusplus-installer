@@ -29,7 +29,7 @@ test('macOS production build targets arm64 artifacts', () => {
   );
   assert.match(
     output,
-    /Bundling macos installer\|npm run tauri bundle -- --bundles dmg --config .*src-tauri\/tauri\.macos\.conf\.json --target aarch64-apple-darwin/
+    /Bundling macos installer\|npm run tauri bundle -- --bundles app,dmg --config .*src-tauri\/tauri\.macos\.conf\.json --target aarch64-apple-darwin/
   );
   assert.match(
     output,
@@ -42,7 +42,8 @@ test('macOS production build targets arm64 artifacts', () => {
 });
 
 test('macOS production build removes the entire bundle directory before rebundling', () => {
-  const bundleDir = '/Users/yxinyu/codes/bpp_codes/bazaarplusplus-installer/src-tauri/target/aarch64-apple-darwin/release/bundle';
+  const bundleDir =
+    '/Users/yxinyu/codes/bpp_codes/bazaarplusplus-installer/src-tauri/target/aarch64-apple-darwin/release/bundle';
   const staleDir = `${bundleDir}/macos`;
   const staleFile = `${staleDir}/rw.test.BazaarPlusPlus_2.0.0_aarch64.dmg`;
 
@@ -116,7 +117,8 @@ test('macOS production build requires the arm64 Rust target', () => {
 });
 
 test('Windows upload uses installer and updater R2 paths under the version directory', () => {
-  const bundleDir = '/Users/yxinyu/codes/bpp_codes/bazaarplusplus-installer/src-tauri/target/release/bundle/nsis';
+  const bundleDir =
+    '/Users/yxinyu/codes/bpp_codes/bazaarplusplus-installer/src-tauri/target/release/bundle/nsis';
   const installerFile = `${bundleDir}/BazaarPlusPlus_2.1.0_x64-setup.exe`;
   const signatureFile = `${installerFile}.sig`;
 

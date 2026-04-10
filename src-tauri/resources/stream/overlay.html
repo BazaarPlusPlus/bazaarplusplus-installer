@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>BazaarPlusPlus Overlay</title>
+    <link rel="stylesheet" href="/assets/overlay.css" />
+    <script type="module" src="/assets/overlay.js"></script>
+  </head>
+  <body>
+    <main id="overlay-root" class="overlay empty" data-state="idle">
+      <div class="panel">
+        <div class="panel-glow" aria-hidden="true"></div>
+
+        <header class="panel-header">
+          <div>
+            <p class="eyebrow">BazaarPlusPlus</p>
+            <p class="header-line">OBS Local Overlay</p>
+          </div>
+          <p id="overlay-status" class="status-pill">Waiting</p>
+        </header>
+
+        <section class="content-grid">
+          <section class="record-block">
+            <p id="overlay-kicker" class="kicker">Latest Record</p>
+            <h1 id="overlay-title">No records yet</h1>
+            <p id="overlay-detail" class="detail">
+              Start a match and the overlay will update automatically.
+            </p>
+          </section>
+
+          <figure id="overlay-card-shell" class="card-shell" hidden>
+            <div id="overlay-card-stage" class="card-stage">
+              <img id="overlay-card-image" alt="Latest record card strip" />
+            </div>
+          </figure>
+        </section>
+
+        <footer class="meta-row">
+          <p id="overlay-time" class="meta-chip">Awaiting first result</p>
+          <p id="overlay-signal" class="signal-chip">Local feed idle</p>
+        </footer>
+      </div>
+    </main>
+  </body>
+</html>

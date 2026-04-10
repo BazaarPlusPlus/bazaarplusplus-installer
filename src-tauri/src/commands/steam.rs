@@ -50,9 +50,7 @@ fn steam_running_from_pgrep(
 fn tasklist_output_indicates_steam_running(stdout: &[u8]) -> bool {
     let output = String::from_utf8_lossy(stdout);
 
-    output
-        .lines()
-        .any(|line| line.contains(STEAM_PROCESS_NAME))
+    output.lines().any(|line| line.contains(STEAM_PROCESS_NAME))
 }
 
 fn ensure_process_stopped_with<IsRunning, RequestQuit, Sleep>(

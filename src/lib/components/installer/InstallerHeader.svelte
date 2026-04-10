@@ -12,6 +12,9 @@
   export let updaterButtonDisabled = false;
   export let updaterButtonHighlighted = false;
   export let onOpenUpdater: () => void;
+  export let streamModeActive = false;
+  export let streamModeLabel = $locale === 'zh' ? '直播模式' : 'Stream Mode';
+  export let onToggleStreamMode: () => void;
 </script>
 
 <header class="header">
@@ -113,6 +116,17 @@
         />
       </svg>
       <span class="updater-label">{updaterButtonLabel}</span>
+    </button>
+
+    <button
+      class="about-toggle stream-toggle"
+      class:is-active={streamModeActive}
+      type="button"
+      title={streamModeLabel}
+      aria-pressed={streamModeActive}
+      onclick={onToggleStreamMode}
+    >
+      <span class="updater-label">{streamModeLabel}</span>
     </button>
   </div>
 
@@ -257,7 +271,8 @@
     cursor: pointer;
   }
 
-  .updater-toggle {
+  .updater-toggle,
+  .stream-toggle {
     width: auto;
     min-width: 2rem;
     padding: 0 0.45rem;
@@ -267,6 +282,7 @@
     font-size: 0.5rem;
     letter-spacing: 0.12em;
     text-transform: uppercase;
+    white-space: nowrap;
   }
 
   .updater-toggle.is-highlighted {
@@ -282,12 +298,28 @@
       0 0 18px rgba(232, 200, 122, 0.12);
   }
 
+  .stream-toggle.is-active {
+    color: #f3d38d;
+    border-color: rgba(232, 200, 122, 0.52);
+    background: linear-gradient(
+      180deg,
+      rgba(232, 200, 122, 0.18),
+      rgba(200, 148, 55, 0.1)
+    );
+    box-shadow:
+      0 0 0 1px rgba(255, 214, 140, 0.1) inset,
+      0 0 12px rgba(232, 200, 122, 0.08);
+  }
+
   .updater-toggle:disabled {
     opacity: 0.55;
     cursor: wait;
   }
 
   .updater-label {
+    display: inline-flex;
+    align-items: center;
+    height: 100%;
     white-space: nowrap;
   }
 
@@ -419,17 +451,23 @@
     color: rgba(205, 150, 60, 0.55);
   }
 
-  @media (max-width: 520px) {
+  @media (max-width: 640px) {
     .header {
       padding: 1.2rem 1rem 1rem;
     }
+
+    .header-corner-links {
+      position: static;
+      width: 100%;
+      justify-content: flex-start;
+      margin-bottom: 0.75rem;
+      padding-right: 3.7rem;
+      flex-wrap: wrap;
+    }
+
     .locale-toggle {
       top: 0.7rem;
       right: 0.7rem;
-    }
-    .header-corner-links {
-      top: 0.7rem;
-      left: 0.7rem;
     }
   }
 </style>
