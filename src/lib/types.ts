@@ -65,4 +65,9 @@ export interface StreamRecordSummary {
   subtitle: string;
   captured_at: string;
   image_url?: string | null;
+  wins?: number | null;
+  position?: number | null;
+  battle_count?: number | null;
+  rank?: number | null;
+  rating?: number | null;
 }

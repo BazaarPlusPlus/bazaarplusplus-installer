@@ -14,6 +14,11 @@ pub struct StreamRecord {
     pub subtitle: String,
     pub captured_at: String,
     pub image_url: Option<String>,
+    pub wins: Option<i64>,
+    pub position: Option<i64>,
+    pub battle_count: Option<i64>,
+    pub rank: Option<i64>,
+    pub rating: Option<i64>,
 }
 
 #[derive(Clone, Debug)]
@@ -23,6 +28,11 @@ pub(crate) struct DatabaseRecord {
     subtitle: String,
     captured_at: String,
     image_path: Option<String>,
+    wins: Option<i64>,
+    position: Option<i64>,
+    battle_count: Option<i64>,
+    rank: Option<i64>,
+    rating: Option<i64>,
 }
 
 #[derive(Clone, Debug)]
@@ -109,6 +119,11 @@ impl RecordRepository {
             subtitle: record.subtitle,
             captured_at: record.captured_at,
             image_url,
+            wins: record.wins,
+            position: record.position,
+            battle_count: record.battle_count,
+            rank: record.rank,
+            rating: record.rating,
         }
     }
 }
@@ -171,7 +186,7 @@ pub(crate) fn load_latest_record_filtered(
     }
 
     let conn = Connection::open(database_path).map_err(|err| err.to_string())?;
-    let template = "select id, title, subtitle, captured_at{image_column} from records{where_clause} order by datetime(captured_at) desc limit 1";
+    let template = "select id, title, subtitle, captured_at{image_column}{wins_column}{position_column}{battle_count_column}{rank_column}{rating_column} from records{where_clause} order by datetime(captured_at) desc limit 1";
     let mut stmt = prepare_record_statement_with_where(
         &conn,
         template,
@@ -210,7 +225,7 @@ pub(crate) fn load_recent_records_filtered(
     }
 
     let conn = Connection::open(database_path).map_err(|err| err.to_string())?;
-    let template = "select id, title, subtitle, captured_at{image_column} from records{where_clause} order by datetime(captured_at) desc limit ?1";
+    let template = "select id, title, subtitle, captured_at{image_column}{wins_column}{position_column}{battle_count_column}{rank_column}{rating_column} from records{where_clause} order by datetime(captured_at) desc limit ?1";
     let mut stmt = prepare_record_statement_with_where(
         &conn,
         template,
@@ -246,7 +261,7 @@ pub(crate) fn load_record_by_id(
     let conn = Connection::open(database_path).map_err(|err| err.to_string())?;
     let mut stmt = prepare_record_statement(
         &conn,
-        "select id, title, subtitle, captured_at{image_column} from records where id = ?1 limit 1",
+        "select id, title, subtitle, captured_at{image_column}{wins_column}{position_column}{battle_count_column}{rank_column}{rating_column} from records where id = ?1 limit 1",
     )?;
 
     stmt.query_row([record_id], map_database_record)
@@ -266,14 +281,45 @@ fn prepare_record_statement_with_where<'conn>(
     template: &str,
     where_clause: &str,
 ) -> Result<rusqlite::Statement<'conn>, String> {
-    let query = if records_table_has_column(conn, "image_path")? {
-        template.replace("{image_column}", ", image_path")
-    } else {
-        template.replace("{image_column}", ", null as image_path")
-    }
-    .replace("{where_clause}", where_clause);
+    let query = template
+        .replace(
+            "{image_column}",
+            &optional_record_column_projection(conn, "image_path")?,
+        )
+        .replace(
+            "{wins_column}",
+            &optional_record_column_projection(conn, "wins")?,
+        )
+        .replace(
+            "{position_column}",
+            &optional_record_column_projection(conn, "position")?,
+        )
+        .replace(
+            "{battle_count_column}",
+            &optional_record_column_projection(conn, "battle_count")?,
+        )
+        .replace(
+            "{rank_column}",
+            &optional_record_column_projection(conn, "rank")?,
+        )
+        .replace(
+            "{rating_column}",
+            &optional_record_column_projection(conn, "rating")?,
+        )
+        .replace("{where_clause}", where_clause);
 
     conn.prepare(&query).map_err(|err| err.to_string())
+}
+
+fn optional_record_column_projection(
+    conn: &Connection,
+    column_name: &str,
+) -> Result<String, String> {
+    if records_table_has_column(conn, column_name)? {
+        Ok(format!(r#", "{column_name}" as {column_name}"#))
+    } else {
+        Ok(format!(", null as {column_name}"))
+    }
 }
 
 fn records_table_has_column(conn: &Connection, column_name: &str) -> Result<bool, String> {
@@ -294,6 +340,11 @@ fn map_database_record(row: &rusqlite::Row<'_>) -> rusqlite::Result<DatabaseReco
         subtitle: row.get(2)?,
         captured_at: row.get(3)?,
         image_path: row.get(4)?,
+        wins: row.get(5)?,
+        position: row.get(6)?,
+        battle_count: row.get(7)?,
+        rank: row.get(8)?,
+        rating: row.get(9)?,
     })
 }
 
@@ -337,6 +388,70 @@ mod tests {
         let latest = load_latest_record(temp.path()).unwrap().unwrap();
         assert_eq!(latest.id, "record-1");
         assert_eq!(latest.image_path.as_deref(), Some("match-1.png"));
+    }
+
+    #[test]
+    fn latest_record_reads_optional_run_metrics_when_present() {
+        let temp = tempfile::NamedTempFile::new().unwrap();
+        let conn = rusqlite::Connection::open(temp.path()).unwrap();
+        conn.execute(
+            "create table records (
+                id text primary key,
+                title text not null,
+                subtitle text not null,
+                captured_at text not null,
+                image_path text,
+                wins integer,
+                position integer,
+                battle_count integer,
+                rank integer,
+                rating integer
+            )",
+            [],
+        )
+        .unwrap();
+        conn.execute(
+            "insert into records (id, title, subtitle, captured_at, image_path, wins, position, battle_count, rank, rating)
+             values ('record-1', 'Title', 'Subtitle', '2026-04-10T23:10:00+08:00', 'match-1.png', 10, 3, 14, 128, 1942)",
+            [],
+        )
+        .unwrap();
+
+        let latest = load_latest_record(temp.path()).unwrap().unwrap();
+        assert_eq!(latest.wins, Some(10));
+        assert_eq!(latest.position, Some(3));
+        assert_eq!(latest.battle_count, Some(14));
+        assert_eq!(latest.rank, Some(128));
+        assert_eq!(latest.rating, Some(1942));
+    }
+
+    #[test]
+    fn latest_record_defaults_optional_run_metrics_to_none_when_columns_are_missing() {
+        let temp = tempfile::NamedTempFile::new().unwrap();
+        let conn = rusqlite::Connection::open(temp.path()).unwrap();
+        conn.execute(
+            "create table records (
+                id text primary key,
+                title text not null,
+                subtitle text not null,
+                captured_at text not null
+            )",
+            [],
+        )
+        .unwrap();
+        conn.execute(
+            "insert into records (id, title, subtitle, captured_at)
+             values ('record-1', 'Title', 'Subtitle', '2026-04-10T23:10:00+08:00')",
+            [],
+        )
+        .unwrap();
+
+        let latest = load_latest_record(temp.path()).unwrap().unwrap();
+        assert_eq!(latest.wins, None);
+        assert_eq!(latest.position, None);
+        assert_eq!(latest.battle_count, None);
+        assert_eq!(latest.rank, None);
+        assert_eq!(latest.rating, None);
     }
 
     #[test]
@@ -390,6 +505,43 @@ mod tests {
         let latest = repository.load_latest().unwrap().unwrap();
 
         assert_eq!(latest.image_url.as_deref(), Some("/images/record-1"));
+    }
+
+    #[test]
+    fn repository_preserves_optional_run_metrics_in_stream_record() {
+        let temp_dir = tempfile::tempdir().unwrap();
+        let game_path = temp_dir.path().join("TheBazaar");
+        let data_dir = game_path.join("BazaarPlusPlus");
+        std::fs::create_dir_all(&data_dir).unwrap();
+
+        let database_path = data_dir.join("records.sqlite");
+        let conn = rusqlite::Connection::open(&database_path).unwrap();
+        conn.execute(
+            "create table records (
+                id text primary key,
+                title text not null,
+                subtitle text not null,
+                captured_at text not null,
+                wins integer,
+                position integer,
+                battle_count integer
+            )",
+            [],
+        )
+        .unwrap();
+        conn.execute(
+            "insert into records (id, title, subtitle, captured_at, wins, position, battle_count)
+             values ('record-1', 'Title', 'Subtitle', '2026-04-10T23:10:00+08:00', 10, 2, 13)",
+            [],
+        )
+        .unwrap();
+
+        let repository = RecordRepository::new(Some(game_path));
+        let latest = repository.load_latest().unwrap().unwrap();
+
+        assert_eq!(latest.wins, Some(10));
+        assert_eq!(latest.position, Some(2));
+        assert_eq!(latest.battle_count, Some(13));
     }
 
     #[test]
