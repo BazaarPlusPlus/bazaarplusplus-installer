@@ -1,9 +1,8 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onDestroy, onMount } from 'svelte';
   import { openUrl } from '@tauri-apps/plugin-opener';
   import StreamFilterCard from '$lib/components/stream/StreamFilterCard.svelte';
   import StreamServiceCard from '$lib/components/stream/StreamServiceCard.svelte';
-  import StreamPreviewCard from '$lib/components/stream/StreamPreviewCard.svelte';
   import { locale } from '$lib/locale';
   import { formatMessage, messages } from '$lib/i18n';
   import {
@@ -46,6 +45,8 @@
   let maxRecordsInput = 5;
   let cropCodeInput = '';
   let cropCodeMessage = '';
+  let copyMessage = '';
+  let copyMessageTimer: number | null = null;
 
   $: t = (
     key: keyof typeof messages.en,
@@ -54,12 +55,17 @@
   $: panelTitle = title || t('streamTitle');
   $: panelIntro = intro || t('streamIntro');
   $: panelEyebrow = eyebrow || ($locale === 'zh' ? '直播模式' : 'Stream Mode');
-  $: pageState = createStreamPageState(status);
+  $: pageState = createStreamPageState(status, $locale);
   $: baseUrl = status.overlay_url?.replace(/\/overlay$/, '') ?? null;
+  $: isZh = $locale === 'zh';
 
   onMount(() => {
     locale.init();
     void initializePage();
+  });
+
+  onDestroy(() => {
+    clearCopyMessage();
   });
 
   async function refreshStatus() {
@@ -119,8 +125,14 @@
 
     try {
       await navigator.clipboard.writeText(status.overlay_url);
+      showCopyMessage(
+        isZh ? 'OBS 地址已复制' : 'OBS URL copied'
+      );
     } catch (error) {
       console.error(error);
+      showCopyMessage(
+        isZh ? '复制失败，请重试' : 'Copy failed'
+      );
     }
   }
 
@@ -220,14 +232,35 @@
     try {
       const payload = await importStreamOverlayCropCode(cropCodeInput.trim());
       cropCodeInput = payload.code;
-      cropCodeMessage = 'Crop code saved. The overlay will use it on the next refresh.';
+      cropCodeMessage = isZh
+        ? '裁切代码已保存，overlay 会在下次刷新时使用它。'
+        : 'Crop code saved. The overlay will use it on the next refresh.';
     } catch (error) {
       console.error(error);
-      cropCodeMessage =
-        error instanceof Error ? error.message : 'Failed to import crop code.';
+      cropCodeMessage = error instanceof Error
+        ? error.message
+        : isZh
+          ? '导入裁切代码失败。'
+          : 'Failed to import crop code.';
     } finally {
       importingCropCode = false;
     }
+  }
+
+  function clearCopyMessage() {
+    if (copyMessageTimer !== null) {
+      window.clearTimeout(copyMessageTimer);
+      copyMessageTimer = null;
+    }
+  }
+
+  function showCopyMessage(message: string) {
+    copyMessage = message;
+    clearCopyMessage();
+    copyMessageTimer = window.setTimeout(() => {
+      copyMessage = '';
+      copyMessageTimer = null;
+    }, 1800);
   }
 </script>
 
@@ -246,6 +279,7 @@
       {importingCropCode}
       {cropCodeInput}
       {cropCodeMessage}
+      {copyMessage}
       onStart={handleStart}
       onStop={handleStop}
       onCopyUrl={copyUrl}
@@ -274,8 +308,6 @@
       onUseStreamStart={useStreamStartTime}
     />
   </div>
-
-  <StreamPreviewCard {baseUrl} />
 </section>
 
 <style>
@@ -286,7 +318,7 @@
 
   .stream-copy {
     display: grid;
-    gap: 0.2rem;
+    gap: 0.22rem;
     padding: 0 0.1rem;
   }
 
@@ -317,8 +349,8 @@
 
   .stream-grid {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.85rem;
+    grid-template-columns: minmax(0, 1.15fr) minmax(20rem, 0.85fr);
+    gap: 1rem;
   }
 
   @media (max-width: 900px) {

@@ -15,7 +15,7 @@ test('createStreamPageState surfaces fallback-port guidance', () => {
     started_at: '2026-04-11T21:00:00+08:00',
     effective_from: '2026-04-11T21:00:00+08:00',
     max_records: 5
-  });
+  }, 'en');
 
   assert.equal(state.canCopyUrl, true);
   assert.match(state.portMessage, /17658/);
@@ -34,9 +34,31 @@ test('createStreamPageState warns that closing the window will hide to tray whil
     started_at: '2026-04-11T21:00:00+08:00',
     effective_from: '2026-04-11T21:00:00+08:00',
     max_records: 5
-  });
+  }, 'en');
 
   assert.match(state.lifecycleMessage, /tray/i);
+});
+
+test('createStreamPageState returns localized Chinese copy when requested', () => {
+  const state = createStreamPageState(
+    {
+      running: false,
+      host: '127.0.0.1',
+      port: null,
+      overlay_url: null,
+      using_fallback_port: false,
+      last_error: null,
+      manual_from: null,
+      started_at: null,
+      effective_from: null,
+      max_records: 5
+    },
+    'zh'
+  );
+
+  assert.match(state.portMessage, /未启动/);
+  assert.match(state.lifecycleMessage, /正常退出/);
+  assert.match(state.maxRecordsMessage, /最多展示 5 条/);
 });
 
 test('toDateTimeLocalValue converts RFC3339 timestamps into datetime-local values', async () => {

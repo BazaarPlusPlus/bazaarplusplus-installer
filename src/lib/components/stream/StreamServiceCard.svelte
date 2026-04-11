@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { locale } from '$lib/locale';
   import type { StreamPageState } from '$lib/stream/state';
   import type { StreamServiceStatus } from '$lib/types';
 
@@ -8,6 +9,7 @@
   export let importingCropCode = false;
   export let cropCodeInput = '';
   export let cropCodeMessage = '';
+  export let copyMessage = '';
   export let onStart: () => void | Promise<void>;
   export let onStop: () => void | Promise<void>;
   export let onCopyUrl: () => void | Promise<void>;
@@ -17,29 +19,90 @@
   export let onImportCropCode: () => void | Promise<void>;
 
   let importPanelOpen = false;
+  $: isZh = $locale === 'zh';
+  $: eyebrow = isZh ? '直播服务' : 'Live Service';
+  $: title = status.running
+    ? isZh
+      ? '直播服务运行中'
+      : 'Stream service is running'
+    : isZh
+      ? '直播服务未启动'
+      : 'Stream service is stopped';
+  $: statusBadge = status.running ? (isZh ? '运行中' : 'Live') : isZh ? '空闲' : 'Idle';
+  $: utilityActions = [
+    {
+      label: isZh ? '复制 OBS 地址' : 'Copy OBS URL',
+      disabled: !pageState.canCopyUrl,
+      action: onCopyUrl
+    },
+    {
+      label: isZh ? '打开预览页' : 'Open Preview',
+      disabled: !pageState.canOpenPreview,
+      action: onOpenPreview
+    },
+    {
+      label: isZh ? '打开校准页' : 'Open Calibration',
+      disabled: !pageState.canOpenPreview,
+      action: onOpenCalibration
+    },
+    {
+      label: importPanelOpen
+        ? isZh
+          ? '收起裁切代码'
+          : 'Hide Crop Code'
+        : isZh
+          ? '导入裁切代码'
+          : 'Import Crop Code',
+      disabled: busy,
+      action: () => {
+        importPanelOpen = !importPanelOpen;
+      }
+    }
+  ];
+  $: toggleActionLabel = busy
+    ? isZh
+      ? '处理中...'
+      : 'Working...'
+    : status.running
+      ? isZh
+        ? '关闭服务'
+        : 'Stop Service'
+      : isZh
+        ? '启动服务'
+        : 'Start Service';
+  $: toggleAction = status.running ? onStop : onStart;
 </script>
 
 <section class="card">
   <div class="heading-row">
-    <div>
-      <p class="eyebrow">Live Service</p>
-      <h2>
-        {status.running
-          ? 'Stream service is running'
-          : 'Stream service is stopped'}
-      </h2>
+    <div class="heading-copy">
+      <p class="eyebrow">{eyebrow}</p>
+      <h2>{title}</h2>
+      <p class="summary">
+        {isZh
+          ? '先启动本地服务，再把生成的地址粘到 OBS 浏览器源。'
+          : 'Start the local service first, then paste the generated URL into OBS as a browser source.'}
+      </p>
     </div>
 
-    <span class:online={status.running} class="badge"
-      >{status.running ? 'Live' : 'Idle'}</span
-    >
+    <span class:online={status.running} class="badge">{statusBadge}</span>
   </div>
 
-  <p class="detail">{pageState.portMessage}</p>
-  <p class="detail subtle">{pageState.lifecycleMessage}</p>
+  <div class="detail-grid">
+    <div class="detail-card">
+      <p class="detail-label">{isZh ? '当前状态' : 'Status'}</p>
+      <p class="detail">{pageState.portMessage}</p>
+    </div>
+  </div>
 
   {#if status.overlay_url}
-    <div class="url-box">{status.overlay_url}</div>
+    <div class="url-shell">
+      <p class="detail-label">{isZh ? 'OBS 浏览器源地址' : 'OBS browser source URL'}</p>
+      <div class="url-box">{status.overlay_url}</div>
+      {#if copyMessage}
+        <p class="copy-message">{copyMessage}</p>
+      {/if}
+    </div>
   {/if}
 
   {#if status.last_error}
@@ -47,32 +110,38 @@
   {/if}
 
   <div class="actions">
-    <button class="primary" disabled={busy || status.running} on:click={onStart}
-      >Start Service</button
-    >
-    <button disabled={busy || !status.running} on:click={onStop}
-      >Stop Service</button
-    >
-    <button disabled={!pageState.canCopyUrl} on:click={onCopyUrl}
-      >Copy OBS URL</button
-    >
-    <button disabled={!pageState.canOpenPreview} on:click={onOpenPreview}
-      >Open Preview</button
-    >
-    <button disabled={!pageState.canOpenPreview} on:click={onOpenCalibration}
-      >Open Calibration</button
-    >
-    <button
-      disabled={busy}
-      on:click={() => {
-        importPanelOpen = !importPanelOpen;
-      }}>Import Crop Code</button
-    >
+    <button class:running={status.running} class="primary toggle-button" disabled={busy} on:click={toggleAction}>
+      {toggleActionLabel}
+    </button>
+
+    <div class="utility-shell">
+      <p class="detail-label">{isZh ? '快捷工具' : 'Quick tools'}</p>
+
+      <div class="utility-actions">
+        {#each utilityActions as item}
+          <button class="secondary" disabled={item.disabled} on:click={item.action}>
+            {item.label}
+          </button>
+        {/each}
+      </div>
+    </div>
+
   </div>
 
   {#if importPanelOpen}
+    <div class="advanced-shell">
+      <p class="detail-label">{isZh ? '裁切代码' : 'Crop code'}</p>
+      <p class="advanced-copy">
+        {isZh
+          ? '只在你已经拿到外部裁切代码时使用；保存后，overlay 会在下次刷新时应用。'
+          : 'Use this only when you already have an external crop code. The overlay applies it on the next refresh.'}
+      </p>
+    </div>
+
     <label class="code-block">
-      <span class="code-label">Import Base64 Crop Code</span>
+      <span class="code-label">
+        {isZh ? '粘贴 Base64 裁切代码' : 'Import Base64 Crop Code'}
+      </span>
       <textarea
         value={cropCodeInput}
         rows="4"
@@ -83,7 +152,7 @@
 
     <div class="import-row">
       <button disabled={busy || importingCropCode || !cropCodeInput.trim()} on:click={onImportCropCode}
-        >Apply Crop Code</button
+        >{isZh ? '应用裁切代码' : 'Apply Crop Code'}</button
       >
       {#if cropCodeMessage}
         <p class="import-message">{cropCodeMessage}</p>
@@ -113,7 +182,12 @@
     display: flex;
     justify-content: space-between;
     gap: 1rem;
-    align-items: start;
+    align-items: flex-start;
+  }
+
+  .heading-copy {
+    display: grid;
+    gap: 0.2rem;
   }
 
   .eyebrow {
@@ -127,7 +201,9 @@
 
   h2,
   .detail,
-  .error {
+  .error,
+  .summary,
+  .detail-label {
     margin: 0;
   }
 
@@ -136,7 +212,15 @@
     color: #f0e2bf;
   }
 
+  .summary {
+    max-width: 42rem;
+    color: rgba(215, 197, 161, 0.72);
+    line-height: 1.45;
+  }
+
   .badge {
+    flex: 0 0 auto;
+    min-width: 6.5rem;
     padding: 0.4rem 0.7rem;
     border-radius: 2px;
     border: 1px solid rgba(190, 137, 59, 0.16);
@@ -158,19 +242,40 @@
     line-height: 1.5;
   }
 
-  .detail.subtle {
-    color: rgba(199, 183, 152, 0.62);
+  .detail-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.7rem;
+  }
+
+  .detail-card,
+  .url-shell {
+    display: grid;
+    gap: 0.32rem;
+    padding: 0.8rem 0.9rem;
+    border-radius: 2px;
+    border: 1px solid rgba(176, 126, 52, 0.12);
+    background: rgba(10, 7, 4, 0.58);
+  }
+
+  .detail-label {
+    font-size: 0.68rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(213, 188, 145, 0.74);
   }
 
   .url-box {
-    padding: 0.8rem 0.9rem;
-    border-radius: 2px;
-    background: rgba(8, 6, 4, 0.82);
-    border: 1px solid rgba(176, 126, 52, 0.16);
     color: #eccf92;
     font-family: 'Fira Code', monospace;
     font-size: 0.8rem;
     word-break: break-all;
+  }
+
+  .copy-message {
+    margin: 0;
+    color: #f1ddaa;
+    font-size: 0.76rem;
   }
 
   .error {
@@ -178,9 +283,31 @@
   }
 
   .actions {
-    display: flex;
-    flex-wrap: wrap;
+    display: grid;
+    gap: 0.75rem;
+  }
+
+  .utility-shell,
+  .advanced-shell {
+    display: grid;
+    gap: 0.45rem;
+    padding: 0.75rem 0.85rem;
+    border-radius: 2px;
+    border: 1px solid rgba(176, 126, 52, 0.12);
+    background: rgba(9, 6, 4, 0.52);
+  }
+
+  .utility-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 0.55rem;
+  }
+
+  .advanced-copy {
+    margin: 0;
+    color: rgba(215, 197, 161, 0.68);
+    line-height: 1.45;
+    font-size: 0.8rem;
   }
 
   .code-block {
@@ -225,6 +352,7 @@
   }
 
   button {
+    width: 100%;
     min-height: 2.4rem;
     padding: 0.65rem 0.9rem;
     border-radius: 2px;
@@ -236,6 +364,11 @@
     letter-spacing: 0.14em;
     text-transform: uppercase;
     cursor: pointer;
+  }
+
+  button.secondary,
+  .toggle-button.running {
+    background: rgba(192, 138, 54, 0.05);
   }
 
   button.primary {
@@ -250,5 +383,12 @@
   button:disabled {
     opacity: 0.45;
     cursor: not-allowed;
+  }
+
+  @media (max-width: 820px) {
+    .detail-grid,
+    .utility-actions {
+      grid-template-columns: 1fr;
+    }
   }
 </style>

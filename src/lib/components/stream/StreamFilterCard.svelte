@@ -12,40 +12,54 @@
   export let onMaxRecordsInput: (value: number) => void;
   export let onSave: () => void | Promise<void>;
   export let onUseStreamStart: () => void | Promise<void>;
+
+  $: isZh = $locale === 'zh';
 </script>
 
 <section class="card">
   <div class="heading-row">
-    <div>
-      <p class="eyebrow">{$locale === 'zh' ? '展示范围' : 'Display Range'}</p>
-      <h2>
-        {$locale === 'zh'
-          ? '控制从哪一场开始展示'
-          : 'Control where record display starts'}
-      </h2>
+    <div class="heading-copy">
+      <p class="eyebrow">{isZh ? '展示范围' : 'Display Range'}</p>
+      <h2>{isZh ? '设置 overlay 展示范围' : 'Set overlay display range'}</h2>
+      <p class="summary">
+        {isZh
+          ? '设置从哪一个时间点开始读取记录，以及页面上最多保留多少条。'
+          : 'Choose where record playback starts and how many recent records the overlay keeps visible.'}
+      </p>
     </div>
     <span class="badge">
-      {$locale === 'zh' ? `最多 ${status.max_records} 条` : `Up to ${status.max_records}`}
+      {isZh ? `当前上限 ${status.max_records} 条` : `Limit ${status.max_records}`}
     </span>
+  </div>
+
+  <div class="context-grid">
+    <div class="context-card">
+      <p class="context-label">{isZh ? '当前起点' : 'Current start point'}</p>
+      <p class="detail">{pageState.effectiveFromMessage}</p>
+    </div>
+    <div class="context-card">
+      <p class="context-label">{isZh ? '当前数量' : 'Current count'}</p>
+      <p class="detail subtle">{pageState.maxRecordsMessage}</p>
+    </div>
   </div>
 
   <div class="grid">
     <label class="field">
-      <span>{$locale === 'zh' ? '手动起始时间' : 'Manual start time'}</span>
+      <span>{isZh ? '开始时间' : 'Start time'}</span>
       <input
         type="datetime-local"
         value={manualFromInput}
         on:input={(event) => onManualFromInput(event.currentTarget.value)}
       />
       <small>
-        {$locale === 'zh'
+        {isZh
           ? '留空时将自动使用本次启动直播服务的时间。'
           : 'Leave empty to follow the time when this stream service session starts.'}
       </small>
     </label>
 
     <label class="field">
-      <span>{$locale === 'zh' ? '最多展示条数' : 'Max records to show'}</span>
+      <span>{isZh ? '最多显示条数' : 'Max records to show'}</span>
       <input
         type="number"
         min="1"
@@ -54,22 +68,19 @@
         on:input={(event) => onMaxRecordsInput(Number(event.currentTarget.value))}
       />
       <small>
-        {$locale === 'zh'
+        {isZh
           ? '服务端会限制在 1 到 50 条之间。'
           : 'The backend clamps this between 1 and 50.'}
       </small>
     </label>
   </div>
 
-  <p class="detail">{pageState.effectiveFromMessage}</p>
-  <p class="detail subtle">{pageState.maxRecordsMessage}</p>
-
   <div class="actions">
     <button class="primary" disabled={saving} on:click={onSave}>
-      {$locale === 'zh' ? '保存展示范围' : 'Save Display Range'}
+      {isZh ? '保存展示范围' : 'Save Display Range'}
     </button>
     <button disabled={saving || !status.started_at} on:click={onUseStreamStart}>
-      {$locale === 'zh' ? '改回本次开播时间' : 'Use Stream Start Time'}
+      {isZh ? '恢复为本次开播时间' : 'Use Stream Start Time'}
     </button>
   </div>
 </section>
@@ -95,13 +106,20 @@
     display: flex;
     justify-content: space-between;
     gap: 1rem;
-    align-items: start;
+    align-items: flex-start;
+  }
+
+  .heading-copy {
+    display: grid;
+    gap: 0.2rem;
   }
 
   .eyebrow,
   h2,
   .detail,
-  .badge {
+  .badge,
+  .summary,
+  .context-label {
     margin: 0;
   }
 
@@ -119,7 +137,15 @@
     color: #f0e2bf;
   }
 
+  .summary {
+    max-width: 42rem;
+    color: rgba(215, 197, 161, 0.72);
+    line-height: 1.45;
+  }
+
   .badge {
+    flex: 0 0 auto;
+    min-width: 8rem;
     padding: 0.4rem 0.7rem;
     border-radius: 2px;
     border: 1px solid rgba(190, 137, 59, 0.16);
@@ -131,9 +157,31 @@
     text-transform: uppercase;
   }
 
-  .grid {
+  .context-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+  }
+
+  .context-card {
+    display: grid;
+    gap: 0.32rem;
+    padding: 0.8rem 0.9rem;
+    border-radius: 2px;
+    border: 1px solid rgba(176, 126, 52, 0.12);
+    background: rgba(10, 7, 4, 0.58);
+  }
+
+  .context-label {
+    font-size: 0.68rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(213, 188, 145, 0.74);
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.3fr) minmax(13rem, 0.9fr);
     gap: 0.9rem;
   }
 
@@ -169,12 +217,13 @@
   }
 
   .actions {
-    display: flex;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 0.55rem;
   }
 
   button {
+    width: 100%;
     min-height: 2.4rem;
     padding: 0.65rem 0.9rem;
     border-radius: 2px;
@@ -203,7 +252,9 @@
   }
 
   @media (max-width: 720px) {
-    .grid {
+    .context-grid,
+    .grid,
+    .actions {
       grid-template-columns: 1fr;
     }
   }
