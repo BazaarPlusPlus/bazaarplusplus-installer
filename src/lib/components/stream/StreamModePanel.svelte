@@ -49,7 +49,6 @@
   };
   let dbPathInfo: StreamDbPathInfo = { found: false, path: null };
   let selectedOffset = 0;
-  let maxBacktrack = 5;
   let selectedRecord: StreamRecordSummary | null = null;
 
   $: t = (
@@ -71,20 +70,25 @@
     fromTimestamp
   );
   $: isZh = $locale === 'zh';
-  $: effectiveBacktrackLimit = Math.min(
-    Math.max(1, Math.trunc(maxBacktrack || 1)),
-    Math.max(0, recordWindowSummary.total)
-  );
   $: canStepEarlier =
     status.running &&
-    recordWindowSummary.total > 0 &&
-    selectedOffset + 1 < effectiveBacktrackLimit;
+    recordWindowSummary.existing_before_start > 0 &&
+    selectedOffset < recordWindowSummary.existing_before_start;
   $: canStepLater = status.running && selectedOffset > 0;
   $: overviewStartLabel = formatOverviewStartTime(
     selectedOffset > 0
       ? selectedRecord?.captured_at ?? status.started_at
       : status.started_at
   );
+  $: overviewHeroLabel = selectedOffset > 0
+    ? (selectedRecord?.title || (isZh ? '未知英雄' : 'Unknown hero'))
+    : status.running
+      ? isZh
+        ? '当前开播点'
+        : 'Current live start'
+      : isZh
+        ? '尚未开始'
+        : 'Not started';
   $: overviewDescription = status.running
     ? isZh
       ? `overview 会展示从这个起始时间之后的记录；当前窗口内共有 ${recordWindowSummary.captured_since_start} 条开播后记录。`
@@ -161,13 +165,17 @@
     recordWindowSummary = await loadStreamRecordWindowSummary(currentBaseUrl);
     const maxSelectableOffset = Math.max(
       0,
-      Math.min(
-        Math.max(1, Math.trunc(maxBacktrack || 1)),
-        Math.max(0, recordWindowSummary.total)
-      ) - 1
+      recordWindowSummary.existing_before_start
     );
     selectedOffset = Math.max(0, Math.min(selectedOffset, maxSelectableOffset));
-    selectedRecord = await loadStreamRecordAtOffset(currentBaseUrl, selectedOffset);
+    if (selectedOffset === 0) {
+      selectedRecord = null;
+      return;
+    }
+
+    const recordOffset =
+      recordWindowSummary.captured_since_start + selectedOffset - 1;
+    selectedRecord = await loadStreamRecordAtOffset(currentBaseUrl, recordOffset);
   }
 
   async function stepOverviewOffset(direction: 1 | -1) {
@@ -179,11 +187,6 @@
     }
 
     selectedOffset = Math.max(0, selectedOffset + direction);
-    await refreshOverviewState();
-  }
-
-  async function updateMaxBacktrack(value: number) {
-    maxBacktrack = Math.max(1, Math.min(50, Math.trunc(value || 1)));
     await refreshOverviewState();
   }
 
@@ -315,7 +318,7 @@
       {copyMessage}
       {copyMessageTone}
       {overviewStartLabel}
-      {maxBacktrack}
+      {overviewHeroLabel}
       {canStepEarlier}
       {canStepLater}
       countAfter={recordWindowSummary.captured_since_start}
@@ -328,7 +331,6 @@
       onOpenCalibration={openCalibration}
       onStepEarlier={() => stepOverviewOffset(1)}
       onStepLater={() => stepOverviewOffset(-1)}
-      onMaxBacktrackInput={updateMaxBacktrack}
       onCropCodeInput={(value) => {
         cropCodeInput = value;
         cropCodeMessage = '';

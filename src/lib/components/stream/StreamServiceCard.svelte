@@ -16,7 +16,7 @@
   export let copyMessage = '';
   export let copyMessageTone: 'success' | 'error' | null = null;
   export let overviewStartLabel = '';
-  export let maxBacktrack = 5;
+  export let overviewHeroLabel = '';
   export let canStepEarlier = false;
   export let canStepLater = false;
   export let onStart: () => void | Promise<void>;
@@ -26,7 +26,6 @@
   export let onOpenCalibration: () => void | Promise<void>;
   export let onStepEarlier: () => void | Promise<void>;
   export let onStepLater: () => void | Promise<void>;
-  export let onMaxBacktrackInput: (value: number) => void | Promise<void>;
   export let onCropCodeInput: (value: string) => void;
   export let onImportCropCode: () => void | Promise<void>;
 
@@ -130,8 +129,17 @@
 
   <div class="overview-shell">
     <div class="overview-copy">
-      <p class="detail-label">{isZh ? 'Overview 起始时间' : 'Overview Start Time'}</p>
-      <p class="overview-value">{overviewStartLabel}</p>
+      <div class="overview-detail">
+        <div>
+          <p class="detail-label">{isZh ? 'Overview 起始时间' : 'Overview Start Time'}</p>
+          <p class="overview-value">{overviewStartLabel}</p>
+        </div>
+
+        <div>
+          <p class="detail-label">{isZh ? '英雄' : 'Hero'}</p>
+          <p class="overview-value">{overviewHeroLabel}</p>
+        </div>
+      </div>
     </div>
 
     <div class="overview-controls">
@@ -151,17 +159,6 @@
           ↓
         </button>
       </div>
-
-      <label class="backtrack-control">
-        <span class="detail-label">{isZh ? '回溯条数' : 'Backtrack'}</span>
-        <input
-          type="number"
-          min="1"
-          max="50"
-          value={maxBacktrack}
-          on:change={(event) => onMaxBacktrackInput(Number(event.currentTarget.value))}
-        />
-      </label>
     </div>
   </div>
 
@@ -393,10 +390,15 @@
 
   .overview-copy,
   .overview-controls,
-  .step-actions,
-  .backtrack-control {
+  .step-actions {
     display: grid;
     gap: 0.35rem;
+  }
+
+  .overview-detail {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
   }
 
   .overview-value {
@@ -406,9 +408,9 @@
   }
 
   .overview-controls {
-    grid-template-columns: auto auto;
-    gap: 0.65rem;
+    grid-template-columns: auto;
     align-items: start;
+    justify-items: end;
   }
 
   .step-actions {
@@ -422,19 +424,6 @@
     padding: 0;
     font-size: 0.9rem;
     letter-spacing: 0;
-  }
-
-  .backtrack-control input {
-    width: 6rem;
-    min-height: 2.15rem;
-    padding: 0.45rem 0.6rem;
-    border-radius: 2px;
-    border: 1px solid rgba(183, 132, 57, 0.16);
-    background: rgba(8, 6, 4, 0.82);
-    color: #eccf92;
-    font-family: 'Fira Code', monospace;
-    font-size: 0.8rem;
-    box-sizing: border-box;
   }
 
   .advanced-copy {
@@ -537,7 +526,8 @@
 
   @media (max-width: 520px) {
     .overview-shell,
-    .overview-controls {
+    .overview-controls,
+    .overview-detail {
       grid-template-columns: 1fr;
     }
 
