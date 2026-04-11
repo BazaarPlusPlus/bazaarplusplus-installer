@@ -95,3 +95,20 @@ export async function writeInstallationPrivateKey(
 ) {
   return invoke('write_installation_private_key', { gameRoot, privateKeyB64 });
 }
+
+export interface IdentityHttpResponse {
+  status: number;
+  body: string;
+}
+
+export async function postIdentityJson(
+  url: string,
+  bodyJson: string,
+  authorization?: string
+) {
+  return invoke<IdentityHttpResponse>('post_identity_json', {
+    url,
+    bodyJson,
+    authorization
+  });
+}

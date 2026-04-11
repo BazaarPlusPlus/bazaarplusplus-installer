@@ -1,6 +1,6 @@
 [package]
 name = "bppinstaller"
-version = "2.3.7"
+version = "2.9.9"
 description = "BazaarPlusPlus Desktop App"
 authors = ["cauyxy <cauyxy@gmail.com>"]
 edition = "2021"
@@ -33,6 +33,8 @@ axum = "0.8"
 tokio = { version = "1", features = ["rt-multi-thread", "macros", "sync", "net"] }
 rusqlite = { version = "0.32", features = ["bundled"] }
 chrono = { version = "0.4", features = ["clock", "serde"] }
+image = { version = "0.25", default-features = false, features = ["jpeg", "png", "webp"] }
+include_dir = "0.7"
 
 [target.'cfg(windows)'.dependencies]
 winreg = "0.52"

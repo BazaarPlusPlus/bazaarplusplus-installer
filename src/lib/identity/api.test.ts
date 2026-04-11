@@ -43,20 +43,21 @@ test('activateFirstAccount posts activate and persists local installation files'
     },
     privateKeyPkcs8B64: 'private-key'
   };
-  const requests: Array<{ input: RequestInfo | URL; init?: RequestInit }> = [];
+  const requests: Array<{
+    url: string;
+    body: string;
+    authorization?: string;
+  }> = [];
   const api = createIdentityApi({
-    fetchImpl: async (input, init) => {
-      requests.push({ input, init });
-      return new Response(
-        JSON.stringify({
+    postJsonImpl: async ({ url, body, authorization }) => {
+      requests.push({ url, body, authorization });
+      return {
+        status: 200,
+        body: JSON.stringify({
           installation_id: 'inst_001',
           status: 'active'
-        }),
-        {
-          status: 200,
-          headers: { 'content-type': 'application/json' }
-        }
-      );
+        })
+      };
     },
     writeInstallationRecordImpl: async (_gameRoot, value) => {
       writes.push({ kind: 'record', value });
@@ -70,32 +71,37 @@ test('activateFirstAccount posts activate and persists local installation files'
   const installation = await api.activateFirstAccount({
     gameRoot: '/games/The Bazaar',
     observation,
-    password: 'hunter2'
+    password: 'hunter2',
+    streamProfile: {
+      stream_platform: 'Bilibili',
+      stream_channel_id: 'player_one_live',
+      stream_url: 'https://live.bilibili.com/10001'
+    }
   });
 
   assert.equal(installation.installation_id, 'inst_001');
   assert.equal(requests.length, 1);
-  const requestBody = JSON.parse(String(requests[0].init?.body));
+  const requestBody = JSON.parse(requests[0].body);
   assert.equal(requestBody.player_account_id, observation.player_account_id);
+  assert.equal(requestBody.stream_platform, 'Bilibili');
+  assert.equal(requestBody.stream_channel_id, 'player_one_live');
+  assert.equal(requestBody.stream_url, 'https://live.bilibili.com/10001');
   assert.equal(writes.length, 2);
   assert.equal(writes[1]?.value, 'private-key');
 });
 
 test('loginAndCreateInstallation rejects mismatched observed player account', async () => {
   const api = createIdentityApi({
-    fetchImpl: async (input) => {
-      if (String(input).endsWith('/login')) {
-        return new Response(
-          JSON.stringify({
+    postJsonImpl: async ({ url }) => {
+      if (url.endsWith('/login')) {
+        return {
+          status: 200,
+          body: JSON.stringify({
             session_token: 'sess_001',
             player_account_id: 'player-account-999',
             expires_at_utc: '2099-04-11T00:30:00.000Z'
-          }),
-          {
-            status: 200,
-            headers: { 'content-type': 'application/json' }
-          }
-        );
+          })
+        };
       }
 
       throw new Error('unexpected_installations_call');

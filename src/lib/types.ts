@@ -57,6 +57,7 @@ export interface StreamServiceStatus {
   started_at: string | null;
   effective_from: string | null;
   max_records: number;
+  excluded_record_ids: string[];
 }
 
 export interface StreamRecordSummary {
@@ -65,4 +66,21 @@ export interface StreamRecordSummary {
   subtitle: string;
   captured_at: string;
   image_url?: string | null;
+  wins?: number | null;
+  position?: number | null;
+  battle_count?: number | null;
+  rank?: string | null;
+  rating?: number | null;
+}
+
+export interface StreamOverlayCropSettings {
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+}
+
+export interface StreamOverlayCropSettingsPayload {
+  crop: StreamOverlayCropSettings;
+  code: string;
 }

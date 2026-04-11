@@ -30,6 +30,12 @@ export interface InstallationActivationResponse {
   status: 'active';
 }
 
+export interface RegistrationStreamProfile {
+  stream_platform: string;
+  stream_channel_id: string;
+  stream_url: string;
+}
+
 export interface InstallationKeyPair {
   publicKey: InstallationPublicKey;
   privateKeyPkcs8B64: string;

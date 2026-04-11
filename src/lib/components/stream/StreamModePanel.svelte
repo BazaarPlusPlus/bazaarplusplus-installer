@@ -1,13 +1,16 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onDestroy, onMount } from 'svelte';
   import { openUrl } from '@tauri-apps/plugin-opener';
   import StreamFilterCard from '$lib/components/stream/StreamFilterCard.svelte';
   import StreamServiceCard from '$lib/components/stream/StreamServiceCard.svelte';
-  import StreamPreviewCard from '$lib/components/stream/StreamPreviewCard.svelte';
   import { locale } from '$lib/locale';
   import { formatMessage, messages } from '$lib/i18n';
   import {
+    getStreamOverlayCropSettings,
     getStreamServiceStatus,
+    importStreamOverlayCropCode,
+    listStreamScreenshotRecords,
+    revealStreamRecordImage,
     startStreamService,
     stopStreamService,
     updateStreamServiceFilters
@@ -17,7 +20,7 @@
     fromDateTimeLocalValue,
     toDateTimeLocalValue
   } from '$lib/stream/state';
-  import type { StreamServiceStatus } from '$lib/types';
+  import type { StreamRecordSummary, StreamServiceStatus } from '$lib/types';
 
   const STREAM_FILTERS_STORAGE_KEY = 'bpp-stream-filters-v1';
 
@@ -35,12 +38,21 @@
     manual_from: null,
     started_at: null,
     effective_from: null,
-    max_records: 5
+    max_records: 5,
+    excluded_record_ids: []
   };
   let busy = false;
   let savingFilters = false;
+  let importingCropCode = false;
   let manualFromInput = '';
   let maxRecordsInput = 5;
+  let excludedRecordIdsInput: string[] = [];
+  let selectableRecords: StreamRecordSummary[] = [];
+  let cropCodeInput = '';
+  let cropCodeMessage = '';
+  let copyMessage = '';
+  let copyMessageTone: 'success' | 'error' | null = null;
+  let copyMessageTimer: number | null = null;
 
   $: t = (
     key: keyof typeof messages.en,
@@ -49,12 +61,17 @@
   $: panelTitle = title || t('streamTitle');
   $: panelIntro = intro || t('streamIntro');
   $: panelEyebrow = eyebrow || ($locale === 'zh' ? '直播模式' : 'Stream Mode');
-  $: pageState = createStreamPageState(status);
+  $: pageState = createStreamPageState(status, $locale);
   $: baseUrl = status.overlay_url?.replace(/\/overlay$/, '') ?? null;
+  $: isZh = $locale === 'zh';
 
   onMount(() => {
     locale.init();
     void initializePage();
+  });
+
+  onDestroy(() => {
+    clearCopyMessage();
   });
 
   async function refreshStatus() {
@@ -68,8 +85,13 @@
     try {
       status = await updateStreamServiceFilters({
         manualFrom: persisted.manualFrom,
-        maxRecords: persisted.maxRecords
+        maxRecords: persisted.maxRecords,
+        excludedRecordIds: persisted.excludedRecordIds
       });
+      const cropSettings = await getStreamOverlayCropSettings();
+      cropCodeInput = cropSettings.code;
+      cropCodeMessage = '';
+      selectableRecords = await listStreamScreenshotRecords();
     } catch (error) {
       console.error(error);
       await refreshStatus();
@@ -111,8 +133,10 @@
 
     try {
       await navigator.clipboard.writeText(status.overlay_url);
+      showCopyMessage(isZh ? 'OBS 地址已复制' : 'OBS URL copied');
     } catch (error) {
       console.error(error);
+      showCopyMessage(isZh ? '复制失败，请重试' : 'Copy failed');
     }
   }
 
@@ -126,40 +150,67 @@
     }
   }
 
+  async function openCalibration() {
+    if (!baseUrl) return;
+
+    try {
+      await openUrl(`${baseUrl}/settings`);
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
   function syncFormFromStatus() {
     manualFromInput = toDateTimeLocalValue(status.manual_from);
     maxRecordsInput = status.max_records;
+    excludedRecordIdsInput = [...status.excluded_record_ids];
   }
 
-  function readPersistedFilters(): { manualFrom: string | null; maxRecords: number } {
+  function readPersistedFilters(): {
+    manualFrom: string | null;
+    maxRecords: number;
+    excludedRecordIds: string[];
+  } {
     if (typeof window === 'undefined') {
-      return { manualFrom: null, maxRecords: 5 };
+      return { manualFrom: null, maxRecords: 5, excludedRecordIds: [] };
     }
 
     try {
       const raw = window.localStorage.getItem(STREAM_FILTERS_STORAGE_KEY);
       if (!raw) {
-        return { manualFrom: null, maxRecords: 5 };
+        return { manualFrom: null, maxRecords: 5, excludedRecordIds: [] };
       }
 
       const parsed = JSON.parse(raw) as {
         manualFrom?: string | null;
         maxRecords?: number;
+        excludedRecordIds?: string[];
       };
 
       return {
         manualFrom: parsed.manualFrom ?? null,
         maxRecords:
-          typeof parsed.maxRecords === 'number' && Number.isFinite(parsed.maxRecords)
+          typeof parsed.maxRecords === 'number' &&
+          Number.isFinite(parsed.maxRecords)
             ? parsed.maxRecords
-            : 5
+            : 5,
+        excludedRecordIds: Array.isArray(parsed.excludedRecordIds)
+          ? parsed.excludedRecordIds.filter(
+              (value): value is string =>
+                typeof value === 'string' && value.trim().length > 0
+            )
+          : []
       };
     } catch {
-      return { manualFrom: null, maxRecords: 5 };
+      return { manualFrom: null, maxRecords: 5, excludedRecordIds: [] };
     }
   }
 
-  function persistFilters(input: { manualFrom: string | null; maxRecords: number }) {
+  function persistFilters(input: {
+    manualFrom: string | null;
+    maxRecords: number;
+    excludedRecordIds: string[];
+  }) {
     if (typeof window === 'undefined') {
       return;
     }
@@ -175,14 +226,20 @@
 
     try {
       const manualFrom = fromDateTimeLocalValue(manualFromInput);
-      const maxRecords = Math.max(1, Math.min(50, Math.trunc(maxRecordsInput || 5)));
+      const maxRecords = Math.max(
+        1,
+        Math.min(50, Math.trunc(maxRecordsInput || 5))
+      );
+      const excludedRecordIds = [...new Set(excludedRecordIdsInput)];
       status = await updateStreamServiceFilters({
         manualFrom,
-        maxRecords
+        maxRecords,
+        excludedRecordIds
       });
       persistFilters({
         manualFrom,
-        maxRecords: status.max_records
+        maxRecords: status.max_records,
+        excludedRecordIds: status.excluded_record_ids
       });
       syncFormFromStatus();
     } finally {
@@ -190,9 +247,60 @@
     }
   }
 
-  async function useStreamStartTime() {
-    manualFromInput = '';
+  async function importCropCode() {
+    importingCropCode = true;
+    cropCodeMessage = '';
+
+    try {
+      const payload = await importStreamOverlayCropCode(cropCodeInput.trim());
+      cropCodeInput = payload.code;
+      cropCodeMessage = isZh
+        ? '裁切代码已保存，overlay 会在下次刷新时使用它。'
+        : 'Crop code saved. The overlay will use it on the next refresh.';
+    } catch (error) {
+      console.error(error);
+      cropCodeMessage =
+        error instanceof Error
+          ? error.message
+          : isZh
+            ? '导入裁切代码失败。'
+            : 'Failed to import crop code.';
+    } finally {
+      importingCropCode = false;
+    }
+  }
+
+  async function handleExcludedRecordIdsInput(value: string[]) {
+    excludedRecordIdsInput = value;
     await saveFilters();
+  }
+
+  async function revealRecordImage(recordId: string) {
+    try {
+      await revealStreamRecordImage(recordId);
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  function clearCopyMessage() {
+    if (copyMessageTimer !== null) {
+      window.clearTimeout(copyMessageTimer);
+      copyMessageTimer = null;
+    }
+  }
+
+  function showCopyMessage(message: string) {
+    copyMessageTone = message === (isZh ? '复制失败，请重试' : 'Copy failed')
+      ? 'error'
+      : 'success';
+    copyMessage = message;
+    clearCopyMessage();
+    copyMessageTimer = window.setTimeout(() => {
+      copyMessage = '';
+      copyMessageTone = null;
+      copyMessageTimer = null;
+    }, 1800);
   }
 </script>
 
@@ -208,17 +316,29 @@
       {status}
       {pageState}
       {busy}
+      {importingCropCode}
+      {cropCodeInput}
+      {cropCodeMessage}
+      {copyMessage}
+      {copyMessageTone}
       onStart={handleStart}
       onStop={handleStop}
       onCopyUrl={copyUrl}
       onOpenPreview={openPreview}
+      onOpenCalibration={openCalibration}
+      onCropCodeInput={(value) => {
+        cropCodeInput = value;
+        cropCodeMessage = '';
+      }}
+      onImportCropCode={importCropCode}
     />
 
     <StreamFilterCard
       {status}
-      {pageState}
       {manualFromInput}
       {maxRecordsInput}
+      {selectableRecords}
+      excludedRecordIds={excludedRecordIdsInput}
       saving={savingFilters || busy}
       onManualFromInput={(value) => {
         manualFromInput = value;
@@ -226,12 +346,11 @@
       onMaxRecordsInput={(value) => {
         maxRecordsInput = Number.isFinite(value) ? value : 5;
       }}
+      onExcludedRecordIdsInput={handleExcludedRecordIdsInput}
+      onRevealRecordImage={revealRecordImage}
       onSave={saveFilters}
-      onUseStreamStart={useStreamStartTime}
     />
   </div>
-
-  <StreamPreviewCard {baseUrl} />
 </section>
 
 <style>
@@ -242,7 +361,7 @@
 
   .stream-copy {
     display: grid;
-    gap: 0.2rem;
+    gap: 0.22rem;
     padding: 0 0.1rem;
   }
 
@@ -273,8 +392,8 @@
 
   .stream-grid {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.85rem;
+    grid-template-columns: minmax(0, 1.15fr) minmax(20rem, 0.85fr);
+    gap: 1rem;
   }
 
   @media (max-width: 900px) {
