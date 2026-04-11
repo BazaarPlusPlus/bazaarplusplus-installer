@@ -68,6 +68,18 @@ export interface StreamRecordSummary {
   wins?: number | null;
   position?: number | null;
   battle_count?: number | null;
-  rank?: number | null;
+  rank?: string | null;
   rating?: number | null;
+}
+
+export interface StreamOverlayCropSettings {
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+}
+
+export interface StreamOverlayCropSettingsPayload {
+  crop: StreamOverlayCropSettings;
+  code: string;
 }

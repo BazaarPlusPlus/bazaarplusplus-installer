@@ -42,10 +42,7 @@ fn clamp_max_records(value: usize) -> usize {
 }
 
 fn update_effective_from(status: &mut StreamServiceStatus) {
-    status.effective_from = status
-        .manual_from
-        .clone()
-        .or_else(|| status.started_at.clone());
+    status.effective_from = status.manual_from.clone();
 }
 
 pub struct StreamTaskHandle {
@@ -176,9 +173,6 @@ mod tests {
 
         let snapshot = state.snapshot();
         assert_eq!(snapshot.max_records, 9);
-        assert_eq!(
-            snapshot.effective_from.as_deref(),
-            Some("2026-04-11T21:00:00+08:00")
-        );
+        assert_eq!(snapshot.effective_from, None);
     }
 }

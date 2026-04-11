@@ -1,6 +1,11 @@
 import { invoke } from '@tauri-apps/api/core';
 import { hasTauriRuntime } from '$lib/installer/runtime';
-import type { StreamRecordSummary, StreamServiceStatus } from '$lib/types';
+import type {
+  StreamOverlayCropSettings,
+  StreamOverlayCropSettingsPayload,
+  StreamRecordSummary,
+  StreamServiceStatus
+} from '$lib/types';
 
 const idleStatus: StreamServiceStatus = {
   running: false,
@@ -75,4 +80,55 @@ export async function loadRecentStreamRecords(
   } catch {
     return [];
   }
+}
+
+export async function getStreamOverlayCropSettings(): Promise<StreamOverlayCropSettingsPayload> {
+  if (!hasTauriRuntime()) {
+    return {
+      crop: {
+        left: 0.342,
+        top: 0.313,
+        width: 0.58,
+        height: 0.22
+      },
+      code: ''
+    };
+  }
+
+  return invoke<StreamOverlayCropSettingsPayload>('get_stream_overlay_crop_settings');
+}
+
+export async function saveStreamOverlayCropSettings(
+  crop: StreamOverlayCropSettings
+): Promise<StreamOverlayCropSettingsPayload> {
+  if (!hasTauriRuntime()) {
+    return {
+      crop,
+      code: ''
+    };
+  }
+
+  return invoke<StreamOverlayCropSettingsPayload>('save_stream_overlay_crop_settings', {
+    crop
+  });
+}
+
+export async function importStreamOverlayCropCode(
+  code: string
+): Promise<StreamOverlayCropSettingsPayload> {
+  if (!hasTauriRuntime()) {
+    return {
+      crop: {
+        left: 0.342,
+        top: 0.313,
+        width: 0.58,
+        height: 0.22
+      },
+      code
+    };
+  }
+
+  return invoke<StreamOverlayCropSettingsPayload>('import_stream_overlay_crop_code', {
+    code
+  });
 }

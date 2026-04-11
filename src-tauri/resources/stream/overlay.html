@@ -9,38 +9,27 @@
   </head>
   <body>
     <main id="overlay-root" class="overlay empty" data-state="idle">
-      <div class="panel">
-        <div class="panel-glow" aria-hidden="true"></div>
-
-        <header class="panel-header">
-          <div>
-            <p class="eyebrow">BazaarPlusPlus</p>
-            <p class="header-line">OBS Local Overlay</p>
+      <section class="list-shell">
+        <header class="overlay-header">
+          <div class="header-copy">
+            <p class="header-label">Run Tracker</p>
+            <p id="overlay-signal" class="header-signal">Local feed idle</p>
           </div>
-          <p id="overlay-status" class="status-pill">Waiting</p>
+          <div class="status-row">
+            <span id="overlay-status-dot" class="status-dot" aria-hidden="true"></span>
+            <p id="overlay-status" class="status-line">Waiting</p>
+          </div>
         </header>
 
-        <section class="content-grid">
-          <section class="record-block">
-            <p id="overlay-kicker" class="kicker">Latest Record</p>
-            <h1 id="overlay-title">No records yet</h1>
-            <p id="overlay-detail" class="detail">
-              Start a match and the overlay will update automatically.
-            </p>
-          </section>
-
-          <figure id="overlay-card-shell" class="card-shell" hidden>
-            <div id="overlay-card-stage" class="card-stage">
-              <img id="overlay-card-image" alt="Latest record card strip" />
-            </div>
-          </figure>
+        <section id="overlay-empty" class="empty-state">
+          <p id="overlay-empty-title" class="empty-title">No records yet</p>
+          <p id="overlay-empty-detail" class="empty-detail">
+            Start a match and the overlay will update automatically.
+          </p>
         </section>
 
-        <footer class="meta-row">
-          <p id="overlay-time" class="meta-chip">Awaiting first result</p>
-          <p id="overlay-signal" class="signal-chip">Local feed idle</p>
-        </footer>
-      </div>
+        <section id="overlay-list" class="run-list" hidden></section>
+      </section>
     </main>
   </body>
 </html>

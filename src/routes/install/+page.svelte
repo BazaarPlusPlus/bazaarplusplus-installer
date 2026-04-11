@@ -101,11 +101,13 @@
   let identityLoadState: 'idle' | 'loading' = 'idle';
   let identityActionBusy: 'idle' | 'activating' | 'logging_in' = 'idle';
   let identityPassword = '';
+  let identityPasswordConfirm = '';
   let identityConfirmed = false;
   let identityError = '';
   let identitySuccess = '';
   let identityLoadedGamePath = '';
   let identityLoadRequestId = 0;
+  let identityPanelExpanded = false;
 
   $: t = (
     key: keyof typeof messages.en,
@@ -363,12 +365,25 @@
     identitySuccess = '';
   }
 
+  function toggleIdentityPanel() {
+    if (identityLoadState === 'loading') {
+      return;
+    }
+
+    if (identityState.kind === 'observation_required') {
+      return;
+    }
+
+    identityPanelExpanded = !identityPanelExpanded;
+  }
+
   async function activateObservedAccount() {
     if (
       !pageState.effectiveGamePath ||
       !playerObservation ||
       !identityConfirmed ||
       !identityPassword.trim() ||
+      identityPassword.trim() !== identityPasswordConfirm.trim() ||
       identityActionBusy !== 'idle'
     ) {
       return;
@@ -384,6 +399,7 @@
         password: identityPassword.trim()
       });
       identityPassword = '';
+      identityPasswordConfirm = '';
       identityConfirmed = false;
       identitySuccess = localized(
         '新的 installation 身份已写入本地共享目录。',
@@ -418,6 +434,7 @@
         password: identityPassword.trim()
       });
       identityPassword = '';
+      identityPasswordConfirm = '';
       identityConfirmed = false;
       identitySuccess = localized(
         'installation 材料已经按当前观察到的账号重新生成。',
@@ -828,6 +845,45 @@
     showStreamMode = !showStreamMode;
   }
 
+  $: modeTitle = showStreamMode ? t('streamTitle') : t('subtitle');
+  $: modeToggleLabel = showStreamMode
+    ? localized('安装模式', 'Install Mode')
+    : localized('直播模式', 'Stream Mode');
+  $: identityPanelTitle =
+    identityState.kind === 'observation_required'
+      ? localized('尚未检测到游戏账号', 'No game account detected yet')
+      : identityState.kind === 'activate_first_account'
+        ? localized('已检测到游戏账号', 'Game account detected')
+        : identityState.kind === 'relogin_required'
+          ? localized('检测到账号切换', 'Game account changed')
+          : localized('当前账号已连接', 'Account is connected');
+  $: identityPanelSummary =
+    identityLoadState === 'loading'
+      ? localized('正在读取账号状态…', 'Reading account status...')
+      : identityState.kind === 'observation_required'
+        ? localized(
+            '请先安装最新版 MOD，运行一次游戏，再回来绑定账号。',
+            'Install the latest mod, run the game once, then come back to bind the account.'
+          )
+        : identityState.kind === 'activate_first_account'
+          ? localized(
+              `当前账号：${identityState.observation.player_username}，点击展开继续。`,
+              `Current account: ${identityState.observation.player_username}. Click to continue.`
+            )
+          : identityState.kind === 'relogin_required'
+            ? localized(
+                `当前账号：${identityState.observation.player_username}，点击展开重新登录。`,
+                `Current account: ${identityState.observation.player_username}. Click to re-login.`
+              )
+            : identityState.observation
+              ? localized(
+                  `当前账号：${identityState.observation.player_username}，点击展开查看。`,
+                  `Current account: ${identityState.observation.player_username}. Click to view details.`
+                )
+              : localized(
+                  '本地安装凭证已就绪，点击展开查看。',
+                  'Local installation credentials are ready. Click to view details.'
+                );
   $: selectedPath = selectCustomGamePath(customGamePath);
   $: modInstalled = Boolean(env?.bpp_version);
   $: bundledBppVersion = env?.bundled_bpp_version ?? null;
@@ -909,9 +965,22 @@
     installation: installationRecord,
     hasInstallationPrivateKey
   });
+  $: activationPasswordMatches =
+    !identityPassword.trim() ||
+    !identityPasswordConfirm.trim() ||
+    identityPassword.trim() === identityPasswordConfirm.trim();
   $: identityBusy =
     identityLoadState === 'loading' || identityActionBusy !== 'idle';
-  $: canSubmitIdentity =
+  $: canActivateObservedAccount =
+    identityState.kind === 'activate_first_account' &&
+    Boolean(pageState.effectiveGamePath) &&
+    Boolean(playerObservation) &&
+    Boolean(identityPassword.trim()) &&
+    Boolean(identityPasswordConfirm.trim()) &&
+    activationPasswordMatches &&
+    identityConfirmed &&
+    !identityBusy;
+  $: canLoginIdentity =
     Boolean(pageState.effectiveGamePath) &&
     Boolean(playerObservation) &&
     Boolean(identityPassword.trim()) &&
@@ -1011,7 +1080,7 @@
 
   <InstallerHeader
     kicker={t('kicker')}
-    subtitle={t('subtitle')}
+    subtitle={modeTitle}
     {localeBadge}
     {localeButtonLabel}
     bilibiliUrl={BILIBILI_URL}
@@ -1022,79 +1091,123 @@
     {updaterButtonHighlighted}
     onOpenUpdater={handleUpdaterAction}
     streamModeActive={showStreamMode}
-    streamModeLabel={$locale === 'zh' ? '直播模式' : 'Stream Mode'}
+    streamModeLabel={modeToggleLabel}
     onToggleStreamMode={toggleStreamMode}
   />
 
-  {#if hasTauriRuntime() && hasPath}
+  {#if !showStreamMode && hasTauriRuntime() && hasPath}
     <section class="identity-card">
-      <div class="identity-header">
-        <p class="identity-kicker">
-          {localized('身份状态', 'Identity Status')}
-        </p>
-        <h2>
-          {identityState.kind === 'observation_required'
-            ? localized('等待游戏写入 observation', 'Waiting for observation')
-            : identityState.kind === 'activate_first_account'
-              ? localized('可以开始激活或登录', 'Ready to activate or log in')
-              : identityState.kind === 'relogin_required'
-                ? localized('检测到游戏账号已切换', 'Observed game account changed')
-                : localized('本地 installation 已就绪', 'Local installation is ready')}
-        </h2>
-      </div>
+      <button
+        type="button"
+        class="identity-toggle"
+        class:is-static={identityState.kind === 'observation_required'}
+        class:is-expanded={identityPanelExpanded}
+        on:click={toggleIdentityPanel}
+        disabled={identityState.kind === 'observation_required' || identityLoadState === 'loading'}
+        aria-expanded={identityState.kind === 'observation_required'
+          ? undefined
+          : identityPanelExpanded}
+      >
+        <div class="identity-toggle-copy">
+          <p class="identity-kicker">
+            {localized('身份状态', 'Identity Status')}
+          </p>
+          <h2>{identityPanelTitle}</h2>
+          <p class="identity-toggle-summary">{identityPanelSummary}</p>
+        </div>
 
-      {#if identityLoadState === 'loading'}
-        <p class="identity-note">
-          {localized('正在读取共享 identity 文件…', 'Reading shared identity files...')}
-        </p>
-      {:else}
+        {#if identityState.kind !== 'observation_required' && identityLoadState !== 'loading'}
+          <span class="identity-toggle-icon" aria-hidden="true">
+            {identityPanelExpanded ? '−' : '+'}
+          </span>
+        {/if}
+      </button>
+
+      {#if identityPanelExpanded && identityLoadState !== 'loading'}
         {#if identityState.kind === 'observation_required'}
-          <p class="identity-note">
-            {localized(
-              '先启动带 mod 的游戏，让它在 BazaarPlusPlus/Identity 里写出 player-observation.bpp。',
-              'Launch the modded game first so it can write player-observation.bpp into BazaarPlusPlus/Identity.'
-            )}
-          </p>
+          <div class="identity-note-stack">
+            <p class="identity-note">
+              {localized(
+                '先启动带 mod 的游戏，安装器会自动识别当前账号。',
+                'Launch the modded game first. The installer will detect the current account automatically.'
+              )}
+            </p>
+          </div>
         {:else if identityState.kind === 'activate_first_account'}
-          <p class="identity-note">
-            {localized(
-              `当前观察到 ${identityState.observation.player_username}（${identityState.observation.player_account_id}）。如果这是第一次注册，用下面的激活按钮；如果账号已经注册过，直接登录并生成新的 installation。`,
-              `Observed ${identityState.observation.player_username} (${identityState.observation.player_account_id}). Create the first account below, or log in to an existing account and mint a new installation.`
-            )}
-          </p>
-        {:else if identityState.kind === 'relogin_required'}
-          <p class="identity-note">
-            {localized(
-              `本地 installation 属于 ${identityState.installation.player_account_id}，但游戏当前观察到的是 ${identityState.observation.player_account_id}。重新登录后才会覆盖本地 installation。`,
-              `The local installation belongs to ${identityState.installation.player_account_id}, but the game currently reports ${identityState.observation.player_account_id}. Re-login is required before replacing the local installation.`
-            )}
-          </p>
-        {:else}
-          <dl class="identity-summary">
+          <dl class="identity-account">
             <div>
-              <dt>{localized('玩家账号', 'Player account')}</dt>
-              <dd>{identityState.installation.player_account_id}</dd>
-            </div>
-            <div>
-              <dt>{localized('Installation ID', 'Installation ID')}</dt>
-              <dd>{identityState.installation.installation_id}</dd>
-            </div>
-            <div>
-              <dt>{localized('状态', 'Status')}</dt>
-              <dd>{identityState.installation.status}</dd>
+              <dt>{localized('当前游戏账号', 'Current game account')}</dt>
+              <dd>{identityState.observation.player_username}</dd>
             </div>
           </dl>
-          <p class="identity-note">
-            {identityState.observation
-              ? localized(
-                  `最近一次 observation 指向 ${identityState.observation.player_username}，和当前 installation 一致。`,
-                  `The latest observation points to ${identityState.observation.player_username}, which matches the current installation.`
-                )
-              : localized(
-                  '当前没有新的 observation，本地 installation 仍然可供 mod 使用。',
-                  'There is no new observation right now. The local installation is still usable by the mod.'
-                )}
-          </p>
+          <div class="identity-note-stack">
+            <p class="identity-note">
+              {localized(
+                '第一次使用就设置密码并激活。',
+                'Set a password and activate if this is your first time here.'
+              )}
+            </p>
+            <p class="identity-note">
+              {localized(
+                '如果这个账号已经注册过，直接点“已有账号登录”。',
+                'If this account already exists, use “Log in existing account”.'
+              )}
+            </p>
+          </div>
+        {:else if identityState.kind === 'relogin_required'}
+          <dl class="identity-account">
+            <div>
+              <dt>{localized('当前游戏账号', 'Current game account')}</dt>
+              <dd>{identityState.observation.player_username}</dd>
+            </div>
+          </dl>
+          <div class="identity-note-stack">
+            <p class="identity-note">
+              {localized(
+                '检测到游戏里已经切到另一个账号。',
+                'The game is currently using a different account.'
+              )}
+            </p>
+            <p class="identity-note">
+              {localized(
+                '重新登录后会更新这台电脑上的本地安装凭证。',
+                'Re-login will refresh the local installation credentials on this computer.'
+              )}
+            </p>
+          </div>
+        {:else}
+          {#if identityState.observation}
+            <dl class="identity-account">
+              <div>
+                <dt>{localized('当前游戏账号', 'Current game account')}</dt>
+                <dd>{identityState.observation.player_username}</dd>
+              </div>
+            </dl>
+          {/if}
+          <div class="identity-note-stack">
+            <p class="identity-note">
+              {identityState.observation
+                ? localized(
+                    '当前检测到的游戏账号和本地安装凭证一致。',
+                    'The detected game account matches the local installation credentials.'
+                  )
+                : localized(
+                    '本地安装凭证已经就绪。',
+                    'The local installation credentials are ready.'
+                  )}
+            </p>
+            <p class="identity-note">
+              {identityState.observation
+                ? localized(
+                    '可以直接继续安装、修复或启动游戏。',
+                    'You can continue with install, repair, or launch.'
+                  )
+                : localized(
+                    '启动游戏后，安装器会再次自动识别当前账号。',
+                    'The installer will detect the current account again after you launch the game.'
+                  )}
+            </p>
+          </div>
         {/if}
 
         {#if identityState.kind !== 'observation_required' && identityState.kind !== 'ready'}
@@ -1108,12 +1221,30 @@
             />
           </label>
 
+          {#if identityState.kind === 'activate_first_account'}
+            <label class="identity-field">
+              <span>{localized('再次输入密码', 'Confirm password')}</span>
+              <input
+                bind:value={identityPasswordConfirm}
+                type="password"
+                autocomplete="new-password"
+                placeholder={localized('再次输入一次密码', 'Enter the password again')}
+              />
+            </label>
+
+            {#if identityPasswordConfirm.trim() && !activationPasswordMatches}
+              <p class="identity-error">
+                {localized('两次输入的密码不一致。', 'The two passwords do not match.')}
+              </p>
+            {/if}
+          {/if}
+
           <label class="identity-confirm">
             <input bind:checked={identityConfirmed} type="checkbox" />
             <span>
               {localized(
-                '我确认 installer 将以当前 observation 代表的游戏账号写入新的 installation 材料。',
-                'I confirm the installer will write new installation material for the currently observed game account.'
+                '我确认要为当前游戏账号写入本地安装凭证。',
+                'I confirm that local installation credentials should be written for the current game account.'
               )}
             </span>
           </label>
@@ -1124,7 +1255,7 @@
                 type="button"
                 class="identity-button primary"
                 on:click={activateObservedAccount}
-                disabled={!canSubmitIdentity}
+                disabled={!canActivateObservedAccount}
               >
                 {identityActionBusy === 'activating'
                   ? localized('正在激活…', 'Activating...')
@@ -1134,7 +1265,7 @@
                 type="button"
                 class="identity-button"
                 on:click={loginAndRefreshInstallation}
-                disabled={!canSubmitIdentity}
+                disabled={!canLoginIdentity}
               >
                 {identityActionBusy === 'logging_in'
                   ? localized('正在登录…', 'Logging in...')
@@ -1145,7 +1276,7 @@
                 type="button"
                 class="identity-button primary"
                 on:click={loginAndRefreshInstallation}
-                disabled={!canSubmitIdentity}
+                disabled={!canLoginIdentity}
               >
                 {identityActionBusy === 'logging_in'
                   ? localized('正在重新登录…', 'Re-logging in...')
@@ -1241,9 +1372,8 @@
   }
 
   .identity-card {
-    padding: 1rem 1.05rem;
     display: grid;
-    gap: 0.85rem;
+    gap: 0.75rem;
     border-radius: 3px;
     border: 1px solid rgba(200, 148, 55, 0.18);
     background:
@@ -1258,9 +1388,27 @@
       inset 0 0 0 1px rgba(255, 214, 140, 0.04);
   }
 
-  .identity-header {
+  .identity-toggle {
+    width: 100%;
+    padding: 0.95rem 1.05rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.9rem;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .identity-toggle.is-static {
+    cursor: default;
+  }
+
+  .identity-toggle-copy {
     display: grid;
-    gap: 0.25rem;
+    gap: 0.22rem;
   }
 
   .identity-kicker {
@@ -1271,23 +1419,50 @@
     color: rgba(216, 182, 109, 0.72);
   }
 
-  .identity-header h2 {
+  .identity-toggle-copy h2 {
     margin: 0;
     font-family: 'Cinzel', serif;
-    font-size: 1.1rem;
+    font-size: 1rem;
     color: rgba(248, 232, 196, 0.95);
+  }
+
+  .identity-toggle-summary {
+    margin: 0;
+    line-height: 1.5;
+    font-size: 0.9rem;
+    color: rgba(240, 222, 188, 0.78);
+  }
+
+  .identity-toggle-icon {
+    flex: none;
+    width: 1.9rem;
+    height: 1.9rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(205, 177, 118, 0.2);
+    border-radius: 999px;
+    color: rgba(248, 232, 196, 0.9);
+    font-size: 1.2rem;
+    line-height: 1;
   }
 
   .identity-note,
   .identity-error,
   .identity-success {
-    margin: 0;
+    margin: 0 1.05rem;
     line-height: 1.55;
     font-size: 0.92rem;
   }
 
   .identity-note {
     color: rgba(240, 222, 188, 0.78);
+  }
+
+  .identity-note-stack {
+    display: grid;
+    gap: 0.35rem;
+    padding: 0 1.05rem;
   }
 
   .identity-error {
@@ -1298,28 +1473,32 @@
     color: rgba(169, 223, 161, 0.92);
   }
 
-  .identity-summary {
-    margin: 0;
-    display: grid;
-    gap: 0.7rem;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  .identity-account {
+    margin: 0 1.05rem;
   }
 
-  .identity-summary div {
+  .identity-account div {
     display: grid;
-    gap: 0.2rem;
+    gap: 0.28rem;
+    width: fit-content;
+    min-width: min(100%, 240px);
+    padding: 0.75rem 0.9rem;
+    border: 1px solid rgba(205, 177, 118, 0.16);
+    border-radius: 2px;
+    background: rgba(14, 8, 5, 0.42);
   }
 
-  .identity-summary dt {
+  .identity-account dt {
     font-size: 0.68rem;
     letter-spacing: 0.18em;
     text-transform: uppercase;
     color: rgba(205, 177, 118, 0.62);
   }
 
-  .identity-summary dd {
+  .identity-account dd {
     margin: 0;
-    font-size: 0.9rem;
+    font-size: 1.02rem;
+    font-weight: 600;
     color: rgba(249, 236, 211, 0.94);
     word-break: break-word;
   }
@@ -1327,6 +1506,7 @@
   .identity-field {
     display: grid;
     gap: 0.4rem;
+    padding: 0 1.05rem;
   }
 
   .identity-field span {
@@ -1354,6 +1534,7 @@
     display: flex;
     gap: 0.55rem;
     align-items: flex-start;
+    padding: 0 1.05rem;
     color: rgba(240, 222, 188, 0.82);
     font-size: 0.85rem;
     line-height: 1.45;
@@ -1367,6 +1548,7 @@
     display: flex;
     flex-wrap: wrap;
     gap: 0.65rem;
+    padding: 0 1.05rem 1.05rem;
   }
 
   .identity-button {

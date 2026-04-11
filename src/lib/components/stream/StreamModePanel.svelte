@@ -7,7 +7,9 @@
   import { locale } from '$lib/locale';
   import { formatMessage, messages } from '$lib/i18n';
   import {
+    getStreamOverlayCropSettings,
     getStreamServiceStatus,
+    importStreamOverlayCropCode,
     startStreamService,
     stopStreamService,
     updateStreamServiceFilters
@@ -39,8 +41,11 @@
   };
   let busy = false;
   let savingFilters = false;
+  let importingCropCode = false;
   let manualFromInput = '';
   let maxRecordsInput = 5;
+  let cropCodeInput = '';
+  let cropCodeMessage = '';
 
   $: t = (
     key: keyof typeof messages.en,
@@ -70,6 +75,9 @@
         manualFrom: persisted.manualFrom,
         maxRecords: persisted.maxRecords
       });
+      const cropSettings = await getStreamOverlayCropSettings();
+      cropCodeInput = cropSettings.code;
+      cropCodeMessage = '';
     } catch (error) {
       console.error(error);
       await refreshStatus();
@@ -121,6 +129,16 @@
 
     try {
       await openUrl(status.overlay_url);
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  async function openCalibration() {
+    if (!baseUrl) return;
+
+    try {
+      await openUrl(`${baseUrl}/settings`);
     } catch (error) {
       console.error(error);
     }
@@ -194,6 +212,23 @@
     manualFromInput = '';
     await saveFilters();
   }
+
+  async function importCropCode() {
+    importingCropCode = true;
+    cropCodeMessage = '';
+
+    try {
+      const payload = await importStreamOverlayCropCode(cropCodeInput.trim());
+      cropCodeInput = payload.code;
+      cropCodeMessage = 'Crop code saved. The overlay will use it on the next refresh.';
+    } catch (error) {
+      console.error(error);
+      cropCodeMessage =
+        error instanceof Error ? error.message : 'Failed to import crop code.';
+    } finally {
+      importingCropCode = false;
+    }
+  }
 </script>
 
 <section class="stream-panel">
@@ -208,10 +243,19 @@
       {status}
       {pageState}
       {busy}
+      {importingCropCode}
+      {cropCodeInput}
+      {cropCodeMessage}
       onStart={handleStart}
       onStop={handleStop}
       onCopyUrl={copyUrl}
       onOpenPreview={openPreview}
+      onOpenCalibration={openCalibration}
+      onCropCodeInput={(value) => {
+        cropCodeInput = value;
+        cropCodeMessage = '';
+      }}
+      onImportCropCode={importCropCode}
     />
 
     <StreamFilterCard

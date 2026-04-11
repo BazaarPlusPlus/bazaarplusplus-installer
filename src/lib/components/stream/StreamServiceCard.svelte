@@ -5,10 +5,18 @@
   export let status: StreamServiceStatus;
   export let pageState: StreamPageState;
   export let busy = false;
+  export let importingCropCode = false;
+  export let cropCodeInput = '';
+  export let cropCodeMessage = '';
   export let onStart: () => void | Promise<void>;
   export let onStop: () => void | Promise<void>;
   export let onCopyUrl: () => void | Promise<void>;
   export let onOpenPreview: () => void | Promise<void>;
+  export let onOpenCalibration: () => void | Promise<void>;
+  export let onCropCodeInput: (value: string) => void;
+  export let onImportCropCode: () => void | Promise<void>;
+
+  let importPanelOpen = false;
 </script>
 
 <section class="card">
@@ -51,7 +59,37 @@
     <button disabled={!pageState.canOpenPreview} on:click={onOpenPreview}
       >Open Preview</button
     >
+    <button disabled={!pageState.canOpenPreview} on:click={onOpenCalibration}
+      >Open Calibration</button
+    >
+    <button
+      disabled={busy}
+      on:click={() => {
+        importPanelOpen = !importPanelOpen;
+      }}>Import Crop Code</button
+    >
   </div>
+
+  {#if importPanelOpen}
+    <label class="code-block">
+      <span class="code-label">Import Base64 Crop Code</span>
+      <textarea
+        value={cropCodeInput}
+        rows="4"
+        spellcheck="false"
+        on:input={(event) => onCropCodeInput(event.currentTarget.value)}
+      ></textarea>
+    </label>
+
+    <div class="import-row">
+      <button disabled={busy || importingCropCode || !cropCodeInput.trim()} on:click={onImportCropCode}
+        >Apply Crop Code</button
+      >
+      {#if cropCodeMessage}
+        <p class="import-message">{cropCodeMessage}</p>
+      {/if}
+    </div>
+  {/if}
 </section>
 
 <style>
@@ -143,6 +181,47 @@
     display: flex;
     flex-wrap: wrap;
     gap: 0.55rem;
+  }
+
+  .code-block {
+    display: grid;
+    gap: 0.35rem;
+  }
+
+  .code-label,
+  .import-message {
+    margin: 0;
+  }
+
+  .code-label {
+    font-size: 0.68rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(213, 188, 145, 0.74);
+  }
+
+  textarea {
+    width: 100%;
+    min-height: 5.8rem;
+    padding: 0.7rem 0.8rem;
+    border-radius: 2px;
+    border: 1px solid rgba(183, 132, 57, 0.16);
+    background: rgba(8, 6, 4, 0.82);
+    color: #eccf92;
+    font-family: 'Fira Code', monospace;
+    font-size: 0.76rem;
+    resize: vertical;
+    box-sizing: border-box;
+  }
+
+  .import-row {
+    display: grid;
+    gap: 0.45rem;
+  }
+
+  .import-message {
+    font-size: 0.76rem;
+    color: rgba(231, 220, 196, 0.72);
   }
 
   button {

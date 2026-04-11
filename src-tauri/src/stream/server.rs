@@ -1,5 +1,6 @@
 use super::{
     http,
+    overlay_settings::OverlaySettingsStore,
     records::RecordRepository,
     state::{StreamRuntimeState, StreamServiceStatus, StreamTaskHandle},
 };
@@ -54,7 +55,8 @@ pub async fn start(
         }
     };
     let record_repository = RecordRepository::new(game_path);
-    let router = http::router(record_repository, state.clone());
+    let overlay_settings = OverlaySettingsStore::default();
+    let router = http::router(record_repository, state.clone(), overlay_settings);
     let (shutdown_tx, shutdown_rx) = oneshot::channel();
 
     let join_handle = tauri::async_runtime::spawn(async move {

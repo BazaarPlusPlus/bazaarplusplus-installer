@@ -1,23 +1,13 @@
 const root = document.getElementById('overlay-root');
-const title = document.getElementById('overlay-title');
-const detail = document.getElementById('overlay-detail');
-const kicker = document.getElementById('overlay-kicker');
-const time = document.getElementById('overlay-time');
 const signal = document.getElementById('overlay-signal');
 const status = document.getElementById('overlay-status');
-const cardShell = document.getElementById('overlay-card-shell');
-const cardStage = document.getElementById('overlay-card-stage');
-const cardImage = document.getElementById('overlay-card-image');
+const emptyState = document.getElementById('overlay-empty');
+const emptyTitle = document.getElementById('overlay-empty-title');
+const emptyDetail = document.getElementById('overlay-empty-detail');
+const list = document.getElementById('overlay-list');
 
-const CROP = {
-  left: 0.342,
-  top: 0.313,
-  width: 0.58,
-  height: 0.22
-};
-
-let lastRecordKey = null;
-let lastImageUrl = null;
+let lastListKey = null;
+let rowResizeObserver = null;
 
 function setClassNames(...tokens) {
   if (!root) {
@@ -25,6 +15,12 @@ function setClassNames(...tokens) {
   }
 
   root.className = ['overlay', ...tokens].join(' ');
+}
+
+function setText(node, value) {
+  if (node) {
+    node.textContent = value;
+  }
 }
 
 function markUpdated() {
@@ -35,141 +31,383 @@ function markUpdated() {
   root.classList.remove('is-updated');
   window.requestAnimationFrame(() => {
     root.classList.add('is-updated');
-    window.setTimeout(() => root.classList.remove('is-updated'), 700);
+    window.setTimeout(() => root.classList.remove('is-updated'), 500);
   });
 }
 
-function renderEmpty(message) {
-  if (!title || !detail || !kicker || !time || !signal || !status) {
-    return;
+function formatMetric(value, suffix) {
+  if (typeof value !== 'number' || !Number.isFinite(value)) {
+    return null;
   }
 
-  setClassNames('empty');
-  kicker.textContent = 'Latest Record';
-  title.textContent = 'No records yet';
-  detail.textContent =
-    message ?? 'Start a match and the overlay will update automatically.';
-  time.textContent = 'Awaiting first result';
-  signal.textContent = 'Local feed idle';
-  status.textContent = 'Waiting';
-  hideCardPreview();
+  return `${value}${suffix}`;
 }
 
-function renderRecord(record, options = {}) {
-  if (!title || !detail || !kicker || !time || !signal || !status) {
+function formatRank(record) {
+  const rankValue = typeof record?.rank === 'string' ? record.rank.trim() : '';
+  const ratingValue =
+    typeof record?.rating === 'number' && Number.isFinite(record.rating)
+      ? String(record.rating)
+      : '';
+
+  if (rankValue && ratingValue) {
+    return `${rankValue} ${ratingValue}`;
+  }
+
+  if (rankValue) {
+    return rankValue;
+  }
+
+  if (ratingValue) {
+    return ratingValue;
+  }
+
+  return null;
+}
+
+function formatTimestamp(value) {
+  if (typeof value !== 'string' || !value.trim()) {
+    return '';
+  }
+
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return value;
+  }
+
+  const month = String(parsed.getMonth() + 1).padStart(2, '0');
+  const day = String(parsed.getDate()).padStart(2, '0');
+  const hours = String(parsed.getHours()).padStart(2, '0');
+  const minutes = String(parsed.getMinutes()).padStart(2, '0');
+
+  return `${month}-${day} ${hours}:${minutes}`;
+}
+
+function escapeHtml(value) {
+  return String(value)
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
+}
+
+function buildStats(record) {
+  return {
+    wins:
+      typeof record?.wins === 'number' && Number.isFinite(record.wins)
+        ? record.wins
+        : null,
+    battles:
+      typeof record?.battle_count === 'number' && Number.isFinite(record.battle_count)
+        ? record.battle_count
+        : null
+  };
+}
+
+function getVictoryTier(wins, battles) {
+  if (typeof wins !== 'number' || !Number.isFinite(wins)) {
+    return {
+      className: 'tier-unknown',
+      label: 'RUN'
+    };
+  }
+
+  if (wins === 10 && battles === 10) {
+    return {
+      className: 'tier-diamond',
+      label: 'DIA'
+    };
+  }
+
+  if (wins >= 10 && typeof battles === 'number' && battles > 10) {
+    return {
+      className: 'tier-gold',
+      label: 'GLD'
+    };
+  }
+
+  if (wins >= 7) {
+    return {
+      className: 'tier-silver',
+      label: 'SLV'
+    };
+  }
+
+  if (wins >= 4) {
+    return {
+      className: 'tier-bronze',
+      label: 'BRZ'
+    };
+  }
+
+  return {
+    className: 'tier-misfortune',
+    label: 'MIS'
+  };
+}
+
+function getHeroBadgeStyle(heroName) {
+  const normalized = typeof heroName === 'string' ? heroName.trim() : '';
+  if (!normalized) {
+    return {
+      shortCode: 'UNK',
+      background: 'rgba(51, 74, 97, 0.95)',
+      text: '#ffffff',
+      assetKey: 'unk'
+    };
+  }
+
+  const map = {
+    Vanessa: { shortCode: 'VAN', background: 'rgb(192, 33, 33)', text: '#ffffff', assetKey: 'van' },
+    Pygmalien: { shortCode: 'PYG', background: 'rgb(39, 103, 192)', text: '#ffffff', assetKey: 'pyg' },
+    Dooley: { shortCode: 'DOO', background: 'rgb(225, 154, 8)', text: '#ffffff', assetKey: 'doo' },
+    Mak: { shortCode: 'MAK', background: 'rgb(190, 230, 91)', text: 'rgb(26, 31, 38)', assetKey: 'mak' },
+    Jules: { shortCode: 'JUL', background: 'rgb(180, 52, 236)', text: '#ffffff', assetKey: 'jul' },
+    Karnok: { shortCode: 'KAR', background: 'rgb(59, 136, 156)', text: '#ffffff', assetKey: 'kar' },
+    Stelle: { shortCode: 'STE', background: 'rgb(255, 235, 24)', text: 'rgb(26, 31, 38)', assetKey: 'ste' }
+  };
+
+  if (map[normalized]) {
+    return map[normalized];
+  }
+
+  return {
+    shortCode: normalized.length <= 3 ? normalized.toUpperCase() : normalized.slice(0, 3).toUpperCase(),
+    background: 'rgba(57, 73, 97, 0.98)',
+    text: '#ffffff',
+    assetKey: 'unk'
+  };
+}
+
+function getWinsBadgeAsset(wins, battles) {
+  if (typeof wins !== 'number' || !Number.isFinite(wins) || wins < 0) {
+    return '/assets/badges/wins/wins-0-mis.svg';
+  }
+
+  const safeWins = Math.max(0, Math.min(10, Math.trunc(wins)));
+  if (safeWins === 10) {
+    if (typeof battles === 'number' && Number.isFinite(battles) && Math.trunc(battles) === 10) {
+      return '/assets/badges/wins/wins-10-dia.svg';
+    }
+    return '/assets/badges/wins/wins-10-gld.svg';
+  }
+  if (safeWins >= 7) {
+    return `/assets/badges/wins/wins-${safeWins}-slv.svg`;
+  }
+  if (safeWins >= 4) {
+    return `/assets/badges/wins/wins-${safeWins}-brz.svg`;
+  }
+  return `/assets/badges/wins/wins-${safeWins}-mis.svg`;
+}
+
+function getInfoBadgeAsset(heroKey, battles) {
+  const safeHeroKey = typeof heroKey === 'string' && heroKey ? heroKey : 'unk';
+  const safeBattles =
+    typeof battles === 'number' && Number.isFinite(battles)
+      ? Math.max(0, Math.min(20, Math.trunc(battles)))
+      : 0;
+  return `/assets/badges/info/info-${safeHeroKey}-${safeBattles}.svg`;
+}
+
+function buildRowMarkup(record) {
+  const title = escapeHtml(record?.title || 'Unknown hero');
+  const stats = buildStats(record);
+  const heroBadge = getHeroBadgeStyle(record?.title);
+  const scoreMarkup = `
+    <div class="meta-stack">
+      <div class="metric-tile score-tile">
+        <img class="metric-badge-svg" src="${getWinsBadgeAsset(stats.wins, stats.battles)}" alt="${stats.wins ?? 'unknown'} wins" loading="eager" />
+      </div>
+      <div class="metric-tile info-tile">
+        <img class="metric-badge-svg" src="${getInfoBadgeAsset(heroBadge.assetKey, stats.battles)}" alt="${stats.battles ?? 'unknown'} battles with ${escapeHtml(heroBadge.shortCode)}" loading="eager" />
+      </div>
+    </div>
+  `;
+  const imageUrl =
+    typeof record?.image_url === 'string' && record.image_url
+      ? `${record.image_url}/strip`
+      : '';
+  const image = imageUrl
+    ? `<figure class="run-visual"><div class="visual-frame"><div class="visual-stage"><img src="${escapeHtml(imageUrl)}" alt="${title} run strip" loading="eager" /></div></div></figure>`
+    : `<figure class="run-visual"><div class="visual-frame"><div class="visual-stage"></div></div></figure>`;
+
+  return `
+    <article class="run-row">
+      <div class="run-card">
+        <section class="run-meta">
+          <p class="hero-name sr-only">${title}</p>
+          ${scoreMarkup}
+        </section>
+        ${image}
+      </div>
+    </article>
+  `;
+}
+
+function renderEmpty(message) {
+  setClassNames('empty');
+  setText(signal, 'Local feed idle');
+  setText(status, 'Waiting');
+
+  if (emptyState) {
+    emptyState.hidden = false;
+    emptyState.style.display = '';
+  }
+
+  if (list) {
+    list.hidden = true;
+    list.innerHTML = '';
+  }
+
+  setText(emptyTitle, 'No records yet');
+  setText(
+    emptyDetail,
+    message ?? 'Start a match and the overlay will update automatically.'
+  );
+}
+
+function renderRecords(records, options = {}) {
+  if (!list) {
     return;
   }
 
   const { stale = false, updated = false } = options;
-  const stateClass = stale ? 'stale' : 'live';
+  setClassNames(stale ? 'stale' : 'live');
+  setText(
+    signal,
+    stale ? 'Connection lost, showing cached data' : 'Local SQLite feed live'
+  );
+  setText(status, stale ? 'Retrying' : 'Live');
 
-  setClassNames(stateClass);
-  kicker.textContent = stale ? 'Latest Record Cached' : 'Latest Record';
-  title.textContent = record.title || 'Untitled record';
-  detail.textContent = record.subtitle || 'No subtitle available.';
-  time.textContent = record.captured_at || 'Capture time unavailable';
-  signal.textContent = stale ? 'Connection lost, showing cached data' : 'Local SQLite feed live';
-  status.textContent = stale ? 'Retrying' : 'Live';
-  updateCardPreview(record.image_url ?? null);
+  if (emptyState) {
+    emptyState.hidden = true;
+    emptyState.style.display = 'none';
+  }
+
+  list.hidden = false;
+  list.innerHTML = records.map(buildRowMarkup).join('');
+  syncRowHeights();
 
   if (updated) {
     markUpdated();
   }
 }
 
-function getRecordKey(record) {
-  return [
-    record?.id ?? '',
-    record?.captured_at ?? '',
-    record?.title ?? '',
-    record?.image_url ?? ''
-  ].join('::');
+function applyRowHeight(row) {
+  if (!(row instanceof HTMLElement)) {
+    return;
+  }
+
+  const visualStage = row.querySelector('.visual-stage');
+  const meta = row.querySelector('.run-meta');
+  if (!(visualStage instanceof HTMLElement) || !(meta instanceof HTMLElement)) {
+    return;
+  }
+
+  const visualHeight = visualStage.getBoundingClientRect().height;
+  if (visualHeight > 0) {
+    meta.style.height = `${visualHeight}px`;
+  }
 }
 
-function hideCardPreview() {
-  if (!cardShell || !cardImage) {
+function syncRowHeights() {
+  if (!(list instanceof HTMLElement)) {
     return;
   }
 
-  cardShell.hidden = true;
-  cardImage.removeAttribute('src');
-  lastImageUrl = null;
-}
-
-function applyCardCrop() {
-  if (!cardStage || !cardImage || !cardImage.naturalWidth || !cardImage.naturalHeight) {
-    return;
+  if (rowResizeObserver) {
+    rowResizeObserver.disconnect();
+    rowResizeObserver = null;
   }
 
-  const stageAspectRatio =
-    (cardImage.naturalWidth * CROP.width) / (cardImage.naturalHeight * CROP.height);
+  rowResizeObserver = new ResizeObserver((entries) => {
+    entries.forEach((entry) => {
+      const row = entry.target.closest('.run-row');
+      if (row instanceof HTMLElement) {
+        applyRowHeight(row);
+      }
+    });
+  });
 
-  document.documentElement.style.setProperty(
-    '--crop-stage-aspect-ratio',
-    stageAspectRatio.toFixed(4)
-  );
-}
-
-function updateCardPreview(imageUrl) {
-  if (!cardShell || !cardImage) {
-    return;
-  }
-
-  if (!imageUrl) {
-    hideCardPreview();
-    return;
-  }
-
-  cardShell.hidden = false;
-
-  if (lastImageUrl === imageUrl) {
-    if (cardImage.complete) {
-      applyCardCrop();
+  list.querySelectorAll('.run-row').forEach((row) => {
+    if (!(row instanceof HTMLElement)) {
+      return;
     }
-    return;
-  }
 
-  lastImageUrl = imageUrl;
-  cardImage.onload = () => {
-    applyCardCrop();
-  };
-  cardImage.src = imageUrl;
+    applyRowHeight(row);
+
+    const visualStage = row.querySelector('.visual-stage');
+    const image = row.querySelector('.visual-stage img');
+
+    if (visualStage instanceof HTMLElement) {
+      rowResizeObserver.observe(visualStage);
+    }
+
+    if (image instanceof HTMLImageElement) {
+      if (image.complete) {
+        applyRowHeight(row);
+      } else {
+        image.addEventListener('load', () => applyRowHeight(row), { once: true });
+      }
+    }
+  });
+}
+
+function getListKey(records) {
+  return records
+    .map((record) =>
+      [
+        record?.id ?? '',
+        record?.captured_at ?? '',
+        record?.wins ?? '',
+        record?.battle_count ?? '',
+        record?.image_url ?? ''
+      ].join('::')
+    )
+    .join('|||');
 }
 
 async function refresh() {
   try {
-    const response = await fetch('/api/records/latest', { cache: 'no-store' });
+    const response = await fetch('/api/records/recent', { cache: 'no-store' });
     if (!response.ok) {
-      throw new Error(`unexpected status ${response.status}`);
+      const message = (await response.text()).trim();
+      throw new Error(message || `unexpected status ${response.status}`);
     }
 
     const payload = await response.json();
-    if (!payload) {
-      lastRecordKey = null;
+    const records = Array.isArray(payload)
+      ? payload.filter((record) => record && record.image_url)
+      : [];
+
+    if (records.length === 0) {
+      lastListKey = null;
       renderEmpty();
       return;
     }
 
-    const nextKey = getRecordKey(payload);
-    const updated = nextKey !== lastRecordKey;
-    lastRecordKey = nextKey;
-    renderRecord(payload, { updated });
-  } catch {
-    if (lastRecordKey) {
-      setClassNames('live', 'stale');
-      if (signal) {
-        signal.textContent = 'Connection lost, showing cached data';
-      }
-      if (status) {
-        status.textContent = 'Retrying';
-      }
+    const nextKey = getListKey(records);
+    const updated = nextKey !== lastListKey;
+    lastListKey = nextKey;
+    renderRecords(records, { updated });
+  } catch (error) {
+    if (lastListKey && list && !list.hidden) {
+      setClassNames('stale');
+      setText(signal, 'Connection lost, showing cached data');
+      setText(status, 'Retrying');
       return;
     }
 
-    renderEmpty('Waiting for the local stream service.');
+    renderEmpty(
+      error instanceof Error && error.message
+        ? error.message
+        : 'Waiting for the local stream service.'
+    );
   }
 }
 
 renderEmpty();
 void refresh();
+window.addEventListener('resize', syncRowHeights);
 window.setInterval(refresh, 4000);

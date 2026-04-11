@@ -17,8 +17,9 @@ use commands::{
     },
     steam::{close_steam, detect_steam_running},
     stream::{
-        get_stream_service_status, start_stream_service, stop_stream_service,
-        update_stream_service_filters,
+        get_stream_overlay_crop_settings, get_stream_service_status,
+        import_stream_overlay_crop_code, save_stream_overlay_crop_settings,
+        start_stream_service, stop_stream_service, update_stream_service_filters,
     },
     supporters::load_supporters,
     vdf::patch_launch_options,
@@ -71,6 +72,9 @@ pub fn run() {
             stop_stream_service,
             get_stream_service_status,
             update_stream_service_filters,
+            get_stream_overlay_crop_settings,
+            save_stream_overlay_crop_settings,
+            import_stream_overlay_crop_code,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

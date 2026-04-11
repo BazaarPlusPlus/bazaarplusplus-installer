@@ -64,7 +64,7 @@ export function createStreamPageState(
       : 'Closing the window will exit BazaarPlusPlus normally.',
     effectiveFromMessage: status.effective_from
       ? `Showing records from ${status.effective_from}.`
-      : 'No active time filter yet. Starting the stream will set the current time automatically.',
+      : 'No active time filter. Showing all completed runs available to the local service.',
     maxRecordsMessage: `Showing up to ${status.max_records} records.`
   };
 }
