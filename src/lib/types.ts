@@ -61,6 +61,7 @@ export interface StreamRecordSummary {
   title: string;
   subtitle: string;
   captured_at: string;
+  captured_at_utc: string;
   image_url?: string | null;
   wins?: number | null;
   position?: number | null;
@@ -85,4 +86,9 @@ export interface StreamOverlayCropSettings {
 export interface StreamOverlayCropSettingsPayload {
   crop: StreamOverlayCropSettings;
   code: string;
+}
+
+export interface StreamDbPathInfo {
+  found: boolean;
+  path: string | null;
 }

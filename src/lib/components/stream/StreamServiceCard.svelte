@@ -1,11 +1,14 @@
 <script lang="ts">
   import { locale } from '$lib/locale';
   import type { StreamPageState } from '$lib/stream/state';
-  import type { StreamServiceStatus } from '$lib/types';
+  import type { StreamDbPathInfo, StreamServiceStatus } from '$lib/types';
 
   export let status: StreamServiceStatus;
   export let pageState: StreamPageState;
   export let busy = false;
+  export let countBefore = 0;
+  export let countAfter = 0;
+  export let dbPathInfo: StreamDbPathInfo = { found: false, path: null };
   export let importingCropCode = false;
   export let previewUrl: string | null = null;
   export let cropCodeInput = '';
@@ -13,8 +16,6 @@
   export let copyMessage = '';
   export let copyMessageTone: 'success' | 'error' | null = null;
   export let overviewStartLabel = '';
-  export let overviewDescription = '';
-  export let selectedOffset = 0;
   export let maxBacktrack = 5;
   export let canStepEarlier = false;
   export let canStepLater = false;
@@ -95,7 +96,25 @@
       <h2>{title}</h2>
     </div>
 
-    <span class:online={status.running} class="badge">{statusBadge}</span>
+    <div class="badge-group">
+      {#if status.running}
+        <span class="count-badge count-after" title={isZh ? '开播后新增记录' : 'Records captured since stream started'}>
+          {isZh ? `开播后 ${countAfter}` : `+${countAfter} After`}
+        </span>
+        <span class="count-badge count-before" title={isZh ? '开播前已有记录' : 'Records captured before stream started'}>
+          {isZh ? `开播前 ${countBefore}` : `${countBefore} Before`}
+        </span>
+      {/if}
+      <span
+        class="count-badge"
+        class:db-tag-found={dbPathInfo.found}
+        class:db-tag-missing={!dbPathInfo.found}
+        title={dbPathInfo.path ?? ''}
+      >
+        {dbPathInfo.found ? (isZh ? 'DB 已找到' : 'DB OK') : (isZh ? 'DB 未找到' : 'DB Missing')}
+      </span>
+      <span class:online={status.running} class="badge">{statusBadge}</span>
+    </div>
   </div>
 
   {#if previewUrl}
@@ -113,7 +132,6 @@
     <div class="overview-copy">
       <p class="detail-label">{isZh ? 'Overview 起始时间' : 'Overview Start Time'}</p>
       <p class="overview-value">{overviewStartLabel}</p>
-      <p class="overview-description">{overviewDescription}</p>
     </div>
 
     <div class="overview-controls">
@@ -135,7 +153,7 @@
       </div>
 
       <label class="backtrack-control">
-        <span class="detail-label">{isZh ? '回溯条数' : 'Backtrack Count'}</span>
+        <span class="detail-label">{isZh ? '回溯条数' : 'Backtrack'}</span>
         <input
           type="number"
           min="1"
@@ -143,9 +161,6 @@
           value={maxBacktrack}
           on:change={(event) => onMaxBacktrackInput(Number(event.currentTarget.value))}
         />
-        <span class="backtrack-meta">
-          {isZh ? `当前回溯偏移 ${selectedOffset}` : `Current backtrack offset ${selectedOffset}`}
-        </span>
       </label>
     </div>
   </div>
@@ -232,6 +247,39 @@
     align-items: flex-start;
   }
 
+  .badge-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+    align-items: flex-start;
+    justify-content: flex-end;
+    flex: 0 0 auto;
+  }
+
+  .count-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.4rem 0.6rem;
+    border-radius: 2px;
+    font-family: 'Cinzel', serif;
+    font-size: 0.55rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .count-after {
+    border: 1px solid rgba(130, 200, 120, 0.22);
+    background: rgba(80, 160, 70, 0.1);
+    color: rgba(180, 230, 170, 0.85);
+  }
+
+  .count-before {
+    border: 1px solid rgba(190, 137, 59, 0.16);
+    background: rgba(192, 138, 54, 0.06);
+    color: rgba(220, 200, 160, 0.7);
+  }
+
   .heading-copy {
     display: grid;
     gap: 0.2rem;
@@ -274,6 +322,18 @@
     border-color: rgba(211, 159, 77, 0.3);
     color: #f5dfa8;
     background: rgba(192, 136, 52, 0.12);
+  }
+
+  .db-tag-found {
+    border-color: rgba(120, 190, 110, 0.22);
+    background: rgba(60, 140, 50, 0.09);
+    color: rgba(170, 220, 160, 0.82);
+  }
+
+  .db-tag-missing {
+    border-color: rgba(214, 118, 104, 0.24);
+    background: rgba(132, 48, 37, 0.14);
+    color: rgba(255, 190, 175, 0.84);
   }
 
   .url-shell {
@@ -339,22 +399,10 @@
     gap: 0.35rem;
   }
 
-  .overview-value,
-  .overview-description,
-  .backtrack-meta {
-    margin: 0;
-  }
-
   .overview-value {
+    margin: 0;
     font-size: 0.94rem;
     color: #f0e2bf;
-  }
-
-  .overview-description,
-  .backtrack-meta {
-    font-size: 0.76rem;
-    line-height: 1.45;
-    color: rgba(215, 197, 161, 0.68);
   }
 
   .overview-controls {

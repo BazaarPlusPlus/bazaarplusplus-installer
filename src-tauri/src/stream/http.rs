@@ -4,11 +4,12 @@ use super::state::StreamRuntimeState;
 use axum::http::StatusCode;
 use axum::{
     extract::{Path, Query, State},
-    http::{header, HeaderValue},
+    http::{header, HeaderValue, Method},
     response::{Html, IntoResponse, Response},
     routing::get,
     Json, Router,
 };
+use tower_http::cors::{Any, CorsLayer};
 use image::{DynamicImage, ImageFormat};
 use include_dir::{include_dir, Dir};
 use serde::{Deserialize, Serialize};
@@ -48,11 +49,13 @@ struct RecordWindowSummaryResponse {
 #[derive(Debug, Deserialize)]
 struct LatestRecordQuery {
     offset: Option<usize>,
+    from: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
 struct RecordListQuery {
     limit: Option<usize>,
+    from: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -74,6 +77,15 @@ pub fn router(
     runtime: StreamRuntimeState,
     overlay_settings: OverlaySettingsStore,
 ) -> Router {
+    // Allow the Tauri WebView (tauri://localhost, http://tauri.localhost, http://localhost:*)
+    // to fetch from this local HTTP server. Without these headers the browser inside the
+    // WebView blocks every cross-origin response, making all badge counts and record lists
+    // return silently-caught zeros.
+    let cors = CorsLayer::new()
+        .allow_origin(Any)
+        .allow_methods([Method::GET, Method::POST])
+        .allow_headers(Any);
+
     Router::new()
         .route("/health", get(health))
         .route("/overlay", get(overlay_page))
@@ -92,6 +104,7 @@ pub fn router(
         .route("/assets/settings.css", get(settings_css))
         .route("/assets/settings.js", get(settings_js))
         .route("/assets/badges/{category}/{file_name}", get(badge_asset))
+        .layer(cors)
         .with_state(HttpAppState {
             overlay_records,
             runtime,
@@ -143,8 +156,9 @@ async fn latest_record(
     Query(query): Query<LatestRecordQuery>,
 ) -> Response {
     let offset = query.offset.unwrap_or(0);
+    let from = query.from.as_deref();
 
-    match app_state.overlay_records.load_record_at_offset(offset) {
+    match app_state.overlay_records.load_record_at_offset(from, offset) {
         Ok(record) => Json(record).into_response(),
         Err(message) => (StatusCode::INTERNAL_SERVER_ERROR, message).into_response(),
     }
@@ -155,8 +169,9 @@ async fn record_list(
     Query(query): Query<RecordListQuery>,
 ) -> Response {
     let limit = query.limit.unwrap_or(20);
+    let from = query.from.as_deref();
 
-    match app_state.overlay_records.load_record_list(Some(limit)) {
+    match app_state.overlay_records.load_record_list(from, Some(limit)) {
         Ok(records) => Json(records).into_response(),
         Err(message) => (StatusCode::INTERNAL_SERVER_ERROR, message).into_response(),
     }

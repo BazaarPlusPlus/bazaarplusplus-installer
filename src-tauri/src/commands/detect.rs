@@ -195,6 +195,22 @@ fn get_steam_path() -> Option<PathBuf> {
 }
 
 fn get_game_path(steam_path: &Path) -> Option<PathBuf> {
+    // Primary: scan library VDF for app 1617400
+    if let Some(path) = get_game_path_from_vdf(steam_path) {
+        return Some(path);
+    }
+
+    // Fallback: The Bazaar might be in the default Steam library (same root as Steam itself).
+    // This catches cases where VDF parsing fails or the default library is not listed.
+    let candidate = steam_path.join("steamapps/common/The Bazaar");
+    if candidate.exists() {
+        return Some(candidate);
+    }
+
+    None
+}
+
+fn get_game_path_from_vdf(steam_path: &Path) -> Option<PathBuf> {
     let library_vdf =
         std::fs::read_to_string(steam_path.join("steamapps/libraryfolders.vdf")).ok()?;
     let library_root = find_game_in_library_vdf(&library_vdf, "1617400")?;

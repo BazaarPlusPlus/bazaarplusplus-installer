@@ -381,6 +381,7 @@ dependencies = [
  "tauri-plugin-updater",
  "tempfile",
  "tokio",
+ "tower-http",
  "uuid",
  "winreg 0.52.0",
  "zip 6.0.0",

@@ -54,7 +54,7 @@ pub async fn start(
             return Err(err);
         }
     };
-    let overlay_record_repository = OverlayRecordRepository::new(game_path);
+    let overlay_record_repository = OverlayRecordRepository::new(game_path.clone());
     let overlay_settings = OverlaySettingsStore::default();
     let router = http::router(overlay_record_repository, state.clone(), overlay_settings);
     let (shutdown_tx, shutdown_rx) = oneshot::channel();
@@ -84,6 +84,7 @@ pub async fn start(
             shutdown: shutdown_tx,
             join_handle,
         },
+        game_path.clone(),
     );
 
     Ok(status)
@@ -113,7 +114,30 @@ async fn bind_listener(host: &str, start: u16, end: u16) -> Result<(TcpListener,
 
 fn resolve_game_path(app: &tauri::AppHandle) -> Result<Option<PathBuf>, String> {
     let env = detect::detect_environment(app.clone(), None)?;
-    Ok(env.game_path.map(PathBuf::from))
+    if let Some(path) = env.game_path.map(PathBuf::from) {
+        return Ok(Some(path));
+    }
+
+    // Fallback: check well-known Windows Steam paths for the BazaarPlusPlus DB
+    #[cfg(target_os = "windows")]
+    {
+        let candidates = [
+            r"C:\Program Files (x86)\Steam\steamapps\common\The Bazaar",
+            r"C:\Program Files\Steam\steamapps\common\The Bazaar",
+            r"D:\Steam\steamapps\common\The Bazaar",
+            r"D:\SteamLibrary\steamapps\common\The Bazaar",
+            r"E:\Steam\steamapps\common\The Bazaar",
+            r"E:\SteamLibrary\steamapps\common\The Bazaar",
+        ];
+        for candidate in &candidates {
+            let path = PathBuf::from(candidate);
+            if path.join("BazaarPlusPlus").join("bazaarplusplus.db").exists() {
+                return Ok(Some(path));
+            }
+        }
+    }
+
+    Ok(None)
 }
 
 fn current_timestamp() -> String {

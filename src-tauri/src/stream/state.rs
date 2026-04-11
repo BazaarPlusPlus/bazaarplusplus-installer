@@ -1,5 +1,8 @@
 use serde::Serialize;
-use std::sync::{Arc, Mutex};
+use std::{
+    path::PathBuf,
+    sync::{Arc, Mutex},
+};
 use tokio::sync::oneshot;
 
 const DEFAULT_HOST: &str = "127.0.0.1";
@@ -43,6 +46,7 @@ pub struct StreamRuntimeState {
 struct StreamRuntimeInner {
     status: StreamServiceStatus,
     task: Option<StreamTaskHandle>,
+    game_path: Option<PathBuf>,
 }
 
 impl StreamRuntimeState {
@@ -54,10 +58,24 @@ impl StreamRuntimeState {
             .clone()
     }
 
-    pub fn set_running(&self, status: StreamServiceStatus, task: StreamTaskHandle) {
+    pub fn get_game_path(&self) -> Option<PathBuf> {
+        self.inner
+            .lock()
+            .expect("stream runtime poisoned")
+            .game_path
+            .clone()
+    }
+
+    pub fn set_running(
+        &self,
+        status: StreamServiceStatus,
+        task: StreamTaskHandle,
+        game_path: Option<PathBuf>,
+    ) {
         let mut inner = self.inner.lock().expect("stream runtime poisoned");
         inner.status = status;
         inner.task = Some(task);
+        inner.game_path = game_path;
     }
 
     pub fn mark_started(&self, started_at: String) -> StreamServiceStatus {

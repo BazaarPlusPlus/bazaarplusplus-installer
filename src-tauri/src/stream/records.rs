@@ -12,6 +12,7 @@ pub struct OverlayRecord {
     pub title: String,
     pub subtitle: String,
     pub captured_at: String,
+    pub captured_at_utc: String,
     pub image_url: Option<String>,
     pub wins: Option<i64>,
     pub position: Option<i64>,
@@ -26,6 +27,7 @@ pub(crate) struct OverlayRecordRow {
     hero: String,
     game_mode: String,
     captured_at: String,
+    captured_at_utc: String,
     image_path: Option<String>,
     wins: Option<i64>,
     position: Option<i64>,
@@ -44,9 +46,9 @@ impl OverlayRecordRepository {
         Self { game_path }
     }
 
-    pub fn load_record_at_offset(&self, offset: usize) -> Result<Option<OverlayRecord>, String> {
+    pub fn load_record_at_offset(&self, from: Option<&str>, offset: usize) -> Result<Option<OverlayRecord>, String> {
         let database_path = self.database_path()?;
-        Ok(load_latest_overlay_record(&database_path, None, offset)?
+        Ok(load_latest_overlay_record(&database_path, from, offset)?
             .map(|row| self.to_overlay_record(row)))
     }
 
@@ -55,9 +57,9 @@ impl OverlayRecordRepository {
         load_overlay_record_count(&database_path, from)
     }
 
-    pub fn load_record_list(&self, limit: Option<usize>) -> Result<Vec<OverlayRecord>, String> {
+    pub fn load_record_list(&self, from: Option<&str>, limit: Option<usize>) -> Result<Vec<OverlayRecord>, String> {
         let database_path = self.database_path()?;
-        Ok(load_overlay_record_list(&database_path, limit)?
+        Ok(load_overlay_record_list(&database_path, from, limit)?
             .into_iter()
             .map(|row| self.to_overlay_record(row))
             .collect())
@@ -84,11 +86,10 @@ impl OverlayRecordRepository {
     }
 
     fn database_path(&self) -> Result<PathBuf, String> {
-        let game_path = self.game_path.as_ref().ok_or_else(|| {
-            "Game path is not configured; expected BazaarPlusPlus/bazaarplusplus.db under the resolved game root."
-                .to_string()
-        })?;
-        resolve_database_path(game_path)
+        if let Some(game_path) = &self.game_path {
+            return resolve_database_path(game_path);
+        }
+        find_database_path_anywhere()
     }
 
     fn resolve_image_path(&self, raw_path: Option<&str>) -> Option<PathBuf> {
@@ -116,6 +117,7 @@ impl OverlayRecordRepository {
             title,
             subtitle,
             captured_at: row.captured_at,
+            captured_at_utc: row.captured_at_utc,
             image_url,
             wins: row.wins,
             position: row.position,
@@ -124,6 +126,32 @@ impl OverlayRecordRepository {
             rating: row.rating,
         }
     }
+}
+
+fn find_database_path_anywhere() -> Result<PathBuf, String> {
+    #[cfg(target_os = "windows")]
+    {
+        let candidates = [
+            r"C:\Program Files (x86)\Steam\steamapps\common\The Bazaar",
+            r"C:\Program Files\Steam\steamapps\common\The Bazaar",
+            r"D:\Steam\steamapps\common\The Bazaar",
+            r"D:\SteamLibrary\steamapps\common\The Bazaar",
+            r"E:\Steam\steamapps\common\The Bazaar",
+            r"E:\SteamLibrary\steamapps\common\The Bazaar",
+        ];
+        for candidate in &candidates {
+            let db = PathBuf::from(candidate)
+                .join(DATA_DIRECTORY)
+                .join(DATABASE_FILE_NAME);
+            if db.exists() {
+                return Ok(db);
+            }
+        }
+    }
+    Err(
+        "bazaarplusplus.db not found: game path is not configured and no known Steam library path contains it."
+            .to_string(),
+    )
 }
 
 pub fn resolve_database_path(game_path: &Path) -> Result<PathBuf, String> {
@@ -198,7 +226,8 @@ select
   rs.player_position,
   rs.day as battle_count,
   nullif(trim(rs.player_rank), '') as player_rank,
-  rs.player_rating as player_rating
+  rs.player_rating as player_rating,
+  rs.captured_at_utc
 from run_screenshots rs
 where rs.capture_source = 'end_of_run_auto'
   and datetime(rs.captured_at_utc) >= datetime(?1)
@@ -219,7 +248,8 @@ select
   rs.player_position,
   rs.day as battle_count,
   nullif(trim(rs.player_rank), '') as player_rank,
-  rs.player_rating as player_rating
+  rs.player_rating as player_rating,
+  rs.captured_at_utc
 from run_screenshots rs
 where rs.capture_source = 'end_of_run_auto'
 order by datetime(rs.captured_at_utc) desc, rs.screenshot_id desc
@@ -284,6 +314,7 @@ where rs.capture_source = 'end_of_run_auto'
 
 pub(crate) fn load_overlay_record_list(
     database_path: &Path,
+    from: Option<&str>,
     limit: Option<usize>,
 ) -> Result<Vec<OverlayRecordRow>, String> {
     if !database_path.exists() {
@@ -295,13 +326,14 @@ pub(crate) fn load_overlay_record_list(
         return Ok(Vec::new());
     }
 
-    let mut records = Vec::new();
-    if let Some(limit) = limit {
-        if limit == 0 {
-            return Ok(records);
-        }
+    let effective_limit = limit.unwrap_or(20);
+    if effective_limit == 0 {
+        return Ok(Vec::new());
+    }
+    let limit_value = i64::try_from(effective_limit).map_err(|err| err.to_string())?;
 
-        let limit_value = i64::try_from(limit).map_err(|err| err.to_string())?;
+    let mut records = Vec::new();
+    if let Some(from) = from {
         let mut stmt = conn
             .prepare(
                 "
@@ -315,26 +347,24 @@ select
   rs.player_position,
   rs.day as battle_count,
   nullif(trim(rs.player_rank), '') as player_rank,
-  rs.player_rating as player_rating
+  rs.player_rating as player_rating,
+  rs.captured_at_utc
 from run_screenshots rs
 where rs.capture_source = 'end_of_run_auto'
+  and datetime(rs.captured_at_utc) >= datetime(?1)
 order by datetime(rs.captured_at_utc) desc, rs.screenshot_id desc
-limit ?1
+limit ?2
 ",
             )
             .map_err(|err| err.to_string())?;
-        let mut rows = stmt.query([limit_value]).map_err(|err| err.to_string())?;
-
+        let mut rows = stmt.query((from, limit_value)).map_err(|err| err.to_string())?;
         while let Some(row) = rows.next().map_err(|err| err.to_string())? {
             records.push(map_overlay_record_row(row)?);
         }
-
-        return Ok(records);
-    }
-
-    let mut stmt = conn
-        .prepare(
-            "
+    } else {
+        let mut stmt = conn
+            .prepare(
+                "
 select
   rs.screenshot_id,
   coalesce(nullif(trim(rs.hero_name), ''), 'Unknown') as hero,
@@ -345,17 +375,19 @@ select
   rs.player_position,
   rs.day as battle_count,
   nullif(trim(rs.player_rank), '') as player_rank,
-  rs.player_rating as player_rating
+  rs.player_rating as player_rating,
+  rs.captured_at_utc
 from run_screenshots rs
 where rs.capture_source = 'end_of_run_auto'
 order by datetime(rs.captured_at_utc) desc, rs.screenshot_id desc
+limit ?1
 ",
-        )
-        .map_err(|err| err.to_string())?;
-    let mut rows = stmt.query([]).map_err(|err| err.to_string())?;
-
-    while let Some(row) = rows.next().map_err(|err| err.to_string())? {
-        records.push(map_overlay_record_row(row)?);
+            )
+            .map_err(|err| err.to_string())?;
+        let mut rows = stmt.query([limit_value]).map_err(|err| err.to_string())?;
+        while let Some(row) = rows.next().map_err(|err| err.to_string())? {
+            records.push(map_overlay_record_row(row)?);
+        }
     }
 
     Ok(records)
@@ -387,7 +419,8 @@ select
   rs.player_position,
   rs.day as battle_count,
   nullif(trim(rs.player_rank), '') as player_rank,
-  rs.player_rating as player_rating
+  rs.player_rating as player_rating,
+  rs.captured_at_utc
 from run_screenshots rs
 where rs.capture_source = 'end_of_run_auto'
   and rs.screenshot_id = ?1
@@ -432,6 +465,7 @@ fn map_overlay_record_row(row: &rusqlite::Row<'_>) -> Result<OverlayRecordRow, S
         battle_count: row.get(7).map_err(|err| err.to_string())?,
         rank: row.get(8).map_err(|err| err.to_string())?,
         rating: row.get(9).map_err(|err| err.to_string())?,
+        captured_at_utc: row.get(10).map_err(|err| err.to_string())?,
     })
 }
 

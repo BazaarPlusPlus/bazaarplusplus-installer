@@ -17,7 +17,7 @@ use commands::{
     },
     steam::{close_steam, detect_steam_running},
     stream::{
-        get_stream_overlay_crop_settings, get_stream_service_status,
+        detect_stream_db_path, get_stream_overlay_crop_settings, get_stream_service_status,
         import_stream_overlay_crop_code, list_stream_overlay_records, reveal_stream_record_image,
         save_stream_overlay_crop_settings, start_stream_service, stop_stream_service,
     },
@@ -77,6 +77,7 @@ pub fn run() {
             import_stream_overlay_crop_code,
             list_stream_overlay_records,
             reveal_stream_record_image,
+            detect_stream_db_path,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

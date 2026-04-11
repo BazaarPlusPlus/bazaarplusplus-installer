@@ -22,11 +22,7 @@ test('createHomeSummary marks stream mode active when service is running', () =>
       overlay_url: 'http://127.0.0.1:17654/overlay',
       using_fallback_port: false,
       last_error: null,
-      manual_from: null,
-      started_at: '2026-04-11T21:00:00+08:00',
-      effective_from: '2026-04-11T21:00:00+08:00',
-      max_records: 5,
-      excluded_record_ids: []
+      started_at: '2026-04-11T21:00:00+08:00'
     }
   });
 
@@ -44,11 +40,7 @@ test('createHomeSummary shows install guidance when BazaarPlusPlus is missing', 
       overlay_url: null,
       using_fallback_port: false,
       last_error: null,
-      manual_from: null,
-      started_at: null,
-      effective_from: null,
-      max_records: 5,
-      excluded_record_ids: []
+      started_at: null
     }
   });
 

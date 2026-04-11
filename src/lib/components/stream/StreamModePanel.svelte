@@ -5,6 +5,7 @@
   import { locale } from '$lib/locale';
   import { formatMessage, messages } from '$lib/i18n';
   import {
+    detectStreamDbPath,
     getStreamOverlayCropSettings,
     loadStreamRecordAtOffset,
     loadStreamRecordWindowSummary,
@@ -13,6 +14,7 @@
     startStreamService,
     stopStreamService
   } from '$lib/stream/api';
+  import type { StreamDbPathInfo } from '$lib/types';
   import { createStreamPageState } from '$lib/stream/state';
   import type {
     StreamRecordSummary,
@@ -45,6 +47,7 @@
     existing_before_start: 0,
     captured_since_start: 0
   };
+  let dbPathInfo: StreamDbPathInfo = { found: false, path: null };
   let selectedOffset = 0;
   let maxBacktrack = 5;
   let selectedRecord: StreamRecordSummary | null = null;
@@ -58,19 +61,23 @@
   $: panelEyebrow = eyebrow || ($locale === 'zh' ? '直播模式' : 'Stream Mode');
   $: pageState = createStreamPageState(status);
   $: baseUrl = status.overlay_url?.replace(/\/overlay$/, '') ?? null;
-  $: previewUrl = withOffsetQuery(status.overlay_url, selectedOffset);
-  $: calibrationUrl = withOffsetQuery(
+  $: fromTimestamp =
+    selectedOffset > 0
+      ? (selectedRecord?.captured_at_utc ?? status.started_at)
+      : status.started_at;
+  $: previewUrl = withFromQuery(status.overlay_url, fromTimestamp);
+  $: calibrationUrl = withFromQuery(
     baseUrl ? `${baseUrl}/settings` : null,
-    selectedOffset
+    fromTimestamp
   );
   $: isZh = $locale === 'zh';
   $: effectiveBacktrackLimit = Math.min(
     Math.max(1, Math.trunc(maxBacktrack || 1)),
-    Math.max(0, recordWindowSummary.captured_since_start)
+    Math.max(0, recordWindowSummary.total)
   );
   $: canStepEarlier =
     status.running &&
-    recordWindowSummary.captured_since_start > 0 &&
+    recordWindowSummary.total > 0 &&
     selectedOffset + 1 < effectiveBacktrackLimit;
   $: canStepLater = status.running && selectedOffset > 0;
   $: overviewStartLabel = formatOverviewStartTime(
@@ -102,6 +109,7 @@
       cropCodeInput = cropSettings.code;
       cropCodeMessage = '';
       await refreshOverviewState();
+      dbPathInfo = await detectStreamDbPath();
     } catch (error) {
       console.error(error);
     }
@@ -155,7 +163,7 @@
       0,
       Math.min(
         Math.max(1, Math.trunc(maxBacktrack || 1)),
-        Math.max(0, recordWindowSummary.captured_since_start)
+        Math.max(0, recordWindowSummary.total)
       ) - 1
     );
     selectedOffset = Math.max(0, Math.min(selectedOffset, maxSelectableOffset));
@@ -179,17 +187,17 @@
     await refreshOverviewState();
   }
 
-  function withOffsetQuery(url: string | null, offset: number): string | null {
+  function withFromQuery(url: string | null, from: string | null): string | null {
     if (!url) {
       return null;
     }
 
-    if (offset <= 0) {
+    if (!from) {
       return url;
     }
 
     const nextUrl = new URL(url);
-    nextUrl.searchParams.set('offset', String(offset));
+    nextUrl.searchParams.set('from', from);
     return nextUrl.toString();
   }
 
@@ -307,11 +315,12 @@
       {copyMessage}
       {copyMessageTone}
       {overviewStartLabel}
-      {overviewDescription}
-      {selectedOffset}
       {maxBacktrack}
       {canStepEarlier}
       {canStepLater}
+      countAfter={recordWindowSummary.captured_since_start}
+      countBefore={recordWindowSummary.existing_before_start}
+      {dbPathInfo}
       onStart={handleStart}
       onStop={handleStop}
       onCopyUrl={copyUrl}

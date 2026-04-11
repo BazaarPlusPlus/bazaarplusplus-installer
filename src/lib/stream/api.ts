@@ -1,6 +1,7 @@
 import { invoke } from '@tauri-apps/api/core';
 import { hasTauriRuntime } from '$lib/installer/runtime';
 import type {
+  StreamDbPathInfo,
   StreamOverlayCropSettings,
   StreamOverlayCropSettingsPayload,
   StreamRecordSummary,
@@ -208,4 +209,12 @@ export async function importStreamOverlayCropCode(
       code
     }
   );
+}
+
+export async function detectStreamDbPath(): Promise<StreamDbPathInfo> {
+  if (!hasTauriRuntime()) {
+    return { found: false, path: null };
+  }
+
+  return invoke<StreamDbPathInfo>('detect_stream_db_path');
 }

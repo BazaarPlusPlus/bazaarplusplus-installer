@@ -8,7 +8,7 @@ const list = document.getElementById('overlay-list');
 
 let lastRecordKey = null;
 let rowResizeObserver = null;
-const requestedOffset = readRequestedOffset();
+const requestedFrom = readRequestedFrom();
 
 function setClassNames(...tokens) {
   if (!root) {
@@ -365,41 +365,47 @@ function getRecordKey(record) {
   ].join('::');
 }
 
-function readRequestedOffset() {
+function readRequestedFrom() {
   try {
     const params = new URLSearchParams(window.location.search);
-    const raw = Number(params.get('offset') || '0');
-    if (!Number.isFinite(raw)) {
-      return 0;
-    }
-    return Math.max(0, Math.trunc(raw));
+    return params.get('from') || null;
   } catch {
-    return 0;
+    return null;
   }
 }
 
 async function refresh() {
   try {
-    const endpoint = new URL('/api/records/latest', window.location.origin);
-    if (requestedOffset > 0) {
-      endpoint.searchParams.set('offset', String(requestedOffset));
+    let records;
+
+    if (requestedFrom) {
+      const endpoint = new URL('/api/records/list', window.location.origin);
+      endpoint.searchParams.set('from', requestedFrom);
+      const response = await fetch(endpoint, { cache: 'no-store' });
+      if (!response.ok) {
+        const message = (await response.text()).trim();
+        throw new Error(message || `unexpected status ${response.status}`);
+      }
+      const payload = await response.json();
+      records = Array.isArray(payload) ? payload.filter((r) => r && r.image_url) : [];
+    } else {
+      const endpoint = new URL('/api/records/latest', window.location.origin);
+      const response = await fetch(endpoint, { cache: 'no-store' });
+      if (!response.ok) {
+        const message = (await response.text()).trim();
+        throw new Error(message || `unexpected status ${response.status}`);
+      }
+      const record = await response.json();
+      records = record && record.image_url ? [record] : [];
     }
 
-    const response = await fetch(endpoint, { cache: 'no-store' });
-    if (!response.ok) {
-      const message = (await response.text()).trim();
-      throw new Error(message || `unexpected status ${response.status}`);
-    }
-
-    const record = await response.json();
-
-    if (!record || !record.image_url) {
+    if (records.length === 0) {
       lastRecordKey = null;
       renderEmpty();
       return;
     }
 
-    const nextKey = getRecordKey(record);
+    const nextKey = records.map(getRecordKey).join('|');
     const updated = nextKey !== lastRecordKey;
 
     if (
@@ -412,7 +418,7 @@ async function refresh() {
     }
 
     lastRecordKey = nextKey;
-    renderRecords([record], { updated });
+    renderRecords(records, { updated });
   } catch (error) {
     if (lastRecordKey && list && !list.hidden) {
       setClassNames('stale');
