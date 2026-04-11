@@ -4,6 +4,7 @@ import type {
   StreamOverlayCropSettings,
   StreamOverlayCropSettingsPayload,
   StreamRecordSummary,
+  StreamRecordWindowSummary,
   StreamServiceStatus
 } from '$lib/types';
 
@@ -14,11 +15,7 @@ const idleStatus: StreamServiceStatus = {
   overlay_url: null,
   using_fallback_port: false,
   last_error: null,
-  manual_from: null,
-  started_at: null,
-  effective_from: null,
-  max_records: 5,
-  excluded_record_ids: []
+  started_at: null
 };
 
 export async function getStreamServiceStatus(): Promise<StreamServiceStatus> {
@@ -45,55 +42,103 @@ export async function stopStreamService(): Promise<StreamServiceStatus> {
   return invoke<StreamServiceStatus>('stop_stream_service');
 }
 
-export async function updateStreamServiceFilters(input: {
-  manualFrom: string | null;
-  maxRecords: number;
-  excludedRecordIds?: string[];
-}): Promise<StreamServiceStatus> {
-  if (!hasTauriRuntime()) {
+export async function loadStreamRecordWindowSummary(
+  baseUrl: string | null
+): Promise<StreamRecordWindowSummary> {
+  if (!baseUrl) {
     return {
-      ...idleStatus,
-      manual_from: input.manualFrom,
-      effective_from: input.manualFrom,
-      max_records: Math.max(1, input.maxRecords || idleStatus.max_records),
-      excluded_record_ids: input.excludedRecordIds ?? []
+      total: 0,
+      existing_before_start: 0,
+      captured_since_start: 0
     };
   }
 
-  return invoke<StreamServiceStatus>('update_stream_service_filters', {
-    manualFrom: input.manualFrom,
-    maxRecords: input.maxRecords,
-    excludedRecordIds: input.excludedRecordIds ?? []
-  });
+  try {
+    const response = await fetch(`${baseUrl}/api/records/summary`);
+    if (!response.ok) {
+      return {
+        total: 0,
+        existing_before_start: 0,
+        captured_since_start: 0
+      };
+    }
+
+    const payload = (await response.json()) as Partial<StreamRecordWindowSummary>;
+    return {
+      total:
+        typeof payload.total === 'number' && Number.isFinite(payload.total)
+          ? Math.max(0, Math.trunc(payload.total))
+          : 0,
+      existing_before_start:
+        typeof payload.existing_before_start === 'number' &&
+        Number.isFinite(payload.existing_before_start)
+          ? Math.max(0, Math.trunc(payload.existing_before_start))
+          : 0,
+      captured_since_start:
+        typeof payload.captured_since_start === 'number' &&
+        Number.isFinite(payload.captured_since_start)
+          ? Math.max(0, Math.trunc(payload.captured_since_start))
+          : 0
+    };
+  } catch {
+    return {
+      total: 0,
+      existing_before_start: 0,
+      captured_since_start: 0
+    };
+  }
 }
 
-export async function loadRecentStreamRecords(
-  baseUrl: string | null
-): Promise<StreamRecordSummary[]> {
+export async function loadStreamRecordAtOffset(
+  baseUrl: string | null,
+  offset: number
+): Promise<StreamRecordSummary | null> {
   if (!baseUrl) {
-    return [];
+    return null;
   }
 
   try {
-    const response = await fetch(`${baseUrl}/api/records/recent`);
-    if (!response.ok) {
-      return [];
+    const endpoint = new URL(`${baseUrl}/api/records/latest`);
+    if (offset > 0) {
+      endpoint.searchParams.set('offset', String(Math.max(0, Math.trunc(offset))));
     }
 
-    return (await response.json()) as StreamRecordSummary[];
+    const response = await fetch(endpoint);
+    if (!response.ok) {
+      return null;
+    }
+
+    const payload = (await response.json()) as StreamRecordSummary | null;
+    return payload && typeof payload.id === 'string' ? payload : null;
   } catch {
-    return [];
+    return null;
   }
 }
 
-export async function listStreamScreenshotRecords(): Promise<
-  StreamRecordSummary[]
-> {
+export async function loadStreamRecordList(
+  limit?: number | null
+): Promise<StreamRecordSummary[]> {
+  if (typeof limit === 'number' && limit <= 0) {
+    return [];
+  }
+
   if (!hasTauriRuntime()) {
     return [];
   }
 
-  return invoke<StreamRecordSummary[]>('list_stream_screenshot_records');
+  const invokeArgs =
+    typeof limit === 'number'
+      ? {
+          limit: Math.max(1, Math.trunc(limit))
+        }
+      : {};
+  const payload = await invoke<StreamRecordSummary[]>(
+    'list_stream_overlay_records',
+    invokeArgs
+  );
+  return Array.isArray(payload)
+    ? payload.filter((item) => item && typeof item.id === 'string')
+    : [];
 }
 
 export async function revealStreamRecordImage(recordId: string): Promise<void> {

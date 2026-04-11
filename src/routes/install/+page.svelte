@@ -13,6 +13,7 @@
   import InstallerInstallPreviewModal from '$lib/components/installer/InstallerInstallPreviewModal.svelte';
   import InstallerResetHistoryModal from '$lib/components/installer/InstallerResetHistoryModal.svelte';
   import InstallerStatusSteps from '$lib/components/installer/InstallerStatusSteps.svelte';
+  import InstallerSupportBar from '$lib/components/installer/InstallerSupportBar.svelte';
   import StreamModePanel from '$lib/components/stream/StreamModePanel.svelte';
   import {
     closeSteam as closeSteamApi,
@@ -64,8 +65,7 @@
   import { createIdentityState } from '$lib/identity/state';
   import type {
     InstallationRecordPayload,
-    PlayerObservationPayload,
-    RegistrationStreamProfile
+    PlayerObservationPayload
   } from '$lib/identity/types';
 
   let env: EnvironmentInfo | null = null;
@@ -104,18 +104,6 @@
         }
       : {}
   );
-  const registrationStreamPlatformOptions = [
-    {
-      value: 'bilibili',
-      zhLabel: '哔哩哔哩',
-      enLabel: 'Bilibili'
-    },
-    {
-      value: 'twitch',
-      zhLabel: 'Twitch',
-      enLabel: 'Twitch'
-    }
-  ] as const;
   let playerObservation: PlayerObservationPayload | null = null;
   let installationRecord: InstallationRecordPayload | null = null;
   let hasInstallationPrivateKey = false;
@@ -123,9 +111,6 @@
   let identityActionBusy: 'idle' | 'activating' | 'logging_in' = 'idle';
   let identityPassword = '';
   let identityPasswordConfirm = '';
-  let identityStreamPlatform = '';
-  let identityStreamChannelId = '';
-  let identityStreamUrl = '';
   let identityConfirmed = false;
   let identityError = '';
   let identitySuccess = '';
@@ -146,15 +131,6 @@
 
   function localized(zh: string, en: string): string {
     return $locale === 'zh' ? zh : en;
-  }
-
-  function isValidHttpUrl(value: string): boolean {
-    try {
-      const parsed = new URL(value);
-      return parsed.protocol === 'http:' || parsed.protocol === 'https:';
-    } catch {
-      return false;
-    }
   }
 
   function resetIdentitySnapshot() {
@@ -425,7 +401,6 @@
       !playerObservation ||
       !identityConfirmed ||
       !identityPassword.trim() ||
-      !identityRegistrationStreamProfile ||
       identityPassword.trim() !== identityPasswordConfirm.trim() ||
       identityActionBusy !== 'idle'
     ) {
@@ -439,14 +414,10 @@
       await identityApi.activateFirstAccount({
         gameRoot: pageState.effectiveGamePath,
         observation: playerObservation,
-        password: identityPassword.trim(),
-        streamProfile: identityRegistrationStreamProfile
+        password: identityPassword.trim()
       });
       identityPassword = '';
       identityPasswordConfirm = '';
-      identityStreamPlatform = '';
-      identityStreamChannelId = '';
-      identityStreamUrl = '';
       identityConfirmed = false;
       identitySuccess = localized(
         '新的 installation 身份已写入本地共享目录。',
@@ -1011,19 +982,6 @@
     !identityPassword.trim() ||
     !identityPasswordConfirm.trim() ||
     identityPassword.trim() === identityPasswordConfirm.trim();
-  $: activationStreamUrlValid =
-    !identityStreamUrl.trim() || isValidHttpUrl(identityStreamUrl.trim());
-  $: identityRegistrationStreamProfile =
-    identityStreamPlatform.trim() &&
-    identityStreamChannelId.trim() &&
-    identityStreamUrl.trim() &&
-    activationStreamUrlValid
-      ? ({
-          stream_platform: identityStreamPlatform.trim(),
-          stream_channel_id: identityStreamChannelId.trim(),
-          stream_url: identityStreamUrl.trim()
-        } satisfies RegistrationStreamProfile)
-      : null;
   $: identityBusy =
     identityLoadState === 'loading' || identityActionBusy !== 'idle';
   $: canActivateObservedAccount =
@@ -1032,7 +990,6 @@
     Boolean(playerObservation) &&
     Boolean(identityPassword.trim()) &&
     Boolean(identityPasswordConfirm.trim()) &&
-    Boolean(identityRegistrationStreamProfile) &&
     activationPasswordMatches &&
     identityConfirmed &&
     !identityBusy;
@@ -1301,53 +1258,6 @@
                 {localized('两次输入的密码不一致。', 'The two passwords do not match.')}
               </p>
             {/if}
-
-            <label class="identity-field">
-              <span>{localized('直播平台', 'Streaming platform')}</span>
-              <select bind:value={identityStreamPlatform}>
-                <option value="">
-                  {localized('请选择直播平台', 'Select a streaming platform')}
-                </option>
-                {#each registrationStreamPlatformOptions as option}
-                  <option value={option.value}>
-                    {$locale === 'zh' ? option.zhLabel : option.enLabel}
-                  </option>
-                {/each}
-              </select>
-            </label>
-
-            <label class="identity-field">
-              <span>{localized('直播频道 ID', 'Stream channel ID')}</span>
-              <input
-                bind:value={identityStreamChannelId}
-                type="text"
-                autocomplete="nickname"
-                placeholder={localized(
-                  '输入频道 ID，例如房间号或频道名',
-                  'Enter the channel ID, for example a room ID or channel name'
-                )}
-              />
-            </label>
-
-            <label class="identity-field">
-              <span>{localized('直播 URL', 'Stream URL')}</span>
-              <input
-                bind:value={identityStreamUrl}
-                type="url"
-                inputmode="url"
-                autocomplete="url"
-                placeholder={localized('输入完整直播链接', 'Enter the full stream URL')}
-              />
-            </label>
-
-            {#if identityStreamUrl.trim() && !activationStreamUrlValid}
-              <p class="identity-error">
-                {localized(
-                  '请输入有效的直播链接，必须以 http:// 或 https:// 开头。',
-                  'Enter a valid stream URL starting with http:// or https://.'
-                )}
-              </p>
-            {/if}
           {/if}
 
           <label class="identity-confirm">
@@ -1446,6 +1356,8 @@
       onCustomGamePathInput={clearBazaarInvalid}
     />
   {/if}
+
+  <InstallerSupportBar />
 
   <footer class="footer" aria-hidden="true">
     <div class="rule">
@@ -1628,16 +1540,6 @@
   }
 
   .identity-field input {
-    width: 100%;
-    padding: 0.72rem 0.82rem;
-    border-radius: 2px;
-    border: 1px solid rgba(200, 148, 55, 0.24);
-    background: rgba(10, 6, 4, 0.72);
-    color: rgba(251, 240, 220, 0.96);
-    font-size: 0.95rem;
-  }
-
-  .identity-field select {
     width: 100%;
     padding: 0.72rem 0.82rem;
     border-radius: 2px;

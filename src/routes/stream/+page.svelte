@@ -1,5 +1,7 @@
 <script lang="ts">
+  import InstallerSupportBar from "$lib/components/installer/InstallerSupportBar.svelte";
   import StreamModePanel from "$lib/components/stream/StreamModePanel.svelte";
+  import StreamRecordLibrary from "$lib/components/stream/StreamRecordLibrary.svelte";
   import { locale } from "$lib/locale";
   import { formatMessage, messages } from "$lib/i18n";
 
@@ -19,6 +21,10 @@
   <a class="back-link" href="/install">{t('navInstall')}</a>
 
   <StreamModePanel />
+
+  <StreamRecordLibrary />
+
+  <InstallerSupportBar />
 </main>
 
 <style>

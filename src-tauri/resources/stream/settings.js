@@ -37,15 +37,28 @@ const outputs = {
   height: document.getElementById('crop-height-value')
 };
 
-let records = [];
-let selectedId = null;
+let selectedRecord = null;
 let currentCrop = { ...DEFAULT_CROP };
 let previewNonce = 0;
 let previewTimer = null;
+const requestedOffset = readRequestedOffset();
 
 function setStatus(message) {
   if (pageStatus) {
     pageStatus.textContent = message;
+  }
+}
+
+function readRequestedOffset() {
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const raw = Number(params.get('offset') || '0');
+    if (!Number.isFinite(raw)) {
+      return 0;
+    }
+    return Math.max(0, Math.trunc(raw));
+  } catch {
+    return 0;
   }
 }
 
@@ -206,14 +219,13 @@ function renderBadgePreview() {
 }
 
 function renderPreview() {
-  const selectedRecord = records.find((record) => record.id === selectedId) || null;
   const crop = readCropFromInputs();
   currentCrop = crop;
   previewNonce += 1;
   writeCropToInputs(crop);
   setCropVariables(crop);
 
-  if (!selectedRecord || !selectedRecord.image_url) {
+  if (!selectedRecord?.image_url) {
     if (previewEmpty) {
       previewEmpty.hidden = false;
     }
@@ -255,13 +267,18 @@ async function loadCropSettings() {
 }
 
 async function loadRecords() {
-  const response = await fetch('/api/records/recent?limit=12', { cache: 'no-store' });
+  const endpoint = new URL('/api/records/latest', window.location.origin);
+  if (requestedOffset > 0) {
+    endpoint.searchParams.set('offset', String(requestedOffset));
+  }
+
+  const response = await fetch(endpoint, { cache: 'no-store' });
   if (!response.ok) {
     throw new Error(await response.text());
   }
 
   const payload = await response.json();
-  return Array.isArray(payload) ? payload.filter((record) => record?.image_url) : [];
+  return payload?.image_url ? payload : null;
 }
 
 async function saveCrop() {
@@ -337,7 +354,7 @@ function bindInputHandlers() {
 async function initialize() {
   try {
     bindInputHandlers();
-    const [settingsPayload, recentRecords] = await Promise.all([
+    const [settingsPayload, latestRecord] = await Promise.all([
       loadCropSettings(),
       loadRecords()
     ]);
@@ -347,15 +364,14 @@ async function initialize() {
     setCropVariables(currentCrop);
     updateCodeField(currentCrop);
 
-    records = recentRecords;
-    selectedId = records[0]?.id ?? null;
+    selectedRecord = latestRecord;
     renderPreview();
     renderBadgePreview();
 
     setStatus(
-      records.length > 0
-        ? 'Loaded recent screenshots. Adjust the crop on the source image, then save or copy the code.'
-        : 'No recent screenshot samples yet. Finish a run, then refresh this page.'
+      selectedRecord
+        ? 'Loaded the selected stream record image. Adjust the crop on the source image, then save or copy the code.'
+        : 'No end-of-run record is available in the current stream window yet. Finish a run, then refresh this page.'
     );
   } catch (error) {
     setStatus(

@@ -3,8 +3,6 @@ use std::sync::{Arc, Mutex};
 use tokio::sync::oneshot;
 
 const DEFAULT_HOST: &str = "127.0.0.1";
-pub const DEFAULT_MAX_RECORDS: usize = 5;
-const MAX_RECORDS_LIMIT: usize = 50;
 
 #[derive(Clone, Debug, Serialize)]
 pub struct StreamServiceStatus {
@@ -14,11 +12,7 @@ pub struct StreamServiceStatus {
     pub overlay_url: Option<String>,
     pub using_fallback_port: bool,
     pub last_error: Option<String>,
-    pub manual_from: Option<String>,
     pub started_at: Option<String>,
-    pub effective_from: Option<String>,
-    pub max_records: usize,
-    pub excluded_record_ids: Vec<String>,
 }
 
 impl Default for StreamServiceStatus {
@@ -30,21 +24,9 @@ impl Default for StreamServiceStatus {
             overlay_url: None,
             using_fallback_port: false,
             last_error: None,
-            manual_from: None,
             started_at: None,
-            effective_from: None,
-            max_records: DEFAULT_MAX_RECORDS,
-            excluded_record_ids: Vec::new(),
         }
     }
-}
-
-fn clamp_max_records(value: usize) -> usize {
-    value.clamp(1, MAX_RECORDS_LIMIT)
-}
-
-fn update_effective_from(status: &mut StreamServiceStatus) {
-    status.effective_from = status.manual_from.clone();
 }
 
 pub struct StreamTaskHandle {
@@ -78,27 +60,9 @@ impl StreamRuntimeState {
         inner.task = Some(task);
     }
 
-    pub fn update_filters(
-        &self,
-        manual_from: Option<String>,
-        max_records: usize,
-        excluded_record_ids: Vec<String>,
-    ) -> StreamServiceStatus {
-        let mut inner = self.inner.lock().expect("stream runtime poisoned");
-        inner.status.manual_from = manual_from.filter(|value| !value.trim().is_empty());
-        inner.status.max_records = clamp_max_records(max_records);
-        inner.status.excluded_record_ids = excluded_record_ids
-            .into_iter()
-            .filter(|value| !value.trim().is_empty())
-            .collect();
-        update_effective_from(&mut inner.status);
-        inner.status.clone()
-    }
-
     pub fn mark_started(&self, started_at: String) -> StreamServiceStatus {
         let mut inner = self.inner.lock().expect("stream runtime poisoned");
         inner.status.started_at = Some(started_at);
-        update_effective_from(&mut inner.status);
         inner.status.clone()
     }
 
@@ -109,7 +73,6 @@ impl StreamRuntimeState {
         inner.status.overlay_url = None;
         inner.status.using_fallback_port = false;
         inner.status.started_at = None;
-        update_effective_from(&mut inner.status);
         inner.task = None;
         inner.status.clone()
     }
@@ -121,7 +84,6 @@ impl StreamRuntimeState {
         inner.status.overlay_url = None;
         inner.status.using_fallback_port = false;
         inner.status.started_at = None;
-        update_effective_from(&mut inner.status);
         inner.status.last_error = Some(message);
         inner.task = None;
     }
@@ -142,47 +104,44 @@ impl StreamRuntimeState {
 
 #[cfg(test)]
 mod tests {
-    use super::{StreamServiceStatus, DEFAULT_MAX_RECORDS};
+    use super::StreamServiceStatus;
 
     #[test]
-    fn default_status_uses_default_record_limit() {
+    fn default_status_starts_idle_without_start_time() {
         let status = StreamServiceStatus::default();
 
-        assert_eq!(status.max_records, DEFAULT_MAX_RECORDS);
-        assert!(status.manual_from.is_none());
+        assert!(!status.running);
         assert!(status.started_at.is_none());
-        assert!(status.effective_from.is_none());
     }
 
     #[test]
-    fn status_can_represent_manual_filter_override() {
+    fn status_can_represent_running_service() {
         let status = StreamServiceStatus {
-            manual_from: Some("2026-04-11T20:00:00+08:00".to_string()),
-            started_at: Some("2026-04-11T21:00:00+08:00".to_string()),
-            effective_from: Some("2026-04-11T20:00:00+08:00".to_string()),
-            max_records: 8,
-            excluded_record_ids: vec!["run-2".to_string()],
+            running: true,
+            port: Some(17654),
+            overlay_url: Some("http://127.0.0.1:17654/overlay".to_string()),
+            started_at: Some("2026-04-11T20:00:00+08:00".to_string()),
             ..StreamServiceStatus::default()
         };
 
-        assert_eq!(status.max_records, 8);
-        assert_eq!(status.excluded_record_ids, vec!["run-2"]);
+        assert!(status.running);
+        assert_eq!(status.port, Some(17654));
         assert_eq!(
-            status.effective_from.as_deref(),
-            Some("2026-04-11T20:00:00+08:00")
+            status.overlay_url.as_deref(),
+            Some("http://127.0.0.1:17654/overlay")
         );
     }
 
     #[test]
-    fn runtime_state_uses_started_at_when_manual_filter_is_empty() {
+    fn runtime_state_marks_started_time() {
         let state = super::StreamRuntimeState::default();
 
-        state.update_filters(None, 9, vec!["run-4".to_string()]);
         state.mark_started("2026-04-11T21:00:00+08:00".to_string());
 
         let snapshot = state.snapshot();
-        assert_eq!(snapshot.max_records, 9);
-        assert_eq!(snapshot.effective_from, None);
-        assert_eq!(snapshot.excluded_record_ids, vec!["run-4"]);
+        assert_eq!(
+            snapshot.started_at.as_deref(),
+            Some("2026-04-11T21:00:00+08:00")
+        );
     }
 }

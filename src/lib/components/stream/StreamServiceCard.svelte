@@ -7,15 +7,25 @@
   export let pageState: StreamPageState;
   export let busy = false;
   export let importingCropCode = false;
+  export let previewUrl: string | null = null;
   export let cropCodeInput = '';
   export let cropCodeMessage = '';
   export let copyMessage = '';
   export let copyMessageTone: 'success' | 'error' | null = null;
+  export let overviewStartLabel = '';
+  export let overviewDescription = '';
+  export let selectedOffset = 0;
+  export let maxBacktrack = 5;
+  export let canStepEarlier = false;
+  export let canStepLater = false;
   export let onStart: () => void | Promise<void>;
   export let onStop: () => void | Promise<void>;
   export let onCopyUrl: () => void | Promise<void>;
   export let onOpenPreview: () => void | Promise<void>;
   export let onOpenCalibration: () => void | Promise<void>;
+  export let onStepEarlier: () => void | Promise<void>;
+  export let onStepLater: () => void | Promise<void>;
+  export let onMaxBacktrackInput: (value: number) => void | Promise<void>;
   export let onCropCodeInput: (value: string) => void;
   export let onImportCropCode: () => void | Promise<void>;
 
@@ -88,16 +98,57 @@
     <span class:online={status.running} class="badge">{statusBadge}</span>
   </div>
 
-  {#if status.overlay_url}
+  {#if previewUrl}
     <div class="url-shell">
       <p class="detail-label">{isZh ? 'OBS 浏览器源地址' : 'OBS browser source URL'}</p>
-      <div class="url-box">{status.overlay_url}</div>
+      <div class="url-box">{previewUrl}</div>
     </div>
   {/if}
 
   {#if status.last_error}
     <p class="error">{status.last_error}</p>
   {/if}
+
+  <div class="overview-shell">
+    <div class="overview-copy">
+      <p class="detail-label">{isZh ? 'Overview 起始时间' : 'Overview Start Time'}</p>
+      <p class="overview-value">{overviewStartLabel}</p>
+      <p class="overview-description">{overviewDescription}</p>
+    </div>
+
+    <div class="overview-controls">
+      <div class="step-actions">
+        <button
+          class="secondary icon-button"
+          disabled={!canStepEarlier || busy}
+          on:click={onStepEarlier}
+        >
+          ↑
+        </button>
+        <button
+          class="secondary icon-button"
+          disabled={!canStepLater || busy}
+          on:click={onStepLater}
+        >
+          ↓
+        </button>
+      </div>
+
+      <label class="backtrack-control">
+        <span class="detail-label">{isZh ? '回溯条数' : 'Backtrack Count'}</span>
+        <input
+          type="number"
+          min="1"
+          max="50"
+          value={maxBacktrack}
+          on:change={(event) => onMaxBacktrackInput(Number(event.currentTarget.value))}
+        />
+        <span class="backtrack-meta">
+          {isZh ? `当前回溯偏移 ${selectedOffset}` : `Current backtrack offset ${selectedOffset}`}
+        </span>
+      </label>
+    </div>
+  </div>
 
   <div class="actions">
     <button class:running={status.running} class="primary toggle-button" disabled={busy} on:click={toggleAction}>
@@ -258,7 +309,8 @@
   }
 
   .utility-shell,
-  .advanced-shell {
+  .advanced-shell,
+  .overview-shell {
     display: grid;
     gap: 0.45rem;
     padding: 0.75rem 0.85rem;
@@ -271,6 +323,70 @@
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 0.55rem;
+  }
+
+  .overview-shell {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0.85rem;
+    align-items: start;
+  }
+
+  .overview-copy,
+  .overview-controls,
+  .step-actions,
+  .backtrack-control {
+    display: grid;
+    gap: 0.35rem;
+  }
+
+  .overview-value,
+  .overview-description,
+  .backtrack-meta {
+    margin: 0;
+  }
+
+  .overview-value {
+    font-size: 0.94rem;
+    color: #f0e2bf;
+  }
+
+  .overview-description,
+  .backtrack-meta {
+    font-size: 0.76rem;
+    line-height: 1.45;
+    color: rgba(215, 197, 161, 0.68);
+  }
+
+  .overview-controls {
+    grid-template-columns: auto auto;
+    gap: 0.65rem;
+    align-items: start;
+  }
+
+  .step-actions {
+    grid-template-columns: repeat(2, minmax(2.4rem, auto));
+    gap: 0.45rem;
+  }
+
+  .icon-button {
+    width: 2.6rem;
+    min-width: 2.6rem;
+    padding: 0;
+    font-size: 0.9rem;
+    letter-spacing: 0;
+  }
+
+  .backtrack-control input {
+    width: 6rem;
+    min-height: 2.15rem;
+    padding: 0.45rem 0.6rem;
+    border-radius: 2px;
+    border: 1px solid rgba(183, 132, 57, 0.16);
+    background: rgba(8, 6, 4, 0.82);
+    color: #eccf92;
+    font-family: 'Fira Code', monospace;
+    font-size: 0.8rem;
+    box-sizing: border-box;
   }
 
   .advanced-copy {
@@ -372,6 +488,11 @@
   }
 
   @media (max-width: 520px) {
+    .overview-shell,
+    .overview-controls {
+      grid-template-columns: 1fr;
+    }
+
     .utility-actions {
       grid-template-columns: 1fr;
     }

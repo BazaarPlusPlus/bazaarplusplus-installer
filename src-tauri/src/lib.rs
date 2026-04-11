@@ -18,9 +18,8 @@ use commands::{
     steam::{close_steam, detect_steam_running},
     stream::{
         get_stream_overlay_crop_settings, get_stream_service_status,
-        import_stream_overlay_crop_code, list_stream_screenshot_records,
-        reveal_stream_record_image, save_stream_overlay_crop_settings, start_stream_service,
-        stop_stream_service, update_stream_service_filters,
+        import_stream_overlay_crop_code, list_stream_overlay_records, reveal_stream_record_image,
+        save_stream_overlay_crop_settings, start_stream_service, stop_stream_service,
     },
     supporters::load_supporters,
     vdf::patch_launch_options,
@@ -73,11 +72,10 @@ pub fn run() {
             start_stream_service,
             stop_stream_service,
             get_stream_service_status,
-            update_stream_service_filters,
             get_stream_overlay_crop_settings,
             save_stream_overlay_crop_settings,
             import_stream_overlay_crop_code,
-            list_stream_screenshot_records,
+            list_stream_overlay_records,
             reveal_stream_record_image,
         ])
         .run(tauri::generate_context!())

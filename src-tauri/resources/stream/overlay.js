@@ -6,8 +6,9 @@ const emptyTitle = document.getElementById('overlay-empty-title');
 const emptyDetail = document.getElementById('overlay-empty-detail');
 const list = document.getElementById('overlay-list');
 
-let lastListKey = null;
+let lastRecordKey = null;
 let rowResizeObserver = null;
+const requestedOffset = readRequestedOffset();
 
 function setClassNames(...tokens) {
   if (!root) {
@@ -354,41 +355,52 @@ function syncRowHeights() {
   });
 }
 
-function getListKey(records) {
-  return records
-    .map((record) =>
-      [
-        record?.id ?? '',
-        record?.captured_at ?? '',
-        record?.wins ?? '',
-        record?.battle_count ?? '',
-        record?.image_url ?? ''
-      ].join('::')
-    )
-    .join('|||');
+function getRecordKey(record) {
+  return [
+    record?.id ?? '',
+    record?.captured_at ?? '',
+    record?.wins ?? '',
+    record?.battle_count ?? '',
+    record?.image_url ?? ''
+  ].join('::');
+}
+
+function readRequestedOffset() {
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const raw = Number(params.get('offset') || '0');
+    if (!Number.isFinite(raw)) {
+      return 0;
+    }
+    return Math.max(0, Math.trunc(raw));
+  } catch {
+    return 0;
+  }
 }
 
 async function refresh() {
   try {
-    const response = await fetch('/api/records/recent', { cache: 'no-store' });
+    const endpoint = new URL('/api/records/latest', window.location.origin);
+    if (requestedOffset > 0) {
+      endpoint.searchParams.set('offset', String(requestedOffset));
+    }
+
+    const response = await fetch(endpoint, { cache: 'no-store' });
     if (!response.ok) {
       const message = (await response.text()).trim();
       throw new Error(message || `unexpected status ${response.status}`);
     }
 
-    const payload = await response.json();
-    const records = Array.isArray(payload)
-      ? payload.filter((record) => record && record.image_url)
-      : [];
+    const record = await response.json();
 
-    if (records.length === 0) {
-      lastListKey = null;
+    if (!record || !record.image_url) {
+      lastRecordKey = null;
       renderEmpty();
       return;
     }
 
-    const nextKey = getListKey(records);
-    const updated = nextKey !== lastListKey;
+    const nextKey = getRecordKey(record);
+    const updated = nextKey !== lastRecordKey;
 
     if (
       !updated &&
@@ -399,10 +411,10 @@ async function refresh() {
       return;
     }
 
-    lastListKey = nextKey;
-    renderRecords(records, { updated });
+    lastRecordKey = nextKey;
+    renderRecords([record], { updated });
   } catch (error) {
-    if (lastListKey && list && !list.hidden) {
+    if (lastRecordKey && list && !list.hidden) {
       setClassNames('stale');
       setText(signal, 'Connection lost, showing cached data');
       setText(status, 'Retrying');
@@ -412,7 +424,7 @@ async function refresh() {
     renderEmpty(
       error instanceof Error && error.message
         ? error.message
-        : 'Waiting for the local stream service.'
+        : 'Waiting for records captured after stream start.'
     );
   }
 }

@@ -1,5 +1,5 @@
 use super::overlay_settings::{validate_crop_settings, OverlayCropSettings, OverlaySettingsStore};
-use super::records::RecordRepository;
+use super::records::OverlayRecordRepository;
 use super::state::StreamRuntimeState;
 use axum::http::StatusCode;
 use axum::{
@@ -28,7 +28,7 @@ static BADGES_DIR: Dir<'_> = include_dir!("$CARGO_MANIFEST_DIR/resources/stream/
 
 #[derive(Clone)]
 pub struct HttpAppState {
-    pub records: RecordRepository,
+    pub overlay_records: OverlayRecordRepository,
     pub runtime: StreamRuntimeState,
     pub overlay_settings: OverlaySettingsStore,
 }
@@ -38,8 +38,20 @@ struct HealthResponse {
     ok: bool,
 }
 
+#[derive(Serialize)]
+struct RecordWindowSummaryResponse {
+    total: usize,
+    existing_before_start: usize,
+    captured_since_start: usize,
+}
+
 #[derive(Debug, Deserialize)]
-struct RecentRecordsQuery {
+struct LatestRecordQuery {
+    offset: Option<usize>,
+}
+
+#[derive(Debug, Deserialize)]
+struct RecordListQuery {
     limit: Option<usize>,
 }
 
@@ -58,7 +70,7 @@ struct StripPreviewQuery {
 }
 
 pub fn router(
-    records: RecordRepository,
+    overlay_records: OverlayRecordRepository,
     runtime: StreamRuntimeState,
     overlay_settings: OverlaySettingsStore,
 ) -> Router {
@@ -67,7 +79,8 @@ pub fn router(
         .route("/overlay", get(overlay_page))
         .route("/settings", get(settings_page))
         .route("/api/records/latest", get(latest_record))
-        .route("/api/records/recent", get(recent_records))
+        .route("/api/records/list", get(record_list))
+        .route("/api/records/summary", get(record_window_summary))
         .route(
             "/api/overlay/crop-config",
             get(get_crop_config).post(save_crop_config),
@@ -80,7 +93,7 @@ pub fn router(
         .route("/assets/settings.js", get(settings_js))
         .route("/assets/badges/{category}/{file_name}", get(badge_asset))
         .with_state(HttpAppState {
-            records,
+            overlay_records,
             runtime,
             overlay_settings,
         })
@@ -125,35 +138,47 @@ async fn settings_page() -> Html<String> {
     Html(load_overlay_asset("settings.html", SETTINGS_HTML))
 }
 
-async fn latest_record(State(app_state): State<HttpAppState>) -> Response {
-    let status = app_state.runtime.snapshot();
-    match app_state
-        .records
-        .load_latest_filtered(
-            status.effective_from.as_deref(),
-            &status.excluded_record_ids,
-        )
-    {
+async fn latest_record(
+    State(app_state): State<HttpAppState>,
+    Query(query): Query<LatestRecordQuery>,
+) -> Response {
+    let offset = query.offset.unwrap_or(0);
+
+    match app_state.overlay_records.load_record_at_offset(offset) {
         Ok(record) => Json(record).into_response(),
         Err(message) => (StatusCode::INTERNAL_SERVER_ERROR, message).into_response(),
     }
 }
 
-async fn recent_records(
+async fn record_list(
     State(app_state): State<HttpAppState>,
-    Query(query): Query<RecentRecordsQuery>,
+    Query(query): Query<RecordListQuery>,
 ) -> Response {
-    let status = app_state.runtime.snapshot();
-    let limit = query.limit.unwrap_or(status.max_records).clamp(1, 20);
-    match app_state
-        .records
-        .load_recent_filtered(
-            status.effective_from.as_deref(),
-            limit,
-            &status.excluded_record_ids,
-        )
-    {
+    let limit = query.limit.unwrap_or(20);
+
+    match app_state.overlay_records.load_record_list(Some(limit)) {
         Ok(records) => Json(records).into_response(),
+        Err(message) => (StatusCode::INTERNAL_SERVER_ERROR, message).into_response(),
+    }
+}
+
+async fn record_window_summary(State(app_state): State<HttpAppState>) -> Response {
+    let from = app_state.runtime.snapshot().started_at;
+    let total = match app_state.overlay_records.count_since(None) {
+        Ok(total) => total,
+        Err(message) => return (StatusCode::INTERNAL_SERVER_ERROR, message).into_response(),
+    };
+
+    match app_state.overlay_records.count_since(from.as_deref()) {
+        Ok(captured_since_start) => {
+            let existing_before_start = total.saturating_sub(captured_since_start);
+            Json(RecordWindowSummaryResponse {
+                total,
+                existing_before_start,
+                captured_since_start,
+            })
+            .into_response()
+        }
         Err(message) => (StatusCode::INTERNAL_SERVER_ERROR, message).into_response(),
     }
 }
@@ -179,7 +204,7 @@ async fn record_image(
     Path(record_id): Path<String>,
     State(app_state): State<HttpAppState>,
 ) -> Response {
-    let (path, bytes) = match app_state.records.load_image(&record_id) {
+    let (path, bytes) = match app_state.overlay_records.load_image(&record_id) {
         Ok(Some(value)) => value,
         Ok(None) => return StatusCode::NOT_FOUND.into_response(),
         Err(message) => return (StatusCode::INTERNAL_SERVER_ERROR, message).into_response(),
@@ -208,7 +233,7 @@ async fn record_strip_image(
         Err(message) => return (StatusCode::BAD_REQUEST, message).into_response(),
     };
 
-    let (path, bytes) = match app_state.records.load_image(&record_id) {
+    let (path, bytes) = match app_state.overlay_records.load_image(&record_id) {
         Ok(Some(value)) => value,
         Ok(None) => return StatusCode::NOT_FOUND.into_response(),
         Err(message) => return (StatusCode::INTERNAL_SERVER_ERROR, message).into_response(),

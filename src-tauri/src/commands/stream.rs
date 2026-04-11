@@ -1,10 +1,9 @@
 use crate::stream::{
     overlay_settings::{OverlayCropSettings, OverlayCropSettingsPayload, OverlaySettingsStore},
-    records::RecordRepository,
+    records::{OverlayRecord, OverlayRecordRepository},
     state::{StreamRuntimeState, StreamServiceStatus},
 };
-use std::path::Path;
-use std::process::Command;
+use std::{path::PathBuf, process::Command};
 
 #[tauri::command]
 pub async fn start_stream_service(
@@ -29,16 +28,6 @@ pub fn get_stream_service_status(
 }
 
 #[tauri::command]
-pub fn update_stream_service_filters(
-    manual_from: Option<String>,
-    max_records: usize,
-    excluded_record_ids: Vec<String>,
-    state: tauri::State<'_, StreamRuntimeState>,
-) -> StreamServiceStatus {
-    state.update_filters(manual_from, max_records, excluded_record_ids)
-}
-
-#[tauri::command]
 pub fn get_stream_overlay_crop_settings() -> Result<OverlayCropSettingsPayload, String> {
     OverlaySettingsStore::default().load_payload()
 }
@@ -56,58 +45,54 @@ pub fn import_stream_overlay_crop_code(code: String) -> Result<OverlayCropSettin
 }
 
 #[tauri::command]
-pub fn list_stream_screenshot_records(
+pub fn list_stream_overlay_records(
     app: tauri::AppHandle,
-) -> Result<Vec<crate::stream::records::StreamRecord>, String> {
-    let repository = RecordRepository::new(resolve_game_path(&app)?);
-    repository.load_screenshots()
+    limit: Option<usize>,
+) -> Result<Vec<OverlayRecord>, String> {
+    let env = crate::commands::detect::detect_environment(app, None)?;
+    let repository = OverlayRecordRepository::new(env.game_path.map(PathBuf::from));
+    repository.load_record_list(limit)
 }
 
 #[tauri::command]
 pub fn reveal_stream_record_image(app: tauri::AppHandle, record_id: String) -> Result<(), String> {
-    let repository = RecordRepository::new(resolve_game_path(&app)?);
-    let Some(image_path) = repository.load_image_path(&record_id)? else {
-        return Err("Screenshot file not found for this run.".to_string());
-    };
+    let env = crate::commands::detect::detect_environment(app, None)?;
+    let repository = OverlayRecordRepository::new(env.game_path.map(PathBuf::from));
+    let path = repository
+        .load_image_path(&record_id)?
+        .ok_or_else(|| format!("Stream image not found for record {record_id}"))?;
 
-    reveal_in_file_explorer(&image_path)
+    reveal_in_file_browser(&path)
 }
 
-fn resolve_game_path(app: &tauri::AppHandle) -> Result<Option<std::path::PathBuf>, String> {
-    let env = crate::commands::detect::detect_environment(app.clone(), None)?;
-    Ok(env.game_path.map(Into::into))
-}
-
-fn reveal_in_file_explorer(path: &Path) -> Result<(), String> {
+fn reveal_in_file_browser(path: &std::path::Path) -> Result<(), String> {
     #[cfg(target_os = "windows")]
     {
-        use std::os::windows::process::CommandExt;
-
-        let canonical_path = std::fs::canonicalize(path).unwrap_or_else(|_| path.to_path_buf());
-        let select_arg = format!(r#"/select,"{}""#, canonical_path.display());
         Command::new("explorer")
-            .raw_arg(select_arg)
+            .args(["/select,", &path.to_string_lossy()])
             .spawn()
-            .map_err(|err| format!("Failed to open Explorer: {err}"))?;
+            .map_err(|err| format!("failed to reveal image in Explorer: {err}"))?;
         return Ok(());
     }
 
     #[cfg(target_os = "macos")]
     {
         Command::new("open")
-            .args(["-R", &path.display().to_string()])
+            .args(["-R", &path.to_string_lossy()])
             .spawn()
-            .map_err(|err| format!("Failed to reveal screenshot in Finder: {err}"))?;
+            .map_err(|err| format!("failed to reveal image in Finder: {err}"))?;
         return Ok(());
     }
 
-    #[cfg(not(any(target_os = "windows", target_os = "macos")))]
+    #[cfg(all(not(target_os = "windows"), not(target_os = "macos")))]
     {
-        let target = path.parent().unwrap_or(path);
+        let parent = path
+            .parent()
+            .ok_or_else(|| "image parent directory is missing".to_string())?;
         Command::new("xdg-open")
-            .arg(target)
+            .arg(parent)
             .spawn()
-            .map_err(|err| format!("Failed to open the screenshot folder: {err}"))?;
+            .map_err(|err| format!("failed to open image directory: {err}"))?;
         Ok(())
     }
 }

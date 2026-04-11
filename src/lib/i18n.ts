@@ -195,13 +195,13 @@ export const messages: Record<Locale, Record<MessageKey, string>> = {
     homeInstallHint:
       'Install, repair, or remove BazaarPlusPlus from the current game directory.',
     homeStreamHint:
-      'Start the local OBS service, copy the browser-source URL, and preview recent records.',
+      'Start the local OBS service, copy the browser-source URL, and verify end-of-run records captured after stream start are loading.',
     homeChangelogHint:
       'Review the current release notes and update highlights.',
     homeAboutHint: 'Project credits, dependencies, and support information.',
     streamTitle: 'Stream Mode',
     streamIntro:
-      'Provide a localhost overlay for OBS and verify recent records are loading correctly.'
+      'Provide a localhost overlay for OBS and review end-of-run records captured after stream start.'
   },
   zh: {
     htmlLang: 'zh-CN',
@@ -297,12 +297,12 @@ export const messages: Record<Locale, Record<MessageKey, string>> = {
     homeOpenStream: '进入直播模式',
     homeInstallHint: '安装、修复或卸载当前游戏目录中的 BazaarPlusPlus。',
     homeStreamHint:
-      '启动本地 OBS 服务、复制浏览器源地址，并检查最近战绩是否正常流转。',
+      '启动本地 OBS 服务、复制浏览器源地址，并确认开播后的 End of Run 记录是否正常读取。',
     homeChangelogHint: '查看当前版本的更新记录与功能亮点。',
     homeAboutHint: '查看项目说明、依赖信息与支持入口。',
     streamTitle: '直播模式',
     streamIntro:
-      '为 OBS 提供本地 overlay，并确认最近战绩读取正常。'
+      '为 OBS 提供本地 overlay，并查看开播后采集到的 End of Run 记录。'
   }
 };
 

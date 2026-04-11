@@ -53,11 +53,7 @@ export interface StreamServiceStatus {
   overlay_url: string | null;
   using_fallback_port: boolean;
   last_error: string | null;
-  manual_from: string | null;
   started_at: string | null;
-  effective_from: string | null;
-  max_records: number;
-  excluded_record_ids: string[];
 }
 
 export interface StreamRecordSummary {
@@ -71,6 +67,12 @@ export interface StreamRecordSummary {
   battle_count?: number | null;
   rank?: string | null;
   rating?: number | null;
+}
+
+export interface StreamRecordWindowSummary {
+  total: number;
+  existing_before_start: number;
+  captured_since_start: number;
 }
 
 export interface StreamOverlayCropSettings {

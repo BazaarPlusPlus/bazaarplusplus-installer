@@ -1,7 +1,7 @@
 use super::{
     http,
     overlay_settings::OverlaySettingsStore,
-    records::RecordRepository,
+    records::OverlayRecordRepository,
     state::{StreamRuntimeState, StreamServiceStatus, StreamTaskHandle},
 };
 use crate::commands::detect;
@@ -54,9 +54,9 @@ pub async fn start(
             return Err(err);
         }
     };
-    let record_repository = RecordRepository::new(game_path);
+    let overlay_record_repository = OverlayRecordRepository::new(game_path);
     let overlay_settings = OverlaySettingsStore::default();
-    let router = http::router(record_repository, state.clone(), overlay_settings);
+    let router = http::router(overlay_record_repository, state.clone(), overlay_settings);
     let (shutdown_tx, shutdown_rx) = oneshot::channel();
 
     let join_handle = tauri::async_runtime::spawn(async move {
@@ -76,11 +76,7 @@ pub async fn start(
         overlay_url: Some(overlay_url),
         using_fallback_port,
         last_error: None,
-        manual_from: status_with_start.manual_from,
         started_at: status_with_start.started_at,
-        effective_from: status_with_start.effective_from,
-        max_records: status_with_start.max_records,
-        excluded_record_ids: status_with_start.excluded_record_ids,
     };
     state.set_running(
         status.clone(),
@@ -130,10 +126,11 @@ mod tests {
 
     #[test]
     fn binds_fallback_port_when_preferred_port_is_occupied() {
-        let occupied = std::net::TcpListener::bind(("127.0.0.1", 17654)).unwrap();
-        let chosen = choose_bind_port("127.0.0.1", 17654, 17656).unwrap();
+        let occupied = std::net::TcpListener::bind(("127.0.0.1", 0)).unwrap();
+        let occupied_port = occupied.local_addr().unwrap().port();
+        let chosen = choose_bind_port("127.0.0.1", occupied_port, occupied_port + 10).unwrap();
 
-        assert_eq!(chosen, 17655);
+        assert_ne!(chosen, occupied_port);
         drop(occupied);
     }
 }
