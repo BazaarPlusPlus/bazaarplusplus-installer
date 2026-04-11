@@ -1,5 +1,7 @@
 # Home Shell And Stream Mode Implementation Plan
 
+> Status: historical implementation record. It reflects a point-in-time plan, not the current source of truth.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Turn the installer into a multi-page desktop utility with a home screen, a dedicated stream mode, and a localhost OBS overlay service that can keep running from the tray.

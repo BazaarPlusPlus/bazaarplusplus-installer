@@ -1,5 +1,7 @@
 # Changelog Page Design
 
+> Status: historical design record. Use `docs/architecture.md` and the current route code for present behavior.
+
 ## Goal
 
 Replace the current single-version `What's New` page with a full-history `Changelog` page aimed at ordinary BazaarPlusPlus players rather than technical users.

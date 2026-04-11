@@ -1,5 +1,7 @@
 # Home Shell And Stream Mode Design
 
+> Status: historical design record. Use `docs/architecture.md` for the current structure of the app.
+
 ## Goal
 
 Evolve the current single-purpose installer into a small desktop utility with a stable home page and a dedicated `Stream Mode` area, while adding an OBS-facing local web service for live record display.

@@ -42,18 +42,13 @@
     markPendingWhatsNewLaunch
   } from '$lib/post-update';
   import {
-    checkForAppUpdate,
     createInitialUpdaterSnapshot,
-    createProgressLabel,
-    downloadAndInstallUpdate,
-    formatUpdaterError,
     type UpdaterSnapshot
   } from '$lib/updater';
-  import {
-    createPageState,
-    selectCustomGamePath,
-    type ActionBusy,
-    type StepState
+  import type {
+    ActionBusy,
+    PageState,
+    StepState
   } from '$lib/installer/state';
   import {
     getInstallRuntimeRisks,
@@ -62,11 +57,30 @@
   } from '$lib/installer/install-guards';
   import { detectInstallerEnvironment } from '$lib/installer/detect-flow';
   import { createIdentityApi } from '$lib/identity/api';
-  import { createIdentityState } from '$lib/identity/state';
+  import type { IdentityState } from '$lib/identity/state';
   import type {
     InstallationRecordPayload,
     PlayerObservationPayload
   } from '$lib/identity/types';
+  import {
+    createInstallDebugEnvironment,
+    createInstallPageModel,
+    formatByteLabel,
+    formatIdentityErrorMessage,
+    type InstallPageModel
+  } from '$lib/installer/page-model';
+  import {
+    activateInstallIdentity,
+    loadInstallIdentitySnapshot,
+    reloginInstallIdentity
+  } from '$lib/installer/identity-flow';
+  import {
+    createCheckingUpdaterSnapshot,
+    downloadPendingUpdate,
+    maybeOpenWhatsNewAfterAutoUpdate as maybeOpenWhatsNewAfterAutoUpdateFlow,
+    runStartupUpdaterCheck as runStartupUpdaterCheckFlow,
+    resolveUpdaterActionDecision
+  } from '$lib/installer/updater-flow';
 
   let env: EnvironmentInfo | null = null;
   let dotnetState: StepState = 'idle';
@@ -118,20 +132,47 @@
   let identityLoadRequestId = 0;
   let identityPanelExpanded = false;
 
-  $: t = (
-    key: keyof typeof messages.en,
-    params?: Record<string, string | number>
-  ): string => formatMessage($locale, key, params);
-
   const isDebugInstallPreview = resolveInstallDebugPreview({
     isDev: import.meta.env.DEV,
     search: typeof window !== 'undefined' ? window.location.search : '',
     hasTauriRuntime: hasTauriRuntime()
   });
 
+  function t(
+    key: keyof typeof messages.en,
+    params?: Record<string, string | number>
+  ): string {
+    return formatMessage($locale, key, params);
+  }
+
   function localized(zh: string, en: string): string {
     return $locale === 'zh' ? zh : en;
   }
+
+  let pageModel: InstallPageModel = createInstallPageModel({
+    env,
+    bazaarFound,
+    customGamePath,
+    actionBusy,
+    showStreamMode,
+    locale: $locale,
+    isDebugInstallPreview,
+    updaterSnapshot,
+    hasPendingUpdate: Boolean(pendingUpdate),
+    pendingSteamAction,
+    playerObservation,
+    installationRecord,
+    hasInstallationPrivateKey,
+    identityLoadState,
+    identityActionBusy,
+    identityPassword,
+    identityPasswordConfirm,
+    identityConfirmed,
+    localized,
+    t
+  });
+  let pageState: PageState = pageModel.pageState;
+  let identityState: IdentityState = pageModel.identityState;
 
   function resetIdentitySnapshot() {
     playerObservation = null;
@@ -141,82 +182,15 @@
     identitySuccess = '';
   }
 
-  function formatIdentityError(error: unknown): string {
-    const code = error instanceof Error ? error.message : String(error);
-
-    switch (code) {
-      case 'invalid_credentials':
-        return localized('用户名或密码不正确。', 'Username or password is incorrect.');
-      case 'player_account_id_claimed':
-        return localized(
-          '这个游戏账号已经注册过，请使用登录入口。',
-          'This observed game account already exists. Use the login path instead.'
-        );
-      case 'player_account_mismatch':
-      case 'observed_player_account_mismatch':
-        return localized(
-          '当前登录账号和游戏里观察到的账号不一致。',
-          'The logged-in account does not match the observed in-game account.'
-        );
-      case 'invalid_installer_session':
-        return localized(
-          '登录会话已经失效，请重新输入密码。',
-          'The installer session expired. Enter your password again.'
-        );
-      case 'webcrypto_unavailable':
-        return localized(
-          '当前运行环境不支持生成 installation 密钥。',
-          'This runtime cannot generate installation keys.'
-        );
-      case 'Failed to fetch':
-      case 'fetch failed':
-        return localized(
-          '无法连接身份服务。当前更像是网络或跨域配置问题，不是账号密码错误。',
-          'Could not reach the identity service. This looks like a network or CORS configuration issue, not a credential error.'
-        );
-      default:
-        return code;
-    }
-  }
-
-  function formatBytes(bytes: number): string {
-    if (bytes < 1024) {
-      return `${bytes} B`;
-    }
-
-    const units = ['KB', 'MB', 'GB'];
-    let value = bytes / 1024;
-    let unitIndex = 0;
-
-    while (value >= 1024 && unitIndex < units.length - 1) {
-      value /= 1024;
-      unitIndex += 1;
-    }
-
-    return `${value.toFixed(value >= 10 ? 0 : 1)} ${units[unitIndex]}`;
-  }
-
   function applyInstallDebugState() {
-    env = {
-      steam_path: 'C:\\Program Files (x86)\\Steam',
-      steam_launch_options_supported: true,
-      game_path: 'C:\\Games\\The Bazaar',
-      dotnet_version: '9.0.0',
-      dotnet_ok: true,
-      bepinex_installed: false,
-      bpp_version: null,
-      bundled_bpp_version: 'debug-preview',
-      bpp_data_version: '1',
-      bpp_data_reset_required: false,
-      bpp_data_issue: null
-    };
+    env = createInstallDebugEnvironment();
     dotnetState = 'found';
     bazaarFound = true;
     bazaarInvalid = false;
   }
 
   function requestInstall() {
-    if (!canInstall) return;
+    if (!pageModel.canInstall) return;
     installAcknowledged = false;
     showInstallModal = true;
   }
@@ -254,15 +228,15 @@
       const info = await getLegacyRecordDirectoryInfoApi(
         pageState.effectiveGamePath
       );
-      sizeLabel = formatBytes(info.total_bytes);
+      sizeLabel = formatByteLabel(info.total_bytes);
     } catch (e) {
       console.error(e);
     }
 
-    if (bppDataResetRequired) {
+    if (pageModel.bppDataResetRequired) {
       repairModalBody = createBppDataResetBody({
-        issue: bppDataIssue,
-        version: bppDataVersion,
+        issue: pageModel.bppDataIssue,
+        version: pageModel.bppDataVersion,
         sizeLabel
       });
     } else {
@@ -336,7 +310,7 @@
 
     try {
       const result = await detectInstallerEnvironment({
-        requestedGamePath: selectedPath,
+        requestedGamePath: pageModel.selectedPath,
         detectEnvironment: detectEnvironmentApi,
         detectDotnetRuntime: detectDotnetRuntimeApi,
         verifyGamePath: verifyGamePathApi
@@ -361,16 +335,14 @@
     identityLoadState = 'loading';
 
     try {
-      const snapshot = await identityApi.loadLocalIdentity(gameRoot);
+      const snapshot = await loadInstallIdentitySnapshot(identityApi, gameRoot);
       if (requestId !== identityLoadRequestId) {
         return;
       }
 
-      playerObservation = snapshot.observation;
-      installationRecord = snapshot.installation;
-      hasInstallationPrivateKey = Boolean(
-        snapshot.installationPrivateKeyPkcs8B64
-      );
+      playerObservation = snapshot.playerObservation;
+      installationRecord = snapshot.installationRecord;
+      hasInstallationPrivateKey = snapshot.hasInstallationPrivateKey;
       identityLoadedGamePath = gameRoot;
     } catch (error) {
       if (requestId !== identityLoadRequestId) {
@@ -378,7 +350,7 @@
       }
 
       resetIdentitySnapshot();
-      identityError = formatIdentityError(error);
+      identityError = formatIdentityErrorMessage(error, localized);
     } finally {
       if (requestId === identityLoadRequestId) {
         identityLoadState = 'idle';
@@ -389,6 +361,23 @@
   function resetIdentityMessages() {
     identityError = '';
     identitySuccess = '';
+  }
+
+  async function runStartupUpdaterCheck() {
+    return runStartupUpdaterCheckFlow({
+      snapshot: updaterSnapshot,
+      hasTauriRuntime: hasTauriRuntime()
+    });
+  }
+
+  async function maybeOpenPendingWhatsNewLaunch() {
+    return maybeOpenWhatsNewAfterAutoUpdateFlow({
+      hasTauriRuntime: hasTauriRuntime(),
+      loadPendingWhatsNewLaunch,
+      clearPendingWhatsNewLaunch,
+      getVersion,
+      goto
+    });
   }
 
   function toggleIdentityPanel() {
@@ -422,21 +411,26 @@
     resetIdentityMessages();
 
     try {
-      await identityApi.activateFirstAccount({
+      const result = await activateInstallIdentity({
+        identityApi,
         gameRoot: pageState.effectiveGamePath,
         observation: playerObservation,
-        password: identityPassword.trim()
+        password: identityPassword.trim(),
+        successMessage: localized(
+          '新的 installation 身份已写入本地共享目录。',
+          'A new installation identity was written to the shared local directory.'
+        )
       });
+      playerObservation = result.snapshot.playerObservation;
+      installationRecord = result.snapshot.installationRecord;
+      hasInstallationPrivateKey = result.snapshot.hasInstallationPrivateKey;
+      identityLoadedGamePath = pageState.effectiveGamePath;
       identityPassword = '';
       identityPasswordConfirm = '';
       identityConfirmed = false;
-      identitySuccess = localized(
-        '新的 installation 身份已写入本地共享目录。',
-        'A new installation identity was written to the shared local directory.'
-      );
-      await refreshIdentity(pageState.effectiveGamePath);
+      identitySuccess = result.successMessage;
     } catch (error) {
-      identityError = formatIdentityError(error);
+      identityError = formatIdentityErrorMessage(error, localized);
     } finally {
       identityActionBusy = 'idle';
     }
@@ -457,21 +451,26 @@
     resetIdentityMessages();
 
     try {
-      await identityApi.loginAndCreateInstallation({
+      const result = await reloginInstallIdentity({
+        identityApi,
         gameRoot: pageState.effectiveGamePath,
         observation: playerObservation,
-        password: identityPassword.trim()
+        password: identityPassword.trim(),
+        successMessage: localized(
+          'installation 材料已经按当前观察到的账号重新生成。',
+          'Installation material was regenerated for the currently observed account.'
+        )
       });
+      playerObservation = result.snapshot.playerObservation;
+      installationRecord = result.snapshot.installationRecord;
+      hasInstallationPrivateKey = result.snapshot.hasInstallationPrivateKey;
+      identityLoadedGamePath = pageState.effectiveGamePath;
       identityPassword = '';
       identityPasswordConfirm = '';
       identityConfirmed = false;
-      identitySuccess = localized(
-        'installation 材料已经按当前观察到的账号重新生成。',
-        'Installation material was regenerated for the currently observed account.'
-      );
-      await refreshIdentity(pageState.effectiveGamePath);
+      identitySuccess = result.successMessage;
     } catch (error) {
-      identityError = formatIdentityError(error);
+      identityError = formatIdentityErrorMessage(error, localized);
     } finally {
       identityActionBusy = 'idle';
     }
@@ -480,13 +479,12 @@
   async function checkForUpdatesOnStartup() {
     const requestId = ++updaterCheckRequestId;
 
-    updaterSnapshot = {
-      ...updaterSnapshot,
-      status: hasTauriRuntime() ? 'checking' : 'unsupported',
-      errorMessage: null
-    };
+    updaterSnapshot = createCheckingUpdaterSnapshot(
+      updaterSnapshot,
+      hasTauriRuntime()
+    );
 
-    const result = await checkForAppUpdate();
+    const result = await runStartupUpdaterCheck();
     if (
       requestId !== updaterCheckRequestId ||
       updaterSnapshot.status !== 'checking'
@@ -499,31 +497,12 @@
   }
 
   async function maybeOpenWhatsNewAfterAutoUpdate(): Promise<boolean> {
-    if (!hasTauriRuntime()) {
-      return false;
-    }
-
-    const pendingLaunch = loadPendingWhatsNewLaunch();
-    if (!pendingLaunch) {
-      return false;
-    }
-
     try {
-      const currentVersion = (await getVersion()).trim();
-
-      if (currentVersion !== pendingLaunch.toVersion) {
-        return false;
-      }
+      return await maybeOpenPendingWhatsNewLaunch();
     } catch (error) {
       console.error(error);
       return false;
     }
-
-    clearPendingWhatsNewLaunch();
-    await goto(
-      `/whats-new?version=${encodeURIComponent(pendingLaunch.toVersion)}`
-    );
-    return true;
   }
 
   async function pickGamePath() {
@@ -613,7 +592,7 @@
   }
 
   async function installBundled(skipSteamShutdown = false) {
-    if (!canInstall) return;
+    if (!pageModel.canInstall) return;
 
     if (isDebugInstallPreview) {
       actionBusy = 'install';
@@ -668,7 +647,7 @@
   }
 
   async function launchGame() {
-    if (!canLaunchGame) return;
+    if (!pageModel.canLaunchGame) return;
 
     try {
       await openUrl(STEAM_BAZAAR_URL);
@@ -717,58 +696,18 @@
   }
 
   async function startPendingUpdateDownload(update: Update) {
-    updaterSnapshot = {
-      ...updaterSnapshot,
-      status: 'downloading',
-      errorMessage: null,
-      progress: {
-        downloadedBytes: 0,
-        totalBytes: null
+    const result = await downloadPendingUpdate({
+      snapshot: updaterSnapshot,
+      update,
+      t,
+      markPendingWhatsNewLaunch,
+      onProgress: (snapshot) => {
+        updaterSnapshot = snapshot;
       }
-    };
+    });
 
-    try {
-      await downloadAndInstallUpdate(update, (progress) => {
-        updaterSnapshot = {
-          ...updaterSnapshot,
-          status: 'downloading',
-          progress
-        };
-      });
-
-      markPendingWhatsNewLaunch({
-        reason: 'auto-update',
-        fromVersion: update.currentVersion,
-        toVersion: update.version
-      });
-
-      updaterSnapshot = {
-        ...updaterSnapshot,
-        status: 'installed'
-      };
-      openUpdaterModal(
-        t('updaterInstalledTitle'),
-        t('updaterInstalledBody', {
-          version: updaterSnapshot.availableVersion ?? update.version
-        })
-      );
-    } catch (error) {
-      const errorMessage = formatUpdaterError(error);
-      updaterSnapshot = {
-        ...updaterSnapshot,
-        status: 'error',
-        errorMessage: errorMessage,
-        progress: {
-          downloadedBytes: 0,
-          totalBytes: null
-        }
-      };
-
-      openUpdaterModal(
-        t('updaterErrorTitle'),
-        t('updaterErrorBody', { message: errorMessage })
-      );
-    }
+    updaterSnapshot = result.snapshot;
+    openUpdaterModal(result.modal.title, result.modal.body);
   }
 
   async function repairBpp() {
@@ -800,78 +739,28 @@
   }
 
   async function handleUpdaterAction() {
-    if (
-      updaterSnapshot.status === 'checking' ||
-      updaterSnapshot.status === 'downloading'
-    ) {
+    const decision = resolveUpdaterActionDecision({
+      snapshot: updaterSnapshot,
+      pendingUpdate,
+      hasTauriRuntime: hasTauriRuntime(),
+      t
+    });
+
+    if (decision.type === 'noop') {
       return;
     }
 
-    if (!hasTauriRuntime()) {
-      openUpdaterModal(
-        t('updaterErrorTitle'),
-        t('updaterErrorBody', { message: t('updaterUnsupported') })
-      );
-      return;
-    }
-
-    if (updaterSnapshot.status === 'available' && pendingUpdate) {
-      openUpdaterReviewModal();
-      return;
-    }
-
-    if (updaterSnapshot.status === 'installed') {
-      openUpdaterModal(
-        t('updaterInstalledTitle'),
-        t('updaterInstalledBody', {
-          version:
-            updaterSnapshot.availableVersion ??
-            updaterSnapshot.currentVersion ??
-            'unknown'
-        })
-      );
-      return;
-    }
-
-    if (updaterSnapshot.status === 'error') {
-      if (pendingUpdate) {
-        openUpdaterReviewModal();
-        return;
-      }
-
-      openUpdaterModal(
-        t('updaterErrorTitle'),
-        t('updaterErrorBody', {
-          message: updaterSnapshot.errorMessage ?? t('updaterUnsupported')
-        })
-      );
-      return;
-    }
-
-    if (updaterSnapshot.status === 'up-to-date') {
-      openUpdaterModal(t('updaterCurrentTitle'), t('updaterCurrentBody'));
-      return;
-    }
-
-    if (updaterSnapshot.status === 'idle') {
+    if (decision.type === 'check') {
       await checkForUpdatesOnStartup();
       return;
     }
 
-    if (updaterSnapshot.status === 'unsupported') {
-      openUpdaterModal(
-        t('updaterErrorTitle'),
-        t('updaterErrorBody', { message: t('updaterUnsupported') })
-      );
+    if (decision.type === 'open_review') {
+      openUpdaterReviewModal();
       return;
     }
 
-    openUpdaterModal(
-      t('updaterReadyTitle'),
-      t('updaterReadyBody', {
-        version: updaterSnapshot.availableVersion ?? 'unknown'
-      })
-    );
+    openUpdaterModal(decision.modal.title, decision.modal.body);
   }
 
   function clearBazaarInvalid() {
@@ -901,146 +790,34 @@
     showStreamMode = !showStreamMode;
   }
 
-  $: modeTitle = showStreamMode ? t('streamTitle') : t('subtitle');
-  $: modeToggleLabel = showStreamMode
-    ? localized('安装模式', 'Install Mode')
-    : localized('直播模式', 'Stream Mode');
-  $: identityPanelTitle =
-    identityState.kind === 'observation_required'
-      ? localized('尚未检测到游戏账号', 'No game account detected yet')
-      : identityState.kind === 'activate_first_account'
-        ? localized('已检测到游戏账号', 'Game account detected')
-        : identityState.kind === 'relogin_required'
-          ? localized('检测到账号切换', 'Game account changed')
-          : localized('账号已连接', 'Account connected');
-  $: identityPanelSummary =
-    identityLoadState === 'loading'
-      ? localized('正在读取账号状态…', 'Reading account status...')
-      : identityState.kind === 'observation_required'
-        ? localized(
-            '请先安装最新版 MOD，运行一次游戏，再回来绑定账号。',
-            'Install the latest mod, run the game once, then come back to bind the account.'
-          )
-        : identityState.kind === 'activate_first_account'
-          ? localized(
-              `当前账号：${identityState.observation.player_username}，点击展开继续。`,
-              `Current account: ${identityState.observation.player_username}. Click to continue.`
-            )
-          : identityState.kind === 'relogin_required'
-            ? localized(
-                `当前账号：${identityState.observation.player_username}，点击展开重新登录。`,
-                `Current account: ${identityState.observation.player_username}. Click to re-login.`
-              )
-            : '';
-  $: if (identityState.kind === 'ready') {
+  $: pageModel = createInstallPageModel({
+    env,
+    bazaarFound,
+    customGamePath,
+    actionBusy,
+    showStreamMode,
+    locale: $locale,
+    isDebugInstallPreview,
+    updaterSnapshot,
+    hasPendingUpdate: Boolean(pendingUpdate),
+    pendingSteamAction,
+    playerObservation,
+    installationRecord,
+    hasInstallationPrivateKey,
+    identityLoadState,
+    identityActionBusy,
+    identityPassword,
+    identityPasswordConfirm,
+    identityConfirmed,
+    localized,
+    t
+  });
+  $: pageState = pageModel.pageState;
+  $: identityState = pageModel.identityState;
+  $: if (pageModel.shouldCollapseIdentityPanel) {
     identityPanelExpanded = false;
   }
-  $: selectedPath = selectCustomGamePath(customGamePath);
-  $: modInstalled = Boolean(env?.bpp_version);
-  $: bundledBppVersion = env?.bundled_bpp_version ?? null;
-  $: installedBppVersion = env?.bpp_version ?? null;
-  $: bppDataVersion = env?.bpp_data_version ?? null;
-  $: bppDataIssue = env?.bpp_data_issue ?? null;
-  $: bppDataResetRequired = Boolean(env?.bpp_data_reset_required);
-  $: pageState = createPageState({
-    actionBusy,
-    bazaarFound,
-    bppDataResetRequired,
-    selectedGamePath: selectedPath,
-    detectedGamePath: env?.game_path ?? null,
-    isDebugInstallPreview,
-    bundledBppVersion,
-    installedBppVersion
-  });
-  $: hasPath = pageState.hasPath;
-  $: versionMismatch = pageState.versionMismatch;
-  $: isBusy = pageState.isBusy;
-  $: canInstall = pageState.canInstall;
-  $: canLaunchGame = pageState.canLaunchGame;
-  $: dotnetDownloadUrl =
-    $locale === 'zh'
-      ? 'https://dotnet.microsoft.com/zh-cn/download'
-      : 'https://dotnet.microsoft.com/en-us/download';
-  $: localeBadge = $locale === 'zh' ? '中' : 'EN';
-  $: localeButtonLabel = $locale === 'zh' ? 'Switch to English' : '切换到中文';
-  $: updaterProgressLabel = createProgressLabel(updaterSnapshot.progress);
-  $: updaterButtonLabel =
-    updaterSnapshot.status === 'checking'
-      ? t('updaterChecking')
-      : updaterSnapshot.status === 'available'
-        ? t('updaterReady', {
-            version: updaterSnapshot.availableVersion ?? '...'
-          })
-        : updaterSnapshot.status === 'downloading'
-          ? t('updaterDownloading', {
-              progress: updaterProgressLabel ?? '...'
-            })
-          : updaterSnapshot.status === 'installed'
-            ? t('updaterInstallReady', {
-                version: updaterSnapshot.availableVersion ?? '...'
-              })
-            : updaterSnapshot.status === 'error'
-              ? pendingUpdate
-                ? t('updaterRetry')
-                : t('updaterErrorState')
-              : updaterSnapshot.status === 'unsupported'
-                ? t('updaterUnsupported')
-                : t('updaterCurrent');
-  $: updaterButtonTitle =
-    updaterSnapshot.status === 'available'
-      ? t('updaterReadyTitle')
-      : updaterSnapshot.status === 'downloading'
-        ? t('updaterInstalling')
-        : updaterSnapshot.status === 'installed'
-          ? t('updaterInstalledTitle')
-          : updaterSnapshot.status === 'error'
-            ? t('updaterErrorTitle')
-            : updaterButtonLabel;
-  $: updaterButtonDisabled =
-    updaterSnapshot.status === 'checking' ||
-    updaterSnapshot.status === 'downloading';
-  $: updaterButtonHighlighted =
-    updaterSnapshot.status === 'available' ||
-    updaterSnapshot.status === 'installed';
-  $: steamModalTitle =
-    pendingSteamAction === 'install'
-      ? t('installRiskTitle')
-      : t('steamQuitTitle');
-  $: steamModalBody =
-    pendingSteamAction === 'install'
-      ? `${t('installRiskSteamDetected')}\n\n${t('installRiskBody')}`
-      : t('steamQuitBody');
-  $: steamModalCancelText =
-    pendingSteamAction === 'install'
-      ? t('actionContinueInstall')
-      : t('actionClose');
   $: persistCustomGamePath(customGamePath);
-  $: identityState = createIdentityState({
-    observation: playerObservation,
-    installation: installationRecord,
-    hasInstallationPrivateKey
-  });
-  $: activationPasswordMatches =
-    !identityPassword.trim() ||
-    !identityPasswordConfirm.trim() ||
-    identityPassword.trim() === identityPasswordConfirm.trim();
-  $: identityBusy =
-    identityLoadState === 'loading' || identityActionBusy !== 'idle';
-  $: canActivateObservedAccount =
-    identityState.kind === 'activate_first_account' &&
-    Boolean(pageState.effectiveGamePath) &&
-    Boolean(playerObservation) &&
-    Boolean(identityPassword.trim()) &&
-    Boolean(identityPasswordConfirm.trim()) &&
-    activationPasswordMatches &&
-    identityConfirmed &&
-    !identityBusy;
-  $: canLoginIdentity =
-    Boolean(pageState.effectiveGamePath) &&
-    Boolean(playerObservation) &&
-    Boolean(identityPassword.trim()) &&
-    identityConfirmed &&
-    !identityBusy;
   $: if (!hasTauriRuntime() || !pageState.effectiveGamePath) {
     identityLoadedGamePath = '';
     resetIdentitySnapshot();
@@ -1096,10 +873,10 @@
   <AppModal
     open={showSteamQuitModal}
     eyebrow="BazaarPlusPlus"
-    title={steamModalTitle}
-    body={steamModalBody}
+    title={pageModel.steamModalTitle}
+    body={pageModel.steamModalBody}
     confirmText={t('actionQuitSteam')}
-    cancelText={steamModalCancelText}
+    cancelText={pageModel.steamModalCancelText}
     showCancel={true}
     confirmBusy={steamActionBusy}
     confirmBusyText={t('actionQuitSteam')}
@@ -1135,22 +912,22 @@
 
   <InstallerHeader
     kicker={t('kicker')}
-    subtitle={modeTitle}
-    {localeBadge}
-    {localeButtonLabel}
+    subtitle={pageModel.modeTitle}
+    localeBadge={pageModel.localeBadge}
+    localeButtonLabel={pageModel.localeButtonLabel}
     bilibiliUrl={BILIBILI_URL}
     onOpenBilibili={openBilibili}
-    {updaterButtonLabel}
-    {updaterButtonTitle}
-    {updaterButtonDisabled}
-    {updaterButtonHighlighted}
+    updaterButtonLabel={pageModel.updaterButtonLabel}
+    updaterButtonTitle={pageModel.updaterButtonTitle}
+    updaterButtonDisabled={pageModel.updaterButtonDisabled}
+    updaterButtonHighlighted={pageModel.updaterButtonHighlighted}
     onOpenUpdater={handleUpdaterAction}
     streamModeActive={showStreamMode}
-    streamModeLabel={modeToggleLabel}
+    streamModeLabel={pageModel.modeToggleLabel}
     onToggleStreamMode={toggleStreamMode}
   />
 
-  {#if !showStreamMode && hasTauriRuntime() && hasPath}
+  {#if !showStreamMode && hasTauriRuntime() && pageModel.hasPath}
     <section class="identity-card">
       <button
         type="button"
@@ -1171,9 +948,9 @@
           <p class="identity-kicker">
             {localized('身份状态', 'Identity Status')}
           </p>
-          <h2>{identityPanelTitle}</h2>
-          {#if identityPanelSummary}
-            <p class="identity-toggle-summary">{identityPanelSummary}</p>
+          <h2>{pageModel.identityPanelTitle}</h2>
+          {#if pageModel.identityPanelSummary}
+            <p class="identity-toggle-summary">{pageModel.identityPanelSummary}</p>
           {/if}
         </div>
 
@@ -1295,7 +1072,7 @@
               />
             </label>
 
-            {#if identityPasswordConfirm.trim() && !activationPasswordMatches}
+            {#if identityPasswordConfirm.trim() && !pageModel.activationPasswordMatches}
               <p class="identity-error">
                 {localized('两次输入的密码不一致。', 'The two passwords do not match.')}
               </p>
@@ -1318,7 +1095,7 @@
                 type="button"
                 class="identity-button primary"
                 on:click={activateObservedAccount}
-                disabled={!canActivateObservedAccount}
+                disabled={!pageModel.canActivateObservedAccount}
               >
                 {identityActionBusy === 'activating'
                   ? localized('正在激活…', 'Activating...')
@@ -1328,7 +1105,7 @@
                 type="button"
                 class="identity-button"
                 on:click={loginAndRefreshInstallation}
-                disabled={!canLoginIdentity}
+                disabled={!pageModel.canLoginIdentity}
               >
                 {identityActionBusy === 'logging_in'
                   ? localized('正在登录…', 'Logging in...')
@@ -1339,7 +1116,7 @@
                 type="button"
                 class="identity-button primary"
                 on:click={loginAndRefreshInstallation}
-                disabled={!canLoginIdentity}
+                disabled={!pageModel.canLoginIdentity}
               >
                 {identityActionBusy === 'logging_in'
                   ? localized('正在重新登录…', 'Re-logging in...')
@@ -1372,23 +1149,23 @@
     <InstallerStatusSteps
       {env}
       {dotnetState}
-      {modInstalled}
-      {versionMismatch}
-      {bundledBppVersion}
-      {installedBppVersion}
+      modInstalled={pageModel.modInstalled}
+      versionMismatch={pageModel.versionMismatch}
+      bundledBppVersion={pageModel.bundledBppVersion}
+      installedBppVersion={pageModel.installedBppVersion}
       {bazaarFound}
       {bazaarChecking}
       {bazaarInvalid}
-      {bppDataResetRequired}
-      {bppDataIssue}
-      {bppDataVersion}
+      bppDataResetRequired={pageModel.bppDataResetRequired}
+      bppDataIssue={pageModel.bppDataIssue}
+      bppDataVersion={pageModel.bppDataVersion}
       bind:customGamePath
-      {hasPath}
-      {isBusy}
+      hasPath={pageModel.hasPath}
+      isBusy={pageModel.isBusy}
       {actionBusy}
-      {canInstall}
-      {canLaunchGame}
-      {dotnetDownloadUrl}
+      canInstall={pageModel.canInstall}
+      canLaunchGame={pageModel.canLaunchGame}
+      dotnetDownloadUrl={pageModel.dotnetDownloadUrl}
       effectiveGamePath={pageState.effectiveGamePath}
       {t}
       onPickGamePath={pickGamePath}

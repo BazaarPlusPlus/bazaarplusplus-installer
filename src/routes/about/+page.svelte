@@ -5,79 +5,33 @@
   import { formatMessage, messages } from '$lib/i18n';
   import { locale, handleLocaleToggle } from '$lib/locale';
   import SupporterListModal from '$lib/components/supporters/SupporterListModal.svelte';
+  import {
+    authors,
+    dataSources,
+    frontendDependencies,
+    inspiredBy,
+    paymentMethods,
+    projectDependencies,
+    rustDependencies,
+    supportLinks
+  } from '$lib/about/content';
+  import {
+    createAboutPageModel,
+    type AboutPageModel
+  } from '$lib/about/page-model';
 
   let appVersion = '0.0.0';
   let showPaymentCodes = false;
   let showSupporterList = false;
   let hiddenPaymentImages: Record<string, boolean> = {};
+  let pageModel: AboutPageModel = createAboutPageModel('en');
 
-  $: t = (
+  function t(
     key: keyof typeof messages.en,
     params?: Record<string, string | number>
-  ): string => formatMessage($locale, key, params);
-
-  $: localeBadge = $locale === 'zh' ? '中' : 'EN';
-  $: localeButtonLabel = $locale === 'zh' ? 'Switch to English' : '切换到中文';
-
-  const paymentMethods = [
-    {
-      id: 'wechat',
-      zhName: '微信收款码',
-      enName: 'WePay',
-      src: '/support/wechat-pay.svg',
-      accent: 'payment-card-wechat'
-    }
-  ];
-
-  const inspiredBy = [
-    { name: 'BazaarHelper', url: 'https://github.com/Duangi/BazaarHelper' },
-    {
-      name: 'BazaarPlannerMod',
-      url: 'https://github.com/oceanseth/BazaarPlannerMod'
-    }
-  ];
-
-  const dataSources = [{ name: 'BazaarDB', url: 'https://bazaardb.gg' }];
-
-  const projectDeps = [
-    {
-      name: 'BepInEx',
-      license: 'LGPL-2.1',
-      url: 'https://github.com/BepInEx/BepInEx'
-    }
-  ];
-
-  const frontendDeps = [
-    { name: 'Svelte', license: 'MIT', url: 'https://svelte.dev' },
-    { name: 'SvelteKit', license: 'MIT', url: 'https://kit.svelte.dev' },
-    { name: 'Vite', license: 'MIT', url: 'https://vitejs.dev' },
-    { name: 'Tauri', license: 'MIT / Apache-2.0', url: 'https://tauri.app' }
-  ];
-
-  const rustDeps = [
-    { name: 'serde', license: 'MIT / Apache-2.0', url: 'https://serde.rs' },
-    {
-      name: 'reqwest',
-      license: 'MIT / Apache-2.0',
-      url: 'https://github.com/seanmonstar/reqwest'
-    },
-    { name: 'zip', license: 'MIT', url: 'https://github.com/zip-rs/zip2' },
-    {
-      name: 'dirs',
-      license: 'MIT / Apache-2.0',
-      url: 'https://github.com/dirs-dev/dirs-rs'
-    },
-    {
-      name: 'keyvalues-parser',
-      license: 'MIT',
-      url: 'https://github.com/CosmicHorrorDev/keyvalues-rs'
-    },
-    {
-      name: 'winreg',
-      license: 'MIT',
-      url: 'https://github.com/gentoo90/winreg-rs'
-    }
-  ];
+  ): string {
+    return formatMessage($locale, key, params);
+  }
 
   locale.init();
 
@@ -117,6 +71,8 @@
       [methodId]: true
     };
   }
+
+  $: pageModel = createAboutPageModel($locale);
 </script>
 
 <svelte:head>
@@ -126,9 +82,9 @@
 <AppModal
   open={showPaymentCodes}
   eyebrow="BazaarPlusPlus"
-  title={$locale === 'zh' ? '支持项目' : 'Support the Project'}
+  title={pageModel.paymentModalTitle}
   bodyClass="payment-modal-body"
-  confirmText={$locale === 'zh' ? '关闭' : 'Close'}
+  confirmText={pageModel.paymentModalCloseLabel}
   onConfirm={closePaymentCodes}
 >
   <section class="payment-modal-shell">
@@ -140,7 +96,7 @@
               <img
                 class="payment-image"
                 src={method.src}
-                alt={$locale === 'zh' ? method.zhName : method.enName}
+                alt={$locale === 'zh' ? method.name.zh : method.name.en}
                 onerror={() => handlePaymentImageError(method.id)}
               />
             {:else}
@@ -149,27 +105,15 @@
           </div>
 
           <div class="payment-copy">
-            <h3>{$locale === 'zh' ? '支持项目' : 'Support the Project'}</h3>
-            <p>
-              {$locale === 'zh'
-                ? '请 Bazaar++ 喝一杯'
-                : 'Buy Bazaar++ a drink.'}
-            </p>
+            <h3>{pageModel.paymentCardTitle}</h3>
+            <p>{pageModel.paymentCardBody}</p>
           </div>
         </article>
       {/each}
     </div>
 
-    <p class="payment-support-note">
-      {$locale === 'zh'
-        ? '有你支持，Bazaar++ 会冒出更多好东西'
-        : 'With your support, Bazaar++ gets to grow more good stuff.'}
-    </p>
-    <p class="payment-support-tip">
-      {$locale === 'zh'
-        ? '如果愿意，欢迎在备注里留一个支持者 ID'
-        : 'If you want, you can leave a supporter ID in the payment note.'}
-    </p>
+    <p class="payment-support-note">{pageModel.paymentSupportNote}</p>
+    <p class="payment-support-tip">{pageModel.paymentSupportTip}</p>
   </section>
 </AppModal>
 
@@ -195,8 +139,8 @@
       class="locale-toggle"
       onclick={handleLocaleToggle}
       type="button"
-      aria-label={localeButtonLabel}
-      title={localeButtonLabel}
+      aria-label={pageModel.localeButtonLabel}
+      title={pageModel.localeButtonLabel}
     >
       <svg class="locale-icon" viewBox="0 0 24 24" aria-hidden="true">
         <path
@@ -204,7 +148,7 @@
           fill="currentColor"
         />
       </svg>
-      <span class="locale-badge">{localeBadge}</span>
+      <span class="locale-badge">{pageModel.localeBadge}</span>
     </button>
 
     <div class="sigil" aria-hidden="true">
@@ -265,12 +209,8 @@
         </p>
       </div>
       <button class="supporter-entry" type="button" onclick={openSupporterList}>
-        <span class="supporter-entry-title"
-          >{$locale === 'zh' ? '支持者名单' : 'Supporters'}</span
-        >
-        <span class="supporter-entry-subtitle"
-          >{$locale === 'zh' ? '查看名单' : 'Open list'}</span
-        >
+        <span class="supporter-entry-title">{pageModel.supporterEntryTitle}</span>
+        <span class="supporter-entry-subtitle">{pageModel.supporterEntrySubtitle}</span>
       </button>
     </div>
   </section>
@@ -278,39 +218,19 @@
   <section class="card">
     <h2 class="section-title">{t('aboutAuthors')}</h2>
     <ul class="dep-list">
-      <li>
-        <a
-          class="dep-item dep-item-link"
-          href="https://github.com/cauyxy"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <span class="dep-name">cauyxy</span>
-          <span class="dep-role">{t('aboutAuthorRole')}</span>
-        </a>
-      </li>
-      <li>
-        <a
-          class="dep-item dep-item-link"
-          href="https://openai.com/codex"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <span class="dep-name">Codex</span>
-          <span class="dep-role">{t('aboutCocreatorRole')}</span>
-        </a>
-      </li>
-      <li>
-        <a
-          class="dep-item dep-item-link"
-          href="https://claude.com/product/claude-code"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <span class="dep-name">Claude Code</span>
-          <span class="dep-role">{t('aboutCocreatorRole')}</span>
-        </a>
-      </li>
+      {#each authors as author}
+        <li>
+          <a
+            class="dep-item dep-item-link"
+            href={author.url}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <span class="dep-name">{author.name}</span>
+            <span class="dep-role">{t(author.roleKey)}</span>
+          </a>
+        </li>
+      {/each}
     </ul>
   </section>
 
@@ -323,23 +243,23 @@
           type="button"
           onclick={openPaymentCodes}
         >
-          <span class="dep-name">{$locale === 'zh' ? '微信' : 'Wepay'}</span>
-          <span class="dep-link-label"
-            >{$locale === 'zh' ? '感谢支持' : 'Support'}</span
-          >
+          <span class="dep-name">{pageModel.paymentActionLabel}</span>
+          <span class="dep-link-label">{pageModel.paymentActionHint}</span>
         </button>
       </li>
-      <li>
-        <a
-          class="dep-item dep-item-link"
-          href="https://ko-fi.com/cauyxy"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <span class="dep-name">Ko-fi</span>
-          <span class="dep-link-label">ko-fi.com/cauyxy</span>
-        </a>
-      </li>
+      {#each supportLinks as supportLink}
+        <li>
+          <a
+            class="dep-item dep-item-link"
+            href={supportLink.url}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <span class="dep-name">{supportLink.name}</span>
+            <span class="dep-link-label">{supportLink.url.replace('https://', '')}</span>
+          </a>
+        </li>
+      {/each}
     </ul>
   </section>
 
@@ -384,7 +304,7 @@
   <section class="card">
     <h2 class="section-title">{t('aboutDependencies')}</h2>
     <ul class="dep-list">
-      {#each projectDeps as dep}
+      {#each projectDependencies as dep}
         <li class="dep-item">
           <span class="dep-name">{dep.name}</span>
           <span class="dep-license">{dep.license}</span>
@@ -398,7 +318,7 @@
 
     <h3 class="group-title">Frontend</h3>
     <ul class="dep-list">
-      {#each frontendDeps as dep}
+      {#each frontendDependencies as dep}
         <li class="dep-item">
           <span class="dep-name">{dep.name}</span>
           <span class="dep-license">{dep.license}</span>
@@ -408,7 +328,7 @@
 
     <h3 class="group-title">Rust / Backend</h3>
     <ul class="dep-list">
-      {#each rustDeps as dep}
+      {#each rustDependencies as dep}
         <li class="dep-item">
           <span class="dep-name">{dep.name}</span>
           <span class="dep-license">{dep.license}</span>
