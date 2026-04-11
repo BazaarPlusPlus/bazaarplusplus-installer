@@ -8,6 +8,8 @@ import {
 } from './version-sync.mjs';
 
 export const sharedBundledZipPath = 'BepInExSource/BepInEx.zip';
+export const bppDataVersionPolicyPath =
+  'src-tauri/resources/BppDataVersionPolicy.json';
 
 const platformAliases = new Map([
   ['darwin', 'macos'],
@@ -71,6 +73,58 @@ function sourceZipPathForPlatform(rootDir, platform) {
     platform,
     'BepInEx.zip'
   );
+}
+
+function parseVersionParts(version) {
+  if (typeof version !== 'string' || version.trim() === '') {
+    return null;
+  }
+
+  const parts = version.trim().split('.');
+  if (parts.some((part) => !/^\d+$/.test(part))) {
+    return null;
+  }
+
+  return parts.map((part) => Number.parseInt(part, 10));
+}
+
+export function compareVersions(left, right) {
+  const leftParts = parseVersionParts(left);
+  const rightParts = parseVersionParts(right);
+  if (!leftParts || !rightParts) {
+    return null;
+  }
+
+  const len = Math.max(leftParts.length, rightParts.length);
+  for (let index = 0; index < len; index += 1) {
+    const leftPart = leftParts[index] ?? 0;
+    const rightPart = rightParts[index] ?? 0;
+    if (leftPart !== rightPart) {
+      return leftPart > rightPart ? 1 : -1;
+    }
+  }
+
+  return 0;
+}
+
+export function readBppDataVersionPolicy(rootDir) {
+  const policyFile = path.join(rootDir, bppDataVersionPolicyPath);
+  const raw = fs.readFileSync(policyFile, 'utf8');
+  const policy = JSON.parse(raw);
+
+  if (
+    !policy ||
+    typeof policy.minimum_supported_bpp_data_version !== 'string' ||
+    !policy.minimum_supported_bpp_data_version.trim()
+  ) {
+    throw new Error(
+      `Invalid BppDataVersionPolicy.json: minimum_supported_bpp_data_version is required`
+    );
+  }
+
+  return {
+    minimumSupported: policy.minimum_supported_bpp_data_version.trim()
+  };
 }
 
 function findEndOfCentralDirectory(buffer) {
@@ -187,8 +241,28 @@ function ensureZipLooksValid(zipPath, platform) {
 
 export function runPrebuildCheck(rootDir, platformEnv) {
   console.log('Running prebuild check...');
-  assertVersionsAreAligned(collectVersionSnapshot(rootDir));
+  const snapshot = collectVersionSnapshot(rootDir);
+  assertVersionsAreAligned(snapshot);
+  const policy = readBppDataVersionPolicy(rootDir);
+  const versionComparison = compareVersions(
+    policy.minimumSupported,
+    snapshot.packageVersion
+  );
+  if (versionComparison === null) {
+    throw new Error(
+      `Invalid BPP data version policy: ${policy.minimumSupported}`
+    );
+  }
+  if (versionComparison > 0) {
+    throw new Error(
+      `minimum_supported_bpp_data_version=${policy.minimumSupported} cannot exceed packageVersion=${snapshot.packageVersion}`
+    );
+  }
   const platforms = resolveTargetPlatforms(platformEnv);
+
+  console.log(
+    `BPP data policy: minimum_supported_bpp_data_version=${policy.minimumSupported}`
+  );
 
   for (const platform of platforms) {
     ensureZipLooksValid(sourceZipPathForPlatform(rootDir, platform), platform);

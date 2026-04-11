@@ -46,7 +46,10 @@ test('detectInstallerEnvironment merges dotnet state into a successful environme
         dotnet_ok: false,
         bepinex_installed: false,
         bpp_version: null,
-        bundled_bpp_version: '2.0.0'
+        bundled_bpp_version: '2.0.0',
+        bpp_data_version: '1',
+        bpp_data_reset_required: false,
+        bpp_data_issue: null
       };
     },
     detectDotnetRuntime: async () => {
@@ -72,7 +75,10 @@ test('detectInstallerEnvironment merges dotnet state into a successful environme
       dotnet_ok: true,
       bepinex_installed: false,
       bpp_version: null,
-      bundled_bpp_version: '2.0.0'
+      bundled_bpp_version: '2.0.0',
+      bpp_data_version: '1',
+      bpp_data_reset_required: false,
+      bpp_data_issue: null
     },
     dotnetState: 'found',
     bazaarFound: true,

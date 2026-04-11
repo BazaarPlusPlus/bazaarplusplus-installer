@@ -6,7 +6,7 @@
   import { onMount } from 'svelte';
   import type { Update } from '@tauri-apps/plugin-updater';
   import AppModal from '$lib/components/AppModal.svelte';
-  import type { EnvironmentInfo } from '$lib/types';
+  import type { BppDataIssue, EnvironmentInfo } from '$lib/types';
   import { locale } from '$lib/locale';
   import { formatMessage, messages } from '$lib/i18n';
   import InstallerHeader from '$lib/components/installer/InstallerHeader.svelte';
@@ -205,7 +205,10 @@
       dotnet_ok: true,
       bepinex_installed: false,
       bpp_version: null,
-      bundled_bpp_version: 'debug-preview'
+      bundled_bpp_version: 'debug-preview',
+      bpp_data_version: '1',
+      bpp_data_reset_required: false,
+      bpp_data_issue: null
     };
     dotnetState = 'found';
     bazaarFound = true;
@@ -256,7 +259,15 @@
       console.error(e);
     }
 
-    repairModalBody = t('resetHistoryBody', { size: sizeLabel });
+    if (bppDataResetRequired) {
+      repairModalBody = createBppDataResetBody({
+        issue: bppDataIssue,
+        version: bppDataVersion,
+        sizeLabel
+      });
+    } else {
+      repairModalBody = t('resetHistoryBody', { size: sizeLabel });
+    }
     repairAcknowledged = false;
     showRepairModal = true;
   }
@@ -529,11 +540,19 @@
     bazaarChecking = true;
     bazaarInvalid = false;
     try {
-      bazaarFound = await verifyGamePathApi(path);
-      if (!bazaarFound) {
-        bazaarInvalid = true;
-      }
-    } catch {
+      const result = await detectInstallerEnvironment({
+        requestedGamePath: path,
+        detectEnvironment: detectEnvironmentApi,
+        detectDotnetRuntime: detectDotnetRuntimeApi,
+        verifyGamePath: verifyGamePathApi
+      });
+      env = result.env;
+      dotnetState = result.dotnetState;
+      bazaarFound = result.bazaarFound;
+      bazaarInvalid = result.bazaarInvalid;
+    } catch (error) {
+      console.error(error);
+      bazaarFound = false;
       bazaarInvalid = true;
     } finally {
       bazaarChecking = false;
@@ -859,6 +878,25 @@
     bazaarInvalid = false;
   }
 
+  function createBppDataResetBody(input: {
+    issue: BppDataIssue | null;
+    version: string | null;
+    sizeLabel: string;
+  }) {
+    if (input.issue === 'incompatible_version') {
+      const versionLabel = input.version ?? localized('未知', 'unknown');
+      return localized(
+        `检测到 BazaarPlusPlus 数据目录中的 BPPData.version 版本不兼容（当前：${versionLabel}）。\n需要删除游戏根目录下整个 BazaarPlusPlus 文件夹，并重建数据目录。\n你可以点击“重置战绩记录”按钮自动重置，或者手动删除该文件夹。\n当前目录占用空间：${input.sizeLabel}\n这会删除你当前的所有战绩记录。`,
+        `An incompatible BPPData.version was detected in the BazaarPlusPlus data directory (current: ${versionLabel}).\nDelete the entire BazaarPlusPlus folder in the game root so the installer can rebuild the data directory.\nYou can use the "Reset Match History" button to reset it automatically, or delete that folder manually.\nCurrent directory size: ${input.sizeLabel}\nThis will delete all current match history.`
+      );
+    }
+
+    return localized(
+      `检测到游戏根目录的 BazaarPlusPlus 文件夹里没有 BPPData.version。\n需要删除整个 BazaarPlusPlus 文件夹，并重建数据目录。\n你可以点击“重置战绩记录”按钮自动重置，或者手动删除该文件夹。\n当前目录占用空间：${input.sizeLabel}\n这会删除你当前的所有战绩记录。`,
+      `The BazaarPlusPlus folder exists in the game root, but BPPData.version is missing.\nDelete the entire BazaarPlusPlus folder so the installer can rebuild the data directory.\nYou can use the "Reset Match History" button to reset it automatically, or delete that folder manually.\nCurrent directory size: ${input.sizeLabel}\nThis will delete all current match history.`
+    );
+  }
+
   function toggleStreamMode() {
     showStreamMode = !showStreamMode;
   }
@@ -901,9 +939,13 @@
   $: modInstalled = Boolean(env?.bpp_version);
   $: bundledBppVersion = env?.bundled_bpp_version ?? null;
   $: installedBppVersion = env?.bpp_version ?? null;
+  $: bppDataVersion = env?.bpp_data_version ?? null;
+  $: bppDataIssue = env?.bpp_data_issue ?? null;
+  $: bppDataResetRequired = Boolean(env?.bpp_data_reset_required);
   $: pageState = createPageState({
     actionBusy,
     bazaarFound,
+    bppDataResetRequired,
     selectedGamePath: selectedPath,
     detectedGamePath: env?.game_path ?? null,
     isDebugInstallPreview,
@@ -1337,6 +1379,9 @@
       {bazaarFound}
       {bazaarChecking}
       {bazaarInvalid}
+      {bppDataResetRequired}
+      {bppDataIssue}
+      {bppDataVersion}
       bind:customGamePath
       {hasPath}
       {isBusy}

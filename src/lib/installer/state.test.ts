@@ -34,6 +34,7 @@ test('createPageState computes install prerequisites and version mismatch', () =
   const state = createPageState({
     actionBusy: 'idle',
     bazaarFound: true,
+    bppDataResetRequired: false,
     selectedGamePath: 'C:\\Games\\The Bazaar',
     detectedGamePath: null,
     isDebugInstallPreview: false,
@@ -52,6 +53,7 @@ test('createPageState allows install during debug preview without prerequisites'
   const state = createPageState({
     actionBusy: 'idle',
     bazaarFound: false,
+    bppDataResetRequired: false,
     selectedGamePath: null,
     detectedGamePath: null,
     isDebugInstallPreview: true,
@@ -67,6 +69,7 @@ test('createPageState allows install when dotnet runtime is missing but game pat
   const state = createPageState({
     actionBusy: 'idle',
     bazaarFound: true,
+    bppDataResetRequired: false,
     selectedGamePath: 'C:\\Games\\The Bazaar',
     detectedGamePath: null,
     isDebugInstallPreview: false,
@@ -82,6 +85,7 @@ test('createPageState does not block install when game path is valid', () => {
   const state = createPageState({
     actionBusy: 'idle',
     bazaarFound: true,
+    bppDataResetRequired: false,
     selectedGamePath: 'C:\\Games\\The Bazaar',
     detectedGamePath: null,
     isDebugInstallPreview: false,
@@ -97,6 +101,7 @@ test('createPageState does not allow launch when Bazaar is flagged found but no 
   const state = createPageState({
     actionBusy: 'idle',
     bazaarFound: true,
+    bppDataResetRequired: false,
     selectedGamePath: null,
     detectedGamePath: null,
     isDebugInstallPreview: false,
@@ -105,5 +110,21 @@ test('createPageState does not allow launch when Bazaar is flagged found but no 
   });
 
   assert.equal(state.hasPath, false);
+  assert.equal(state.canLaunchGame, false);
+});
+
+test('createPageState blocks install and launch until BazaarPlusPlus data is reset', () => {
+  const state = createPageState({
+    actionBusy: 'idle',
+    bazaarFound: true,
+    bppDataResetRequired: true,
+    selectedGamePath: 'C:\\Games\\The Bazaar',
+    detectedGamePath: null,
+    isDebugInstallPreview: false,
+    bundledBppVersion: '1.2.0',
+    installedBppVersion: '1.2.0'
+  });
+
+  assert.equal(state.canInstall, false);
   assert.equal(state.canLaunchGame, false);
 });

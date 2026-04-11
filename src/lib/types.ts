@@ -1,3 +1,5 @@
+export type BppDataIssue = 'missing_version_file' | 'incompatible_version';
+
 export interface EnvironmentInfo {
   steam_path: string | null;
   steam_launch_options_supported: boolean;
@@ -7,6 +9,9 @@ export interface EnvironmentInfo {
   bepinex_installed: boolean;
   bpp_version: string | null;
   bundled_bpp_version: string | null;
+  bpp_data_version: string | null;
+  bpp_data_reset_required: boolean;
+  bpp_data_issue: BppDataIssue | null;
 }
 
 export interface DotnetInfo {

@@ -4,7 +4,8 @@
     "targets": ["nsis"],
     "icon": ["icons/icon.ico"],
     "resources": {
-      "resources/BepInExSource/windows/BepInEx.zip": "BepInExSource/BepInEx.zip"
+      "resources/BepInExSource/windows/BepInEx.zip": "BepInExSource/BepInEx.zip",
+      "resources/BppDataVersionPolicy.json": "BppDataVersionPolicy.json"
     },
     "windows": {
       "nsis": {
