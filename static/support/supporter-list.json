@@ -13,7 +13,7 @@
   },
   {
     "name": "麦麦在逃脆薯饼",
-    "tier": 3
+    "tier": 4
   },
   {
     "name": "山那边有片海",
@@ -502,5 +502,9 @@
   {
     "name": "aFortySevenz",
     "tier": 1
+  },
+  {
+    "name": "ayym",
+    "tier": 3
   }
 ]
