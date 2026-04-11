@@ -22,6 +22,7 @@
     getLegacyRecordDirectoryInfo as getLegacyRecordDirectoryInfoApi,
     installBepinex,
     patchLaunchOptions,
+    postIdentityJson,
     repairBpp as repairBppApi,
     uninstallBpp as uninstallBppApi,
     verifyGamePath as verifyGamePathApi
@@ -63,7 +64,8 @@
   import { createIdentityState } from '$lib/identity/state';
   import type {
     InstallationRecordPayload,
-    PlayerObservationPayload
+    PlayerObservationPayload,
+    RegistrationStreamProfile
   } from '$lib/identity/types';
 
   let env: EnvironmentInfo | null = null;
@@ -94,7 +96,26 @@
   let updaterReviewBusy = false;
   let updaterCheckRequestId = 0;
   let showStreamMode = false;
-  const identityApi = createIdentityApi();
+  const identityApi = createIdentityApi(
+    hasTauriRuntime()
+      ? {
+          postJsonImpl: ({ url, body, authorization }) =>
+            postIdentityJson(url, body, authorization)
+        }
+      : {}
+  );
+  const registrationStreamPlatformOptions = [
+    {
+      value: 'bilibili',
+      zhLabel: '哔哩哔哩',
+      enLabel: 'Bilibili'
+    },
+    {
+      value: 'twitch',
+      zhLabel: 'Twitch',
+      enLabel: 'Twitch'
+    }
+  ] as const;
   let playerObservation: PlayerObservationPayload | null = null;
   let installationRecord: InstallationRecordPayload | null = null;
   let hasInstallationPrivateKey = false;
@@ -102,6 +123,9 @@
   let identityActionBusy: 'idle' | 'activating' | 'logging_in' = 'idle';
   let identityPassword = '';
   let identityPasswordConfirm = '';
+  let identityStreamPlatform = '';
+  let identityStreamChannelId = '';
+  let identityStreamUrl = '';
   let identityConfirmed = false;
   let identityError = '';
   let identitySuccess = '';
@@ -122,6 +146,15 @@
 
   function localized(zh: string, en: string): string {
     return $locale === 'zh' ? zh : en;
+  }
+
+  function isValidHttpUrl(value: string): boolean {
+    try {
+      const parsed = new URL(value);
+      return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+    } catch {
+      return false;
+    }
   }
 
   function resetIdentitySnapshot() {
@@ -158,6 +191,12 @@
         return localized(
           '当前运行环境不支持生成 installation 密钥。',
           'This runtime cannot generate installation keys.'
+        );
+      case 'Failed to fetch':
+      case 'fetch failed':
+        return localized(
+          '无法连接身份服务。当前更像是网络或跨域配置问题，不是账号密码错误。',
+          'Could not reach the identity service. This looks like a network or CORS configuration issue, not a credential error.'
         );
       default:
         return code;
@@ -370,7 +409,10 @@
       return;
     }
 
-    if (identityState.kind === 'observation_required') {
+    if (
+      identityState.kind === 'observation_required' ||
+      identityState.kind === 'ready'
+    ) {
       return;
     }
 
@@ -383,6 +425,7 @@
       !playerObservation ||
       !identityConfirmed ||
       !identityPassword.trim() ||
+      !identityRegistrationStreamProfile ||
       identityPassword.trim() !== identityPasswordConfirm.trim() ||
       identityActionBusy !== 'idle'
     ) {
@@ -396,10 +439,14 @@
       await identityApi.activateFirstAccount({
         gameRoot: pageState.effectiveGamePath,
         observation: playerObservation,
-        password: identityPassword.trim()
+        password: identityPassword.trim(),
+        streamProfile: identityRegistrationStreamProfile
       });
       identityPassword = '';
       identityPasswordConfirm = '';
+      identityStreamPlatform = '';
+      identityStreamChannelId = '';
+      identityStreamUrl = '';
       identityConfirmed = false;
       identitySuccess = localized(
         '新的 installation 身份已写入本地共享目录。',
@@ -856,7 +903,7 @@
         ? localized('已检测到游戏账号', 'Game account detected')
         : identityState.kind === 'relogin_required'
           ? localized('检测到账号切换', 'Game account changed')
-          : localized('当前账号已连接', 'Account is connected');
+          : localized('账号已连接', 'Account connected');
   $: identityPanelSummary =
     identityLoadState === 'loading'
       ? localized('正在读取账号状态…', 'Reading account status...')
@@ -875,15 +922,10 @@
                 `当前账号：${identityState.observation.player_username}，点击展开重新登录。`,
                 `Current account: ${identityState.observation.player_username}. Click to re-login.`
               )
-            : identityState.observation
-              ? localized(
-                  `当前账号：${identityState.observation.player_username}，点击展开查看。`,
-                  `Current account: ${identityState.observation.player_username}. Click to view details.`
-                )
-              : localized(
-                  '本地安装凭证已就绪，点击展开查看。',
-                  'Local installation credentials are ready. Click to view details.'
-                );
+            : '';
+  $: if (identityState.kind === 'ready') {
+    identityPanelExpanded = false;
+  }
   $: selectedPath = selectCustomGamePath(customGamePath);
   $: modInstalled = Boolean(env?.bpp_version);
   $: bundledBppVersion = env?.bundled_bpp_version ?? null;
@@ -969,6 +1011,19 @@
     !identityPassword.trim() ||
     !identityPasswordConfirm.trim() ||
     identityPassword.trim() === identityPasswordConfirm.trim();
+  $: activationStreamUrlValid =
+    !identityStreamUrl.trim() || isValidHttpUrl(identityStreamUrl.trim());
+  $: identityRegistrationStreamProfile =
+    identityStreamPlatform.trim() &&
+    identityStreamChannelId.trim() &&
+    identityStreamUrl.trim() &&
+    activationStreamUrlValid
+      ? ({
+          stream_platform: identityStreamPlatform.trim(),
+          stream_channel_id: identityStreamChannelId.trim(),
+          stream_url: identityStreamUrl.trim()
+        } satisfies RegistrationStreamProfile)
+      : null;
   $: identityBusy =
     identityLoadState === 'loading' || identityActionBusy !== 'idle';
   $: canActivateObservedAccount =
@@ -977,6 +1032,7 @@
     Boolean(playerObservation) &&
     Boolean(identityPassword.trim()) &&
     Boolean(identityPasswordConfirm.trim()) &&
+    Boolean(identityRegistrationStreamProfile) &&
     activationPasswordMatches &&
     identityConfirmed &&
     !identityBusy;
@@ -1100,12 +1156,16 @@
       <button
         type="button"
         class="identity-toggle"
-        class:is-static={identityState.kind === 'observation_required'}
+        class:is-static={identityState.kind === 'observation_required' || identityState.kind === 'ready'}
         class:is-expanded={identityPanelExpanded}
         on:click={toggleIdentityPanel}
-        disabled={identityState.kind === 'observation_required' || identityLoadState === 'loading'}
+        disabled={identityState.kind === 'observation_required' ||
+          identityState.kind === 'ready' ||
+          identityLoadState === 'loading'}
         aria-expanded={identityState.kind === 'observation_required'
           ? undefined
+          : identityState.kind === 'ready'
+            ? undefined
           : identityPanelExpanded}
       >
         <div class="identity-toggle-copy">
@@ -1113,10 +1173,14 @@
             {localized('身份状态', 'Identity Status')}
           </p>
           <h2>{identityPanelTitle}</h2>
-          <p class="identity-toggle-summary">{identityPanelSummary}</p>
+          {#if identityPanelSummary}
+            <p class="identity-toggle-summary">{identityPanelSummary}</p>
+          {/if}
         </div>
 
-        {#if identityState.kind !== 'observation_required' && identityLoadState !== 'loading'}
+        {#if identityState.kind !== 'observation_required' &&
+          identityState.kind !== 'ready' &&
+          identityLoadState !== 'loading'}
           <span class="identity-toggle-icon" aria-hidden="true">
             {identityPanelExpanded ? '−' : '+'}
           </span>
@@ -1237,6 +1301,53 @@
                 {localized('两次输入的密码不一致。', 'The two passwords do not match.')}
               </p>
             {/if}
+
+            <label class="identity-field">
+              <span>{localized('直播平台', 'Streaming platform')}</span>
+              <select bind:value={identityStreamPlatform}>
+                <option value="">
+                  {localized('请选择直播平台', 'Select a streaming platform')}
+                </option>
+                {#each registrationStreamPlatformOptions as option}
+                  <option value={option.value}>
+                    {$locale === 'zh' ? option.zhLabel : option.enLabel}
+                  </option>
+                {/each}
+              </select>
+            </label>
+
+            <label class="identity-field">
+              <span>{localized('直播频道 ID', 'Stream channel ID')}</span>
+              <input
+                bind:value={identityStreamChannelId}
+                type="text"
+                autocomplete="nickname"
+                placeholder={localized(
+                  '输入频道 ID，例如房间号或频道名',
+                  'Enter the channel ID, for example a room ID or channel name'
+                )}
+              />
+            </label>
+
+            <label class="identity-field">
+              <span>{localized('直播 URL', 'Stream URL')}</span>
+              <input
+                bind:value={identityStreamUrl}
+                type="url"
+                inputmode="url"
+                autocomplete="url"
+                placeholder={localized('输入完整直播链接', 'Enter the full stream URL')}
+              />
+            </label>
+
+            {#if identityStreamUrl.trim() && !activationStreamUrlValid}
+              <p class="identity-error">
+                {localized(
+                  '请输入有效的直播链接，必须以 http:// 或 https:// 开头。',
+                  'Enter a valid stream URL starting with http:// or https://.'
+                )}
+              </p>
+            {/if}
           {/if}
 
           <label class="identity-confirm">
@@ -1291,7 +1402,7 @@
         <p class="identity-error">{identityError}</p>
       {/if}
 
-      {#if identitySuccess}
+      {#if identitySuccess && identityState.kind !== 'ready'}
         <p class="identity-success">{identitySuccess}</p>
       {/if}
     </section>
@@ -1517,6 +1628,16 @@
   }
 
   .identity-field input {
+    width: 100%;
+    padding: 0.72rem 0.82rem;
+    border-radius: 2px;
+    border: 1px solid rgba(200, 148, 55, 0.24);
+    background: rgba(10, 6, 4, 0.72);
+    color: rgba(251, 240, 220, 0.96);
+    font-size: 0.95rem;
+  }
+
+  .identity-field select {
     width: 100%;
     padding: 0.72rem 0.82rem;
     border-radius: 2px;

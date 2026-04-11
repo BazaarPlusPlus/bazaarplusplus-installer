@@ -57,6 +57,7 @@ export interface StreamServiceStatus {
   started_at: string | null;
   effective_from: string | null;
   max_records: number;
+  excluded_record_ids: string[];
 }
 
 export interface StreamRecordSummary {

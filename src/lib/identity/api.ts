@@ -18,6 +18,7 @@ import type {
   InstallationKeyPair,
   InstallationRecordPayload,
   InstallationPublicKey,
+  RegistrationStreamProfile,
   InstallerSessionResponse,
   LoadedIdentitySnapshot,
   PlayerObservationPayload
@@ -25,8 +26,17 @@ import type {
 
 export const DEFAULT_V3_API_BASE_URL = 'https://mod-api-v3.bazaarplusplus.com';
 
+export interface IdentityTransportResponse {
+  status: number;
+  body: string;
+}
+
 export interface IdentityApiDeps {
-  fetchImpl?: typeof fetch;
+  postJsonImpl?: (input: {
+    url: string;
+    body: string;
+    authorization?: string;
+  }) => Promise<IdentityTransportResponse>;
   readPlayerObservationImpl?: typeof readPlayerObservation;
   readInstallationRecordImpl?: typeof readInstallationRecord;
   readInstallationPrivateKeyImpl?: typeof readInstallationPrivateKey;
@@ -35,13 +45,18 @@ export interface IdentityApiDeps {
   generateInstallationKeyPairImpl?: () => Promise<InstallationKeyPair>;
 }
 
-async function readJsonOrError<T>(response: Response): Promise<T> {
-  const body = (await response.json().catch(() => null)) as
-    | { error?: string }
-    | T
-    | null;
+async function readJsonOrError<T>(
+  response: IdentityTransportResponse
+): Promise<T> {
+  const body = ((): { error?: string } | T | null => {
+    try {
+      return (JSON.parse(response.body || 'null') as { error?: string } | T | null) ?? null;
+    } catch {
+      return null;
+    }
+  })();
 
-  if (!response.ok) {
+  if (response.status < 200 || response.status >= 300) {
     const errorCode =
       body && typeof body === 'object' && 'error' in body
         ? String(body.error ?? 'identity_request_failed')
@@ -50,6 +65,28 @@ async function readJsonOrError<T>(response: Response): Promise<T> {
   }
 
   return body as T;
+}
+
+async function postJsonWithFetch(input: {
+  url: string;
+  body: string;
+  authorization?: string;
+}): Promise<IdentityTransportResponse> {
+  const response = await fetch(input.url, {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      ...(input.authorization
+        ? { authorization: `Bearer ${input.authorization}` }
+        : {})
+    },
+    body: input.body
+  });
+
+  return {
+    status: response.status,
+    body: await response.text()
+  };
 }
 
 export async function generateInstallationKeyPair(): Promise<InstallationKeyPair> {
@@ -107,7 +144,7 @@ function buildInstallationRecord(input: {
 }
 
 export function createIdentityApi(deps: IdentityApiDeps = {}) {
-  const fetchImpl = deps.fetchImpl ?? fetch;
+  const postJsonImpl = deps.postJsonImpl ?? postJsonWithFetch;
   const readPlayerObservationImpl =
     deps.readPlayerObservationImpl ?? readPlayerObservation;
   const readInstallationRecordImpl =
@@ -167,17 +204,20 @@ export function createIdentityApi(deps: IdentityApiDeps = {}) {
       gameRoot: string;
       observation: PlayerObservationPayload;
       password: string;
+      streamProfile: RegistrationStreamProfile;
       apiBaseUrl?: string;
     }): Promise<InstallationRecordPayload> {
       const apiBaseUrl = input.apiBaseUrl ?? DEFAULT_V3_API_BASE_URL;
       const keyPair = await generateInstallationKeyPairImpl();
-      const response = await fetchImpl(`${apiBaseUrl}/activate`, {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
+      const response = await postJsonImpl({
+        url: `${apiBaseUrl}/activate`,
         body: JSON.stringify({
           player_account_id: input.observation.player_account_id,
           player_username: input.observation.player_username,
           password: input.password,
+          stream_platform: input.streamProfile.stream_platform,
+          stream_channel_id: input.streamProfile.stream_channel_id,
+          stream_url: input.streamProfile.stream_url,
           installation_public_key: JSON.stringify(keyPair.publicKey)
         })
       });
@@ -207,9 +247,8 @@ export function createIdentityApi(deps: IdentityApiDeps = {}) {
       apiBaseUrl?: string;
     }): Promise<InstallationRecordPayload> {
       const apiBaseUrl = input.apiBaseUrl ?? DEFAULT_V3_API_BASE_URL;
-      const sessionResponse = await fetchImpl(`${apiBaseUrl}/login`, {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
+      const sessionResponse = await postJsonImpl({
+        url: `${apiBaseUrl}/login`,
         body: JSON.stringify({
           player_username: input.observation.player_username,
           password: input.password
@@ -224,12 +263,9 @@ export function createIdentityApi(deps: IdentityApiDeps = {}) {
       }
 
       const keyPair = await generateInstallationKeyPairImpl();
-      const installationResponse = await fetchImpl(`${apiBaseUrl}/installations`, {
-        method: 'POST',
-        headers: {
-          authorization: `Bearer ${session.session_token}`,
-          'content-type': 'application/json'
-        },
+      const installationResponse = await postJsonImpl({
+        url: `${apiBaseUrl}/installations`,
+        authorization: session.session_token,
         body: JSON.stringify({
           player_account_id: input.observation.player_account_id,
           installation_public_key: JSON.stringify(keyPair.publicKey)

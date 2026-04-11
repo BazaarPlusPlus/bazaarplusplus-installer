@@ -1,4 +1,5 @@
 use rusqlite::Connection;
+use rusqlite::{params_from_iter, types::Value};
 use serde::Serialize;
 use std::path::{Path, PathBuf};
 
@@ -45,44 +46,65 @@ impl RecordRepository {
     }
 
     pub fn load_latest(&self) -> Result<Option<StreamRecord>, String> {
-        self.load_latest_filtered(None)
+        self.load_latest_filtered(None, &[])
     }
 
-    pub fn load_latest_filtered(&self, from: Option<&str>) -> Result<Option<StreamRecord>, String> {
+    pub fn load_latest_filtered(
+        &self,
+        from: Option<&str>,
+        excluded_record_ids: &[String],
+    ) -> Result<Option<StreamRecord>, String> {
         let database_path = self.database_path()?;
 
-        Ok(load_latest_record_filtered(&database_path, from)?.map(|record| self.to_stream_record(record)))
+        Ok(load_latest_record_filtered(&database_path, from, excluded_record_ids)?
+            .map(|record| self.to_stream_record(record)))
     }
 
     pub fn load_recent(&self, limit: usize) -> Result<Vec<StreamRecord>, String> {
-        self.load_recent_filtered(None, limit)
+        self.load_recent_filtered(None, limit, &[])
     }
 
     pub fn load_recent_filtered(
         &self,
         from: Option<&str>,
         limit: usize,
+        excluded_record_ids: &[String],
     ) -> Result<Vec<StreamRecord>, String> {
         let database_path = self.database_path()?;
 
-        Ok(load_recent_records_filtered(&database_path, from, limit)?
+        Ok(load_recent_records_filtered(&database_path, from, limit, excluded_record_ids)?
+            .into_iter()
+            .map(|record| self.to_stream_record(record))
+            .collect())
+    }
+
+    pub fn load_screenshots(&self) -> Result<Vec<StreamRecord>, String> {
+        let database_path = self.database_path()?;
+
+        Ok(load_screenshot_records(&database_path)?
             .into_iter()
             .map(|record| self.to_stream_record(record))
             .collect())
     }
 
     pub fn load_image(&self, record_id: &str) -> Result<Option<(PathBuf, Vec<u8>)>, String> {
-        let database_path = self.database_path()?;
-
-        let Some(record) = load_record_by_id(&database_path, record_id)? else {
-            return Ok(None);
-        };
-        let Some(image_path) = self.resolve_image_path(record.image_path.as_deref()) else {
+        let Some(image_path) = self.load_image_path(record_id)? else {
             return Ok(None);
         };
         let bytes = std::fs::read(&image_path).map_err(|err| err.to_string())?;
 
         Ok(Some((image_path, bytes)))
+    }
+
+    pub fn load_image_path(&self, record_id: &str) -> Result<Option<PathBuf>, String> {
+        let database_path = self.database_path()?;
+
+        let Some(record) = load_record_by_id(&database_path, record_id)? else {
+            return Ok(None);
+        };
+        Ok(self
+            .resolve_image_path(record.image_path.as_deref())
+            .filter(|path| path.exists()))
     }
 
     fn database_path(&self) -> Result<PathBuf, String> {
@@ -93,13 +115,8 @@ impl RecordRepository {
         resolve_database_path(game_path)
     }
 
-    fn screenshots_directory(&self) -> Option<PathBuf> {
-        let game_path = self.game_path.as_ref()?;
-        Some(game_path.join(DATA_DIRECTORY).join(SCREENSHOTS_DIRECTORY))
-    }
-
     fn resolve_image_path(&self, raw_path: Option<&str>) -> Option<PathBuf> {
-        resolve_record_image_path(self.screenshots_directory(), raw_path)
+        resolve_record_image_path(self.game_path.clone(), raw_path)
     }
 
     fn to_stream_record(&self, record: DatabaseRecord) -> StreamRecord {
@@ -110,7 +127,9 @@ impl RecordRepository {
 
         let title = record.hero;
         let subtitle = match (record.wins, record.battle_count) {
-            (Some(wins), Some(battles)) => format!("{} · {}W · {} battles", record.game_mode, wins, battles),
+            (Some(wins), Some(battles)) => {
+                format!("{} · {}W · {} battles", record.game_mode, wins, battles)
+            }
             (Some(wins), None) => format!("{} · {}W", record.game_mode, wins),
             (None, Some(battles)) => format!("{} · {} battles", record.game_mode, battles),
             (None, None) => record.game_mode,
@@ -152,7 +171,7 @@ pub fn resolve_database_path(game_path: &Path) -> Result<PathBuf, String> {
 }
 
 pub fn resolve_record_image_path(
-    screenshots_directory: Option<PathBuf>,
+    game_path: Option<PathBuf>,
     raw_path: Option<&str>,
 ) -> Option<PathBuf> {
     let raw_path = raw_path?.trim();
@@ -165,19 +184,33 @@ pub fn resolve_record_image_path(
         return Some(candidate);
     }
 
-    let screenshots_directory = screenshots_directory?;
-    Some(screenshots_directory.join(candidate))
+    let game_path = game_path?;
+    let screenshots_directory = game_path.join(DATA_DIRECTORY).join(SCREENSHOTS_DIRECTORY);
+    let from_screenshots = Some(screenshots_directory.join(&candidate));
+    if let Some(path) = from_screenshots.as_ref().filter(|path| path.exists()) {
+        return Some(path.clone());
+    }
+
+    from_screenshots
 }
 
 pub(crate) fn load_latest_record(database_path: &Path) -> Result<Option<DatabaseRecord>, String> {
-    load_latest_record_filtered(database_path, None)
+    load_latest_record_filtered(database_path, None, &[])
 }
 
 pub(crate) fn load_latest_record_filtered(
     database_path: &Path,
     from: Option<&str>,
+    excluded_record_ids: &[String],
 ) -> Result<Option<DatabaseRecord>, String> {
-    let records = load_run_records(database_path, from, 1, None)?;
+    let records = load_run_records(
+        database_path,
+        from,
+        Some(1),
+        false,
+        None,
+        excluded_record_ids,
+    )?;
     Ok(records.into_iter().next())
 }
 
@@ -185,79 +218,83 @@ pub(crate) fn load_recent_records(
     database_path: &Path,
     limit: usize,
 ) -> Result<Vec<DatabaseRecord>, String> {
-    load_recent_records_filtered(database_path, None, limit)
+    load_recent_records_filtered(database_path, None, limit, &[])
 }
 
 pub(crate) fn load_recent_records_filtered(
     database_path: &Path,
     from: Option<&str>,
     limit: usize,
+    excluded_record_ids: &[String],
 ) -> Result<Vec<DatabaseRecord>, String> {
-    load_run_records(database_path, from, limit, None)
+    load_run_records(database_path, from, Some(limit), false, None, excluded_record_ids)
+}
+
+pub(crate) fn load_screenshot_records(database_path: &Path) -> Result<Vec<DatabaseRecord>, String> {
+    load_run_records(database_path, None, None, true, None, &[])
 }
 
 pub(crate) fn load_record_by_id(
     database_path: &Path,
     record_id: &str,
 ) -> Result<Option<DatabaseRecord>, String> {
-    let records = load_run_records(database_path, None, 1, Some(record_id))?;
+    let records = load_run_records(database_path, None, Some(1), false, Some(record_id), &[])?;
     Ok(records.into_iter().next())
 }
 
 fn load_run_records(
     database_path: &Path,
     from: Option<&str>,
-    limit: usize,
+    limit: Option<usize>,
+    require_image: bool,
     record_id: Option<&str>,
+    excluded_record_ids: &[String],
 ) -> Result<Vec<DatabaseRecord>, String> {
     if !database_path.exists() {
         return Ok(Vec::new());
     }
 
     let conn = Connection::open(database_path).map_err(|err| err.to_string())?;
-    let query = build_run_records_query(from.is_some(), record_id.is_some());
+    let query = build_run_records_query(
+        from.is_some(),
+        record_id.is_some(),
+        require_image,
+        excluded_record_ids.len(),
+    );
     let mut stmt = conn.prepare(&query).map_err(|err| err.to_string())?;
+    let limit_value = limit
+        .map(|value| value.min(i64::MAX as usize) as i64)
+        .unwrap_or(-1);
+    let mut params: Vec<Value> = Vec::new();
+
+    if let Some(from) = from {
+      params.push(Value::Text(from.to_string()));
+    }
+    if let Some(record_id) = record_id {
+      params.push(Value::Text(record_id.to_string()));
+    }
+    for record_id in excluded_record_ids {
+      params.push(Value::Text(record_id.clone()));
+    }
+    params.push(Value::Integer(limit_value));
 
     let mut records = Vec::new();
-    match (from, record_id) {
-        (Some(from), Some(record_id)) => {
-            let rows = stmt
-                .query_map((from, record_id, limit as i64), map_database_record)
-                .map_err(|err| err.to_string())?;
-            for row in rows {
-                records.push(row.map_err(|err| err.to_string())?);
-            }
-        }
-        (Some(from), None) => {
-            let rows = stmt
-                .query_map((from, limit as i64), map_database_record)
-                .map_err(|err| err.to_string())?;
-            for row in rows {
-                records.push(row.map_err(|err| err.to_string())?);
-            }
-        }
-        (None, Some(record_id)) => {
-            let rows = stmt
-                .query_map((record_id, limit as i64), map_database_record)
-                .map_err(|err| err.to_string())?;
-            for row in rows {
-                records.push(row.map_err(|err| err.to_string())?);
-            }
-        }
-        (None, None) => {
-            let rows = stmt
-                .query_map([limit as i64], map_database_record)
-                .map_err(|err| err.to_string())?;
-            for row in rows {
-                records.push(row.map_err(|err| err.to_string())?);
-            }
-        }
+    let rows = stmt
+        .query_map(params_from_iter(params.iter()), map_database_record)
+        .map_err(|err| err.to_string())?;
+    for row in rows {
+        records.push(row.map_err(|err| err.to_string())?);
     }
 
     Ok(records)
 }
 
-fn build_run_records_query(has_from: bool, has_record_id: bool) -> String {
+fn build_run_records_query(
+    has_from: bool,
+    has_record_id: bool,
+    require_image: bool,
+    excluded_count: usize,
+) -> String {
     let mut filters = vec![
         "r.completed = 1".to_string(),
         "r.status = 'completed'".to_string(),
@@ -269,13 +306,22 @@ fn build_run_records_query(has_from: bool, has_record_id: bool) -> String {
         let record_index = if has_from { 2 } else { 1 };
         filters.push(format!("r.run_id = ?{record_index}"));
     }
+    if require_image {
+        filters.push(
+            "coalesce(ds.image_relative_path, fs.image_relative_path) is not null".to_string(),
+        );
+    }
+    if excluded_count > 0 {
+        let start_index = usize::from(has_from) + usize::from(has_record_id) + 1;
+        let placeholders = (0..excluded_count)
+            .map(|offset| format!("?{}", start_index + offset))
+            .collect::<Vec<_>>()
+            .join(", ");
+        filters.push(format!("r.run_id not in ({placeholders})"));
+    }
 
     let where_clause = filters.join(" and ");
-    let limit_index = match (has_from, has_record_id) {
-        (true, true) => 3,
-        (true, false) | (false, true) => 2,
-        (false, false) => 1,
-    };
+    let limit_index = usize::from(has_from) + usize::from(has_record_id) + excluded_count + 1;
 
     format!(
         "
@@ -359,8 +405,8 @@ fn map_database_record(row: &rusqlite::Row<'_>) -> rusqlite::Result<DatabaseReco
 #[cfg(test)]
 mod tests {
     use super::{
-        load_latest_record, load_recent_records_filtered, resolve_record_image_path, RecordRepository,
-        DATABASE_FILE_NAME,
+        load_latest_record, load_recent_records_filtered, load_screenshot_records,
+        resolve_record_image_path, RecordRepository, DATABASE_FILE_NAME,
     };
     use std::path::PathBuf;
 
@@ -496,18 +542,35 @@ mod tests {
 
     #[test]
     fn resolve_record_image_path_supports_relative_and_absolute_inputs() {
-        let screenshots_dir = Some(PathBuf::from("/tmp/BazaarPlusPlus/Screenshots"));
-
-        let relative =
-            resolve_record_image_path(screenshots_dir.clone(), Some("match-1.png")).unwrap();
+        let game_path = Some(PathBuf::from("/tmp/TheBazaar"));
+        let relative = resolve_record_image_path(game_path.clone(), Some("match-1.png")).unwrap();
         let absolute = resolve_record_image_path(
-            screenshots_dir,
+            game_path,
             Some("/tmp/BazaarPlusPlus/Screenshots/match-2.png"),
         )
         .unwrap();
 
-        assert_eq!(relative, PathBuf::from("/tmp/BazaarPlusPlus/Screenshots/match-1.png"));
-        assert_eq!(absolute, PathBuf::from("/tmp/BazaarPlusPlus/Screenshots/match-2.png"));
+        assert_eq!(
+            relative,
+            PathBuf::from("/tmp/TheBazaar/BazaarPlusPlus/Screenshots/match-1.png")
+        );
+        assert_eq!(
+            absolute,
+            PathBuf::from("/tmp/BazaarPlusPlus/Screenshots/match-2.png")
+        );
+    }
+
+    #[test]
+    fn resolve_record_image_path_supports_bazaarplusplus_screenshots_directory() {
+        let temp_dir = tempfile::tempdir().unwrap();
+        let game_path = temp_dir.path().join("TheBazaar");
+        let screenshots_dir = game_path.join("BazaarPlusPlus").join("Screenshots");
+        std::fs::create_dir_all(&screenshots_dir).unwrap();
+        std::fs::write(screenshots_dir.join("match-1.png"), b"png").unwrap();
+
+        let resolved = resolve_record_image_path(Some(game_path), Some("match-1.png")).unwrap();
+
+        assert_eq!(resolved, screenshots_dir.join("match-1.png"));
     }
 
     #[test]
@@ -605,10 +668,65 @@ mod tests {
         )
         .unwrap();
 
-        let records = load_recent_records_filtered(temp.path(), Some("2026-04-11T20:30:00+00:00"), 5)
-            .unwrap();
+        let records =
+            load_recent_records_filtered(temp.path(), Some("2026-04-11T20:30:00+00:00"), 5, &[])
+                .unwrap();
 
         assert_eq!(records.len(), 1);
         assert_eq!(records[0].id, "run-3");
+    }
+
+    #[test]
+    fn recent_records_can_exclude_selected_run_ids() {
+        let temp = tempfile::NamedTempFile::new().unwrap();
+        let conn = rusqlite::Connection::open(temp.path()).unwrap();
+        create_stream_tables(&conn);
+        conn.execute(
+            "insert into runs (run_id, started_at_utc, last_seen_at_utc, status, completed, hero, game_mode, victories, losses, ended_at_utc)
+             values
+              ('run-1', '2026-04-11T18:00:00+00:00', '2026-04-11T19:00:00+00:00', 'completed', 1, 'Mak', 'Ranked', 1, 1, '2026-04-11T19:00:00+00:00'),
+              ('run-2', '2026-04-11T19:00:00+00:00', '2026-04-11T20:00:00+00:00', 'completed', 1, 'Vanessa', 'Ranked', 2, 2, '2026-04-11T20:00:00+00:00'),
+              ('run-3', '2026-04-11T20:00:00+00:00', '2026-04-11T21:00:00+00:00', 'completed', 1, 'Pygmalien', 'Ranked', 3, 3, '2026-04-11T21:00:00+00:00')",
+            [],
+        )
+        .unwrap();
+
+        let records = load_recent_records_filtered(
+            temp.path(),
+            None,
+            5,
+            &["run-2".to_string()],
+        )
+        .unwrap();
+
+        assert_eq!(records.len(), 2);
+        assert_eq!(records[0].id, "run-3");
+        assert_eq!(records[1].id, "run-1");
+    }
+
+    #[test]
+    fn screenshot_records_only_include_rows_with_images() {
+        let temp = tempfile::NamedTempFile::new().unwrap();
+        let conn = rusqlite::Connection::open(temp.path()).unwrap();
+        create_stream_tables(&conn);
+        conn.execute(
+            "insert into runs (run_id, started_at_utc, last_seen_at_utc, status, completed, hero, game_mode, victories, losses, ended_at_utc)
+             values
+              ('run-1', '2026-04-11T18:00:00+00:00', '2026-04-11T19:00:00+00:00', 'completed', 1, 'Mak', 'Ranked', 1, 1, '2026-04-11T19:00:00+00:00'),
+              ('run-2', '2026-04-11T19:00:00+00:00', '2026-04-11T20:00:00+00:00', 'completed', 1, 'Vanessa', 'Ranked', 2, 2, '2026-04-11T20:00:00+00:00')",
+            [],
+        )
+        .unwrap();
+        conn.execute(
+            "insert into run_screenshots (screenshot_id, run_id, battle_id, capture_source, is_primary, image_relative_path, captured_at_local, captured_at_utc, day, victories_at_capture)
+             values ('shot-1', 'run-1', null, 'end_of_run_auto', 1, 'match-1.png', '2026-04-12T03:00:00+08:00', '2026-04-11T19:00:00+00:00', 10, 1)",
+            [],
+        )
+        .unwrap();
+
+        let records = load_screenshot_records(temp.path()).unwrap();
+
+        assert_eq!(records.len(), 1);
+        assert_eq!(records[0].id, "run-1");
     }
 }

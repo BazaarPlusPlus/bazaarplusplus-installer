@@ -18,6 +18,7 @@ pub struct StreamServiceStatus {
     pub started_at: Option<String>,
     pub effective_from: Option<String>,
     pub max_records: usize,
+    pub excluded_record_ids: Vec<String>,
 }
 
 impl Default for StreamServiceStatus {
@@ -33,6 +34,7 @@ impl Default for StreamServiceStatus {
             started_at: None,
             effective_from: None,
             max_records: DEFAULT_MAX_RECORDS,
+            excluded_record_ids: Vec::new(),
         }
     }
 }
@@ -80,10 +82,15 @@ impl StreamRuntimeState {
         &self,
         manual_from: Option<String>,
         max_records: usize,
+        excluded_record_ids: Vec<String>,
     ) -> StreamServiceStatus {
         let mut inner = self.inner.lock().expect("stream runtime poisoned");
         inner.status.manual_from = manual_from.filter(|value| !value.trim().is_empty());
         inner.status.max_records = clamp_max_records(max_records);
+        inner.status.excluded_record_ids = excluded_record_ids
+            .into_iter()
+            .filter(|value| !value.trim().is_empty())
+            .collect();
         update_effective_from(&mut inner.status);
         inner.status.clone()
     }
@@ -154,10 +161,12 @@ mod tests {
             started_at: Some("2026-04-11T21:00:00+08:00".to_string()),
             effective_from: Some("2026-04-11T20:00:00+08:00".to_string()),
             max_records: 8,
+            excluded_record_ids: vec!["run-2".to_string()],
             ..StreamServiceStatus::default()
         };
 
         assert_eq!(status.max_records, 8);
+        assert_eq!(status.excluded_record_ids, vec!["run-2"]);
         assert_eq!(
             status.effective_from.as_deref(),
             Some("2026-04-11T20:00:00+08:00")
@@ -168,11 +177,12 @@ mod tests {
     fn runtime_state_uses_started_at_when_manual_filter_is_empty() {
         let state = super::StreamRuntimeState::default();
 
-        state.update_filters(None, 9);
+        state.update_filters(None, 9, vec!["run-4".to_string()]);
         state.mark_started("2026-04-11T21:00:00+08:00".to_string());
 
         let snapshot = state.snapshot();
         assert_eq!(snapshot.max_records, 9);
         assert_eq!(snapshot.effective_from, None);
+        assert_eq!(snapshot.excluded_record_ids, vec!["run-4"]);
     }
 }

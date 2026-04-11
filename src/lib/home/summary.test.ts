@@ -25,7 +25,8 @@ test('createHomeSummary marks stream mode active when service is running', () =>
       manual_from: null,
       started_at: '2026-04-11T21:00:00+08:00',
       effective_from: '2026-04-11T21:00:00+08:00',
-      max_records: 5
+      max_records: 5,
+      excluded_record_ids: []
     }
   });
 
@@ -46,7 +47,8 @@ test('createHomeSummary shows install guidance when BazaarPlusPlus is missing', 
       manual_from: null,
       started_at: null,
       effective_from: null,
-      max_records: 5
+      max_records: 5,
+      excluded_record_ids: []
     }
   });
 

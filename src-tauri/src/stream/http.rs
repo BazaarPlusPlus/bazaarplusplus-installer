@@ -1,6 +1,7 @@
 use super::overlay_settings::{validate_crop_settings, OverlayCropSettings, OverlaySettingsStore};
 use super::records::RecordRepository;
 use super::state::StreamRuntimeState;
+use axum::http::StatusCode;
 use axum::{
     extract::{Path, Query, State},
     http::{header, HeaderValue},
@@ -8,7 +9,6 @@ use axum::{
     routing::get,
     Json, Router,
 };
-use axum::http::StatusCode;
 use image::{DynamicImage, ImageFormat};
 use include_dir::{include_dir, Dir};
 use serde::{Deserialize, Serialize};
@@ -129,7 +129,10 @@ async fn latest_record(State(app_state): State<HttpAppState>) -> Response {
     let status = app_state.runtime.snapshot();
     match app_state
         .records
-        .load_latest_filtered(status.effective_from.as_deref())
+        .load_latest_filtered(
+            status.effective_from.as_deref(),
+            &status.excluded_record_ids,
+        )
     {
         Ok(record) => Json(record).into_response(),
         Err(message) => (StatusCode::INTERNAL_SERVER_ERROR, message).into_response(),
@@ -144,7 +147,11 @@ async fn recent_records(
     let limit = query.limit.unwrap_or(status.max_records).clamp(1, 20);
     match app_state
         .records
-        .load_recent_filtered(status.effective_from.as_deref(), limit)
+        .load_recent_filtered(
+            status.effective_from.as_deref(),
+            limit,
+            &status.excluded_record_ids,
+        )
     {
         Ok(records) => Json(records).into_response(),
         Err(message) => (StatusCode::INTERNAL_SERVER_ERROR, message).into_response(),
@@ -221,14 +228,8 @@ async fn record_strip_image(
 
     (
         [
-            (
-                header::CONTENT_TYPE,
-                HeaderValue::from_static("image/png"),
-            ),
-            (
-                header::CACHE_CONTROL,
-                HeaderValue::from_static("no-store"),
-            ),
+            (header::CONTENT_TYPE, HeaderValue::from_static("image/png")),
+            (header::CACHE_CONTROL, HeaderValue::from_static("no-store")),
         ],
         strip_bytes,
     )
@@ -239,7 +240,11 @@ fn resolve_strip_crop(
     query: &StripPreviewQuery,
     app_state: &HttpAppState,
 ) -> Result<OverlayCropSettings, String> {
-    if query.left.is_some() || query.top.is_some() || query.width.is_some() || query.height.is_some() {
+    if query.left.is_some()
+        || query.top.is_some()
+        || query.width.is_some()
+        || query.height.is_some()
+    {
         let defaults = OverlayCropSettings::default();
         return validate_crop_settings(OverlayCropSettings {
             left: query.left.unwrap_or(defaults.left),
@@ -275,7 +280,8 @@ fn overlay_cache_directory() -> PathBuf {
 }
 
 fn sanitized_cache_name(value: &str) -> String {
-    value.chars()
+    value
+        .chars()
         .map(|ch| match ch {
             'a'..='z' | 'A'..='Z' | '0'..='9' | '-' | '_' => ch,
             _ => '_',
@@ -283,7 +289,11 @@ fn sanitized_cache_name(value: &str) -> String {
         .collect()
 }
 
-fn crop_cache_path(record_id: &str, source_path: &FsPath, crop: OverlayCropSettings) -> Result<PathBuf, String> {
+fn crop_cache_path(
+    record_id: &str,
+    source_path: &FsPath,
+    crop: OverlayCropSettings,
+) -> Result<PathBuf, String> {
     let metadata = std::fs::metadata(source_path).map_err(|err| {
         format!(
             "Failed to read source image metadata from {}: {err}",
@@ -358,15 +368,22 @@ fn crop_strip_image(source_bytes: &[u8], crop: OverlayCropSettings) -> Result<Ve
     Ok(output.into_inner())
 }
 
-fn crop_dynamic_image(image: DynamicImage, crop: OverlayCropSettings) -> Result<DynamicImage, String> {
+fn crop_dynamic_image(
+    image: DynamicImage,
+    crop: OverlayCropSettings,
+) -> Result<DynamicImage, String> {
     let width = image.width();
     let height = image.height();
     if width == 0 || height == 0 {
         return Err("Overlay source image is empty.".to_string());
     }
 
-    let left = ((width as f64) * crop.left).floor().clamp(0.0, (width - 1) as f64) as u32;
-    let top = ((height as f64) * crop.top).floor().clamp(0.0, (height - 1) as f64) as u32;
+    let left = ((width as f64) * crop.left)
+        .floor()
+        .clamp(0.0, (width - 1) as f64) as u32;
+    let top = ((height as f64) * crop.top)
+        .floor()
+        .clamp(0.0, (height - 1) as f64) as u32;
     let crop_width = ((width as f64) * crop.width)
         .round()
         .clamp(1.0, (width - left) as f64) as u32;

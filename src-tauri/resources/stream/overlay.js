@@ -389,6 +389,16 @@ async function refresh() {
 
     const nextKey = getListKey(records);
     const updated = nextKey !== lastListKey;
+
+    if (
+      !updated &&
+      root?.classList.contains('live') &&
+      list &&
+      !list.hidden
+    ) {
+      return;
+    }
+
     lastListKey = nextKey;
     renderRecords(records, { updated });
   } catch (error) {

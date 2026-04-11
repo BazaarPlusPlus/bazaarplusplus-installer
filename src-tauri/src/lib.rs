@@ -12,14 +12,15 @@ use commands::{
     detect::{detect_dotnet_runtime, detect_environment, verify_game_path},
     game::detect_bazaar_running,
     identity::{
-        read_installation_private_key, read_installation_record, read_player_observation,
-        write_installation_private_key, write_installation_record,
+        post_identity_json, read_installation_private_key, read_installation_record,
+        read_player_observation, write_installation_private_key, write_installation_record,
     },
     steam::{close_steam, detect_steam_running},
     stream::{
         get_stream_overlay_crop_settings, get_stream_service_status,
-        import_stream_overlay_crop_code, save_stream_overlay_crop_settings,
-        start_stream_service, stop_stream_service, update_stream_service_filters,
+        import_stream_overlay_crop_code, list_stream_screenshot_records,
+        reveal_stream_record_image, save_stream_overlay_crop_settings, start_stream_service,
+        stop_stream_service, update_stream_service_filters,
     },
     supporters::load_supporters,
     vdf::patch_launch_options,
@@ -62,6 +63,7 @@ pub fn run() {
             read_installation_private_key,
             write_installation_record,
             write_installation_private_key,
+            post_identity_json,
             install_bepinex,
             repair_bpp,
             get_legacy_record_directory_info,
@@ -75,6 +77,8 @@ pub fn run() {
             get_stream_overlay_crop_settings,
             save_stream_overlay_crop_settings,
             import_stream_overlay_crop_code,
+            list_stream_screenshot_records,
+            reveal_stream_record_image,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

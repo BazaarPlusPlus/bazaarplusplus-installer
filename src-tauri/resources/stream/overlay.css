@@ -52,14 +52,27 @@ body {
 }
 
 .overlay-header {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
-  justify-content: space-between;
   gap: 0.6rem;
   padding: 0 0.15rem;
 }
 
-.header-label,
+.header-copy {
+  justify-self: start;
+}
+
+.header-brand {
+  font-family: 'Cinzel', 'Palatino Linotype', 'Book Antiqua', Georgia, serif;
+  font-size: 1.32rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(242, 227, 191, 0.94);
+  text-align: center;
+  white-space: nowrap;
+}
+
 .header-signal,
 .status-line,
 .empty-title,
@@ -72,24 +85,17 @@ body {
   margin: 0;
 }
 
-.header-label {
-  font-size: 0.52rem;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: rgba(217, 170, 88, 0.86);
-}
-
-.header-signal,
 .status-line {
   font-size: 0.56rem;
   line-height: 1.25;
-  color: var(--bpp-dim);
+  color: rgba(210, 188, 146, 0.7);
 }
 
 .status-row {
   display: flex;
   align-items: center;
   gap: 0.32rem;
+  justify-self: end;
 }
 
 .status-dot {
@@ -236,10 +242,6 @@ body {
   height: auto;
 }
 
-.overlay.empty .header-signal {
-  color: rgba(228, 210, 181, 0.68);
-}
-
 .overlay.live .status-dot {
   background: var(--bpp-live);
   box-shadow:
@@ -247,8 +249,7 @@ body {
     0 0 10px rgba(127, 194, 103, 0.24);
 }
 
-.overlay.live .status-line,
-.overlay.live .header-signal {
+.overlay.live .status-line {
   color: rgba(213, 234, 200, 0.92);
 }
 
@@ -259,8 +260,7 @@ body {
     0 0 10px rgba(221, 111, 98, 0.2);
 }
 
-.overlay.stale .status-line,
-.overlay.stale .header-signal {
+.overlay.stale .status-line {
   color: rgba(255, 204, 194, 0.92);
 }
 
@@ -308,6 +308,16 @@ body {
   .overlay {
     width: calc(100vw - 0.3rem);
     margin: 0.15rem;
+  }
+
+  .overlay-header {
+    grid-template-columns: 1fr;
+    justify-items: start;
+  }
+
+  .header-brand,
+  .status-row {
+    justify-self: start;
   }
 
   .run-card {

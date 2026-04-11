@@ -80,6 +80,7 @@ pub async fn start(
         started_at: status_with_start.started_at,
         effective_from: status_with_start.effective_from,
         max_records: status_with_start.max_records,
+        excluded_record_ids: status_with_start.excluded_record_ids,
     };
     state.set_running(
         status.clone(),

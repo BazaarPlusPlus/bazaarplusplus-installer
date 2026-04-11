@@ -155,8 +155,8 @@ pub fn validate_crop_settings(crop: OverlayCropSettings) -> Result<OverlayCropSe
 
 pub fn encode_crop_code(crop: OverlayCropSettings) -> String {
     let document = OverlayCropDocument { v: 1, crop };
-    let raw = serde_json::to_vec(&document)
-        .expect("overlay crop document should serialize to JSON");
+    let raw =
+        serde_json::to_vec(&document).expect("overlay crop document should serialize to JSON");
     STANDARD.encode(raw)
 }
 
