@@ -10,6 +10,7 @@
   export let cropCodeInput = '';
   export let cropCodeMessage = '';
   export let copyMessage = '';
+  export let copyMessageTone: 'success' | 'error' | null = null;
   export let onStart: () => void | Promise<void>;
   export let onStop: () => void | Promise<void>;
   export let onCopyUrl: () => void | Promise<void>;
@@ -31,17 +32,20 @@
   $: statusBadge = status.running ? (isZh ? '运行中' : 'Live') : isZh ? '空闲' : 'Idle';
   $: utilityActions = [
     {
-      label: isZh ? '复制 OBS 地址' : 'Copy OBS URL',
+      label: copyMessage || (isZh ? '复制 OBS 地址' : 'Copy OBS URL'),
+      state: copyMessageTone,
       disabled: !pageState.canCopyUrl,
       action: onCopyUrl
     },
     {
       label: isZh ? '打开预览页' : 'Open Preview',
+      state: null,
       disabled: !pageState.canOpenPreview,
       action: onOpenPreview
     },
     {
       label: isZh ? '打开校准页' : 'Open Calibration',
+      state: null,
       disabled: !pageState.canOpenPreview,
       action: onOpenCalibration
     },
@@ -53,6 +57,7 @@
         : isZh
           ? '导入裁切代码'
           : 'Import Crop Code',
+      state: null,
       disabled: busy,
       action: () => {
         importPanelOpen = !importPanelOpen;
@@ -78,30 +83,15 @@
     <div class="heading-copy">
       <p class="eyebrow">{eyebrow}</p>
       <h2>{title}</h2>
-      <p class="summary">
-        {isZh
-          ? '先启动本地服务，再把生成的地址粘到 OBS 浏览器源。'
-          : 'Start the local service first, then paste the generated URL into OBS as a browser source.'}
-      </p>
     </div>
 
     <span class:online={status.running} class="badge">{statusBadge}</span>
-  </div>
-
-  <div class="detail-grid">
-    <div class="detail-card">
-      <p class="detail-label">{isZh ? '当前状态' : 'Status'}</p>
-      <p class="detail">{pageState.portMessage}</p>
-    </div>
   </div>
 
   {#if status.overlay_url}
     <div class="url-shell">
       <p class="detail-label">{isZh ? 'OBS 浏览器源地址' : 'OBS browser source URL'}</p>
       <div class="url-box">{status.overlay_url}</div>
-      {#if copyMessage}
-        <p class="copy-message">{copyMessage}</p>
-      {/if}
     </div>
   {/if}
 
@@ -119,7 +109,13 @@
 
       <div class="utility-actions">
         {#each utilityActions as item}
-          <button class="secondary" disabled={item.disabled} on:click={item.action}>
+          <button
+            class="secondary"
+            class:is-success={item.state === 'success'}
+            class:is-error={item.state === 'error'}
+            disabled={item.disabled}
+            on:click={item.action}
+          >
             {item.label}
           </button>
         {/each}
@@ -200,9 +196,7 @@
   }
 
   h2,
-  .detail,
   .error,
-  .summary,
   .detail-label {
     margin: 0;
   }
@@ -210,12 +204,6 @@
   h2 {
     font-size: 1.22rem;
     color: #f0e2bf;
-  }
-
-  .summary {
-    max-width: 42rem;
-    color: rgba(215, 197, 161, 0.72);
-    line-height: 1.45;
   }
 
   .badge {
@@ -237,18 +225,6 @@
     background: rgba(192, 136, 52, 0.12);
   }
 
-  .detail {
-    color: rgba(231, 220, 196, 0.74);
-    line-height: 1.5;
-  }
-
-  .detail-grid {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 0.7rem;
-  }
-
-  .detail-card,
   .url-shell {
     display: grid;
     gap: 0.32rem;
@@ -270,12 +246,6 @@
     font-family: 'Fira Code', monospace;
     font-size: 0.8rem;
     word-break: break-all;
-  }
-
-  .copy-message {
-    margin: 0;
-    color: #f1ddaa;
-    font-size: 0.76rem;
   }
 
   .error {
@@ -371,6 +341,22 @@
     background: rgba(192, 138, 54, 0.05);
   }
 
+  button.secondary.is-success {
+    border-color: rgba(216, 164, 82, 0.3);
+    background: linear-gradient(
+      180deg,
+      rgba(199, 145, 58, 0.2),
+      rgba(116, 68, 24, 0.22)
+    );
+    color: #f3d38d;
+  }
+
+  button.secondary.is-error {
+    border-color: rgba(214, 118, 104, 0.28);
+    background: rgba(132, 48, 37, 0.2);
+    color: #ffcbc0;
+  }
+
   button.primary {
     background: linear-gradient(
       180deg,
@@ -385,8 +371,7 @@
     cursor: not-allowed;
   }
 
-  @media (max-width: 820px) {
-    .detail-grid,
+  @media (max-width: 520px) {
     .utility-actions {
       grid-template-columns: 1fr;
     }

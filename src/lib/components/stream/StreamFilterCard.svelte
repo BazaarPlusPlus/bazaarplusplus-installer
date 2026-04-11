@@ -1,19 +1,52 @@
 <script lang="ts">
   import { locale } from '$lib/locale';
-  import type { StreamPageState } from '$lib/stream/state';
-  import type { StreamServiceStatus } from '$lib/types';
+  import { toDateTimeLocalValue } from '$lib/stream/state';
+  import type { StreamRecordSummary, StreamServiceStatus } from '$lib/types';
 
   export let status: StreamServiceStatus;
-  export let pageState: StreamPageState;
   export let manualFromInput = '';
   export let maxRecordsInput = 5;
+  export let selectableRecords: StreamRecordSummary[] = [];
+  export let excludedRecordIds: string[] = [];
   export let saving = false;
   export let onManualFromInput: (value: string) => void;
   export let onMaxRecordsInput: (value: number) => void;
+  export let onExcludedRecordIdsInput: (value: string[]) => void | Promise<void>;
+  export let onRevealRecordImage: (recordId: string) => void | Promise<void>;
   export let onSave: () => void | Promise<void>;
-  export let onUseStreamStart: () => void | Promise<void>;
 
+  let manualFromField: HTMLInputElement | null = null;
   $: isZh = $locale === 'zh';
+  $: effectiveTimeInputValue = toDateTimeLocalValue(
+    status.manual_from ?? status.started_at
+  );
+  let timeFieldFocused = false;
+
+  function openDateTimePicker() {
+    manualFromField?.focus();
+    manualFromField?.showPicker?.();
+  }
+
+  function isRecordSelected(recordId: string): boolean {
+    return !excludedRecordIds.includes(recordId);
+  }
+
+  async function toggleRecord(recordId: string, selected: boolean) {
+    if (selected) {
+      await onExcludedRecordIdsInput(
+        excludedRecordIds.filter((value) => value !== recordId)
+      );
+      return;
+    }
+
+    await onExcludedRecordIdsInput([...excludedRecordIds, recordId]);
+  }
+
+  async function setAllRecordsSelected(selected: boolean) {
+    await onExcludedRecordIdsInput(
+      selected ? [] : selectableRecords.map((record) => record.id)
+    );
+  }
 </script>
 
 <section class="card">
@@ -21,41 +54,32 @@
     <div class="heading-copy">
       <p class="eyebrow">{isZh ? '展示范围' : 'Display Range'}</p>
       <h2>{isZh ? '设置 overlay 展示范围' : 'Set overlay display range'}</h2>
-      <p class="summary">
-        {isZh
-          ? '设置从哪一个时间点开始读取记录，以及页面上最多保留多少条。'
-          : 'Choose where record playback starts and how many recent records the overlay keeps visible.'}
-      </p>
-    </div>
-    <span class="badge">
-      {isZh ? `当前上限 ${status.max_records} 条` : `Limit ${status.max_records}`}
-    </span>
-  </div>
-
-  <div class="context-grid">
-    <div class="context-card">
-      <p class="context-label">{isZh ? '当前起点' : 'Current start point'}</p>
-      <p class="detail">{pageState.effectiveFromMessage}</p>
-    </div>
-    <div class="context-card">
-      <p class="context-label">{isZh ? '当前数量' : 'Current count'}</p>
-      <p class="detail subtle">{pageState.maxRecordsMessage}</p>
     </div>
   </div>
 
   <div class="grid">
     <label class="field">
       <span>{isZh ? '开始时间' : 'Start time'}</span>
-      <input
-        type="datetime-local"
-        value={manualFromInput}
-        on:input={(event) => onManualFromInput(event.currentTarget.value)}
-      />
-      <small>
-        {isZh
-          ? '留空时将自动使用本次启动直播服务的时间。'
-          : 'Leave empty to follow the time when this stream service session starts.'}
-      </small>
+      <div class="time-field-shell">
+        <input
+          bind:this={manualFromField}
+          type="datetime-local"
+          value={manualFromInput}
+          on:click={openDateTimePicker}
+          on:focus={() => {
+            timeFieldFocused = true;
+          }}
+          on:blur={() => {
+            timeFieldFocused = false;
+          }}
+          on:input={(event) => onManualFromInput(event.currentTarget.value)}
+        />
+        {#if !manualFromInput && !timeFieldFocused && effectiveTimeInputValue}
+          <div class="time-field-overlay">
+            <span>{effectiveTimeInputValue.replace('T', ' ')}</span>
+          </div>
+        {/if}
+      </div>
     </label>
 
     <label class="field">
@@ -67,11 +91,6 @@
         value={maxRecordsInput}
         on:input={(event) => onMaxRecordsInput(Number(event.currentTarget.value))}
       />
-      <small>
-        {isZh
-          ? '服务端会限制在 1 到 50 条之间。'
-          : 'The backend clamps this between 1 and 50.'}
-      </small>
     </label>
   </div>
 
@@ -79,9 +98,53 @@
     <button class="primary" disabled={saving} on:click={onSave}>
       {isZh ? '保存展示范围' : 'Save Display Range'}
     </button>
-    <button disabled={saving || !status.started_at} on:click={onUseStreamStart}>
-      {isZh ? '恢复为本次开播时间' : 'Use Stream Start Time'}
-    </button>
+  </div>
+
+  <div class="selection-shell">
+    <div class="selection-head">
+      <div>
+        <p class="context-label">{isZh ? '选择展示的 run' : 'Select runs to show'}</p>
+      </div>
+      <div class="selection-actions">
+        <button type="button" class="secondary-action" on:click={() => setAllRecordsSelected(true)}>
+          {isZh ? '全选' : 'Select all'}
+        </button>
+        <button type="button" class="secondary-action" on:click={() => setAllRecordsSelected(false)}>
+          {isZh ? '全部隐藏' : 'Hide all'}
+        </button>
+      </div>
+    </div>
+
+    {#if selectableRecords.length === 0}
+      <p class="selection-empty">
+        {isZh
+          ? '当前还没有可选择的 run，完成几局后这里会自动出现。'
+          : 'No runs are available yet. Finish a few runs and they will appear here.'}
+      </p>
+    {:else}
+      <div class="selection-list">
+        {#each selectableRecords as record}
+          <label class:unchecked={!isRecordSelected(record.id)} class="selection-row">
+            <input
+              type="checkbox"
+              checked={isRecordSelected(record.id)}
+              on:change={(event) => toggleRecord(record.id, event.currentTarget.checked)}
+            />
+            <div class="selection-meta">
+              <strong>{record.title}</strong>
+              <span>{record.subtitle}</span>
+            </div>
+            <button
+              type="button"
+              class="locate-button"
+              on:click|stopPropagation={() => onRevealRecordImage(record.id)}
+            >
+              {isZh ? '定位截图' : 'Locate screenshot'}
+            </button>
+          </label>
+        {/each}
+      </div>
+    {/if}
   </div>
 </section>
 
@@ -116,9 +179,6 @@
 
   .eyebrow,
   h2,
-  .detail,
-  .badge,
-  .summary,
   .context-label {
     margin: 0;
   }
@@ -137,48 +197,6 @@
     color: #f0e2bf;
   }
 
-  .summary {
-    max-width: 42rem;
-    color: rgba(215, 197, 161, 0.72);
-    line-height: 1.45;
-  }
-
-  .badge {
-    flex: 0 0 auto;
-    min-width: 8rem;
-    padding: 0.4rem 0.7rem;
-    border-radius: 2px;
-    border: 1px solid rgba(190, 137, 59, 0.16);
-    color: rgba(231, 220, 194, 0.7);
-    background: rgba(192, 138, 54, 0.08);
-    font-family: 'Cinzel', serif;
-    font-size: 0.58rem;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-  }
-
-  .context-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.75rem;
-  }
-
-  .context-card {
-    display: grid;
-    gap: 0.32rem;
-    padding: 0.8rem 0.9rem;
-    border-radius: 2px;
-    border: 1px solid rgba(176, 126, 52, 0.12);
-    background: rgba(10, 7, 4, 0.58);
-  }
-
-  .context-label {
-    font-size: 0.68rem;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: rgba(213, 188, 145, 0.74);
-  }
-
   .grid {
     display: grid;
     grid-template-columns: minmax(0, 1.3fr) minmax(13rem, 0.9fr);
@@ -190,20 +208,13 @@
     gap: 0.42rem;
   }
 
+  .time-field-shell {
+    position: relative;
+  }
+
   .field span {
     color: #f0e2bf;
     font-size: 0.9rem;
-  }
-
-  .field small,
-  .detail {
-    color: rgba(231, 220, 196, 0.74);
-    line-height: 1.5;
-  }
-
-  .detail.subtle,
-  .field small {
-    color: rgba(199, 183, 152, 0.62);
   }
 
   input {
@@ -216,10 +227,127 @@
     font-size: 0.95rem;
   }
 
+  .time-field-overlay {
+    position: absolute;
+    inset: 1px 3rem 1px 1px;
+    display: flex;
+    align-items: center;
+    padding: 0.7rem 0.85rem;
+    color: #eccf92;
+    pointer-events: none;
+    background: rgba(8, 6, 4, 0.82);
+    border-radius: 2px;
+    line-height: 1;
+  }
+
+  input:focus {
+    outline: 1px solid rgba(216, 164, 82, 0.55);
+    border-color: rgba(216, 164, 82, 0.28);
+  }
+
   .actions {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: 1fr;
     gap: 0.55rem;
+  }
+
+  .selection-shell {
+    display: grid;
+    gap: 0.65rem;
+    padding: 0.85rem 0.9rem;
+    border-radius: 2px;
+    border: 1px solid rgba(176, 126, 52, 0.12);
+    background: rgba(10, 7, 4, 0.58);
+  }
+
+  .selection-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.75rem;
+    align-items: flex-start;
+  }
+
+  .selection-empty,
+  .selection-meta strong,
+  .selection-meta span {
+    margin: 0;
+  }
+
+  .selection-empty,
+  .selection-meta span {
+    color: rgba(215, 197, 161, 0.72);
+    line-height: 1.45;
+  }
+
+  .context-label {
+    font-size: 0.68rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(213, 188, 145, 0.74);
+  }
+
+  .selection-actions {
+    display: flex;
+    gap: 0.45rem;
+    flex-wrap: wrap;
+  }
+
+  .secondary-action {
+    width: auto;
+    min-height: 2rem;
+    padding: 0.45rem 0.75rem;
+    font-size: 0.56rem;
+    background: rgba(192, 138, 54, 0.05);
+  }
+
+  .selection-list {
+    display: grid;
+    gap: 0.5rem;
+    max-height: 16rem;
+    overflow: auto;
+    padding-right: 0.15rem;
+  }
+
+  .selection-row {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 0.7rem;
+    align-items: flex-start;
+    padding: 0.7rem 0.75rem;
+    border-radius: 2px;
+    border: 1px solid rgba(176, 126, 52, 0.12);
+    background: rgba(8, 6, 4, 0.7);
+  }
+
+  .selection-row.unchecked {
+    opacity: 0.6;
+  }
+
+  .selection-row input {
+    min-height: 0;
+    margin-top: 0.1rem;
+    accent-color: #c7913a;
+  }
+
+  .selection-meta {
+    display: grid;
+    gap: 0.16rem;
+    min-width: 0;
+  }
+
+  .selection-meta strong {
+    color: #f0e2bf;
+    font-size: 0.88rem;
+  }
+
+  .locate-button {
+    width: auto;
+    min-width: 7rem;
+    min-height: 2rem;
+    padding: 0.45rem 0.7rem;
+    font-size: 0.54rem;
+    background: rgba(192, 138, 54, 0.05);
+    white-space: nowrap;
   }
 
   button {
@@ -252,10 +380,22 @@
   }
 
   @media (max-width: 720px) {
-    .context-grid,
     .grid,
     .actions {
       grid-template-columns: 1fr;
+    }
+
+    .selection-head {
+      flex-direction: column;
+    }
+
+    .selection-row {
+      grid-template-columns: auto minmax(0, 1fr);
+    }
+
+    .locate-button {
+      width: 100%;
+      grid-column: 1 / -1;
     }
   }
 </style>

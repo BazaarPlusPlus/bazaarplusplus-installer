@@ -201,7 +201,7 @@ export const messages: Record<Locale, Record<MessageKey, string>> = {
     homeAboutHint: 'Project credits, dependencies, and support information.',
     streamTitle: 'Stream Mode',
     streamIntro:
-      'Run a localhost overlay service for OBS, keep the app minimized while live, and check whether recent records are flowing correctly.'
+      'Provide a localhost overlay for OBS and verify recent records are loading correctly.'
   },
   zh: {
     htmlLang: 'zh-CN',
@@ -302,7 +302,7 @@ export const messages: Record<Locale, Record<MessageKey, string>> = {
     homeAboutHint: '查看项目说明、依赖信息与支持入口。',
     streamTitle: '直播模式',
     streamIntro:
-      '为 OBS 启动本地 overlay 服务，在直播时把安装器缩到托盘，并确认最近战绩是否正常读出。'
+      '为 OBS 提供本地 overlay，并确认最近战绩读取正常。'
   }
 };
 
