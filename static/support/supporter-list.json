@@ -514,5 +514,13 @@
   {
     "name": "Misertilar",
     "tier": 3
+  },
+  {
+    "name":"蜥蜴君",
+    "tier": 4
+  },
+  {
+    "name": "优质睡眠持有者",
+    "tier": 4
   }
 ]
