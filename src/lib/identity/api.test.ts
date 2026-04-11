@@ -71,21 +71,13 @@ test('activateFirstAccount posts activate and persists local installation files'
   const installation = await api.activateFirstAccount({
     gameRoot: '/games/The Bazaar',
     observation,
-    password: 'hunter2',
-    streamProfile: {
-      stream_platform: 'Bilibili',
-      stream_channel_id: 'player_one_live',
-      stream_url: 'https://live.bilibili.com/10001'
-    }
+    password: 'hunter2'
   });
 
   assert.equal(installation.installation_id, 'inst_001');
   assert.equal(requests.length, 1);
   const requestBody = JSON.parse(requests[0].body);
   assert.equal(requestBody.player_account_id, observation.player_account_id);
-  assert.equal(requestBody.stream_platform, 'Bilibili');
-  assert.equal(requestBody.stream_channel_id, 'player_one_live');
-  assert.equal(requestBody.stream_url, 'https://live.bilibili.com/10001');
   assert.equal(writes.length, 2);
   assert.equal(writes[1]?.value, 'private-key');
 });

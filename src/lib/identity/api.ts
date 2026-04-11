@@ -18,7 +18,6 @@ import type {
   InstallationKeyPair,
   InstallationRecordPayload,
   InstallationPublicKey,
-  RegistrationStreamProfile,
   InstallerSessionResponse,
   LoadedIdentitySnapshot,
   PlayerObservationPayload
@@ -204,7 +203,6 @@ export function createIdentityApi(deps: IdentityApiDeps = {}) {
       gameRoot: string;
       observation: PlayerObservationPayload;
       password: string;
-      streamProfile: RegistrationStreamProfile;
       apiBaseUrl?: string;
     }): Promise<InstallationRecordPayload> {
       const apiBaseUrl = input.apiBaseUrl ?? DEFAULT_V3_API_BASE_URL;
@@ -215,9 +213,6 @@ export function createIdentityApi(deps: IdentityApiDeps = {}) {
           player_account_id: input.observation.player_account_id,
           player_username: input.observation.player_username,
           password: input.password,
-          stream_platform: input.streamProfile.stream_platform,
-          stream_channel_id: input.streamProfile.stream_channel_id,
-          stream_url: input.streamProfile.stream_url,
           installation_public_key: JSON.stringify(keyPair.publicKey)
         })
       });
