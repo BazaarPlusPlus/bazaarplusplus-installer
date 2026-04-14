@@ -9,6 +9,7 @@ const list = document.getElementById('overlay-list');
 let lastRecordKey = null;
 let rowResizeObserver = null;
 const requestedFrom = readRequestedFrom();
+let currentDisplayMode = 'current';
 
 function setClassNames(...tokens) {
   if (!root) {
@@ -181,6 +182,14 @@ function getHeroBadgeStyle(heroName) {
   };
 }
 
+function normalizeDisplayMode(value) {
+  if (value === 'hero' || value === 'herohalf') {
+    return value;
+  }
+
+  return 'current';
+}
+
 function getWinsBadgeAsset(wins, battles) {
   if (typeof wins !== 'number' || !Number.isFinite(wins) || wins < 0) {
     return '/assets/badges/wins/wins-0-mis.svg';
@@ -211,17 +220,34 @@ function getInfoBadgeAsset(heroKey, battles) {
   return `/assets/badges/info/info-${safeHeroKey}-${safeBattles}.svg`;
 }
 
+function getHeroModeAsset(heroKey, displayMode) {
+  const safeHeroKey = typeof heroKey === 'string' && heroKey ? heroKey : 'unk';
+  if (displayMode === 'hero') {
+    return `/assets/badges/heroes/hero-${safeHeroKey}.svg`;
+  }
+
+  return `/assets/badges/herohalf/herohalf-${safeHeroKey}.svg`;
+}
+
 function buildRowMarkup(record) {
   const title = escapeHtml(record?.title || 'Unknown hero');
   const stats = buildStats(record);
   const heroBadge = getHeroBadgeStyle(record?.title);
+  const secondBadgeSrc =
+    currentDisplayMode === 'current'
+      ? getInfoBadgeAsset(heroBadge.assetKey, stats.battles)
+      : getHeroModeAsset(heroBadge.assetKey, currentDisplayMode);
+  const secondBadgeAlt =
+    currentDisplayMode === 'current'
+      ? `${stats.battles ?? 'unknown'} battles with ${escapeHtml(heroBadge.shortCode)}`
+      : `${escapeHtml(title)} hero badge`;
   const scoreMarkup = `
-    <div class="meta-stack">
+    <div class="meta-stack mode-${currentDisplayMode}">
       <div class="metric-tile score-tile">
         <img class="metric-badge-svg" src="${getWinsBadgeAsset(stats.wins, stats.battles)}" alt="${stats.wins ?? 'unknown'} wins" loading="eager" />
       </div>
-      <div class="metric-tile info-tile">
-        <img class="metric-badge-svg" src="${getInfoBadgeAsset(heroBadge.assetKey, stats.battles)}" alt="${stats.battles ?? 'unknown'} battles with ${escapeHtml(heroBadge.shortCode)}" loading="eager" />
+      <div class="metric-tile secondary-tile">
+        <img class="metric-badge-svg" src="${secondBadgeSrc}" alt="${secondBadgeAlt}" loading="eager" />
       </div>
     </div>
   `;
@@ -374,9 +400,21 @@ function readRequestedFrom() {
   }
 }
 
+async function loadOverlaySettings() {
+  const response = await fetch('/api/overlay/crop-config', { cache: 'no-store' });
+  if (!response.ok) {
+    const message = (await response.text()).trim();
+    throw new Error(message || `unexpected status ${response.status}`);
+  }
+
+  const payload = await response.json();
+  return normalizeDisplayMode(payload?.display_mode);
+}
+
 async function refresh() {
   try {
     let records;
+    const settingsPromise = loadOverlaySettings().catch(() => currentDisplayMode);
 
     if (requestedFrom) {
       const endpoint = new URL('/api/records/list', window.location.origin);
@@ -398,6 +436,8 @@ async function refresh() {
       const record = await response.json();
       records = record && record.image_url ? [record] : [];
     }
+
+    currentDisplayMode = await settingsPromise;
 
     if (records.length === 0) {
       lastRecordKey = null;

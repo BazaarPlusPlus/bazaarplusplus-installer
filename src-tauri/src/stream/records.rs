@@ -46,7 +46,11 @@ impl OverlayRecordRepository {
         Self { game_path }
     }
 
-    pub fn load_record_at_offset(&self, from: Option<&str>, offset: usize) -> Result<Option<OverlayRecord>, String> {
+    pub fn load_record_at_offset(
+        &self,
+        from: Option<&str>,
+        offset: usize,
+    ) -> Result<Option<OverlayRecord>, String> {
         let database_path = self.database_path()?;
         Ok(load_latest_overlay_record(&database_path, from, offset)?
             .map(|row| self.to_overlay_record(row)))
@@ -57,7 +61,11 @@ impl OverlayRecordRepository {
         load_overlay_record_count(&database_path, from)
     }
 
-    pub fn load_record_list(&self, from: Option<&str>, limit: Option<usize>) -> Result<Vec<OverlayRecord>, String> {
+    pub fn load_record_list(
+        &self,
+        from: Option<&str>,
+        limit: Option<usize>,
+    ) -> Result<Vec<OverlayRecord>, String> {
         let database_path = self.database_path()?;
         Ok(load_overlay_record_list(&database_path, from, limit)?
             .into_iter()
@@ -357,7 +365,9 @@ limit ?2
 ",
             )
             .map_err(|err| err.to_string())?;
-        let mut rows = stmt.query((from, limit_value)).map_err(|err| err.to_string())?;
+        let mut rows = stmt
+            .query((from, limit_value))
+            .map_err(|err| err.to_string())?;
         while let Some(row) = rows.next().map_err(|err| err.to_string())? {
             records.push(map_overlay_record_row(row)?);
         }
@@ -711,7 +721,7 @@ mod tests {
         .unwrap();
 
         let repository = OverlayRecordRepository::new(Some(game_path));
-        let latest = repository.load_record_at_offset(0).unwrap().unwrap();
+        let latest = repository.load_record_at_offset(None, 0).unwrap().unwrap();
 
         assert_eq!(latest.image_url.as_deref(), Some("/images/snap-1"));
     }
@@ -740,7 +750,7 @@ mod tests {
         .unwrap();
 
         let repository = OverlayRecordRepository::new(Some(game_path));
-        let latest = repository.load_record_at_offset(0).unwrap().unwrap();
+        let latest = repository.load_record_at_offset(None, 0).unwrap().unwrap();
 
         assert_eq!(latest.wins, Some(10));
         assert_eq!(latest.position, Some(1));
@@ -809,7 +819,7 @@ mod tests {
         )
         .unwrap();
 
-        let records = load_overlay_record_list(temp.path(), Some(2)).unwrap();
+        let records = load_overlay_record_list(temp.path(), None, Some(2)).unwrap();
 
         assert_eq!(records.len(), 2);
         assert_eq!(records[0].id, "snap-3");
@@ -833,7 +843,7 @@ mod tests {
         )
         .unwrap();
 
-        let records = load_overlay_record_list(temp.path(), None).unwrap();
+        let records = load_overlay_record_list(temp.path(), None, None).unwrap();
 
         assert_eq!(records.len(), 3);
         assert_eq!(records[0].id, "snap-3");

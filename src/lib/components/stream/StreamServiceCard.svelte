@@ -1,14 +1,20 @@
 <script lang="ts">
   import { locale } from '$lib/locale';
   import type { StreamPageState } from '$lib/stream/state';
-  import type { StreamDbPathInfo, StreamServiceStatus } from '$lib/types';
+  import type {
+    StreamDbPathInfo,
+    StreamOverlayDisplayMode,
+    StreamServiceStatus
+  } from '$lib/types';
 
   export let status: StreamServiceStatus;
   export let pageState: StreamPageState;
   export let busy = false;
+  export let savingDisplayMode = false;
   export let countBefore = 0;
   export let countAfter = 0;
   export let dbPathInfo: StreamDbPathInfo = { found: false, path: null };
+  export let displayMode: StreamOverlayDisplayMode = 'current';
   export let importingCropCode = false;
   export let previewUrl: string | null = null;
   export let cropCodeInput = '';
@@ -26,6 +32,7 @@
   export let onOpenCalibration: () => void | Promise<void>;
   export let onStepEarlier: () => void | Promise<void>;
   export let onStepLater: () => void | Promise<void>;
+  export let onDisplayModeChange: (mode: StreamOverlayDisplayMode) => void | Promise<void>;
   export let onCropCodeInput: (value: string) => void;
   export let onImportCropCode: () => void | Promise<void>;
 
@@ -86,6 +93,11 @@
         ? '启动服务'
         : 'Start Service';
   $: toggleAction = status.running ? onStop : onStart;
+  $: displayModeOptions = [
+    { value: 'current' as const, label: isZh ? '当前' : 'Current' },
+    { value: 'hero' as const, label: isZh ? '完整英雄' : 'Full Hero' },
+    { value: 'herohalf' as const, label: isZh ? '半身英雄' : 'Half Hero' }
+  ];
 </script>
 
 <section class="card">
@@ -159,6 +171,23 @@
           ↓
         </button>
       </div>
+    </div>
+  </div>
+
+  <div class="mode-shell">
+    <p class="detail-label">{isZh ? 'Overlay 显示模式' : 'Overlay Display Mode'}</p>
+    <div class="mode-picker" role="radiogroup" aria-label={isZh ? 'Overlay 显示模式' : 'Overlay display mode'}>
+      {#each displayModeOptions as option}
+        <button
+          class="mode-chip"
+          class:is-active={displayMode === option.value}
+          disabled={busy || savingDisplayMode}
+          aria-pressed={displayMode === option.value}
+          on:click={() => onDisplayModeChange(option.value)}
+        >
+          {option.label}
+        </button>
+      {/each}
     </div>
   </div>
 
@@ -367,7 +396,8 @@
 
   .utility-shell,
   .advanced-shell,
-  .overview-shell {
+  .overview-shell,
+  .mode-shell {
     display: grid;
     gap: 0.45rem;
     padding: 0.75rem 0.85rem;
@@ -380,6 +410,12 @@
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 0.55rem;
+  }
+
+  .mode-picker {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
   }
 
   .overview-shell {
@@ -472,6 +508,27 @@
   .import-message {
     font-size: 0.76rem;
     color: rgba(231, 220, 196, 0.72);
+  }
+
+  button.mode-chip {
+    width: auto;
+    min-width: 0;
+    min-height: 2.15rem;
+    padding: 0.5rem 0.85rem;
+    border-radius: 999px;
+    font-size: 0.58rem;
+    background: rgba(192, 138, 54, 0.06);
+    color: rgba(240, 227, 198, 0.72);
+  }
+
+  button.mode-chip.is-active {
+    border-color: rgba(216, 164, 82, 0.3);
+    background: linear-gradient(
+      180deg,
+      rgba(199, 145, 58, 0.2),
+      rgba(116, 68, 24, 0.22)
+    );
+    color: #f3d38d;
   }
 
   button {

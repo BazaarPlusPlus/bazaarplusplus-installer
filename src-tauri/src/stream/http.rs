@@ -9,7 +9,6 @@ use axum::{
     routing::get,
     Json, Router,
 };
-use tower_http::cors::{Any, CorsLayer};
 use image::{DynamicImage, ImageFormat};
 use include_dir::{include_dir, Dir};
 use serde::{Deserialize, Serialize};
@@ -18,6 +17,7 @@ use std::{
     path::{Path as FsPath, PathBuf},
     time::UNIX_EPOCH,
 };
+use tower_http::cors::{Any, CorsLayer};
 
 const OVERLAY_HTML: &str = include_str!("../../resources/stream/overlay.html");
 const OVERLAY_CSS: &str = include_str!("../../resources/stream/overlay.css");
@@ -158,7 +158,10 @@ async fn latest_record(
     let offset = query.offset.unwrap_or(0);
     let from = query.from.as_deref();
 
-    match app_state.overlay_records.load_record_at_offset(from, offset) {
+    match app_state
+        .overlay_records
+        .load_record_at_offset(from, offset)
+    {
         Ok(record) => Json(record).into_response(),
         Err(message) => (StatusCode::INTERNAL_SERVER_ERROR, message).into_response(),
     }
@@ -171,7 +174,10 @@ async fn record_list(
     let limit = query.limit.unwrap_or(20);
     let from = query.from.as_deref();
 
-    match app_state.overlay_records.load_record_list(from, Some(limit)) {
+    match app_state
+        .overlay_records
+        .load_record_list(from, Some(limit))
+    {
         Ok(records) => Json(records).into_response(),
         Err(message) => (StatusCode::INTERNAL_SERVER_ERROR, message).into_response(),
     }
@@ -294,7 +300,10 @@ fn resolve_strip_crop(
         });
     }
 
-    app_state.overlay_settings.load()
+    app_state
+        .overlay_settings
+        .load()
+        .map(|settings| settings.crop)
 }
 
 fn detect_content_type(path: &FsPath) -> &'static str {

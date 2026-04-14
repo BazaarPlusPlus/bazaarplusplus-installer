@@ -4,6 +4,7 @@ import type {
   StreamDbPathInfo,
   StreamOverlayCropSettings,
   StreamOverlayCropSettingsPayload,
+  StreamOverlayDisplayMode,
   StreamRecordSummary,
   StreamRecordWindowSummary,
   StreamServiceStatus
@@ -161,7 +162,8 @@ export async function getStreamOverlayCropSettings(): Promise<StreamOverlayCropS
         width: 0.58,
         height: 0.22
       },
-      code: ''
+      code: '',
+      display_mode: 'current'
     };
   }
 
@@ -176,7 +178,8 @@ export async function saveStreamOverlayCropSettings(
   if (!hasTauriRuntime()) {
     return {
       crop,
-      code: ''
+      code: '',
+      display_mode: 'current'
     };
   }
 
@@ -199,7 +202,8 @@ export async function importStreamOverlayCropCode(
         width: 0.58,
         height: 0.22
       },
-      code
+      code,
+      display_mode: 'current'
     };
   }
 
@@ -207,6 +211,30 @@ export async function importStreamOverlayCropCode(
     'import_stream_overlay_crop_code',
     {
       code
+    }
+  );
+}
+
+export async function saveStreamOverlayDisplayMode(
+  displayMode: StreamOverlayDisplayMode
+): Promise<StreamOverlayCropSettingsPayload> {
+  if (!hasTauriRuntime()) {
+    return {
+      crop: {
+        left: 0.342,
+        top: 0.313,
+        width: 0.58,
+        height: 0.22
+      },
+      code: '',
+      display_mode: displayMode
+    };
+  }
+
+  return invoke<StreamOverlayCropSettingsPayload>(
+    'save_stream_overlay_display_mode',
+    {
+      displayMode
     }
   );
 }

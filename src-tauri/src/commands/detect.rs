@@ -63,10 +63,9 @@ pub fn detect_environment(
     let bundled_bpp_version = crate::commands::bepinex::read_bundled_bpp_version(&app)
         .ok()
         .flatten();
-    let bpp_data_version_policy = crate::commands::bepinex::read_bundled_bpp_data_version_policy(
-        &app,
-    )
-    .unwrap_or_else(|_| crate::commands::bepinex::default_bpp_data_version_policy());
+    let bpp_data_version_policy =
+        crate::commands::bepinex::read_bundled_bpp_data_version_policy(&app)
+            .unwrap_or_else(|_| crate::commands::bepinex::default_bpp_data_version_policy());
     let bpp_data_state = game_path
         .as_ref()
         .map(|path| {

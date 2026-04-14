@@ -13,6 +13,31 @@ pub struct OverlayCropSettings {
     pub height: f64,
 }
 
+#[derive(Clone, Copy, Debug, Deserialize, Serialize, PartialEq, Eq, Default)]
+#[serde(rename_all = "snake_case")]
+pub enum OverlayDisplayMode {
+    #[default]
+    Current,
+    Hero,
+    Herohalf,
+}
+
+#[derive(Clone, Copy, Debug, Deserialize, Serialize, PartialEq)]
+pub struct OverlaySettings {
+    pub crop: OverlayCropSettings,
+    #[serde(default)]
+    pub display_mode: OverlayDisplayMode,
+}
+
+impl Default for OverlaySettings {
+    fn default() -> Self {
+        Self {
+            crop: OverlayCropSettings::default(),
+            display_mode: OverlayDisplayMode::default(),
+        }
+    }
+}
+
 impl Default for OverlayCropSettings {
     fn default() -> Self {
         Self {
@@ -27,13 +52,15 @@ impl Default for OverlayCropSettings {
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
 struct OverlayCropDocument {
     v: u8,
-    crop: OverlayCropSettings,
+    #[serde(flatten)]
+    settings: OverlaySettings,
 }
 
 #[derive(Clone, Debug, Serialize, PartialEq)]
 pub struct OverlayCropSettingsPayload {
     pub crop: OverlayCropSettings,
     pub code: String,
+    pub display_mode: OverlayDisplayMode,
 }
 
 #[derive(Clone, Debug)]
@@ -55,9 +82,9 @@ impl OverlaySettingsStore {
         Self { path }
     }
 
-    pub fn load(&self) -> Result<OverlayCropSettings, String> {
+    pub fn load(&self) -> Result<OverlaySettings, String> {
         if !self.path.exists() {
-            return Ok(OverlayCropSettings::default());
+            return Ok(OverlaySettings::default());
         }
 
         let raw = std::fs::read_to_string(&self.path).map_err(|err| {
@@ -73,12 +100,21 @@ impl OverlaySettingsStore {
             )
         })?;
 
-        validate_crop_settings(document.crop)
+        let crop = validate_crop_settings(document.settings.crop)?;
+        Ok(OverlaySettings {
+            crop,
+            display_mode: document.settings.display_mode,
+        })
     }
 
     pub fn save(&self, crop: OverlayCropSettings) -> Result<OverlayCropSettingsPayload, String> {
         let crop = validate_crop_settings(crop)?;
-        let document = OverlayCropDocument { v: 1, crop };
+        let display_mode = self
+            .load()
+            .map(|settings| settings.display_mode)
+            .unwrap_or_default();
+        let settings = OverlaySettings { crop, display_mode };
+        let document = OverlayCropDocument { v: 1, settings };
         let raw = serde_json::to_string_pretty(&document)
             .map_err(|err| format!("Failed to serialize overlay crop settings: {err}"))?;
 
@@ -98,19 +134,52 @@ impl OverlaySettingsStore {
             )
         })?;
 
-        Ok(self.payload(crop))
+        Ok(self.payload(settings))
     }
 
-    pub fn payload(&self, crop: OverlayCropSettings) -> OverlayCropSettingsPayload {
+    pub fn save_display_mode(
+        &self,
+        display_mode: OverlayDisplayMode,
+    ) -> Result<OverlayCropSettingsPayload, String> {
+        let crop = self
+            .load()
+            .map(|settings| settings.crop)
+            .unwrap_or_default();
+        let settings = OverlaySettings { crop, display_mode };
+        let document = OverlayCropDocument { v: 1, settings };
+        let raw = serde_json::to_string_pretty(&document)
+            .map_err(|err| format!("Failed to serialize overlay crop settings: {err}"))?;
+
+        if let Some(parent) = self.path.parent() {
+            std::fs::create_dir_all(parent).map_err(|err| {
+                format!(
+                    "Failed to create overlay settings directory {}: {err}",
+                    parent.display()
+                )
+            })?;
+        }
+
+        std::fs::write(&self.path, raw).map_err(|err| {
+            format!(
+                "Failed to write overlay crop settings to {}: {err}",
+                self.path.display()
+            )
+        })?;
+
+        Ok(self.payload(settings))
+    }
+
+    pub fn payload(&self, settings: OverlaySettings) -> OverlayCropSettingsPayload {
         OverlayCropSettingsPayload {
-            crop,
-            code: encode_crop_code(crop),
+            crop: settings.crop,
+            code: encode_crop_code(settings.crop),
+            display_mode: settings.display_mode,
         }
     }
 
     pub fn load_payload(&self) -> Result<OverlayCropSettingsPayload, String> {
-        let crop = self.load()?;
-        Ok(self.payload(crop))
+        let settings = self.load()?;
+        Ok(self.payload(settings))
     }
 
     pub fn import_code(&self, code: &str) -> Result<OverlayCropSettingsPayload, String> {
@@ -154,7 +223,13 @@ pub fn validate_crop_settings(crop: OverlayCropSettings) -> Result<OverlayCropSe
 }
 
 pub fn encode_crop_code(crop: OverlayCropSettings) -> String {
-    let document = OverlayCropDocument { v: 1, crop };
+    let document = OverlayCropDocument {
+        v: 1,
+        settings: OverlaySettings {
+            crop,
+            display_mode: OverlayDisplayMode::Current,
+        },
+    };
     let raw =
         serde_json::to_vec(&document).expect("overlay crop document should serialize to JSON");
     STANDARD.encode(raw)
@@ -179,12 +254,24 @@ pub fn decode_crop_code(code: &str) -> Result<OverlayCropSettings, String> {
         ));
     }
 
-    validate_crop_settings(document.crop)
+    validate_crop_settings(document.settings.crop)
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{decode_crop_code, encode_crop_code, OverlayCropSettings, OverlaySettingsStore};
+    use super::{
+        decode_crop_code, encode_crop_code, OverlayCropSettings, OverlayDisplayMode,
+        OverlaySettingsStore,
+    };
+
+    fn sample_crop() -> OverlayCropSettings {
+        OverlayCropSettings {
+            left: 0.29,
+            top: 0.27,
+            width: 0.61,
+            height: 0.21,
+        }
+    }
 
     #[test]
     fn crop_code_round_trip_preserves_values() {
@@ -205,7 +292,10 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let store = OverlaySettingsStore::new(dir.path().join("missing.json"));
 
-        assert_eq!(store.load().unwrap(), OverlayCropSettings::default());
+        let loaded = store.load_payload().unwrap();
+
+        assert_eq!(loaded.crop, OverlayCropSettings::default());
+        assert_eq!(loaded.display_mode, OverlayDisplayMode::Current);
     }
 
     #[test]
@@ -213,17 +303,52 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let path = dir.path().join("overlay.json");
         let store = OverlaySettingsStore::new(path);
-        let crop = OverlayCropSettings {
-            left: 0.29,
-            top: 0.27,
-            width: 0.61,
-            height: 0.21,
-        };
+        let crop = sample_crop();
 
         let saved = store.save(crop).unwrap();
         let loaded = store.load_payload().unwrap();
 
         assert_eq!(saved, loaded);
         assert_eq!(loaded.crop, crop);
+        assert_eq!(loaded.display_mode, OverlayDisplayMode::Current);
+    }
+
+    #[test]
+    fn store_loads_legacy_crop_document_with_current_mode() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("legacy-overlay.json");
+        let store = OverlaySettingsStore::new(path.clone());
+
+        std::fs::write(
+            path,
+            serde_json::json!({
+                "v": 1,
+                "crop": sample_crop()
+            })
+            .to_string(),
+        )
+        .unwrap();
+
+        let loaded = store.load_payload().unwrap();
+
+        assert_eq!(loaded.crop, sample_crop());
+        assert_eq!(loaded.display_mode, OverlayDisplayMode::Current);
+    }
+
+    #[test]
+    fn store_can_save_and_reload_display_mode() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("overlay.json");
+        let store = OverlaySettingsStore::new(path);
+
+        store.save(sample_crop()).unwrap();
+        let saved = store
+            .save_display_mode(OverlayDisplayMode::Herohalf)
+            .unwrap();
+        let loaded = store.load_payload().unwrap();
+
+        assert_eq!(saved, loaded);
+        assert_eq!(loaded.crop, sample_crop());
+        assert_eq!(loaded.display_mode, OverlayDisplayMode::Herohalf);
     }
 }

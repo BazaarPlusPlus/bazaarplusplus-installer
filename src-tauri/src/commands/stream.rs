@@ -1,5 +1,7 @@
 use crate::stream::{
-    overlay_settings::{OverlayCropSettings, OverlayCropSettingsPayload, OverlaySettingsStore},
+    overlay_settings::{
+        OverlayCropSettings, OverlayCropSettingsPayload, OverlayDisplayMode, OverlaySettingsStore,
+    },
     records::{OverlayRecord, OverlayRecordRepository},
     state::{StreamRuntimeState, StreamServiceStatus},
 };
@@ -84,6 +86,13 @@ pub fn import_stream_overlay_crop_code(code: String) -> Result<OverlayCropSettin
     OverlaySettingsStore::default().import_code(&code)
 }
 
+#[tauri::command]
+pub fn save_stream_overlay_display_mode(
+    display_mode: OverlayDisplayMode,
+) -> Result<OverlayCropSettingsPayload, String> {
+    OverlaySettingsStore::default().save_display_mode(display_mode)
+}
+
 /// Returns the resolved DB path for display/debug purposes.
 /// `found` = DB file exists at that path.
 /// `path` = full path to bazaarplusplus.db (or None if not located at all).
@@ -94,11 +103,12 @@ pub fn detect_stream_db_path(
 ) -> StreamDbPathInfo {
     let game_path = resolve_game_path_with_fallback(&app, &state);
     match game_path {
-        None => StreamDbPathInfo { found: false, path: None },
+        None => StreamDbPathInfo {
+            found: false,
+            path: None,
+        },
         Some(game_path) => {
-            let db = game_path
-                .join("BazaarPlusPlus")
-                .join("bazaarplusplus.db");
+            let db = game_path.join("BazaarPlusPlus").join("bazaarplusplus.db");
             let found = db.exists();
             StreamDbPathInfo {
                 found,

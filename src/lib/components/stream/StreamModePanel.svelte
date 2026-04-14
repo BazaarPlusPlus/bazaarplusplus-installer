@@ -9,6 +9,7 @@
     getStreamOverlayCropSettings,
     loadStreamRecordAtOffset,
     loadStreamRecordWindowSummary,
+    saveStreamOverlayDisplayMode,
     getStreamServiceStatus,
     importStreamOverlayCropCode,
     startStreamService,
@@ -17,6 +18,7 @@
   import type { StreamDbPathInfo } from '$lib/types';
   import { createStreamPageState } from '$lib/stream/state';
   import type {
+    StreamOverlayDisplayMode,
     StreamRecordSummary,
     StreamRecordWindowSummary,
     StreamServiceStatus
@@ -36,9 +38,11 @@
     started_at: null
   };
   let busy = false;
+  let savingDisplayMode = false;
   let importingCropCode = false;
   let cropCodeInput = '';
   let cropCodeMessage = '';
+  let displayMode: StreamOverlayDisplayMode = 'current';
   let copyMessage = '';
   let copyMessageTone: 'success' | 'error' | null = null;
   let copyMessageTimer: number | null = null;
@@ -111,6 +115,7 @@
       status = await getStreamServiceStatus();
       const cropSettings = await getStreamOverlayCropSettings();
       cropCodeInput = cropSettings.code;
+      displayMode = cropSettings.display_mode;
       cropCodeMessage = '';
       await refreshOverviewState();
       dbPathInfo = await detectStreamDbPath();
@@ -278,6 +283,22 @@
     }
   }
 
+  async function updateDisplayMode(nextMode: StreamOverlayDisplayMode) {
+    if (savingDisplayMode || displayMode === nextMode) {
+      return;
+    }
+
+    savingDisplayMode = true;
+    try {
+      const payload = await saveStreamOverlayDisplayMode(nextMode);
+      displayMode = payload.display_mode;
+    } catch (error) {
+      console.error(error);
+    } finally {
+      savingDisplayMode = false;
+    }
+  }
+
   function clearCopyMessage() {
     if (copyMessageTimer !== null) {
       window.clearTimeout(copyMessageTimer);
@@ -311,6 +332,8 @@
       {status}
       {pageState}
       {busy}
+      {savingDisplayMode}
+      {displayMode}
       {importingCropCode}
       previewUrl={previewUrl}
       {cropCodeInput}
@@ -331,6 +354,7 @@
       onOpenCalibration={openCalibration}
       onStepEarlier={() => stepOverviewOffset(1)}
       onStepLater={() => stepOverviewOffset(-1)}
+      onDisplayModeChange={updateDisplayMode}
       onCropCodeInput={(value) => {
         cropCodeInput = value;
         cropCodeMessage = '';

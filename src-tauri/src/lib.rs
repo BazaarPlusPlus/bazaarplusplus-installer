@@ -19,7 +19,8 @@ use commands::{
     stream::{
         detect_stream_db_path, get_stream_overlay_crop_settings, get_stream_service_status,
         import_stream_overlay_crop_code, list_stream_overlay_records, reveal_stream_record_image,
-        save_stream_overlay_crop_settings, start_stream_service, stop_stream_service,
+        save_stream_overlay_crop_settings, save_stream_overlay_display_mode, start_stream_service,
+        stop_stream_service,
     },
     supporters::load_supporters,
     vdf::patch_launch_options,
@@ -74,6 +75,7 @@ pub fn run() {
             get_stream_service_status,
             get_stream_overlay_crop_settings,
             save_stream_overlay_crop_settings,
+            save_stream_overlay_display_mode,
             import_stream_overlay_crop_code,
             list_stream_overlay_records,
             reveal_stream_record_image,

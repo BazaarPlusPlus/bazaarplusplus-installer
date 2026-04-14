@@ -13,17 +13,6 @@ const selectedMeta = document.getElementById('selected-meta');
 const codeField = document.getElementById('settings-code');
 const saveButton = document.getElementById('save-button');
 const copyButton = document.getElementById('copy-button');
-const badgeHeroInput = document.getElementById('badge-hero');
-const badgeWinsInput = document.getElementById('badge-wins');
-const badgeBattlesInput = document.getElementById('badge-battles');
-const badgeWinsValue = document.getElementById('badge-wins-value');
-const badgeBattlesValue = document.getElementById('badge-battles-value');
-const badgePreviewCard = document.querySelector('.badge-preview-card');
-const badgePreviewScore = document.getElementById('badge-preview-score');
-const badgePreviewWins = document.getElementById('badge-preview-wins');
-const badgePreviewBattles = document.getElementById('badge-preview-battles');
-const badgePreviewInfo = document.getElementById('badge-preview-info');
-
 const inputs = {
   left: document.getElementById('crop-left'),
   top: document.getElementById('crop-top'),
@@ -122,100 +111,6 @@ function updateCodeField(crop) {
   }
 
   codeField.textContent = encodeCropCode(crop);
-}
-
-function getVictoryTier(wins, battles) {
-  if (!Number.isFinite(wins)) {
-    return 'tier-unknown-preview';
-  }
-  if (wins === 10 && battles === 10) {
-    return 'tier-diamond-preview';
-  }
-  if (wins >= 10 && battles > 10) {
-    return 'tier-gold-preview';
-  }
-  if (wins >= 7) {
-    return 'tier-silver-preview';
-  }
-  if (wins >= 4) {
-    return 'tier-bronze-preview';
-  }
-  return 'tier-misfortune-preview';
-}
-
-function getHeroBadgeStyle(heroName) {
-  const map = {
-    Vanessa: { shortCode: 'VAN', background: 'rgb(192, 33, 33)', text: '#ffffff', assetKey: 'van' },
-    Pygmalien: { shortCode: 'PYG', background: 'rgb(39, 103, 192)', text: '#ffffff', assetKey: 'pyg' },
-    Dooley: { shortCode: 'DOO', background: 'rgb(225, 154, 8)', text: '#ffffff', assetKey: 'doo' },
-    Mak: { shortCode: 'MAK', background: 'rgb(190, 230, 91)', text: 'rgb(26, 31, 38)', assetKey: 'mak' },
-    Jules: { shortCode: 'JUL', background: 'rgb(180, 52, 236)', text: '#ffffff', assetKey: 'jul' },
-    Karnok: { shortCode: 'KAR', background: 'rgb(59, 136, 156)', text: '#ffffff', assetKey: 'kar' },
-    Stelle: { shortCode: 'STE', background: 'rgb(255, 235, 24)', text: 'rgb(26, 31, 38)', assetKey: 'ste' }
-  };
-
-  return map[heroName] || { shortCode: 'UNK', background: 'rgb(57, 73, 97)', text: '#ffffff', assetKey: 'unk' };
-}
-
-function getWinsBadgeAsset(wins, battles) {
-  if (!Number.isFinite(wins) || wins < 0) {
-    return '/assets/badges/wins/wins-0-mis.svg';
-  }
-  const safeWins = Math.max(0, Math.min(10, Math.trunc(wins)));
-  if (safeWins === 10) {
-    if (Number.isFinite(battles) && Math.trunc(battles) === 10) {
-      return '/assets/badges/wins/wins-10-dia.svg';
-    }
-    return '/assets/badges/wins/wins-10-gld.svg';
-  }
-  if (safeWins >= 7) {
-    return `/assets/badges/wins/wins-${safeWins}-slv.svg`;
-  }
-  if (safeWins >= 4) {
-    return `/assets/badges/wins/wins-${safeWins}-brz.svg`;
-  }
-  return `/assets/badges/wins/wins-${safeWins}-mis.svg`;
-}
-
-function getInfoBadgeAsset(heroKey, battles) {
-  const safeHeroKey = typeof heroKey === 'string' && heroKey ? heroKey : 'unk';
-  const safeBattles = Number.isFinite(battles) ? Math.max(0, Math.min(20, Math.trunc(battles))) : 0;
-  return `/assets/badges/info/info-${safeHeroKey}-${safeBattles}.svg`;
-}
-
-function renderBadgePreview() {
-  if (
-    !badgeHeroInput ||
-    !badgeWinsInput ||
-    !badgeBattlesInput ||
-    !badgePreviewCard ||
-    !badgePreviewScore ||
-    !badgePreviewWins ||
-    !badgePreviewBattles ||
-    !badgePreviewInfo
-  ) {
-    return;
-  }
-
-  let wins = Number(badgeWinsInput.value || 0);
-  let battles = Number(badgeBattlesInput.value || 0);
-  if (wins > battles) {
-    battles = wins;
-    badgeBattlesInput.value = String(battles);
-  }
-
-  const hero = badgeHeroInput.value;
-  const heroStyle = getHeroBadgeStyle(hero);
-
-  if (badgeWinsValue) {
-    badgeWinsValue.textContent = String(wins);
-  }
-  if (badgeBattlesValue) {
-    badgeBattlesValue.textContent = String(battles);
-  }
-
-  badgePreviewWins.innerHTML = `<img class="badge-preview-svg" src="${getWinsBadgeAsset(wins, battles)}" alt="${wins} wins" />`;
-  badgePreviewBattles.innerHTML = `<img class="badge-preview-svg" src="${getInfoBadgeAsset(heroStyle.assetKey, battles)}" alt="${battles} battles with ${heroStyle.shortCode}" />`;
 }
 
 function renderPreview() {
@@ -346,9 +241,6 @@ function bindInputHandlers() {
     }
   });
 
-  badgeHeroInput?.addEventListener('change', renderBadgePreview);
-  badgeWinsInput?.addEventListener('input', renderBadgePreview);
-  badgeBattlesInput?.addEventListener('input', renderBadgePreview);
 }
 
 async function initialize() {
@@ -366,7 +258,6 @@ async function initialize() {
 
     selectedRecord = latestRecord;
     renderPreview();
-    renderBadgePreview();
 
     setStatus(
       selectedRecord

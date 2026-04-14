@@ -270,66 +270,6 @@ button {
   line-height: 1.45;
 }
 
-.badge-lab,
-.badge-lab-controls,
-.badge-lab-preview {
-  display: grid;
-}
-
-.badge-lab {
-  gap: 0.65rem;
-  margin-top: 0.2rem;
-  padding-top: 0.75rem;
-  border-top: 1px solid rgba(178, 134, 64, 0.14);
-}
-
-.badge-lab-controls {
-  gap: 0.6rem;
-}
-
-.badge-select {
-  min-height: 2.2rem;
-  padding: 0.45rem 0.65rem;
-  border-radius: 8px;
-  border: 1px solid rgba(178, 134, 64, 0.18);
-  background: rgba(8, 6, 4, 0.86);
-  color: var(--bpp-text);
-  font: inherit;
-}
-
-.badge-preview-card {
-  display: grid;
-  justify-items: center;
-  padding: 0.75rem 0.5rem 0.55rem;
-  border-radius: 12px;
-  border: 1px solid rgba(178, 134, 64, 0.14);
-  background:
-    linear-gradient(180deg, rgba(18, 13, 8, 0.96), rgba(11, 8, 5, 0.98)),
-    radial-gradient(circle at top, rgba(217, 170, 88, 0.06), transparent 56%);
-}
-
-.badge-preview-stack {
-  display: grid;
-  aspect-ratio: 1 / 2;
-  grid-template-rows: repeat(2, minmax(0, 1fr));
-  gap: 0.08rem;
-}
-
-.badge-preview-tile {
-  width: 100%;
-  min-height: 0;
-  display: block;
-  padding: 0;
-  border-radius: 0.28rem;
-  overflow: hidden;
-}
-
-.badge-preview-svg {
-  display: block;
-  width: 100%;
-  height: 100%;
-}
-
 @media (max-width: 1080px) {
   .workspace {
     grid-template-columns: 1fr;

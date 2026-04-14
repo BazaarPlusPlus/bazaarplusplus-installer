@@ -131,7 +131,11 @@ fn resolve_game_path(app: &tauri::AppHandle) -> Result<Option<PathBuf>, String> 
         ];
         for candidate in &candidates {
             let path = PathBuf::from(candidate);
-            if path.join("BazaarPlusPlus").join("bazaarplusplus.db").exists() {
+            if path
+                .join("BazaarPlusPlus")
+                .join("bazaarplusplus.db")
+                .exists()
+            {
                 return Ok(Some(path));
             }
         }

@@ -88,9 +88,12 @@ export interface StreamOverlayCropSettings {
   height: number;
 }
 
+export type StreamOverlayDisplayMode = 'current' | 'hero' | 'herohalf';
+
 export interface StreamOverlayCropSettingsPayload {
   crop: StreamOverlayCropSettings;
   code: string;
+  display_mode: StreamOverlayDisplayMode;
 }
 
 export interface StreamDbPathInfo {
