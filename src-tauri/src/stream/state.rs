@@ -16,6 +16,8 @@ pub struct StreamServiceStatus {
     pub using_fallback_port: bool,
     pub last_error: Option<String>,
     pub started_at: Option<String>,
+    pub active_from: Option<String>,
+    pub active_window_offset: usize,
 }
 
 impl Default for StreamServiceStatus {
@@ -28,6 +30,8 @@ impl Default for StreamServiceStatus {
             using_fallback_port: false,
             last_error: None,
             started_at: None,
+            active_from: None,
+            active_window_offset: 0,
         }
     }
 }
@@ -81,6 +85,19 @@ impl StreamRuntimeState {
     pub fn mark_started(&self, started_at: String) -> StreamServiceStatus {
         let mut inner = self.inner.lock().expect("stream runtime poisoned");
         inner.status.started_at = Some(started_at);
+        inner.status.active_from = inner.status.started_at.clone();
+        inner.status.active_window_offset = 0;
+        inner.status.clone()
+    }
+
+    pub fn set_active_window(
+        &self,
+        active_from: Option<String>,
+        active_window_offset: usize,
+    ) -> StreamServiceStatus {
+        let mut inner = self.inner.lock().expect("stream runtime poisoned");
+        inner.status.active_from = active_from;
+        inner.status.active_window_offset = active_window_offset;
         inner.status.clone()
     }
 
@@ -91,6 +108,8 @@ impl StreamRuntimeState {
         inner.status.overlay_url = None;
         inner.status.using_fallback_port = false;
         inner.status.started_at = None;
+        inner.status.active_from = None;
+        inner.status.active_window_offset = 0;
         inner.task = None;
         inner.status.clone()
     }
@@ -102,6 +121,8 @@ impl StreamRuntimeState {
         inner.status.overlay_url = None;
         inner.status.using_fallback_port = false;
         inner.status.started_at = None;
+        inner.status.active_from = None;
+        inner.status.active_window_offset = 0;
         inner.status.last_error = Some(message);
         inner.task = None;
     }
@@ -130,6 +151,8 @@ mod tests {
 
         assert!(!status.running);
         assert!(status.started_at.is_none());
+        assert!(status.active_from.is_none());
+        assert_eq!(status.active_window_offset, 0);
     }
 
     #[test]
@@ -139,6 +162,8 @@ mod tests {
             port: Some(17654),
             overlay_url: Some("http://127.0.0.1:17654/overlay".to_string()),
             started_at: Some("2026-04-11T20:00:00+08:00".to_string()),
+            active_from: Some("2026-04-11T20:00:00+08:00".to_string()),
+            active_window_offset: 0,
             ..StreamServiceStatus::default()
         };
 
@@ -147,6 +172,10 @@ mod tests {
         assert_eq!(
             status.overlay_url.as_deref(),
             Some("http://127.0.0.1:17654/overlay")
+        );
+        assert_eq!(
+            status.active_from.as_deref(),
+            Some("2026-04-11T20:00:00+08:00")
         );
     }
 
@@ -161,5 +190,10 @@ mod tests {
             snapshot.started_at.as_deref(),
             Some("2026-04-11T21:00:00+08:00")
         );
+        assert_eq!(
+            snapshot.active_from.as_deref(),
+            Some("2026-04-11T21:00:00+08:00")
+        );
+        assert_eq!(snapshot.active_window_offset, 0);
     }
 }

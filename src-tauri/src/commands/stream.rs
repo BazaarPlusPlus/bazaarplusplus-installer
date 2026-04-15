@@ -1,10 +1,14 @@
 use crate::stream::{
+    http::remove_overlay_strip_cache,
     overlay_settings::{
         OverlayCropSettings, OverlayCropSettingsPayload, OverlayDisplayMode, OverlaySettingsStore,
     },
     records::{OverlayRecord, OverlayRecordRepository},
     state::{StreamRuntimeState, StreamServiceStatus},
 };
+use base64::{engine::general_purpose::STANDARD, Engine as _};
+use image::{DynamicImage, ImageFormat};
+use std::collections::HashMap;
 use std::{path::PathBuf, process::Command};
 
 fn normalize_requested_game_path(game_path: Option<String>) -> Option<PathBuf> {
@@ -84,6 +88,50 @@ pub fn get_stream_service_status(
     state: tauri::State<'_, StreamRuntimeState>,
 ) -> StreamServiceStatus {
     state.snapshot()
+}
+
+#[tauri::command]
+pub fn set_stream_overlay_window_offset(
+    app: tauri::AppHandle,
+    state: tauri::State<'_, StreamRuntimeState>,
+    game_path: Option<String>,
+    offset: usize,
+) -> Result<StreamServiceStatus, String> {
+    let snapshot = state.snapshot();
+    if !snapshot.running {
+        return Ok(snapshot);
+    }
+
+    let started_at = snapshot
+        .started_at
+        .clone()
+        .ok_or_else(|| "Stream start time is unavailable.".to_string())?;
+    let resolved_game_path = resolve_game_path_with_fallback(&app, &state, game_path);
+    let repository = OverlayRecordRepository::new(resolved_game_path);
+
+    if offset == 0 {
+        return Ok(state.set_active_window(Some(started_at), 0));
+    }
+
+    let captured_since_start = repository.count_since(Some(started_at.as_str()))?;
+    let total = repository.count_since(None)?;
+    let existing_before_start = total.saturating_sub(captured_since_start);
+    if offset > existing_before_start {
+        return Err(format!(
+            "Requested stream window offset {offset} exceeds the available {existing_before_start} earlier record(s)."
+        ));
+    }
+
+    let record_offset = captured_since_start + offset - 1;
+    let record = repository
+        .load_record_at_offset(None, record_offset)?
+        .ok_or_else(|| {
+            format!(
+                "No end-of-run record is available for stream window offset {offset}."
+            )
+        })?;
+
+    Ok(state.set_active_window(Some(record.captured_at_utc), offset))
 }
 
 #[tauri::command]
@@ -175,6 +223,113 @@ pub fn reveal_stream_record_image(
         })?;
 
     reveal_in_file_browser(&path)
+}
+
+#[tauri::command]
+pub fn delete_stream_record(
+    app: tauri::AppHandle,
+    state: tauri::State<'_, StreamRuntimeState>,
+    game_path: Option<String>,
+    record_id: String,
+) -> Result<(), String> {
+    let game_path = resolve_game_path_with_fallback(&app, &state, game_path);
+    let repository = OverlayRecordRepository::new(game_path);
+    let deleted = repository.delete_record(&record_id)?;
+    if !deleted {
+        return Err(format!("Stream record {record_id} was not found."));
+    }
+
+    remove_overlay_strip_cache(&record_id)?;
+    Ok(())
+}
+
+#[tauri::command]
+pub fn load_stream_record_strip_preview(
+    app: tauri::AppHandle,
+    state: tauri::State<'_, StreamRuntimeState>,
+    game_path: Option<String>,
+    record_id: String,
+) -> Result<Option<String>, String> {
+    let game_path = resolve_game_path_with_fallback(&app, &state, game_path);
+    let repository = OverlayRecordRepository::new(game_path);
+    let Some((_path, bytes)) = repository.load_image(&record_id)? else {
+        return Ok(None);
+    };
+
+    let crop = OverlaySettingsStore::default().load_payload()?.crop;
+    let image = image::load_from_memory(&bytes)
+        .map_err(|err| format!("Failed to decode overlay source image: {err}"))?;
+    let cropped = crop_dynamic_image(image, &crop)?;
+
+    let mut encoded = Vec::new();
+    cropped
+        .write_to(&mut std::io::Cursor::new(&mut encoded), ImageFormat::Png)
+        .map_err(|err| format!("Failed to encode overlay strip image: {err}"))?;
+
+    Ok(Some(format!(
+        "data:image/png;base64,{}",
+        STANDARD.encode(encoded)
+    )))
+}
+
+#[tauri::command]
+pub fn load_stream_record_strip_previews(
+    app: tauri::AppHandle,
+    state: tauri::State<'_, StreamRuntimeState>,
+    game_path: Option<String>,
+    record_ids: Vec<String>,
+) -> Result<HashMap<String, String>, String> {
+    let game_path = resolve_game_path_with_fallback(&app, &state, game_path);
+    let repository = OverlayRecordRepository::new(game_path);
+    let crop = OverlaySettingsStore::default().load_payload()?.crop;
+    let mut previews = HashMap::new();
+
+    for record_id in record_ids {
+        let Some((_path, bytes)) = repository.load_image(&record_id)? else {
+            continue;
+        };
+
+        let image = image::load_from_memory(&bytes)
+            .map_err(|err| format!("Failed to decode overlay source image: {err}"))?;
+        let cropped = crop_dynamic_image(image, &crop)?;
+
+        let mut encoded = Vec::new();
+        cropped
+            .write_to(&mut std::io::Cursor::new(&mut encoded), ImageFormat::Png)
+            .map_err(|err| format!("Failed to encode overlay strip image: {err}"))?;
+
+        previews.insert(
+            record_id,
+            format!("data:image/png;base64,{}", STANDARD.encode(encoded)),
+        );
+    }
+
+    Ok(previews)
+}
+
+fn crop_dynamic_image(
+    image: DynamicImage,
+    crop: &OverlayCropSettings,
+) -> Result<DynamicImage, String> {
+    let left = crop.left.clamp(0.0, 1.0);
+    let top = crop.top.clamp(0.0, 1.0);
+    let width = crop.width.clamp(0.01, 1.0);
+    let height = crop.height.clamp(0.01, 1.0);
+
+    let source_width = image.width().max(1);
+    let source_height = image.height().max(1);
+
+    let left_px = (left * source_width as f64).floor() as u32;
+    let top_px = (top * source_height as f64).floor() as u32;
+    let width_px = ((width * source_width as f64).round() as u32).max(1);
+    let height_px = ((height * source_height as f64).round() as u32).max(1);
+
+    let max_width = source_width.saturating_sub(left_px).max(1);
+    let max_height = source_height.saturating_sub(top_px).max(1);
+    let final_width = width_px.min(max_width);
+    let final_height = height_px.min(max_height);
+
+    Ok(image.crop_imm(left_px, top_px, final_width, final_height))
 }
 
 fn reveal_in_file_browser(path: &std::path::Path) -> Result<(), String> {

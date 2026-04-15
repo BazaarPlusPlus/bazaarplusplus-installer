@@ -8,7 +8,6 @@ const list = document.getElementById('overlay-list');
 
 let lastRecordKey = null;
 let rowResizeObserver = null;
-const requestedFrom = readRequestedFrom();
 let currentDisplayMode = 'current';
 
 function setClassNames(...tokens) {
@@ -391,15 +390,6 @@ function getRecordKey(record) {
   ].join('::');
 }
 
-function readRequestedFrom() {
-  try {
-    const params = new URLSearchParams(window.location.search);
-    return params.get('from') || null;
-  } catch {
-    return null;
-  }
-}
-
 async function loadOverlaySettings() {
   const response = await fetch('/api/overlay/crop-config', { cache: 'no-store' });
   if (!response.ok) {
@@ -413,31 +403,19 @@ async function loadOverlaySettings() {
 
 async function refresh() {
   try {
-    let records;
     const settingsPromise = loadOverlaySettings().catch(() => currentDisplayMode);
-
-    if (requestedFrom) {
-      const endpoint = new URL('/api/records/list', window.location.origin);
-      endpoint.searchParams.set('from', requestedFrom);
-      const response = await fetch(endpoint, { cache: 'no-store' });
-      if (!response.ok) {
-        const message = (await response.text()).trim();
-        throw new Error(message || `unexpected status ${response.status}`);
-      }
-      const payload = await response.json();
-      records = Array.isArray(payload) ? payload.filter((r) => r && r.image_url) : [];
-    } else {
-      const endpoint = new URL('/api/records/latest', window.location.origin);
-      const response = await fetch(endpoint, { cache: 'no-store' });
-      if (!response.ok) {
-        const message = (await response.text()).trim();
-        throw new Error(message || `unexpected status ${response.status}`);
-      }
-      const record = await response.json();
-      records = record && record.image_url ? [record] : [];
+    const endpoint = new URL('/api/records/list', window.location.origin);
+    const response = await fetch(endpoint, { cache: 'no-store' });
+    if (!response.ok) {
+      const message = (await response.text()).trim();
+      throw new Error(message || `unexpected status ${response.status}`);
     }
+    const payload = await response.json();
+    const records = Array.isArray(payload) ? payload.filter((r) => r && r.image_url) : [];
 
-    currentDisplayMode = await settingsPromise;
+    const nextDisplayMode = await settingsPromise;
+    const modeChanged = nextDisplayMode !== currentDisplayMode;
+    currentDisplayMode = nextDisplayMode;
 
     if (records.length === 0) {
       lastRecordKey = null;
@@ -450,6 +428,7 @@ async function refresh() {
 
     if (
       !updated &&
+      !modeChanged &&
       root?.classList.contains('live') &&
       list &&
       !list.hidden

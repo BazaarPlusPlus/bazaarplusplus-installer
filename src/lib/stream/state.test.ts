@@ -11,7 +11,9 @@ test('createStreamPageState enables preview actions only when service is running
     overlay_url: 'http://127.0.0.1:17654/overlay',
     using_fallback_port: false,
     last_error: null,
-    started_at: '2026-04-11T21:00:00+08:00'
+    started_at: '2026-04-11T21:00:00+08:00',
+    active_from: '2026-04-11T21:00:00+08:00',
+    active_window_offset: 0
   });
 
   assert.equal(state.canCopyUrl, true);
@@ -26,7 +28,9 @@ test('createStreamPageState disables preview actions when service is stopped', (
     overlay_url: null,
     using_fallback_port: false,
     last_error: null,
-    started_at: null
+    started_at: null,
+    active_from: null,
+    active_window_offset: 0
   });
 
   assert.equal(state.canCopyUrl, false);

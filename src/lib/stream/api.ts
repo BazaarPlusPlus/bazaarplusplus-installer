@@ -18,7 +18,9 @@ const idleStatus: StreamServiceStatus = {
   overlay_url: null,
   using_fallback_port: false,
   last_error: null,
-  started_at: null
+  started_at: null,
+  active_from: null,
+  active_window_offset: 0
 };
 
 export async function getStreamServiceStatus(): Promise<StreamServiceStatus> {
@@ -48,6 +50,22 @@ export async function stopStreamService(): Promise<StreamServiceStatus> {
   }
 
   return invoke<StreamServiceStatus>('stop_stream_service');
+}
+
+export async function setStreamOverlayWindowOffset(
+  offset: number,
+  gamePath?: string | null
+): Promise<StreamServiceStatus> {
+  if (!hasTauriRuntime()) {
+    return idleStatus;
+  }
+
+  return invoke<StreamServiceStatus>(
+    'set_stream_overlay_window_offset',
+    buildStreamCommandArgs(gamePath, {
+      offset: Math.max(0, Math.trunc(offset))
+    })
+  );
 }
 
 export async function loadStreamRecordWindowSummary(
@@ -162,6 +180,54 @@ export async function revealStreamRecordImage(
     'reveal_stream_record_image',
     buildStreamCommandArgs(gamePath, {
       recordId
+    })
+  );
+}
+
+export async function deleteStreamRecord(
+  recordId: string,
+  gamePath?: string | null
+): Promise<void> {
+  if (!hasTauriRuntime()) {
+    return;
+  }
+
+  await invoke(
+    'delete_stream_record',
+    buildStreamCommandArgs(gamePath, {
+      recordId
+    })
+  );
+}
+
+export async function loadStreamRecordStripPreview(
+  recordId: string,
+  gamePath?: string | null
+): Promise<string | null> {
+  if (!hasTauriRuntime()) {
+    return null;
+  }
+
+  return invoke<string | null>(
+    'load_stream_record_strip_preview',
+    buildStreamCommandArgs(gamePath, {
+      recordId
+    })
+  );
+}
+
+export async function loadStreamRecordStripPreviews(
+  recordIds: string[],
+  gamePath?: string | null
+): Promise<Record<string, string>> {
+  if (!hasTauriRuntime() || recordIds.length === 0) {
+    return {};
+  }
+
+  return invoke<Record<string, string>>(
+    'load_stream_record_strip_previews',
+    buildStreamCommandArgs(gamePath, {
+      recordIds
     })
   );
 }

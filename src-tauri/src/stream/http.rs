@@ -156,7 +156,8 @@ async fn latest_record(
     Query(query): Query<LatestRecordQuery>,
 ) -> Response {
     let offset = query.offset.unwrap_or(0);
-    let from = query.from.as_deref();
+    let snapshot = app_state.runtime.snapshot();
+    let from = query.from.as_deref().or(snapshot.active_from.as_deref());
 
     match app_state
         .overlay_records
@@ -172,7 +173,8 @@ async fn record_list(
     Query(query): Query<RecordListQuery>,
 ) -> Response {
     let limit = query.limit.unwrap_or(20);
-    let from = query.from.as_deref();
+    let snapshot = app_state.runtime.snapshot();
+    let from = query.from.as_deref().or(snapshot.active_from.as_deref());
 
     match app_state
         .overlay_records
@@ -336,6 +338,49 @@ fn sanitized_cache_name(value: &str) -> String {
             _ => '_',
         })
         .collect()
+}
+
+pub(crate) fn remove_overlay_strip_cache(record_id: &str) -> Result<(), String> {
+    let directory = overlay_cache_directory();
+    if !directory.exists() {
+        return Ok(());
+    }
+
+    let prefix = format!("{}-", sanitized_cache_name(record_id));
+    let entries = std::fs::read_dir(&directory).map_err(|err| {
+        format!(
+            "Failed to read overlay cache directory {}: {err}",
+            directory.display()
+        )
+    })?;
+
+    for entry in entries {
+        let entry = entry.map_err(|err| {
+            format!(
+                "Failed to read overlay cache entry in {}: {err}",
+                directory.display()
+            )
+        })?;
+        let file_name = entry.file_name();
+        let Some(file_name) = file_name.to_str() else {
+            continue;
+        };
+        if !file_name.starts_with(&prefix) {
+            continue;
+        }
+
+        let path = entry.path();
+        if path.is_file() {
+            std::fs::remove_file(&path).map_err(|err| {
+                format!(
+                    "Failed to remove cached overlay strip {}: {err}",
+                    path.display()
+                )
+            })?;
+        }
+    }
+
+    Ok(())
 }
 
 fn crop_cache_path(

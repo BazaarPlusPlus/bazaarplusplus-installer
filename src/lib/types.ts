@@ -59,6 +59,8 @@ export interface StreamServiceStatus {
   using_fallback_port: boolean;
   last_error: string | null;
   started_at: string | null;
+  active_from: string | null;
+  active_window_offset: number;
 }
 
 export interface StreamRecordSummary {
@@ -68,6 +70,7 @@ export interface StreamRecordSummary {
   captured_at: string;
   captured_at_utc: string;
   image_url?: string | null;
+  image_path?: string | null;
   wins?: number | null;
   position?: number | null;
   battle_count?: number | null;

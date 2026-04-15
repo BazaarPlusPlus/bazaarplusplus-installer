@@ -14,6 +14,7 @@ pub struct OverlayRecord {
     pub captured_at: String,
     pub captured_at_utc: String,
     pub image_url: Option<String>,
+    pub image_path: Option<String>,
     pub wins: Option<i64>,
     pub position: Option<i64>,
     pub battle_count: Option<i64>,
@@ -93,6 +94,52 @@ impl OverlayRecordRepository {
             .filter(|path| path.exists()))
     }
 
+    pub fn delete_record(&self, record_id: &str) -> Result<bool, String> {
+        let database_path = self.database_path()?;
+        if !database_path.exists() {
+            return Ok(false);
+        }
+
+        let row = load_overlay_record_by_id(&database_path, record_id)?;
+        let image_path = row
+            .as_ref()
+            .and_then(|value| self.resolve_image_path(value.image_path.as_deref()));
+
+        let conn = Connection::open(&database_path).map_err(|err| err.to_string())?;
+        if !table_exists(&conn, "run_screenshots")? {
+            return Ok(false);
+        }
+
+        let deleted = conn
+            .execute(
+                "
+delete from run_screenshots
+where capture_source = 'end_of_run_auto'
+  and screenshot_id = ?1
+",
+                [record_id],
+            )
+            .map_err(|err| err.to_string())?;
+        if deleted == 0 {
+            return Ok(false);
+        }
+
+        if let Some(path) = image_path {
+            match std::fs::remove_file(&path) {
+                Ok(()) => {}
+                Err(err) if err.kind() == std::io::ErrorKind::NotFound => {}
+                Err(err) => {
+                    eprintln!(
+                        "failed to remove deleted stream image {}: {err}",
+                        path.display()
+                    );
+                }
+            }
+        }
+
+        Ok(true)
+    }
+
     fn database_path(&self) -> Result<PathBuf, String> {
         if let Some(game_path) = &self.game_path {
             return resolve_database_path(game_path);
@@ -105,10 +152,13 @@ impl OverlayRecordRepository {
     }
 
     fn to_overlay_record(&self, row: OverlayRecordRow) -> OverlayRecord {
-        let image_url = self
+        let image_path = self
             .resolve_image_path(row.image_path.as_deref())
-            .filter(|path| path.exists())
+            .filter(|path| path.exists());
+        let image_url = image_path
+            .as_ref()
             .map(|_| format!("/images/{}", row.id));
+        let image_path = image_path.map(|path| path.to_string_lossy().into_owned());
 
         let title = row.hero;
         let subtitle = match (row.wins, row.battle_count) {
@@ -127,6 +177,7 @@ impl OverlayRecordRepository {
             captured_at: row.captured_at,
             captured_at_utc: row.captured_at_utc,
             image_url,
+            image_path,
             wins: row.wins,
             position: row.position,
             battle_count: row.battle_count,
@@ -879,5 +930,41 @@ mod tests {
         assert_eq!(records.len(), 3);
         assert_eq!(records[0].id, "snap-3");
         assert_eq!(records[2].id, "snap-1");
+    }
+
+    #[test]
+    fn repository_delete_record_removes_database_row_and_image_file() {
+        let temp_dir = tempfile::tempdir().unwrap();
+        let game_path = temp_dir.path().join("TheBazaar");
+        let data_dir = game_path.join("BazaarPlusPlus");
+        let screenshots_dir = data_dir.join("Screenshots");
+        std::fs::create_dir_all(&screenshots_dir).unwrap();
+        let image_path = screenshots_dir.join("match-1.png");
+        std::fs::write(&image_path, b"png").unwrap();
+
+        let database_path = data_dir.join(DATABASE_FILE_NAME);
+        let conn = rusqlite::Connection::open(&database_path).unwrap();
+        create_run_screenshots_table(&conn);
+        conn.execute(
+            "insert into run_screenshots (
+                screenshot_id, run_id, capture_source, image_relative_path, captured_at_local, captured_at_utc
+             ) values (
+                'snap-1', 'run-1', 'end_of_run_auto', 'match-1.png',
+                '2026-04-10T20:30:05+00:00', '2026-04-10T20:30:05+00:00'
+             )",
+            [],
+        )
+        .unwrap();
+
+        let repository = OverlayRecordRepository::new(Some(game_path));
+
+        assert_eq!(repository.delete_record("snap-1").unwrap(), true);
+        assert_eq!(repository.delete_record("snap-1").unwrap(), false);
+        assert!(!image_path.exists());
+
+        let remaining: i64 = conn
+            .query_row("select count(*) from run_screenshots", [], |row| row.get(0))
+            .unwrap();
+        assert_eq!(remaining, 0);
     }
 }

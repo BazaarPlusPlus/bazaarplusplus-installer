@@ -10,6 +10,7 @@
     getStreamOverlayCropSettings,
     loadStreamRecordAtOffset,
     loadStreamRecordWindowSummary,
+    setStreamOverlayWindowOffset,
     saveStreamOverlayDisplayMode,
     getStreamServiceStatus,
     importStreamOverlayCropCode,
@@ -37,7 +38,9 @@
     overlay_url: null,
     using_fallback_port: false,
     last_error: null,
-    started_at: null
+    started_at: null,
+    active_from: null,
+    active_window_offset: 0
   };
   let busy = false;
   let savingDisplayMode = false;
@@ -68,15 +71,8 @@
   $: pageState = createStreamPageState(status);
   $: requestedGamePath = gamePath?.trim() || persistedGamePath || null;
   $: baseUrl = status.overlay_url?.replace(/\/overlay$/, '') ?? null;
-  $: fromTimestamp =
-    selectedOffset > 0
-      ? (selectedRecord?.captured_at_utc ?? status.started_at)
-      : status.started_at;
-  $: previewUrl = withFromQuery(status.overlay_url, fromTimestamp);
-  $: calibrationUrl = withFromQuery(
-    baseUrl ? `${baseUrl}/settings` : null,
-    fromTimestamp
-  );
+  $: previewUrl = status.overlay_url;
+  $: calibrationUrl = baseUrl ? `${baseUrl}/settings` : null;
   $: isZh = $locale === 'zh';
   $: canStepEarlier =
     status.running &&
@@ -108,7 +104,9 @@
   onMount(() => {
     locale.init();
     persistedGamePath = loadPersistedCustomGamePath();
-    void initializePage();
+    window.requestAnimationFrame(() => {
+      void initializePage();
+    });
   });
 
   onDestroy(() => {
@@ -117,13 +115,19 @@
 
   async function initializePage() {
     try {
-      status = await getStreamServiceStatus();
-      const cropSettings = await getStreamOverlayCropSettings();
+      const [nextStatus, cropSettings, nextDbPathInfo] = await Promise.all([
+        getStreamServiceStatus(),
+        getStreamOverlayCropSettings(),
+        detectStreamDbPath(requestedGamePath)
+      ]);
+
+      status = nextStatus;
+      selectedOffset = status.active_window_offset;
       cropCodeInput = cropSettings.code;
       displayMode = cropSettings.display_mode;
       cropCodeMessage = '';
       await refreshOverviewState();
-      dbPathInfo = await detectStreamDbPath(requestedGamePath);
+      dbPathInfo = nextDbPathInfo;
       console.info('[stream-mode-panel] initialize', {
         requestedGamePath,
         status,
@@ -141,7 +145,7 @@
     busy = true;
     try {
       status = await startStreamService(requestedGamePath);
-      selectedOffset = 0;
+      selectedOffset = status.active_window_offset;
       await refreshOverviewState();
       dbPathInfo = await detectStreamDbPath(requestedGamePath);
       console.info('[stream-mode-panel] stream service started', {
@@ -165,7 +169,7 @@
     busy = true;
     try {
       status = await stopStreamService();
-      selectedOffset = 0;
+      selectedOffset = status.active_window_offset;
       await refreshOverviewState();
       dbPathInfo = await detectStreamDbPath(requestedGamePath);
       console.info('[stream-mode-panel] stream service stopped', {
@@ -222,22 +226,22 @@
       return;
     }
 
-    selectedOffset = Math.max(0, selectedOffset + direction);
-    await refreshOverviewState();
-  }
+    const nextOffset = Math.max(0, selectedOffset + direction);
 
-  function withFromQuery(url: string | null, from: string | null): string | null {
-    if (!url) {
-      return null;
+    try {
+      status = await setStreamOverlayWindowOffset(nextOffset, requestedGamePath);
+      selectedOffset = status.active_window_offset;
+      await refreshOverviewState();
+    } catch (error) {
+      console.error('[stream-mode-panel] failed to update live window', {
+        requestedGamePath,
+        nextOffset,
+        error
+      });
+      status = await getStreamServiceStatus();
+      selectedOffset = status.active_window_offset;
+      await refreshOverviewState();
     }
-
-    if (!from) {
-      return url;
-    }
-
-    const nextUrl = new URL(url);
-    nextUrl.searchParams.set('from', from);
-    return nextUrl.toString();
   }
 
   function formatOverviewStartTime(value: string | null): string {
@@ -323,6 +327,15 @@
     try {
       const payload = await saveStreamOverlayDisplayMode(nextMode);
       displayMode = payload.display_mode;
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(
+          new CustomEvent('bpp-stream-display-mode-change', {
+            detail: {
+              displayMode: payload.display_mode
+            }
+          })
+        );
+      }
     } catch (error) {
       console.error(error);
     } finally {

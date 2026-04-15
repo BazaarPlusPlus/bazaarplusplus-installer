@@ -11,20 +11,6 @@ use tokio::{net::TcpListener, sync::oneshot};
 
 const HOST: &str = "127.0.0.1";
 const PREFERRED_PORT: u16 = 17654;
-const MAX_PORT: u16 = 17674;
-
-#[cfg_attr(not(test), allow(dead_code))]
-pub fn choose_bind_port(host: &str, start: u16, end: u16) -> Result<u16, String> {
-    for port in start..=end {
-        if std::net::TcpListener::bind((host, port)).is_ok() {
-            return Ok(port);
-        }
-    }
-
-    Err(format!(
-        "No available localhost port in range {start}-{end}"
-    ))
-}
 
 pub async fn start(
     app: tauri::AppHandle,
@@ -38,15 +24,14 @@ pub async fn start(
 
     state.clear_error();
 
-    let (listener, port) = match bind_listener(HOST, PREFERRED_PORT, MAX_PORT).await {
+    let listener = match bind_listener(HOST, PREFERRED_PORT).await {
         Ok(listener) => listener,
         Err(err) => {
             state.set_error(err.clone());
             return Err(err);
         }
     };
-    let using_fallback_port = port != PREFERRED_PORT;
-    let overlay_url = format!("http://{HOST}:{port}/overlay");
+    let overlay_url = format!("http://{HOST}:{PREFERRED_PORT}/overlay");
     let status_with_start = state.mark_started(current_timestamp());
     let game_path = match resolve_game_path(&app, requested_game_path) {
         Ok(game_path) => game_path,
@@ -73,11 +58,13 @@ pub async fn start(
     let status = StreamServiceStatus {
         running: true,
         host: HOST.to_string(),
-        port: Some(port),
+        port: Some(PREFERRED_PORT),
         overlay_url: Some(overlay_url),
-        using_fallback_port,
+        using_fallback_port: false,
         last_error: None,
         started_at: status_with_start.started_at,
+        active_from: status_with_start.active_from,
+        active_window_offset: status_with_start.active_window_offset,
     };
     state.set_running(
         status.clone(),
@@ -100,17 +87,12 @@ pub async fn stop(state: &StreamRuntimeState) -> Result<StreamServiceStatus, Str
     Ok(state.set_idle())
 }
 
-async fn bind_listener(host: &str, start: u16, end: u16) -> Result<(TcpListener, u16), String> {
-    for port in start..=end {
-        match TcpListener::bind((host, port)).await {
-            Ok(listener) => return Ok((listener, port)),
-            Err(_) => continue,
-        }
-    }
-
-    Err(format!(
-        "No available localhost port in range {start}-{end}"
-    ))
+async fn bind_listener(host: &str, port: u16) -> Result<TcpListener, String> {
+    TcpListener::bind((host, port)).await.map_err(|err| {
+        format!(
+            "OBS overlay port {port} is unavailable on {host}. Free that port and try again. ({err})"
+        )
+    })
 }
 
 fn resolve_game_path(
@@ -163,15 +145,16 @@ fn current_timestamp() -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::choose_bind_port;
+    use super::bind_listener;
+    use tokio::net::TcpListener;
 
-    #[test]
-    fn binds_fallback_port_when_preferred_port_is_occupied() {
-        let occupied = std::net::TcpListener::bind(("127.0.0.1", 0)).unwrap();
+    #[tokio::test]
+    async fn bind_listener_returns_error_when_port_is_occupied() {
+        let occupied = TcpListener::bind(("127.0.0.1", 0)).await.unwrap();
         let occupied_port = occupied.local_addr().unwrap().port();
-        let chosen = choose_bind_port("127.0.0.1", occupied_port, occupied_port + 10).unwrap();
 
-        assert_ne!(chosen, occupied_port);
-        drop(occupied);
+        let error = bind_listener("127.0.0.1", occupied_port).await.unwrap_err();
+
+        assert!(error.contains("OBS overlay port"));
     }
 }

@@ -1146,8 +1146,8 @@
         title={$locale === 'zh' ? '直播模式' : 'Stream Mode'}
         intro={t('streamIntro')}
       />
-      <StreamRecordLibrary gamePath={pageState.effectiveGamePath || null} />
     </section>
+    <StreamRecordLibrary gamePath={pageState.effectiveGamePath || null} />
   {:else}
     <InstallerStatusSteps
       {env}
