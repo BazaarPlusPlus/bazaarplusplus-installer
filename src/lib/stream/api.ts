@@ -1,5 +1,6 @@
 import { invoke } from '@tauri-apps/api/core';
 import { hasTauriRuntime } from '$lib/installer/runtime';
+import { buildStreamCommandArgs } from '$lib/stream/command-args';
 import type {
   StreamDbPathInfo,
   StreamOverlayCropSettings,
@@ -28,12 +29,17 @@ export async function getStreamServiceStatus(): Promise<StreamServiceStatus> {
   return invoke<StreamServiceStatus>('get_stream_service_status');
 }
 
-export async function startStreamService(): Promise<StreamServiceStatus> {
+export async function startStreamService(
+  gamePath?: string | null
+): Promise<StreamServiceStatus> {
   if (!hasTauriRuntime()) {
     return idleStatus;
   }
 
-  return invoke<StreamServiceStatus>('start_stream_service');
+  return invoke<StreamServiceStatus>(
+    'start_stream_service',
+    buildStreamCommandArgs(gamePath, {})
+  );
 }
 
 export async function stopStreamService(): Promise<StreamServiceStatus> {
@@ -118,6 +124,7 @@ export async function loadStreamRecordAtOffset(
 }
 
 export async function loadStreamRecordList(
+  gamePath?: string | null,
   limit?: number | null
 ): Promise<StreamRecordSummary[]> {
   if (typeof limit === 'number' && limit <= 0) {
@@ -130,10 +137,10 @@ export async function loadStreamRecordList(
 
   const invokeArgs =
     typeof limit === 'number'
-      ? {
+      ? buildStreamCommandArgs(gamePath, {
           limit: Math.max(1, Math.trunc(limit))
-        }
-      : {};
+        })
+      : buildStreamCommandArgs(gamePath, {});
   const payload = await invoke<StreamRecordSummary[]>(
     'list_stream_overlay_records',
     invokeArgs
@@ -143,14 +150,20 @@ export async function loadStreamRecordList(
     : [];
 }
 
-export async function revealStreamRecordImage(recordId: string): Promise<void> {
+export async function revealStreamRecordImage(
+  recordId: string,
+  gamePath?: string | null
+): Promise<void> {
   if (!hasTauriRuntime()) {
     return;
   }
 
-  await invoke('reveal_stream_record_image', {
-    recordId
-  });
+  await invoke(
+    'reveal_stream_record_image',
+    buildStreamCommandArgs(gamePath, {
+      recordId
+    })
+  );
 }
 
 export async function getStreamOverlayCropSettings(): Promise<StreamOverlayCropSettingsPayload> {
@@ -239,10 +252,15 @@ export async function saveStreamOverlayDisplayMode(
   );
 }
 
-export async function detectStreamDbPath(): Promise<StreamDbPathInfo> {
+export async function detectStreamDbPath(
+  gamePath?: string | null
+): Promise<StreamDbPathInfo> {
   if (!hasTauriRuntime()) {
     return { found: false, path: null };
   }
 
-  return invoke<StreamDbPathInfo>('detect_stream_db_path');
+  return invoke<StreamDbPathInfo>(
+    'detect_stream_db_path',
+    buildStreamCommandArgs(gamePath, {})
+  );
 }

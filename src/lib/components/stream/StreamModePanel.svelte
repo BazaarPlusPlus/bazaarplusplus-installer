@@ -2,6 +2,7 @@
   import { onDestroy, onMount } from 'svelte';
   import { openUrl } from '@tauri-apps/plugin-opener';
   import StreamServiceCard from '$lib/components/stream/StreamServiceCard.svelte';
+  import { loadPersistedCustomGamePath } from '$lib/installer/storage';
   import { locale } from '$lib/locale';
   import { formatMessage, messages } from '$lib/i18n';
   import {
@@ -27,6 +28,7 @@
   export let title = '';
   export let intro = '';
   export let eyebrow = '';
+  export let gamePath: string | null = null;
 
   let status: StreamServiceStatus = {
     running: false,
@@ -54,6 +56,7 @@
   let dbPathInfo: StreamDbPathInfo = { found: false, path: null };
   let selectedOffset = 0;
   let selectedRecord: StreamRecordSummary | null = null;
+  let persistedGamePath = '';
 
   $: t = (
     key: keyof typeof messages.en,
@@ -63,6 +66,7 @@
   $: panelIntro = intro || t('streamIntro');
   $: panelEyebrow = eyebrow || ($locale === 'zh' ? '直播模式' : 'Stream Mode');
   $: pageState = createStreamPageState(status);
+  $: requestedGamePath = gamePath?.trim() || persistedGamePath || null;
   $: baseUrl = status.overlay_url?.replace(/\/overlay$/, '') ?? null;
   $: fromTimestamp =
     selectedOffset > 0
@@ -103,6 +107,7 @@
 
   onMount(() => {
     locale.init();
+    persistedGamePath = loadPersistedCustomGamePath();
     void initializePage();
   });
 
@@ -118,20 +123,37 @@
       displayMode = cropSettings.display_mode;
       cropCodeMessage = '';
       await refreshOverviewState();
-      dbPathInfo = await detectStreamDbPath();
+      dbPathInfo = await detectStreamDbPath(requestedGamePath);
+      console.info('[stream-mode-panel] initialize', {
+        requestedGamePath,
+        status,
+        dbPathInfo
+      });
     } catch (error) {
-      console.error(error);
+      console.error('[stream-mode-panel] initialize failed', {
+        requestedGamePath,
+        error
+      });
     }
   }
 
   async function handleStart() {
     busy = true;
     try {
-      status = await startStreamService();
+      status = await startStreamService(requestedGamePath);
       selectedOffset = 0;
       await refreshOverviewState();
+      dbPathInfo = await detectStreamDbPath(requestedGamePath);
+      console.info('[stream-mode-panel] stream service started', {
+        requestedGamePath,
+        status,
+        dbPathInfo
+      });
     } catch (error) {
-      console.error(error);
+      console.error('[stream-mode-panel] start failed', {
+        requestedGamePath,
+        error
+      });
       status = await getStreamServiceStatus();
       await refreshOverviewState();
     } finally {
@@ -145,8 +167,17 @@
       status = await stopStreamService();
       selectedOffset = 0;
       await refreshOverviewState();
+      dbPathInfo = await detectStreamDbPath(requestedGamePath);
+      console.info('[stream-mode-panel] stream service stopped', {
+        requestedGamePath,
+        status,
+        dbPathInfo
+      });
     } catch (error) {
-      console.error(error);
+      console.error('[stream-mode-panel] stop failed', {
+        requestedGamePath,
+        error
+      });
       status = await getStreamServiceStatus();
       await refreshOverviewState();
     } finally {

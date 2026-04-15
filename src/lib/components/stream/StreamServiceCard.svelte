@@ -94,9 +94,9 @@
         : 'Start Service';
   $: toggleAction = status.running ? onStop : onStart;
   $: displayModeOptions = [
-    { value: 'current' as const, label: isZh ? '当前' : 'Current' },
+    { value: 'current' as const, label: isZh ? '战斗场数' : 'Battle Count' },
     { value: 'hero' as const, label: isZh ? '完整英雄' : 'Full Hero' },
-    { value: 'herohalf' as const, label: isZh ? '半身英雄' : 'Half Hero' }
+    { value: 'herohalf' as const, label: isZh ? '半高英雄' : 'Half-Height Hero' }
   ];
 </script>
 

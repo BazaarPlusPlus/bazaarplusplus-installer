@@ -29,6 +29,7 @@ pub fn choose_bind_port(host: &str, start: u16, end: u16) -> Result<u16, String>
 pub async fn start(
     app: tauri::AppHandle,
     state: &StreamRuntimeState,
+    requested_game_path: Option<PathBuf>,
 ) -> Result<StreamServiceStatus, String> {
     let snapshot = state.snapshot();
     if snapshot.running {
@@ -47,7 +48,7 @@ pub async fn start(
     let using_fallback_port = port != PREFERRED_PORT;
     let overlay_url = format!("http://{HOST}:{port}/overlay");
     let status_with_start = state.mark_started(current_timestamp());
-    let game_path = match resolve_game_path(&app) {
+    let game_path = match resolve_game_path(&app, requested_game_path) {
         Ok(game_path) => game_path,
         Err(err) => {
             state.set_error(err.clone());
@@ -112,9 +113,21 @@ async fn bind_listener(host: &str, start: u16, end: u16) -> Result<(TcpListener,
     ))
 }
 
-fn resolve_game_path(app: &tauri::AppHandle) -> Result<Option<PathBuf>, String> {
-    let env = detect::detect_environment(app.clone(), None)?;
+fn resolve_game_path(
+    app: &tauri::AppHandle,
+    requested_game_path: Option<PathBuf>,
+) -> Result<Option<PathBuf>, String> {
+    let env = detect::detect_environment(
+        app.clone(),
+        requested_game_path
+            .as_ref()
+            .map(|path| path.to_string_lossy().into_owned()),
+    )?;
     if let Some(path) = env.game_path.map(PathBuf::from) {
+        return Ok(Some(path));
+    }
+
+    if let Some(path) = requested_game_path {
         return Ok(Some(path));
     }
 

@@ -15,6 +15,7 @@
   import InstallerStatusSteps from '$lib/components/installer/InstallerStatusSteps.svelte';
   import InstallerSupportBar from '$lib/components/installer/InstallerSupportBar.svelte';
   import StreamModePanel from '$lib/components/stream/StreamModePanel.svelte';
+  import StreamRecordLibrary from '$lib/components/stream/StreamRecordLibrary.svelte';
   import {
     closeSteam as closeSteamApi,
     detectDotnetRuntime as detectDotnetRuntimeApi,
@@ -1140,10 +1141,12 @@
   {#if showStreamMode}
     <section class="embedded-stream-shell">
       <StreamModePanel
+        gamePath={pageState.effectiveGamePath || null}
         eyebrow={$locale === 'zh' ? '直播模式' : 'Stream Mode'}
         title={$locale === 'zh' ? '直播模式' : 'Stream Mode'}
         intro={t('streamIntro')}
       />
+      <StreamRecordLibrary gamePath={pageState.effectiveGamePath || null} />
     </section>
   {:else}
     <InstallerStatusSteps

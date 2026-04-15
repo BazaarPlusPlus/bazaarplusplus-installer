@@ -1,26 +1,56 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { loadPersistedCustomGamePath } from '$lib/installer/storage';
   import { locale } from '$lib/locale';
   import { loadStreamRecordList, revealStreamRecordImage } from '$lib/stream/api';
   import type { StreamRecordSummary } from '$lib/types';
 
+  export let gamePath: string | null = null;
+
   let records: StreamRecordSummary[] = [];
   let loading = false;
   let isZh = false;
+  let persistedGamePath = '';
+  let debugStatus = '';
+  let debugError = '';
 
   $: isZh = $locale === 'zh';
+  $: requestedGamePath = gamePath?.trim() || persistedGamePath || null;
 
   onMount(() => {
+    persistedGamePath = loadPersistedCustomGamePath();
     void refreshRecords();
   });
 
   async function refreshRecords() {
     loading = true;
+    debugError = '';
+    debugStatus = isZh
+      ? `准备读取截图记录，路径：${requestedGamePath ?? '未提供，走自动探测'}`
+      : `Preparing to load screenshot records. Path: ${requestedGamePath ?? 'not provided, using auto-detect'}`;
+    console.info('[stream-record-library] refresh start', {
+      requestedGamePath
+    });
     try {
-      records = await loadStreamRecordList();
+      records = await loadStreamRecordList(requestedGamePath);
+      debugStatus = isZh
+        ? `已读取 ${records.length} 条截图记录，路径：${requestedGamePath ?? '自动探测'}`
+        : `Loaded ${records.length} screenshot record(s). Path: ${requestedGamePath ?? 'auto-detect'}`;
+      console.info('[stream-record-library] refresh success', {
+        requestedGamePath,
+        recordCount: records.length,
+        recordIds: records.map((record) => record.id)
+      });
     } catch (error) {
-      console.error(error);
+      console.error('[stream-record-library] refresh failed', {
+        requestedGamePath,
+        error
+      });
       records = [];
+      debugError = error instanceof Error ? error.message : String(error);
+      debugStatus = isZh
+        ? `读取截图记录失败，路径：${requestedGamePath ?? '自动探测'}`
+        : `Failed to load screenshot records. Path: ${requestedGamePath ?? 'auto-detect'}`;
     } finally {
       loading = false;
     }
@@ -28,9 +58,18 @@
 
   async function revealRecordImage(recordId: string) {
     try {
-      await revealStreamRecordImage(recordId);
+      await revealStreamRecordImage(recordId, requestedGamePath);
+      console.info('[stream-record-library] reveal image', {
+        requestedGamePath,
+        recordId
+      });
     } catch (error) {
-      console.error(error);
+      console.error('[stream-record-library] reveal image failed', {
+        requestedGamePath,
+        recordId,
+        error
+      });
+      debugError = error instanceof Error ? error.message : String(error);
     }
   }
 
@@ -65,6 +104,20 @@
     <button type="button" class="refresh-button" on:click={refreshRecords} disabled={loading}>
       {loading ? (isZh ? '刷新中...' : 'Refreshing...') : isZh ? '刷新列表' : 'Refresh'}
     </button>
+  </div>
+
+  <div class="record-debug" aria-live="polite">
+    <p class="record-debug-line">
+      {isZh ? '调试状态' : 'Debug status'}: {debugStatus || (isZh ? '尚未读取' : 'Not loaded yet')}
+    </p>
+    <p class="record-debug-line">
+      {isZh ? '请求路径' : 'Requested path'}: {requestedGamePath ?? (isZh ? '自动探测' : 'auto-detect')}
+    </p>
+    {#if debugError}
+      <p class="record-debug-line record-debug-error">
+        {isZh ? '最近错误' : 'Last error'}: {debugError}
+      </p>
+    {/if}
   </div>
 
   <div class="record-list-shell">
@@ -165,6 +218,27 @@
     border-radius: 2px;
     border: 1px solid rgba(176, 126, 52, 0.12);
     background: rgba(10, 7, 4, 0.58);
+  }
+
+  .record-debug {
+    display: grid;
+    gap: 0.2rem;
+    padding: 0.7rem 0.85rem;
+    border-radius: 2px;
+    border: 1px solid rgba(176, 126, 52, 0.12);
+    background: rgba(10, 7, 4, 0.42);
+  }
+
+  .record-debug-line {
+    margin: 0;
+    font-size: 0.72rem;
+    line-height: 1.45;
+    color: rgba(208, 188, 150, 0.74);
+    word-break: break-word;
+  }
+
+  .record-debug-error {
+    color: rgba(255, 170, 146, 0.88);
   }
 
   .record-list {

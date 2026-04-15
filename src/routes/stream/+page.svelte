@@ -1,5 +1,6 @@
 <script lang="ts">
   import InstallerSupportBar from "$lib/components/installer/InstallerSupportBar.svelte";
+  import { loadPersistedCustomGamePath } from "$lib/installer/storage";
   import StreamModePanel from "$lib/components/stream/StreamModePanel.svelte";
   import StreamRecordLibrary from "$lib/components/stream/StreamRecordLibrary.svelte";
   import { locale } from "$lib/locale";
@@ -9,6 +10,7 @@
     key: keyof typeof messages.en,
     params?: Record<string, string | number>
   ): string => formatMessage($locale, key, params);
+  $: persistedGamePath = loadPersistedCustomGamePath() || null;
 
   locale.init();
 </script>
@@ -20,9 +22,9 @@
 <main class="stream-shell">
   <a class="back-link" href="/install">{t('navInstall')}</a>
 
-  <StreamModePanel />
+  <StreamModePanel gamePath={persistedGamePath} />
 
-  <StreamRecordLibrary />
+  <StreamRecordLibrary gamePath={persistedGamePath} />
 
   <InstallerSupportBar />
 </main>

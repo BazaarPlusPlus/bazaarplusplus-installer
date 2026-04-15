@@ -7,15 +7,31 @@ use crate::stream::{
 };
 use std::{path::PathBuf, process::Command};
 
+fn normalize_requested_game_path(game_path: Option<String>) -> Option<PathBuf> {
+    game_path
+        .as_deref()
+        .map(str::trim)
+        .filter(|path| !path.is_empty())
+        .map(PathBuf::from)
+}
+
 fn resolve_game_path_with_fallback(
     app: &tauri::AppHandle,
     state: &StreamRuntimeState,
+    requested_game_path: Option<String>,
 ) -> Option<PathBuf> {
     // 1. Try full Steam detection (registry + VDF)
-    if let Ok(env) = crate::commands::detect::detect_environment(app.clone(), None) {
+    if let Ok(env) = crate::commands::detect::detect_environment(
+        app.clone(),
+        requested_game_path.clone(),
+    ) {
         if let Some(path) = env.game_path.map(PathBuf::from) {
             return Some(path);
         }
+    }
+
+    if let Some(path) = normalize_requested_game_path(requested_game_path) {
+        return Some(path);
     }
 
     // 2. Use path cached when service last started
@@ -51,8 +67,9 @@ fn resolve_game_path_with_fallback(
 pub async fn start_stream_service(
     app: tauri::AppHandle,
     state: tauri::State<'_, StreamRuntimeState>,
+    game_path: Option<String>,
 ) -> Result<StreamServiceStatus, String> {
-    crate::stream::server::start(app, state.inner()).await
+    crate::stream::server::start(app, state.inner(), normalize_requested_game_path(game_path)).await
 }
 
 #[tauri::command]
@@ -100,8 +117,9 @@ pub fn save_stream_overlay_display_mode(
 pub fn detect_stream_db_path(
     app: tauri::AppHandle,
     state: tauri::State<'_, StreamRuntimeState>,
+    game_path: Option<String>,
 ) -> StreamDbPathInfo {
-    let game_path = resolve_game_path_with_fallback(&app, &state);
+    let game_path = resolve_game_path_with_fallback(&app, &state, game_path);
     match game_path {
         None => StreamDbPathInfo {
             found: false,
@@ -128,9 +146,10 @@ pub struct StreamDbPathInfo {
 pub fn list_stream_overlay_records(
     app: tauri::AppHandle,
     state: tauri::State<'_, StreamRuntimeState>,
+    game_path: Option<String>,
     limit: Option<usize>,
 ) -> Result<Vec<OverlayRecord>, String> {
-    let game_path = resolve_game_path_with_fallback(&app, &state);
+    let game_path = resolve_game_path_with_fallback(&app, &state, game_path);
     let repository = OverlayRecordRepository::new(game_path);
     repository.load_record_list(None, limit)
 }
@@ -139,13 +158,21 @@ pub fn list_stream_overlay_records(
 pub fn reveal_stream_record_image(
     app: tauri::AppHandle,
     state: tauri::State<'_, StreamRuntimeState>,
+    game_path: Option<String>,
     record_id: String,
 ) -> Result<(), String> {
-    let game_path = resolve_game_path_with_fallback(&app, &state);
-    let repository = OverlayRecordRepository::new(game_path);
+    let requested_game_path = game_path.clone();
+    let game_path = resolve_game_path_with_fallback(&app, &state, game_path);
+    let repository = OverlayRecordRepository::new(game_path.clone());
     let path = repository
         .load_image_path(&record_id)?
-        .ok_or_else(|| format!("Stream image not found for record {record_id}"))?;
+        .ok_or_else(|| {
+            let message = format!(
+                "Stream image not found for record {record_id}. requested_game_path={requested_game_path:?}, resolved_game_path={game_path:?}"
+            );
+            eprintln!("{message}");
+            message
+        })?;
 
     reveal_in_file_browser(&path)
 }
@@ -179,5 +206,21 @@ fn reveal_in_file_browser(path: &std::path::Path) -> Result<(), String> {
             .spawn()
             .map_err(|err| format!("failed to open image directory: {err}"))?;
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::normalize_requested_game_path;
+    use std::path::PathBuf;
+
+    #[test]
+    fn normalize_requested_game_path_trims_blank_input() {
+        assert_eq!(
+            normalize_requested_game_path(Some("  D:\\Games\\The Bazaar  ".to_string())),
+            Some(PathBuf::from("D:\\Games\\The Bazaar"))
+        );
+        assert_eq!(normalize_requested_game_path(Some("   ".to_string())), None);
+        assert_eq!(normalize_requested_game_path(None), None);
     }
 }
