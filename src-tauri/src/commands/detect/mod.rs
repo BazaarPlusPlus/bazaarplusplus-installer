@@ -1,11 +1,6 @@
-#[path = "detect/steam.rs"]
-mod steam;
-
-#[path = "detect/dotnet.rs"]
 mod dotnet;
-
-#[path = "detect/game.rs"]
 mod game;
+mod steam;
 
 pub use game::BppDataIssue;
 pub(crate) use game::is_valid_game_path;
