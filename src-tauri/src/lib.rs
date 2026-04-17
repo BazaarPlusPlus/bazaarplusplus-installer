@@ -10,7 +10,7 @@ use tauri::{
 use commands::{
     bepinex::{get_legacy_record_directory_info, install_bepinex, repair_bpp, uninstall_bpp},
     detect::{detect_dotnet_runtime, detect_environment, verify_game_path},
-    game::detect_bazaar_running,
+    game_process::detect_bazaar_running,
     identity::{
         post_identity_json, read_installation_private_key, read_installation_record,
         read_player_observation, write_installation_private_key, write_installation_record,
