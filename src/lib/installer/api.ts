@@ -74,13 +74,6 @@ export async function loadSupporters() {
   return call('load_supporters');
 }
 
-export {
-  readPlayerObservation,
-  readAuthRecord,
-  writeAuthRecord,
-  deleteAuthRecord
-} from '../identity/repository.ts';
-
 export async function postIdentityJson(
   url: string,
   bodyJson: string,
