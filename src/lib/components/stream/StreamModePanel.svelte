@@ -27,7 +27,6 @@
   } from '$lib/types';
 
   export let title = '';
-  export let intro = '';
   export let eyebrow = '';
   export let gamePath: string | null = null;
 
@@ -66,7 +65,6 @@
     params?: Record<string, string | number>
   ): string => formatMessage($locale, key, params);
   $: panelTitle = title || t('streamTitle');
-  $: panelIntro = intro || t('streamIntro');
   $: panelEyebrow = eyebrow || ($locale === 'zh' ? '直播模式' : 'Stream Mode');
   $: pageState = createStreamPageState(status);
   $: requestedGamePath = gamePath?.trim() || persistedGamePath || null;
@@ -368,7 +366,6 @@
   <div class="stream-copy">
     <p class="stream-eyebrow">{panelEyebrow}</p>
     <h2>{panelTitle}</h2>
-    <p class="stream-body">{panelIntro}</p>
   </div>
 
   <div class="stream-grid">
@@ -436,13 +433,6 @@
     letter-spacing: 0.08em;
     text-transform: uppercase;
     color: rgba(232, 220, 194, 0.92);
-  }
-
-  .stream-body {
-    margin: 0;
-    font-size: 0.78rem;
-    line-height: 1.55;
-    color: rgba(208, 188, 150, 0.74);
   }
 
   .stream-grid {

@@ -89,8 +89,7 @@ export type MessageKey =
   | 'homeStreamHint'
   | 'homeChangelogHint'
   | 'homeAboutHint'
-  | 'streamTitle'
-  | 'streamIntro';
+  | 'streamTitle';
 
 export const defaultLocale: Locale = 'zh';
 
@@ -199,9 +198,7 @@ export const messages: Record<Locale, Record<MessageKey, string>> = {
     homeChangelogHint:
       'Review the current release notes and update highlights.',
     homeAboutHint: 'Project credits, dependencies, and support information.',
-    streamTitle: 'Stream Mode',
-    streamIntro:
-      'Provide a localhost overlay for OBS and review end-of-run records captured after stream start.'
+    streamTitle: 'Stream Mode'
   },
   zh: {
     htmlLang: 'zh-CN',
@@ -300,9 +297,7 @@ export const messages: Record<Locale, Record<MessageKey, string>> = {
       '启动本地 OBS 服务、复制浏览器源地址，并确认开播后的 End of Run 记录是否正常读取。',
     homeChangelogHint: '查看当前版本的更新记录与功能亮点。',
     homeAboutHint: '查看项目说明、依赖信息与支持入口。',
-    streamTitle: '直播模式',
-    streamIntro:
-      '为 OBS 提供本地 overlay，并查看开播后采集到的 End of Run 记录。'
+    streamTitle: '直播模式'
   }
 };
 

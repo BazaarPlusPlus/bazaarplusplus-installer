@@ -45,7 +45,6 @@
       gamePath={effectiveGamePath || null}
       eyebrow={locale === 'zh' ? '直播模式' : 'Stream Mode'}
       title={locale === 'zh' ? '直播模式' : 'Stream Mode'}
-      intro={t('streamIntro')}
     />
   </section>
   <StreamRecordLibrary gamePath={effectiveGamePath || null} />
