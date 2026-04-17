@@ -1,87 +1,122 @@
-import test from 'node:test';
-import assert from 'node:assert/strict';
-
 import { selectIdentityPanel } from './identity-panel.ts';
 import type { LocalizedText } from './types.ts';
 
 const localized: LocalizedText = (zh, en) => en || zh;
+const vitest = (
+  import.meta as ImportMeta & {
+    vitest?: {
+      describe: (name: string, fn: () => void) => void;
+      expect: <T>(actual: T) => {
+        toBe: (expected: T) => void;
+        toBeUndefined: () => void;
+      };
+      it: (name: string, fn: () => void) => void;
+    };
+  }
+).vitest;
+const { describe, expect, it } = vitest ?? {
+  describe: () => undefined,
+  expect: () => ({ toBe: () => undefined, toBeUndefined: () => undefined }),
+  it: () => undefined
+};
 
-test('selectIdentityPanel describes the observation-required state', () => {
-  const selection = selectIdentityPanel({
-    identityState: {
-      kind: 'observation_required',
-      installation: null,
-      observation: null
-    },
-    identityLoadState: 'idle',
-    localized
-  });
-
-  assert.equal(selection.title, 'No game account detected');
-  assert.equal(selection.summary, 'Launch the game once to complete account detection.');
-});
-
-test('selectIdentityPanel describes activation and relogin states', () => {
-  const activate = selectIdentityPanel({
-    identityState: {
-      kind: 'activate_first_account',
-      installation: null,
-      observation: {
-        player_account_id: 'player-1',
-        player_username: 'Tester',
-        observed_at_utc: '2026-04-12T00:00:00Z'
-      }
-    },
-    identityLoadState: 'idle',
-    localized
-  });
-  const relogin = selectIdentityPanel({
-    identityState: {
-      kind: 'relogin_required',
-      installation: {
-        installation_id: 'install-1',
-        player_account_id: 'player-1',
-        api_base_url: 'https://mod-api-v3.bazaarplusplus.com',
-        public_key: { modulus_b64: 'n', exponent_b64: 'AQAB' },
-        status: 'active',
-        created_at_utc: '2026-04-12T00:00:00Z'
+describe('selectIdentityPanel', () => {
+  it('describes the observation-required state', () => {
+    const selection = selectIdentityPanel({
+      identityState: {
+        kind: 'observation_required',
+        auth: null,
+        observation: null
       },
-      observation: {
-        player_account_id: 'player-2',
-        player_username: 'OtherTester',
-        observed_at_utc: '2026-04-12T00:00:00Z'
-      }
-    },
-    identityLoadState: 'idle',
-    localized
+      identityLoadState: 'idle',
+      localized
+    });
+
+    expect(selection.title).toBe('Account');
+    expect(selection.summary).toBe('No game account detected');
+    expect(selection.accountHighlight).toBeUndefined();
   });
 
-  assert.equal(activate.title, 'Identity verification required');
-  assert.match(activate.summary, /Current account: Tester/);
-  assert.match(activate.summary, /create local credentials for this machine/);
-  assert.equal(relogin.title, 'Reconnect current account');
-  assert.match(relogin.summary, /Current account: OtherTester/);
-  assert.match(relogin.summary, /refresh the local credentials on this machine/);
-});
-
-test('selectIdentityPanel prefers loading summary over ready summary', () => {
-  const loading = selectIdentityPanel({
-    identityState: {
-      kind: 'ready',
-      installation: {
-        installation_id: 'install-1',
-        player_account_id: 'player-1',
-        api_base_url: 'https://mod-api-v3.bazaarplusplus.com',
-        public_key: { modulus_b64: 'n', exponent_b64: 'AQAB' },
-        status: 'active',
-        created_at_utc: '2026-04-12T00:00:00Z'
+  it('describes login and mismatch states', () => {
+    const login = selectIdentityPanel({
+      identityState: {
+        kind: 'login_or_register',
+        auth: null,
+        observation: {
+          player_account_id: 'player-1',
+          player_username: 'Tester',
+          observed_at_utc: '2026-04-12T00:00:00Z'
+        }
       },
-      observation: null
-    },
-    identityLoadState: 'loading',
-    localized
+      identityLoadState: 'idle',
+      localized
+    });
+    const mismatch = selectIdentityPanel({
+      identityState: {
+        kind: 'account_mismatch',
+        auth: {
+          token: 'token-1',
+          player_account_id: 'player-1',
+          player_username: 'Tester',
+          issued_at_utc: '2026-04-12T00:00:00Z'
+        },
+        observation: {
+          player_account_id: 'player-2',
+          player_username: 'OtherTester',
+          observed_at_utc: '2026-04-12T00:00:00Z'
+        }
+      },
+      identityLoadState: 'idle',
+      localized
+    });
+
+    expect(login.title).toBe('Account');
+    expect(login.summary).toBe('Detected game account');
+    expect(login.accountHighlight).toBe('Tester');
+    expect(mismatch.title).toBe('Account');
+    expect(mismatch.summary).toBe('Account mismatch — sign out and sign in again');
+    expect(mismatch.accountHighlight).toBeUndefined();
   });
 
-  assert.equal(loading.title, 'Account connected');
-  assert.equal(loading.summary, 'Reading account status...');
+  it('separates the signed-in username into an account highlight', () => {
+    const ready = selectIdentityPanel({
+      identityState: {
+        kind: 'ready',
+        auth: {
+          token: 'token-1',
+          player_account_id: 'player-1',
+          player_username: 'Tester',
+          issued_at_utc: '2026-04-12T00:00:00Z'
+        },
+        observation: null
+      },
+      identityLoadState: 'idle',
+      localized
+    });
+
+    expect(ready.title).toBe('Account');
+    expect(ready.summary).toBe('Signed in as');
+    expect(ready.accountHighlight).toBe('Tester');
+  });
+
+  it('prefers loading summary over ready summary', () => {
+    const loading = selectIdentityPanel({
+      identityState: {
+        kind: 'ready',
+        auth: {
+          token: 'token-1',
+          player_account_id: 'player-1',
+          player_username: 'Tester',
+          issued_at_utc: '2026-04-12T00:00:00Z'
+        },
+        observation: null
+      },
+      identityLoadState: 'loading',
+      localized
+    });
+
+    expect(loading.title).toBe('Account');
+    expect(loading.summary).toBe('Loading...');
+    expect(loading.accountHighlight).toBeUndefined();
+  });
 });

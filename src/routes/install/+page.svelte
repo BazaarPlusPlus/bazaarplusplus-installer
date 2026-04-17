@@ -144,13 +144,10 @@
   const updaterReviewBusy = updaterController.updaterReviewBusy;
 
   const playerObservation = identityController.playerObservation;
-  const installationRecord = identityController.installationRecord;
-  const hasInstallationPrivateKey =
-    identityController.hasInstallationPrivateKey;
+  const authRecord = identityController.authRecord;
   const identityLoadState = identityController.identityLoadState;
   const identityActionBusy = identityController.identityActionBusy;
   const identityPassword = identityController.identityPassword;
-  const identityConfirmed = identityController.identityConfirmed;
   const identityError = identityController.identityError;
   const identitySuccess = identityController.identitySuccess;
 
@@ -166,12 +163,10 @@
     hasPendingUpdate: false,
     pendingSteamAction: null,
     playerObservation: null,
-    installationRecord: null,
-    hasInstallationPrivateKey: false,
+    authRecord: null,
     identityLoadState: 'idle',
     identityActionBusy: 'idle',
     identityPassword: '',
-    identityConfirmed: false,
     localized,
     t
   };
@@ -187,12 +182,10 @@
     hasPendingUpdate: Boolean($pendingUpdate),
     pendingSteamAction: $pendingSteamAction,
     playerObservation: $playerObservation,
-    installationRecord: $installationRecord,
-    hasInstallationPrivateKey: $hasInstallationPrivateKey,
+    authRecord: $authRecord,
     identityLoadState: $identityLoadState,
     identityActionBusy: $identityActionBusy,
     identityPassword: $identityPassword,
-    identityConfirmed: $identityConfirmed,
     localized,
     t
   };
@@ -298,13 +291,18 @@
     {pageModel}
     identityLoadState={$identityLoadState}
     bind:identityPassword={$identityPassword}
-    bind:identityConfirmed={$identityConfirmed}
     identityActionBusy={$identityActionBusy}
     identityError={$identityError}
     identitySuccess={$identitySuccess}
     {localized}
+    onDismissError={() => identityController.identityError.set('')}
     onContinue={() =>
       identityController.continueIdentity({
+        identityState,
+        gameRoot: pageState.effectiveGamePath
+      })}
+    onLogout={() =>
+      identityController.logoutIdentity({
         identityState,
         gameRoot: pageState.effectiveGamePath
       })}

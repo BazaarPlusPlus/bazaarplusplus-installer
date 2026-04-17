@@ -2,9 +2,10 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
-  activateInstallIdentity,
+  activateObservedIdentity,
   loadInstallIdentitySnapshot,
-  reloginInstallIdentity
+  loginInstallIdentity,
+  logoutInstallIdentity
 } from './identity-flow.ts';
 
 test('loadInstallIdentitySnapshot maps the local identity payload', async () => {
@@ -16,24 +17,34 @@ test('loadInstallIdentitySnapshot maps the local identity payload', async () => 
           player_username: 'Tester',
           observed_at_utc: '2026-04-12T00:00:00Z'
         },
-        installation: null,
-        installationPrivateKeyPkcs8B64: 'secret'
+        auth: {
+          token: 'token-1',
+          player_account_id: 'player-1',
+          player_username: 'Tester',
+          issued_at_utc: '2026-04-12T00:00:00Z'
+        }
       })
     } as never,
     'C:\\Games\\The Bazaar'
   );
 
   assert.equal(snapshot.playerObservation?.player_username, 'Tester');
-  assert.equal(snapshot.hasInstallationPrivateKey, true);
+  assert.equal(snapshot.authRecord?.token, 'token-1');
 });
 
-test('activateInstallIdentity persists then reloads identity state', async () => {
+test('activateObservedIdentity persists then reloads identity state', async () => {
   let activated = false;
 
-  const result = await activateInstallIdentity({
+  const result = await activateObservedIdentity({
     identityApi: {
-      activateFirstAccount: async () => {
+      activateObservedAccount: async () => {
         activated = true;
+        return {
+          token: 'token-1',
+          player_account_id: 'player-1',
+          player_username: 'Tester',
+          issued_at_utc: '2026-04-12T00:00:00Z'
+        };
       },
       loadLocalIdentity: async () => ({
         observation: {
@@ -41,18 +52,12 @@ test('activateInstallIdentity persists then reloads identity state', async () =>
           player_username: 'Tester',
           observed_at_utc: '2026-04-12T00:00:00Z'
         },
-        installation: {
-          installation_id: 'install-1',
+        auth: {
+          token: 'token-1',
           player_account_id: 'player-1',
-          api_base_url: 'https://example.com',
-          public_key: {
-            modulus_b64: 'mod',
-            exponent_b64: 'exp'
-          },
-          status: 'active',
-          created_at_utc: '2026-04-12T00:00:00Z'
-        },
-        installationPrivateKeyPkcs8B64: 'secret'
+          player_username: 'Tester',
+          issued_at_utc: '2026-04-12T00:00:00Z'
+        }
       })
     } as never,
     gameRoot: 'C:\\Games\\The Bazaar',
@@ -67,16 +72,22 @@ test('activateInstallIdentity persists then reloads identity state', async () =>
 
   assert.equal(activated, true);
   assert.equal(result.successMessage, 'ok');
-  assert.equal(result.snapshot.installationRecord?.installation_id, 'install-1');
+  assert.equal(result.snapshot.authRecord?.token, 'token-1');
 });
 
-test('reloginInstallIdentity reuses the same snapshot reload path', async () => {
+test('loginInstallIdentity reuses the same snapshot reload path', async () => {
   let loggedIn = false;
 
-  const result = await reloginInstallIdentity({
+  const result = await loginInstallIdentity({
     identityApi: {
-      loginAndCreateInstallation: async () => {
+      loginIdentity: async () => {
         loggedIn = true;
+        return {
+          token: 'token-1',
+          player_account_id: 'player-1',
+          player_username: 'Tester',
+          issued_at_utc: '2026-04-12T00:00:00Z'
+        };
       },
       loadLocalIdentity: async () => ({
         observation: {
@@ -84,20 +95,50 @@ test('reloginInstallIdentity reuses the same snapshot reload path', async () => 
           player_username: 'Tester',
           observed_at_utc: '2026-04-12T00:00:00Z'
         },
-        installation: null,
-        installationPrivateKeyPkcs8B64: null
+        auth: {
+          token: 'token-1',
+          player_account_id: 'player-1',
+          player_username: 'Tester',
+          issued_at_utc: '2026-04-12T00:00:00Z'
+        }
       })
     } as never,
     gameRoot: 'C:\\Games\\The Bazaar',
-    observation: {
-      player_account_id: 'player-1',
-      player_username: 'Tester',
-      observed_at_utc: '2026-04-12T00:00:00Z'
-    },
+    playerUsername: 'Tester',
     password: 'secret',
-    successMessage: 'relogged'
+    successMessage: 'logged'
   });
 
   assert.equal(loggedIn, true);
-  assert.equal(result.successMessage, 'relogged');
+  assert.equal(result.successMessage, 'logged');
+});
+
+test('logoutInstallIdentity returns the local-only message when remote logout fails', async () => {
+  const result = await logoutInstallIdentity({
+    identityApi: {
+      logoutIdentity: async () => ({
+        remoteLoggedOut: false
+      }),
+      loadLocalIdentity: async () => ({
+        observation: {
+          player_account_id: 'player-1',
+          player_username: 'Tester',
+          observed_at_utc: '2026-04-12T00:00:00Z'
+        },
+        auth: null
+      })
+    } as never,
+    gameRoot: 'C:\\Games\\The Bazaar',
+    auth: {
+      token: 'token-1',
+      player_account_id: 'player-1',
+      player_username: 'Tester',
+      issued_at_utc: '2026-04-12T00:00:00Z'
+    },
+    successMessage: 'remote',
+    localOnlySuccessMessage: 'local'
+  });
+
+  assert.equal(result.successMessage, 'local');
+  assert.equal(result.snapshot.authRecord, null);
 });

@@ -1,13 +1,11 @@
-use base64::{engine::general_purpose::STANDARD, Engine as _};
 use reqwest::blocking::Client;
+use rusqlite::{params, Connection, OptionalExtension};
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 use std::time::Duration;
 
 const IDENTITY_ROOT_RELATIVE_PATH: &str = "BazaarPlusPlus/Identity";
-const PLAYER_OBSERVATION_FILE_NAME: &str = "player-observation.bpp";
-const INSTALLATION_RECORD_FILE_NAME: &str = "installation.bpp";
-const INSTALLATION_PRIVATE_KEY_FILE_NAME: &str = "installation.key";
+const IDENTITY_DATABASE_FILE_NAME: &str = "identity.db";
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, ts_rs::TS)]
 #[ts(export)]
@@ -17,31 +15,91 @@ pub struct IdentityHttpResponse {
     pub body: String,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+struct PlayerObservationRow {
+    player_account_id: String,
+    player_username: String,
+    observed_at_utc: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+struct AuthRecordRow {
+    token: String,
+    player_account_id: String,
+    player_username: String,
+    issued_at_utc: String,
+}
+
 fn identity_directory(game_root: &Path) -> PathBuf {
     game_root.join(IDENTITY_ROOT_RELATIVE_PATH)
 }
 
-fn optional_base64_file(path: &Path) -> Result<Option<String>, String> {
-    if !path.exists() {
-        return Ok(None);
-    }
-
-    let bytes =
-        std::fs::read(path).map_err(|err| format!("Cannot read {}: {err}", path.display()))?;
-    Ok(Some(STANDARD.encode(bytes)))
+fn identity_database_path(game_root: &Path) -> PathBuf {
+    identity_directory(game_root).join(IDENTITY_DATABASE_FILE_NAME)
 }
 
-fn write_base64_file(path: &Path, payload_b64: &str) -> Result<(), String> {
-    let bytes = STANDARD
-        .decode(payload_b64.trim())
-        .map_err(|err| format!("Cannot decode payload for {}: {err}", path.display()))?;
+#[cfg(unix)]
+fn harden_identity_db_permissions(path: &Path) -> Result<(), String> {
+    use std::fs;
+    use std::os::unix::fs::PermissionsExt;
 
-    if let Some(parent) = path.parent() {
-        std::fs::create_dir_all(parent)
-            .map_err(|err| format!("Cannot create {}: {err}", parent.display()))?;
+    let permissions = fs::Permissions::from_mode(0o600);
+    fs::set_permissions(path, permissions)
+        .map_err(|err| format!("Cannot set permissions on {}: {err}", path.display()))
+}
+
+#[cfg(not(unix))]
+fn harden_identity_db_permissions(_path: &Path) -> Result<(), String> {
+    Ok(())
+}
+
+fn ensure_identity_schema(conn: &Connection) -> Result<(), String> {
+    conn.execute_batch(
+        "
+        CREATE TABLE IF NOT EXISTS auth (
+          id                INTEGER PRIMARY KEY CHECK (id = 1),
+          token             TEXT    NOT NULL,
+          player_account_id TEXT    NOT NULL,
+          player_username   TEXT    NOT NULL,
+          issued_at_utc     TEXT    NOT NULL
+        );
+        CREATE TABLE IF NOT EXISTS player_observation (
+          id                INTEGER PRIMARY KEY CHECK (id = 1),
+          player_account_id TEXT    NOT NULL,
+          player_username   TEXT    NOT NULL,
+          observed_at_utc   TEXT    NOT NULL
+        );
+        PRAGMA user_version = 1;
+        ",
+    )
+    .map_err(|err| format!("Cannot ensure identity schema: {err}"))
+}
+
+fn open_identity_connection(game_root: &Path) -> Result<Connection, String> {
+    let directory = identity_directory(game_root);
+    std::fs::create_dir_all(&directory)
+        .map_err(|err| format!("Cannot create {}: {err}", directory.display()))?;
+
+    let database_path = identity_database_path(game_root);
+    let database_existed = database_path.exists();
+    let conn = Connection::open(&database_path)
+        .map_err(|err| format!("Cannot open {}: {err}", database_path.display()))?;
+
+    conn.busy_timeout(Duration::from_secs(5))
+        .map_err(|err| format!("Cannot configure busy timeout: {err}"))?;
+    conn.pragma_update(None, "journal_mode", "WAL")
+        .map_err(|err| format!("Cannot enable WAL mode: {err}"))?;
+    ensure_identity_schema(&conn)?;
+
+    if !database_existed {
+        harden_identity_db_permissions(&database_path)?;
     }
 
-    std::fs::write(path, bytes).map_err(|err| format!("Cannot write {}: {err}", path.display()))
+    Ok(conn)
+}
+
+fn serialize_row<T: Serialize>(value: &T) -> Result<String, String> {
+    serde_json::to_string(value).map_err(|err| format!("Cannot serialize identity row: {err}"))
 }
 
 fn send_identity_post_request(
@@ -76,35 +134,81 @@ fn send_identity_post_request(
 
 #[tauri::command]
 pub fn read_player_observation(game_root: String) -> Result<Option<String>, String> {
-    let path = identity_directory(Path::new(&game_root)).join(PLAYER_OBSERVATION_FILE_NAME);
-    optional_base64_file(&path)
+    let game_root_path = Path::new(&game_root);
+    let conn = open_identity_connection(game_root_path)?;
+    let row = conn
+        .query_row(
+            "SELECT player_account_id, player_username, observed_at_utc FROM player_observation WHERE id = 1",
+            [],
+            |row| {
+                Ok(PlayerObservationRow {
+                    player_account_id: row.get(0)?,
+                    player_username: row.get(1)?,
+                    observed_at_utc: row.get(2)?,
+                })
+            },
+        )
+        .optional()
+        .map_err(|err| format!("Cannot read player_observation: {err}"))?;
+
+    row.map(|value| serialize_row(&value)).transpose()
 }
 
 #[tauri::command]
-pub fn read_installation_record(game_root: String) -> Result<Option<String>, String> {
-    let path = identity_directory(Path::new(&game_root)).join(INSTALLATION_RECORD_FILE_NAME);
-    optional_base64_file(&path)
+pub fn read_auth_record(game_root: String) -> Result<Option<String>, String> {
+    let conn = open_identity_connection(Path::new(&game_root))?;
+    let row = conn
+        .query_row(
+            "SELECT token, player_account_id, player_username, issued_at_utc FROM auth WHERE id = 1",
+            [],
+            |row| {
+                Ok(AuthRecordRow {
+                    token: row.get(0)?,
+                    player_account_id: row.get(1)?,
+                    player_username: row.get(2)?,
+                    issued_at_utc: row.get(3)?,
+                })
+            },
+        )
+        .optional()
+        .map_err(|err| format!("Cannot read auth row: {err}"))?;
+
+    row.map(|value| serialize_row(&value)).transpose()
 }
 
 #[tauri::command]
-pub fn read_installation_private_key(game_root: String) -> Result<Option<String>, String> {
-    let path = identity_directory(Path::new(&game_root)).join(INSTALLATION_PRIVATE_KEY_FILE_NAME);
-    optional_base64_file(&path)
+pub fn write_auth_record(game_root: String, payload_json: String) -> Result<(), String> {
+    let payload: AuthRecordRow = serde_json::from_str(payload_json.trim())
+        .map_err(|err| format!("Cannot parse auth payload JSON: {err}"))?;
+    let conn = open_identity_connection(Path::new(&game_root))?;
+    conn.execute(
+        "
+        INSERT INTO auth (id, token, player_account_id, player_username, issued_at_utc)
+        VALUES (1, ?1, ?2, ?3, ?4)
+        ON CONFLICT(id) DO UPDATE SET
+          token = excluded.token,
+          player_account_id = excluded.player_account_id,
+          player_username = excluded.player_username,
+          issued_at_utc = excluded.issued_at_utc
+        ",
+        params![
+            payload.token,
+            payload.player_account_id,
+            payload.player_username,
+            payload.issued_at_utc
+        ],
+    )
+    .map_err(|err| format!("Cannot write auth row: {err}"))?;
+
+    Ok(())
 }
 
 #[tauri::command]
-pub fn write_installation_record(game_root: String, payload_b64: String) -> Result<(), String> {
-    let path = identity_directory(Path::new(&game_root)).join(INSTALLATION_RECORD_FILE_NAME);
-    write_base64_file(&path, &payload_b64)
-}
-
-#[tauri::command]
-pub fn write_installation_private_key(
-    game_root: String,
-    private_key_b64: String,
-) -> Result<(), String> {
-    let path = identity_directory(Path::new(&game_root)).join(INSTALLATION_PRIVATE_KEY_FILE_NAME);
-    write_base64_file(&path, &private_key_b64)
+pub fn delete_auth_record(game_root: String) -> Result<(), String> {
+    let conn = open_identity_connection(Path::new(&game_root))?;
+    conn.execute("DELETE FROM auth WHERE id = 1", [])
+        .map_err(|err| format!("Cannot delete auth row: {err}"))?;
+    Ok(())
 }
 
 #[tauri::command]

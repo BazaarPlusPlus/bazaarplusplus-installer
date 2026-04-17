@@ -2,15 +2,23 @@ import { writable, get } from 'svelte/store';
 
 import type { IdentityApiLike, InstallIdentitySnapshot } from '../identity-flow.ts';
 import {
-  activateInstallIdentity,
+  activateObservedIdentity,
   loadInstallIdentitySnapshot,
-  reloginInstallIdentity
+  loginInstallIdentity,
+  logoutInstallIdentity
 } from '../identity-flow.ts';
 import type { IdentityState } from '../../identity/state.ts';
 import type {
-  InstallationRecordPayload,
+  AuthRecordPayload,
   PlayerObservationPayload
 } from '../../identity/types.ts';
+
+function debugIdentityControllerLog(
+  message: string,
+  payload: Record<string, unknown>
+) {
+  console.debug(`[identity-controller] ${message}`, payload);
+}
 
 export function createIdentityController(input: {
   hasTauriRuntime: () => boolean;
@@ -22,28 +30,36 @@ export function createIdentityController(input: {
   ) => string;
 }) {
   const playerObservation = writable<PlayerObservationPayload | null>(null);
-  const installationRecord = writable<InstallationRecordPayload | null>(null);
-  const hasInstallationPrivateKey = writable(false);
+  const authRecord = writable<AuthRecordPayload | null>(null);
   const identityLoadState = writable<'idle' | 'loading'>('idle');
-  const identityActionBusy = writable<'idle' | 'activating' | 'logging_in'>('idle');
+  const identityActionBusy = writable<
+    'idle' | 'activating' | 'logging_in' | 'logging_out'
+  >('idle');
   const identityPassword = writable('');
-  const identityConfirmed = writable(false);
   const identityError = writable('');
   const identitySuccess = writable('');
   const identityLoadedGamePath = writable('');
   let identityLoadRequestId = 0;
 
+  function clearFormState() {
+    identityPassword.set('');
+  }
+
   function applySnapshot(snapshot: InstallIdentitySnapshot, gameRoot: string) {
+    debugIdentityControllerLog('applySnapshot', {
+      gameRoot,
+      observation: snapshot.playerObservation,
+      auth: snapshot.authRecord
+    });
     playerObservation.set(snapshot.playerObservation);
-    installationRecord.set(snapshot.installationRecord);
-    hasInstallationPrivateKey.set(snapshot.hasInstallationPrivateKey);
+    authRecord.set(snapshot.authRecord);
     identityLoadedGamePath.set(gameRoot);
   }
 
   function resetIdentitySnapshot() {
+    debugIdentityControllerLog('resetIdentitySnapshot', {});
     playerObservation.set(null);
-    installationRecord.set(null);
-    hasInstallationPrivateKey.set(false);
+    authRecord.set(null);
     identityError.set('');
     identitySuccess.set('');
   }
@@ -55,6 +71,10 @@ export function createIdentityController(input: {
 
   async function refreshIdentity(gameRoot: string) {
     if (!input.hasTauriRuntime() || !gameRoot) {
+      debugIdentityControllerLog('refreshIdentity skipped', {
+        gameRoot,
+        hasTauriRuntime: input.hasTauriRuntime()
+      });
       identityLoadedGamePath.set('');
       resetIdentitySnapshot();
       return;
@@ -75,10 +95,13 @@ export function createIdentityController(input: {
         return;
       }
 
+      console.error('[identity-controller] refreshIdentity failed', {
+        gameRoot,
+        requestId,
+        error
+      });
       resetIdentitySnapshot();
-      identityError.set(
-        input.formatIdentityErrorMessage(error, input.localized)
-      );
+      identityError.set(input.formatIdentityErrorMessage(error, input.localized));
     } finally {
       if (requestId === identityLoadRequestId) {
         identityLoadState.set('idle');
@@ -102,21 +125,15 @@ export function createIdentityController(input: {
     identityState: IdentityState;
     gameRoot: string;
   }) {
-    if (inputArgs.identityState.kind === 'relogin_required') {
-      await loginAndRefreshInstallation({ gameRoot: inputArgs.gameRoot });
-      return;
-    }
-
-    if (inputArgs.identityState.kind !== 'activate_first_account') {
+    if (inputArgs.identityState.kind !== 'login_or_register') {
       return;
     }
 
     const observation = get(playerObservation);
     const password = get(identityPassword).trim();
-    const confirmed = get(identityConfirmed);
     const actionBusy = get(identityActionBusy);
 
-    if (!inputArgs.gameRoot || !observation || !confirmed || !password || actionBusy !== 'idle') {
+    if (!inputArgs.gameRoot || !observation || !password || actionBusy !== 'idle') {
       return;
     }
 
@@ -124,26 +141,27 @@ export function createIdentityController(input: {
     resetIdentityMessages();
 
     try {
-      const result = await activateInstallIdentity({
+      const result = await activateObservedIdentity({
         identityApi: input.identityApi,
         gameRoot: inputArgs.gameRoot,
         observation,
         password,
         successMessage: input.localized(
-          '当前账号的 installation 身份已写入本地共享目录。',
-          'Installation identity for the current account was written to the shared local directory.'
+          '已登录。',
+          'Signed in.'
         )
       });
       applySnapshot(result.snapshot, inputArgs.gameRoot);
-      identityPassword.set('');
-      identityConfirmed.set(false);
+      clearFormState();
       identitySuccess.set(result.successMessage);
       return;
     } catch (error) {
-      if (!(error instanceof Error) || error.message !== 'player_account_id_claimed') {
-        identityError.set(
-          input.formatIdentityErrorMessage(error, input.localized)
-        );
+      const errorCode = error instanceof Error ? error.message : String(error);
+      if (
+        errorCode !== 'player_account_id_taken' &&
+        errorCode !== 'player_username_taken'
+      ) {
+        identityError.set(input.formatIdentityErrorMessage(error, input.localized));
         identityActionBusy.set('idle');
         return;
       }
@@ -152,20 +170,35 @@ export function createIdentityController(input: {
     identityActionBusy.set('logging_in');
 
     try {
-      const result = await reloginInstallIdentity({
+      const result = await loginInstallIdentity({
         identityApi: input.identityApi,
         gameRoot: inputArgs.gameRoot,
-        observation,
+        playerUsername: observation.player_username,
         password,
         successMessage: input.localized(
-          '检测到这个账号已经存在，已按当前账号刷新本地 installation 身份。',
-          'This account already existed, so the local installation identity was refreshed for the current account.'
+          '已登录。',
+          'Signed in.'
         )
       });
       applySnapshot(result.snapshot, inputArgs.gameRoot);
-      identityPassword.set('');
-      identityConfirmed.set(false);
-      identitySuccess.set(result.successMessage);
+      clearFormState();
+
+      const refreshedObservation = result.snapshot.playerObservation;
+      const refreshedAuth = result.snapshot.authRecord;
+      if (
+        refreshedObservation &&
+        refreshedAuth &&
+        refreshedObservation.player_account_id !== refreshedAuth.player_account_id
+      ) {
+        identitySuccess.set(
+          input.localized(
+            '已登录，但与当前游戏账号不一致。',
+            "Signed in, but doesn't match the current game account."
+          )
+        );
+      } else {
+        identitySuccess.set(result.successMessage);
+      }
     } catch (error) {
       if (error instanceof Error && error.message === 'invalid_credentials') {
         identityError.set(
@@ -175,49 +208,52 @@ export function createIdentityController(input: {
           )
         );
       } else {
-        identityError.set(
-          input.formatIdentityErrorMessage(error, input.localized)
-        );
+        identityError.set(input.formatIdentityErrorMessage(error, input.localized));
       }
     } finally {
       identityActionBusy.set('idle');
     }
   }
 
-  async function loginAndRefreshInstallation(inputArgs: {
+  async function logoutIdentity(inputArgs: {
+    identityState: IdentityState;
     gameRoot: string;
   }) {
-    const observation = get(playerObservation);
-    const password = get(identityPassword).trim();
-    const confirmed = get(identityConfirmed);
-    const actionBusy = get(identityActionBusy);
-
-    if (!inputArgs.gameRoot || !observation || !confirmed || !password || actionBusy !== 'idle') {
+    if (
+      inputArgs.identityState.kind !== 'ready' &&
+      inputArgs.identityState.kind !== 'account_mismatch'
+    ) {
       return;
     }
 
-    identityActionBusy.set('logging_in');
+    const auth = get(authRecord);
+    const actionBusy = get(identityActionBusy);
+    if (!inputArgs.gameRoot || !auth || actionBusy !== 'idle') {
+      return;
+    }
+
+    identityActionBusy.set('logging_out');
     resetIdentityMessages();
 
     try {
-      const result = await reloginInstallIdentity({
+      const result = await logoutInstallIdentity({
         identityApi: input.identityApi,
         gameRoot: inputArgs.gameRoot,
-        observation,
-        password,
+        auth,
         successMessage: input.localized(
-          'installation 材料已经按当前观察到的账号重新生成。',
-          'Installation material was regenerated for the currently observed account.'
+          '已登出。',
+          'Signed out.'
+        ),
+        localOnlySuccessMessage: input.localized(
+          '已登出（离线）。',
+          'Signed out (offline).'
         )
       });
       applySnapshot(result.snapshot, inputArgs.gameRoot);
-      identityPassword.set('');
-      identityConfirmed.set(false);
+      clearFormState();
       identitySuccess.set(result.successMessage);
     } catch (error) {
-      identityError.set(
-        input.formatIdentityErrorMessage(error, input.localized)
-      );
+      identityError.set(input.formatIdentityErrorMessage(error, input.localized));
     } finally {
       identityActionBusy.set('idle');
     }
@@ -225,12 +261,10 @@ export function createIdentityController(input: {
 
   return {
     playerObservation,
-    installationRecord,
-    hasInstallationPrivateKey,
+    authRecord,
     identityLoadState,
     identityActionBusy,
     identityPassword,
-    identityConfirmed,
     identityError,
     identitySuccess,
     identityLoadedGamePath,
@@ -239,6 +273,6 @@ export function createIdentityController(input: {
     refreshIdentity,
     syncGameRoot,
     continueIdentity,
-    loginAndRefreshInstallation
+    logoutIdentity
   };
 }

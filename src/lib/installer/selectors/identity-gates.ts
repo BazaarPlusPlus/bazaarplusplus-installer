@@ -4,28 +4,32 @@ import type { IdentityActionBusy, IdentityLoadState } from './types.ts';
 
 export interface IdentityGatesSelection {
   identityBusy: boolean;
-  canLoginIdentity: boolean;
+  canContinueIdentity: boolean;
+  canLogoutIdentity: boolean;
 }
 
 export function selectIdentityGates(input: {
   identityState: IdentityState;
   pageState: PageState;
-  playerObservationPresent: boolean;
   identityLoadState: IdentityLoadState;
   identityActionBusy: IdentityActionBusy;
   identityPassword: string;
-  identityConfirmed: boolean;
 }): IdentityGatesSelection {
   const identityBusy =
     input.identityLoadState === 'loading' || input.identityActionBusy !== 'idle';
+  const hasGameRoot = Boolean(input.pageState.effectiveGamePath);
 
   return {
     identityBusy,
-    canLoginIdentity:
-      Boolean(input.pageState.effectiveGamePath) &&
-      input.playerObservationPresent &&
+    canContinueIdentity:
+      input.identityState.kind === 'login_or_register' &&
+      hasGameRoot &&
       Boolean(input.identityPassword.trim()) &&
-      input.identityConfirmed &&
+      !identityBusy,
+    canLogoutIdentity:
+      (input.identityState.kind === 'ready' ||
+        input.identityState.kind === 'account_mismatch') &&
+      hasGameRoot &&
       !identityBusy
   };
 }

@@ -1,6 +1,6 @@
 import { createIdentityState, type IdentityState } from '../identity/state.ts';
 import type {
-  InstallationRecordPayload,
+  AuthRecordPayload,
   PlayerObservationPayload
 } from '../identity/types.ts';
 import type { BppDataIssue, EnvironmentInfo } from '../types.ts';
@@ -40,12 +40,10 @@ export interface InstallPageModelInput {
   hasPendingUpdate: boolean;
   pendingSteamAction: PendingSteamAction;
   playerObservation: PlayerObservationPayload | null;
-  installationRecord: InstallationRecordPayload | null;
-  hasInstallationPrivateKey: boolean;
+  authRecord: AuthRecordPayload | null;
   identityLoadState: IdentityLoadState;
   identityActionBusy: IdentityActionBusy;
   identityPassword: string;
-  identityConfirmed: boolean;
   localized: LocalizedText;
   t: TranslateText;
 }
@@ -80,8 +78,10 @@ export interface InstallPageModel {
   identityState: IdentityState;
   identityPanelTitle: string;
   identityPanelSummary: string;
+  identityPanelAccountHighlight?: string;
   identityBusy: boolean;
-  canLoginIdentity: boolean;
+  canContinueIdentity: boolean;
+  canLogoutIdentity: boolean;
 }
 
 export function createInstallDebugEnvironment(): EnvironmentInfo {
@@ -105,41 +105,67 @@ export function formatIdentityErrorMessage(
   localized: LocalizedText
 ): string {
   const code = error instanceof Error ? error.message : String(error);
+  const identityRequestFailedMatch = code.match(
+    /^identity_request_failed:(\d+):(.*)$/
+  );
+
+  if (identityRequestFailedMatch) {
+    const status = Number(identityRequestFailedMatch[1]);
+    const summary = identityRequestFailedMatch[2] || 'empty_body';
+
+    if (status === 404) {
+      return localized(
+        '身份服务接口不存在。当前客户端和服务端版本可能不一致。',
+        'The identity service endpoint was not found. The client and server may be on different versions.'
+      );
+    }
+
+    if (status >= 500) {
+      return localized(
+        `身份服务暂时不可用（HTTP ${status}）。响应摘要：${summary}`,
+        `The identity service is temporarily unavailable (HTTP ${status}). Response summary: ${summary}`
+      );
+    }
+
+    return localized(
+      `身份服务请求失败（HTTP ${status}）。响应摘要：${summary}`,
+      `The identity service request failed (HTTP ${status}). Response summary: ${summary}`
+    );
+  }
 
   switch (code) {
     case 'invalid_credentials':
       return localized('用户名或密码不正确。', 'Username or password is incorrect.');
+    case 'player_account_id_taken':
+      return localized(
+        '这个游戏账号已经注册过，请直接登录。',
+        'This game account already exists. Sign in instead.'
+      );
+    case 'player_username_taken':
+      return localized(
+        '这个用户名已经被占用。',
+        'This username is already taken.'
+      );
     case 'existing_account_invalid_credentials':
       return localized(
-        '这个游戏账号已经存在，但输入的密码不正确。',
-        'This game account already exists, but the password is incorrect.'
+        '这个游戏账号已经注册过，但输入的密码不正确。',
+        'This game account is already registered, but the password is incorrect.'
       );
-    case 'player_account_id_claimed':
+    case 'invalid_token':
       return localized(
-        '这个游戏账号已经注册过，请使用登录入口。',
-        'This observed game account already exists. Use the login path instead.'
-      );
-    case 'player_account_mismatch':
-    case 'observed_player_account_mismatch':
-      return localized(
-        '当前登录账号和游戏里观察到的账号不一致。',
-        'The logged-in account does not match the observed in-game account.'
-      );
-    case 'invalid_installer_session':
-      return localized(
-        '登录会话已经失效，请重新输入密码。',
-        'The installer session expired. Enter your password again.'
-      );
-    case 'webcrypto_unavailable':
-      return localized(
-        '当前运行环境不支持生成 installation 密钥。',
-        'This runtime cannot generate installation keys.'
+        '本地登录状态已经失效，请重新登录。',
+        'The local sign-in state is no longer valid. Sign in again.'
       );
     case 'Failed to fetch':
     case 'fetch failed':
       return localized(
         '无法连接身份服务。当前更像是网络或跨域配置问题，不是账号密码错误。',
         'Could not reach the identity service. This looks like a network or CORS configuration issue, not a credential error.'
+      );
+    case 'identity_request_failed':
+      return localized(
+        '身份服务请求失败，但返回内容不可解析。请检查当前服务端版本是否正确。',
+        'The identity service request failed, but the response could not be parsed. Check whether the server version is the one you expect.'
       );
     default:
       return code;
@@ -175,8 +201,7 @@ export function createInstallPageModel(
   });
   const identityState = createIdentityState({
     observation: input.playerObservation,
-    installation: input.installationRecord,
-    hasInstallationPrivateKey: input.hasInstallationPrivateKey
+    auth: input.authRecord
   });
   const updaterButton = selectUpdaterButton({
     snapshot: input.updaterSnapshot,
@@ -201,11 +226,9 @@ export function createInstallPageModel(
   const identityGates = selectIdentityGates({
     identityState,
     pageState: installGates.pageState,
-    playerObservationPresent: Boolean(input.playerObservation),
     identityLoadState: input.identityLoadState,
     identityActionBusy: input.identityActionBusy,
-    identityPassword: input.identityPassword,
-    identityConfirmed: input.identityConfirmed
+    identityPassword: input.identityPassword
   });
 
   return {
@@ -238,7 +261,9 @@ export function createInstallPageModel(
     identityState,
     identityPanelTitle: identityPanel.title,
     identityPanelSummary: identityPanel.summary,
+    identityPanelAccountHighlight: identityPanel.accountHighlight,
     identityBusy: identityGates.identityBusy,
-    canLoginIdentity: identityGates.canLoginIdentity
+    canContinueIdentity: identityGates.canContinueIdentity,
+    canLogoutIdentity: identityGates.canLogoutIdentity
   };
 }

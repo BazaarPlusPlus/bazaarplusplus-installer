@@ -3,101 +3,87 @@ import assert from 'node:assert/strict';
 
 import { selectIdentityGates } from './identity-gates.ts';
 
-test('selectIdentityGates blocks login when required fields are missing', () => {
+const pageState = {
+  hasPath: true,
+  isBusy: false,
+  canInstall: true,
+  canLaunchGame: true,
+  versionMismatch: false,
+  effectiveGamePath: 'C:\\Games\\The Bazaar'
+} as const;
+
+test('selectIdentityGates blocks activation and login when fields are missing', () => {
   const selection = selectIdentityGates({
     identityState: {
-      kind: 'activate_first_account',
-      installation: null,
+      kind: 'login_or_register',
+      auth: null,
       observation: {
         player_account_id: 'player-1',
         player_username: 'Tester',
         observed_at_utc: '2026-04-12T00:00:00Z'
       }
     },
-    pageState: {
-      hasPath: true,
-      isBusy: false,
-      canInstall: true,
-      canLaunchGame: true,
-      versionMismatch: false,
-      effectiveGamePath: 'C:\\Games\\The Bazaar'
-    },
-    playerObservationPresent: true,
+    pageState,
     identityLoadState: 'idle',
     identityActionBusy: 'idle',
-    identityPassword: '',
-    identityConfirmed: false
+    identityPassword: ''
   });
 
   assert.equal(selection.identityBusy, false);
-  assert.equal(selection.canLoginIdentity, false);
+  assert.equal(selection.canContinueIdentity, false);
 });
 
-test('selectIdentityGates blocks login while busy', () => {
+test('selectIdentityGates blocks actions while busy', () => {
   const selection = selectIdentityGates({
     identityState: {
-      kind: 'activate_first_account',
-      installation: null,
+      kind: 'login_or_register',
+      auth: null,
       observation: {
         player_account_id: 'player-1',
         player_username: 'Tester',
         observed_at_utc: '2026-04-12T00:00:00Z'
       }
     },
-    pageState: {
-      hasPath: true,
-      isBusy: false,
-      canInstall: true,
-      canLaunchGame: true,
-      versionMismatch: false,
-      effectiveGamePath: 'C:\\Games\\The Bazaar'
-    },
-    playerObservationPresent: true,
+    pageState,
     identityLoadState: 'loading',
     identityActionBusy: 'idle',
-    identityPassword: 'secret',
-    identityConfirmed: true
+    identityPassword: 'secret'
   });
 
   assert.equal(selection.identityBusy, true);
-  assert.equal(selection.canLoginIdentity, false);
+  assert.equal(selection.canContinueIdentity, false);
 });
 
-test('selectIdentityGates allows login for both activation and relogin states', () => {
-  const activate = selectIdentityGates({
+test('selectIdentityGates allows continue when password is present', () => {
+  const selection = selectIdentityGates({
     identityState: {
-      kind: 'activate_first_account',
-      installation: null,
+      kind: 'login_or_register',
+      auth: null,
       observation: {
         player_account_id: 'player-1',
         player_username: 'Tester',
         observed_at_utc: '2026-04-12T00:00:00Z'
       }
     },
-    pageState: {
-      hasPath: true,
-      isBusy: false,
-      canInstall: true,
-      canLaunchGame: true,
-      versionMismatch: false,
-      effectiveGamePath: 'C:\\Games\\The Bazaar'
-    },
-    playerObservationPresent: true,
+    pageState,
     identityLoadState: 'idle',
     identityActionBusy: 'idle',
-    identityPassword: 'secret',
-    identityConfirmed: true
+    identityPassword: 'secret'
   });
-  const relogin = selectIdentityGates({
+
+  assert.equal(selection.canContinueIdentity, true);
+  assert.equal(selection.canLogoutIdentity, false);
+});
+
+test('selectIdentityGates exposes logout only for signed-in states', () => {
+  const selection = selectIdentityGates({
     identityState: {
-      kind: 'relogin_required',
-      installation: {
-        installation_id: 'install-1',
+      kind: 'account_mismatch',
+      auth: {
+        token: 'token-1',
         player_account_id: 'player-1',
-        api_base_url: 'https://mod-api-v3.bazaarplusplus.com',
-        public_key: { modulus_b64: 'n', exponent_b64: 'AQAB' },
-        status: 'active',
-        created_at_utc: '2026-04-12T00:00:00Z'
+        player_username: 'Tester',
+        issued_at_utc: '2026-04-12T00:00:00Z'
       },
       observation: {
         player_account_id: 'player-2',
@@ -105,21 +91,11 @@ test('selectIdentityGates allows login for both activation and relogin states', 
         observed_at_utc: '2026-04-12T00:00:00Z'
       }
     },
-    pageState: {
-      hasPath: true,
-      isBusy: false,
-      canInstall: true,
-      canLaunchGame: true,
-      versionMismatch: false,
-      effectiveGamePath: 'C:\\Games\\The Bazaar'
-    },
-    playerObservationPresent: true,
+    pageState,
     identityLoadState: 'idle',
     identityActionBusy: 'idle',
-    identityPassword: 'secret',
-    identityConfirmed: true
+    identityPassword: ''
   });
 
-  assert.equal(activate.canLoginIdentity, true);
-  assert.equal(relogin.canLoginIdentity, true);
+  assert.equal(selection.canLogoutIdentity, true);
 });

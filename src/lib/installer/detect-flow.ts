@@ -2,7 +2,7 @@ import type { DotnetInfo, EnvironmentInfo } from '$lib/types';
 import type { StepState } from '$lib/installer/state';
 
 function debugDetectLog(message: string, payload: Record<string, unknown>) {
-  if (!import.meta.env.DEV) return;
+  if (!import.meta.env?.DEV) return;
   console.debug(`[detect-flow] ${message}`, payload);
 }
 

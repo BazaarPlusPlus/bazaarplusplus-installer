@@ -1,4 +1,3 @@
-import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
@@ -6,6 +5,17 @@ import {
   createInstallPageModel,
   formatIdentityErrorMessage
 } from './page-model.ts';
+
+const vitest = (
+  import.meta as ImportMeta & {
+    vitest?: {
+      it: (name: string, fn: () => void) => void;
+    };
+  }
+).vitest;
+const { it: test } = vitest ?? {
+  it: () => undefined
+};
 
 function localized(zh: string, en: string): string {
   return en || zh;
@@ -36,6 +46,13 @@ test('formatIdentityErrorMessage maps installer-specific error codes', () => {
   assert.equal(
     formatIdentityErrorMessage('fetch failed', localized),
     'Could not reach the identity service. This looks like a network or CORS configuration issue, not a credential error.'
+  );
+  assert.equal(
+    formatIdentityErrorMessage(
+      'identity_request_failed:404:<html><body>not found</body></html>',
+      localized
+    ),
+    'The identity service endpoint was not found. The client and server may be on different versions.'
   );
 });
 
@@ -77,12 +94,10 @@ test('createInstallPageModel centralizes install page derivations', () => {
       player_username: 'Tester',
       observed_at_utc: '2026-04-12T00:00:00Z'
     },
-    installationRecord: null,
-    hasInstallationPrivateKey: false,
+    authRecord: null,
     identityLoadState: 'idle',
     identityActionBusy: 'idle',
     identityPassword: 'secret',
-    identityConfirmed: true,
     localized,
     t
   });
@@ -90,8 +105,11 @@ test('createInstallPageModel centralizes install page derivations', () => {
   assert.equal(model.selectedPath, 'D:\\Bazaar Custom');
   assert.equal(model.canInstall, true);
   assert.equal(model.versionMismatch, true);
-  assert.equal(model.identityState.kind, 'activate_first_account');
-  assert.equal(model.identityPanelTitle, 'Identity verification required');
+  assert.equal(model.identityState.kind, 'login_or_register');
+  assert.equal(model.identityPanelTitle, 'Account');
+  assert.equal(model.identityPanelSummary, 'Detected game account');
+  assert.equal(model.identityPanelAccountHighlight, 'Tester');
+  assert.equal(model.canContinueIdentity, true);
   assert.equal(model.updaterButtonLabel, 'Ready 3.1.0');
   assert.equal(model.steamModalTitle, 'installRiskTitle');
 });

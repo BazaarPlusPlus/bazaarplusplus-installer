@@ -48,20 +48,16 @@ export interface TauriCommandMap {
     input: { gameRoot: string };
     output: string | null;
   };
-  read_installation_record: {
+  read_auth_record: {
     input: { gameRoot: string };
     output: string | null;
   };
-  read_installation_private_key: {
-    input: { gameRoot: string };
-    output: string | null;
-  };
-  write_installation_record: {
-    input: { gameRoot: string; payloadB64: string };
+  write_auth_record: {
+    input: { gameRoot: string; payloadJson: string };
     output: void;
   };
-  write_installation_private_key: {
-    input: { gameRoot: string; privateKeyB64: string };
+  delete_auth_record: {
+    input: { gameRoot: string };
     output: void;
   };
   post_identity_json: {

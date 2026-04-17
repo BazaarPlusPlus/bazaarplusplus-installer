@@ -3,6 +3,17 @@ export interface IdentityTransportResponse {
   body: string;
 }
 
+function summarizeBody(body: string): string {
+  const normalized = body.replace(/\s+/g, ' ').trim();
+  if (!normalized) {
+    return 'empty_body';
+  }
+
+  return normalized.length > 120
+    ? `${normalized.slice(0, 117)}...`
+    : normalized;
+}
+
 export async function readJsonOrError<T>(
   response: IdentityTransportResponse
 ): Promise<T> {
@@ -15,10 +26,12 @@ export async function readJsonOrError<T>(
   })();
 
   if (response.status < 200 || response.status >= 300) {
+    const bodyLen = typeof response.body === 'string' ? response.body.length : 0;
+    const base = `identity_request_failed:${response.status}:len=${bodyLen}`;
     const errorCode =
       body && typeof body === 'object' && 'error' in body
         ? String(body.error ?? 'identity_request_failed')
-        : 'identity_request_failed';
+        : import.meta.env?.DEV ? `${base}:${summarizeBody(response.body)}` : base;
     throw new Error(errorCode);
   }
 

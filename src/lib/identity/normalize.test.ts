@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import {
   isNonEmptyString,
   isRecord,
-  normalizeInstallationRecord,
+  normalizeAuthRecord,
   normalizePlayerObservation
 } from './normalize.ts';
 
@@ -68,41 +68,24 @@ test('normalizePlayerObservation rejects missing or blank required fields', () =
   );
 });
 
-test('normalizeInstallationRecord accepts a well-formed record', () => {
+test('normalizeAuthRecord accepts a well-formed record', () => {
   const record = {
-    installation_id: 'inst-1',
+    token: 'token-1',
     player_account_id: 'player-1',
-    api_base_url: 'https://example',
-    public_key: { modulus_b64: 'm', exponent_b64: 'e' },
-    status: 'active',
-    created_at_utc: '2026-04-11T01:00:00.000Z'
+    player_username: 'player-one',
+    issued_at_utc: '2026-04-11T01:00:00.000Z'
   };
 
-  assert.deepEqual(normalizeInstallationRecord(record), record);
+  assert.deepEqual(normalizeAuthRecord(record), record);
 });
 
-test('normalizeInstallationRecord rejects unknown status values', () => {
+test('normalizeAuthRecord rejects blank required fields', () => {
   const record = {
-    installation_id: 'inst-1',
+    token: '',
     player_account_id: 'player-1',
-    api_base_url: 'https://example',
-    public_key: { modulus_b64: 'm', exponent_b64: 'e' },
-    status: 'pending',
-    created_at_utc: '2026-04-11T01:00:00.000Z'
+    player_username: 'player-one',
+    issued_at_utc: '2026-04-11T01:00:00.000Z'
   };
 
-  assert.equal(normalizeInstallationRecord(record), null);
-});
-
-test('normalizeInstallationRecord rejects malformed public_key', () => {
-  const record = {
-    installation_id: 'inst-1',
-    player_account_id: 'player-1',
-    api_base_url: 'https://example',
-    public_key: { modulus_b64: '', exponent_b64: 'e' },
-    status: 'active',
-    created_at_utc: '2026-04-11T01:00:00.000Z'
-  };
-
-  assert.equal(normalizeInstallationRecord(record), null);
+  assert.equal(normalizeAuthRecord(record), null);
 });

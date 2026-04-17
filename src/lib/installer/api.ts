@@ -76,10 +76,9 @@ export async function loadSupporters() {
 
 export {
   readPlayerObservation,
-  readInstallationRecord,
-  readInstallationPrivateKey,
-  writeInstallationRecord,
-  writeInstallationPrivateKey
+  readAuthRecord,
+  writeAuthRecord,
+  deleteAuthRecord
 } from '../identity/repository.ts';
 
 export async function postIdentityJson(

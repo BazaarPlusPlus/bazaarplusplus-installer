@@ -3,72 +3,58 @@ import assert from 'node:assert/strict';
 
 import { createIdentityState } from './state.ts';
 
-test('no observation blocks first activation', () => {
+test('no observation blocks sign-in onboarding', () => {
   const state = createIdentityState({
     observation: null,
-    installation: null,
-    hasInstallationPrivateKey: false
+    auth: null
   });
 
   assert.equal(state.kind, 'observation_required');
 });
 
-test('observation enables first activation', () => {
+test('observation with no auth opens login or register flow', () => {
   const state = createIdentityState({
     observation: {
       player_account_id: 'player-account-001',
       player_username: 'player-one',
       observed_at_utc: '2026-04-11T01:00:00.000Z'
     },
-    installation: null,
-    hasInstallationPrivateKey: false
+    auth: null
   });
 
-  assert.equal(state.kind, 'activate_first_account');
+  assert.equal(state.kind, 'login_or_register');
   assert.equal(state.observation.player_username, 'player-one');
 });
 
-test('logged-in user with changed observation requires re-login', () => {
+test('signed-in user with changed observation requires logout and relogin', () => {
   const state = createIdentityState({
     observation: {
       player_account_id: 'player-account-002',
       player_username: 'player-two',
       observed_at_utc: '2026-04-11T01:00:00.000Z'
     },
-    installation: {
-      installation_id: 'inst_001',
+    auth: {
+      token: 'token-001',
       player_account_id: 'player-account-001',
-      api_base_url: 'https://mod-api-v3.bazaarplusplus.com',
-      public_key: {
-        modulus_b64: 'modulus',
-        exponent_b64: 'AQAB'
-      },
-      status: 'active',
-      created_at_utc: '2026-04-10T01:00:00.000Z'
-    },
-    hasInstallationPrivateKey: true
+      player_username: 'player-one',
+      issued_at_utc: '2026-04-10T01:00:00.000Z'
+    }
   });
 
-  assert.equal(state.kind, 'relogin_required');
+  assert.equal(state.kind, 'account_mismatch');
 });
 
-test('logged-in user with no new observation can still view profile', () => {
+test('signed-in user with no observation can still view profile', () => {
   const state = createIdentityState({
     observation: null,
-    installation: {
-      installation_id: 'inst_001',
+    auth: {
+      token: 'token-001',
       player_account_id: 'player-account-001',
-      api_base_url: 'https://mod-api-v3.bazaarplusplus.com',
-      public_key: {
-        modulus_b64: 'modulus',
-        exponent_b64: 'AQAB'
-      },
-      status: 'active',
-      created_at_utc: '2026-04-10T01:00:00.000Z'
-    },
-    hasInstallationPrivateKey: true
+      player_username: 'player-one',
+      issued_at_utc: '2026-04-10T01:00:00.000Z'
+    }
   });
 
   assert.equal(state.kind, 'ready');
-  assert.equal(state.installation.player_account_id, 'player-account-001');
+  assert.equal(state.auth.player_account_id, 'player-account-001');
 });

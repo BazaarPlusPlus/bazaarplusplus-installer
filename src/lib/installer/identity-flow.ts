@@ -1,27 +1,30 @@
 import type {
-  InstallationRecordPayload,
+  AuthRecordPayload,
   LoadedIdentitySnapshot,
   PlayerObservationPayload
 } from '../identity/types.ts';
 
 export interface IdentityApiLike {
   loadLocalIdentity(gameRoot: string): Promise<LoadedIdentitySnapshot>;
-  activateFirstAccount(input: {
+  activateObservedAccount(input: {
     gameRoot: string;
     observation: PlayerObservationPayload;
     password: string;
-  }): Promise<InstallationRecordPayload>;
-  loginAndCreateInstallation(input: {
+  }): Promise<AuthRecordPayload>;
+  loginIdentity(input: {
     gameRoot: string;
-    observation: PlayerObservationPayload;
+    playerUsername: string;
     password: string;
-  }): Promise<InstallationRecordPayload>;
+  }): Promise<AuthRecordPayload>;
+  logoutIdentity(input: {
+    gameRoot: string;
+    auth: AuthRecordPayload;
+  }): Promise<{ remoteLoggedOut: boolean }>;
 }
 
 export interface InstallIdentitySnapshot {
   playerObservation: PlayerObservationPayload | null;
-  installationRecord: InstallationRecordPayload | null;
-  hasInstallationPrivateKey: boolean;
+  authRecord: AuthRecordPayload | null;
 }
 
 export async function loadInstallIdentitySnapshot(
@@ -32,12 +35,11 @@ export async function loadInstallIdentitySnapshot(
 
   return {
     playerObservation: snapshot.observation,
-    installationRecord: snapshot.installation,
-    hasInstallationPrivateKey: Boolean(snapshot.installationPrivateKeyPkcs8B64)
+    authRecord: snapshot.auth
   };
 }
 
-export async function activateInstallIdentity(input: {
+export async function activateObservedIdentity(input: {
   identityApi: IdentityApiLike;
   gameRoot: string;
   observation: PlayerObservationPayload;
@@ -47,7 +49,7 @@ export async function activateInstallIdentity(input: {
   successMessage: string;
   snapshot: InstallIdentitySnapshot;
 }> {
-  await input.identityApi.activateFirstAccount({
+  await input.identityApi.activateObservedAccount({
     gameRoot: input.gameRoot,
     observation: input.observation,
     password: input.password
@@ -59,24 +61,47 @@ export async function activateInstallIdentity(input: {
   };
 }
 
-export async function reloginInstallIdentity(input: {
+export async function loginInstallIdentity(input: {
   identityApi: IdentityApiLike;
   gameRoot: string;
-  observation: PlayerObservationPayload;
+  playerUsername: string;
   password: string;
   successMessage: string;
 }): Promise<{
   successMessage: string;
   snapshot: InstallIdentitySnapshot;
 }> {
-  await input.identityApi.loginAndCreateInstallation({
+  await input.identityApi.loginIdentity({
     gameRoot: input.gameRoot,
-    observation: input.observation,
+    playerUsername: input.playerUsername,
     password: input.password
   });
 
   return {
     successMessage: input.successMessage,
+    snapshot: await loadInstallIdentitySnapshot(input.identityApi, input.gameRoot)
+  };
+}
+
+export async function logoutInstallIdentity(input: {
+  identityApi: IdentityApiLike;
+  gameRoot: string;
+  auth: AuthRecordPayload;
+  localOnlySuccessMessage: string;
+  successMessage: string;
+}): Promise<{
+  successMessage: string;
+  snapshot: InstallIdentitySnapshot;
+}> {
+  const result = await input.identityApi.logoutIdentity({
+    gameRoot: input.gameRoot,
+    auth: input.auth
+  });
+
+  return {
+    successMessage: result.remoteLoggedOut
+      ? input.successMessage
+      : input.localOnlySuccessMessage,
     snapshot: await loadInstallIdentitySnapshot(input.identityApi, input.gameRoot)
   };
 }
