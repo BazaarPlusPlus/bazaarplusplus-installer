@@ -8,7 +8,6 @@ use serde::Serialize;
 use std::path::{Path, PathBuf};
 
 const DATA_DIRECTORY: &str = "BazaarPlusPlus";
-const SCREENSHOTS_DIRECTORY: &str = "Screenshots";
 const DATABASE_FILE_NAME: &str = "bazaarplusplus.db";
 
 #[derive(Clone, Debug, Serialize)]
@@ -219,8 +218,6 @@ fn find_database_path_anywhere() -> Result<PathBuf, String> {
 }
 
 pub fn resolve_database_path(game_path: &Path) -> Result<PathBuf, String> {
-    let _ = SCREENSHOTS_DIRECTORY;
-    let _ = locator::DATABASE_FILE_NAME;
     let data_dir = game_path.join(DATA_DIRECTORY);
     if !data_dir.exists() {
         return Err(format!(
