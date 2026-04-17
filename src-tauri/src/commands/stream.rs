@@ -328,11 +328,28 @@ fn crop_dynamic_image(
     Ok(image.crop_imm(left_px, top_px, final_width, final_height))
 }
 
+#[cfg(target_os = "windows")]
+fn strip_extended_length_prefix(value: &str) -> String {
+    if let Some(stripped) = value.strip_prefix(r"\\?\UNC\") {
+        format!(r"\\{stripped}")
+    } else if let Some(stripped) = value.strip_prefix(r"\\?\") {
+        stripped.to_string()
+    } else {
+        value.to_string()
+    }
+}
+
 fn reveal_in_file_browser(path: &std::path::Path) -> Result<(), String> {
     #[cfg(target_os = "windows")]
     {
+        use std::os::windows::process::CommandExt;
+
+        let canonical = std::fs::canonicalize(path)
+            .map(|buf| strip_extended_length_prefix(&buf.to_string_lossy()))
+            .unwrap_or_else(|_| path.to_string_lossy().into_owned());
+
         Command::new("explorer")
-            .arg(format!("/select,{}", path.to_string_lossy()))
+            .raw_arg(format!("/select,\"{}\"", canonical))
             .spawn()
             .map_err(|err| format!("failed to reveal image in Explorer: {err}"))?;
         return Ok(());
