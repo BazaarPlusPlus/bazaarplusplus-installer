@@ -1,16 +1,12 @@
-#[path = "records/image.rs"]
 mod image;
-#[path = "records/locator.rs"]
 mod locator;
-#[path = "records/mapper.rs"]
 mod mapper;
-#[path = "records/repo.rs"]
 mod repo;
 
+use image::resolve_overlay_image_path;
+use locator::{find_database_path_anywhere, resolve_database_path};
 use mapper::to_overlay_record;
-pub use locator::resolve_database_path;
 pub use mapper::OverlayRecord;
-use locator::find_database_path_anywhere;
 use repo::{
     delete_overlay_record_row, load_latest_overlay_record, load_overlay_record_by_id,
     load_overlay_record_count, load_overlay_record_list,
@@ -106,7 +102,7 @@ impl OverlayRecordRepository {
     }
 
     fn resolve_image_path(&self, raw_path: Option<&str>) -> Option<PathBuf> {
-        image::resolve_overlay_image_path(self.game_path.clone(), raw_path)
+        resolve_overlay_image_path(self.game_path.clone(), raw_path)
     }
 }
 
