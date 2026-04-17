@@ -219,7 +219,7 @@ fn normalized_relative_image_path(raw_path: &str) -> PathBuf {
 
 In `src-tauri/src/stream/records.rs`, delete the definitions of `resolve_overlay_image_path` (lines 236–259) and `normalized_relative_image_path` (lines 261–271). Replace the `impl OverlayRecordRepository::resolve_image_path` body that used to call the free function with a call to `image::resolve_overlay_image_path`. Also remove the three `resolve_overlay_image_path_*` tests from the `#[cfg(test)] mod tests` block in `records.rs` since they now live in `image.rs`. Remove any `resolve_overlay_image_path` entry from the `use super::{...}` line at the top of the test module.
 
-Keep the constants `DATA_DIRECTORY`, `SCREENSHOTS_DIRECTORY`, `DATABASE_FILE_NAME` in `records.rs` for now; they will move in Task 5 when `locator.rs` absorbs them in full.
+Keep the constants `DATA_DIRECTORY` and `DATABASE_FILE_NAME` in `records.rs` for now; they will move in Task 5 when `locator.rs` absorbs them in full. `SCREENSHOTS_DIRECTORY` is no longer referenced from `records.rs` after this step (only `image.rs` uses it, via `super::locator::SCREENSHOTS_DIRECTORY`), so remove it from `records.rs` instead of leaving a dead constant.
 
 Replace the inline `resolve_image_path` method (currently at records.rs:150–152) with:
 
@@ -229,20 +229,14 @@ fn resolve_image_path(&self, raw_path: Option<&str>) -> Option<PathBuf> {
 }
 ```
 
-- [ ] **Step 1.7: Re-export image and locator symbols from `records.rs`**
+- [ ] **Step 1.7: Skip the `pub use` re-export until Task 5**
 
-At the top of `src-tauri/src/stream/records.rs`, right after the existing `#[path = ...]` declarations from Step 1.1, add:
-
-```rust
-pub use image::resolve_overlay_image_path;
-```
-
-This keeps `stream::records::resolve_overlay_image_path` resolvable for any current consumer (none exists outside the module today, but the re-export is free insurance).
+Do NOT add `pub use image::resolve_overlay_image_path;` to `records.rs` now. No caller outside the module references `stream::records::resolve_overlay_image_path`, so the re-export would emit an unused-import warning. Adding `#[allow(unused_imports)]` to silence it would be a warning-suppression hack, which violates the anti-suppression spirit of this plan. Task 5 will re-introduce the re-export from `records/mod.rs` at the correct time (when `mod.rs` is the canonical module surface).
 
 - [ ] **Step 1.8: Run tests — expect all green**
 
 Run: `cargo test --manifest-path src-tauri/Cargo.toml --lib stream::records`
-Expected: 13 tests pass (3 in `image::tests`, 10 in `records::tests`). The three image tests now live under `stream::records::image::tests`.
+Expected: 17 tests pass (3 in `image::tests`, 14 in `records::tests`). The three image tests now live under `stream::records::image::tests`.
 
 - [ ] **Step 1.9: Commit**
 
@@ -578,7 +572,7 @@ In `src-tauri/src/stream/records.rs`:
 
 1. Delete the `OverlayRecord` struct definition (lines 9–23).
 2. Delete the `fn to_overlay_record(&self, row: OverlayRecordRow) -> OverlayRecord { ... }` method (around lines 154–187). Keep the `fn resolve_image_path(&self, raw_path: Option<&str>) -> Option<PathBuf>` helper — `OverlayRecordRepository::delete_record` still uses it to locate the on-disk image before deleting, and `mapper.rs` does not replace that usage.
-3. Add at the top-of-file imports, with the existing `pub use image::resolve_overlay_image_path;` line:
+3. Add at the top-of-file imports (no `pub use` for `resolve_overlay_image_path` yet — that re-export lands in Task 5 when `mod.rs` becomes the module surface):
 
 ```rust
 pub use mapper::OverlayRecord;
