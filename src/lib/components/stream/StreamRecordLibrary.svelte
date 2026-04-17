@@ -497,7 +497,7 @@
   .record-list {
     display: grid;
     gap: 0.7rem;
-    max-height: 32rem;
+    max-height: 25rem;
     overflow-y: auto;
     padding-right: 0.2rem;
   }
