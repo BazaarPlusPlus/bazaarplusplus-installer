@@ -2,35 +2,21 @@
 mod image;
 #[path = "records/locator.rs"]
 mod locator;
+#[path = "records/mapper.rs"]
+mod mapper;
 #[path = "records/repo.rs"]
 mod repo;
 
-use serde::Serialize;
-use std::path::{Path, PathBuf};
-pub(crate) use repo::OverlayRecordRow;
+use mapper::to_overlay_record;
+pub use mapper::OverlayRecord;
 use repo::{
     delete_overlay_record_row, load_latest_overlay_record, load_overlay_record_by_id,
     load_overlay_record_count, load_overlay_record_list,
 };
+use std::path::{Path, PathBuf};
 
 const DATA_DIRECTORY: &str = "BazaarPlusPlus";
 const DATABASE_FILE_NAME: &str = "bazaarplusplus.db";
-
-#[derive(Clone, Debug, Serialize)]
-pub struct OverlayRecord {
-    pub id: String,
-    pub title: String,
-    pub subtitle: String,
-    pub captured_at: String,
-    pub captured_at_utc: String,
-    pub image_url: Option<String>,
-    pub image_path: Option<String>,
-    pub wins: Option<i64>,
-    pub position: Option<i64>,
-    pub battle_count: Option<i64>,
-    pub rank: Option<String>,
-    pub rating: Option<i64>,
-}
 
 #[derive(Clone, Debug)]
 pub struct OverlayRecordRepository {
@@ -49,7 +35,7 @@ impl OverlayRecordRepository {
     ) -> Result<Option<OverlayRecord>, String> {
         let database_path = self.database_path()?;
         Ok(load_latest_overlay_record(&database_path, from, offset)?
-            .map(|row| self.to_overlay_record(row)))
+            .map(|row| to_overlay_record(self.game_path.as_deref(), row)))
     }
 
     pub fn count_since(&self, from: Option<&str>) -> Result<usize, String> {
@@ -65,7 +51,7 @@ impl OverlayRecordRepository {
         let database_path = self.database_path()?;
         Ok(load_overlay_record_list(&database_path, from, limit)?
             .into_iter()
-            .map(|row| self.to_overlay_record(row))
+            .map(|row| to_overlay_record(self.game_path.as_deref(), row))
             .collect())
     }
 
@@ -122,41 +108,6 @@ impl OverlayRecordRepository {
 
     fn resolve_image_path(&self, raw_path: Option<&str>) -> Option<PathBuf> {
         image::resolve_overlay_image_path(self.game_path.clone(), raw_path)
-    }
-
-    fn to_overlay_record(&self, row: OverlayRecordRow) -> OverlayRecord {
-        let image_path = self
-            .resolve_image_path(row.image_path.as_deref())
-            .filter(|path| path.exists());
-        let image_url = image_path
-            .as_ref()
-            .map(|_| format!("/images/{}", row.id));
-        let image_path = image_path.map(|path| path.to_string_lossy().into_owned());
-
-        let title = row.hero;
-        let subtitle = match (row.wins, row.battle_count) {
-            (Some(wins), Some(battles)) => {
-                format!("{} · {}W · {} battles", row.game_mode, wins, battles)
-            }
-            (Some(wins), None) => format!("{} · {}W", row.game_mode, wins),
-            (None, Some(battles)) => format!("{} · {} battles", row.game_mode, battles),
-            (None, None) => row.game_mode,
-        };
-
-        OverlayRecord {
-            id: row.id,
-            title,
-            subtitle,
-            captured_at: row.captured_at,
-            captured_at_utc: row.captured_at_utc,
-            image_url,
-            image_path,
-            wins: row.wins,
-            position: row.position,
-            battle_count: row.battle_count,
-            rank: row.rank,
-            rating: row.rating,
-        }
     }
 }
 
