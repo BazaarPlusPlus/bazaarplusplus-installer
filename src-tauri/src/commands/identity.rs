@@ -48,7 +48,32 @@ fn harden_identity_db_permissions(path: &Path) -> Result<(), String> {
         .map_err(|err| format!("Cannot set permissions on {}: {err}", path.display()))
 }
 
-#[cfg(not(unix))]
+#[cfg(windows)]
+fn harden_identity_db_permissions(path: &Path) -> Result<(), String> {
+    use std::process::Command;
+
+    let username = std::env::var("USERNAME")
+        .map_err(|err| format!("Cannot read USERNAME env: {err}"))?;
+    // Break inheritance and grant full access only to the current user.
+    let output = Command::new("icacls")
+        .arg(path)
+        .arg("/inheritance:r")
+        .arg("/grant:r")
+        .arg(format!("{username}:F"))
+        .output()
+        .map_err(|err| format!("Cannot invoke icacls on {}: {err}", path.display()))?;
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        eprintln!(
+            "[identity] icacls hardening failed for {}: {}",
+            path.display(),
+            stderr.trim()
+        );
+    }
+    Ok(())
+}
+
+#[cfg(not(any(unix, windows)))]
 fn harden_identity_db_permissions(_path: &Path) -> Result<(), String> {
     Ok(())
 }
@@ -81,7 +106,6 @@ fn open_identity_connection(game_root: &Path) -> Result<Connection, String> {
         .map_err(|err| format!("Cannot create {}: {err}", directory.display()))?;
 
     let database_path = identity_database_path(game_root);
-    let database_existed = database_path.exists();
     let conn = Connection::open(&database_path)
         .map_err(|err| format!("Cannot open {}: {err}", database_path.display()))?;
 
@@ -90,12 +114,17 @@ fn open_identity_connection(game_root: &Path) -> Result<Connection, String> {
     conn.pragma_update(None, "journal_mode", "WAL")
         .map_err(|err| format!("Cannot enable WAL mode: {err}"))?;
     ensure_identity_schema(&conn)?;
-
-    if !database_existed {
-        harden_identity_db_permissions(&database_path)?;
-    }
+    harden_identity_db_permissions(&database_path)?;
 
     Ok(conn)
+}
+
+fn open_existing_identity_connection(game_root: &Path) -> Result<Option<Connection>, String> {
+    let database_path = identity_database_path(game_root);
+    if !database_path.exists() {
+        return Ok(None);
+    }
+    Ok(Some(open_identity_connection(game_root)?))
 }
 
 fn serialize_row<T: Serialize>(value: &T) -> Result<String, String> {
@@ -135,7 +164,9 @@ fn send_identity_post_request(
 #[tauri::command]
 pub fn read_player_observation(game_root: String) -> Result<Option<String>, String> {
     let game_root_path = Path::new(&game_root);
-    let conn = open_identity_connection(game_root_path)?;
+    let Some(conn) = open_existing_identity_connection(game_root_path)? else {
+        return Ok(None);
+    };
     let row = conn
         .query_row(
             "SELECT player_account_id, player_username, observed_at_utc FROM player_observation WHERE id = 1",
@@ -156,7 +187,9 @@ pub fn read_player_observation(game_root: String) -> Result<Option<String>, Stri
 
 #[tauri::command]
 pub fn read_auth_record(game_root: String) -> Result<Option<String>, String> {
-    let conn = open_identity_connection(Path::new(&game_root))?;
+    let Some(conn) = open_existing_identity_connection(Path::new(&game_root))? else {
+        return Ok(None);
+    };
     let row = conn
         .query_row(
             "SELECT token, player_account_id, player_username, issued_at_utc FROM auth WHERE id = 1",
@@ -205,7 +238,9 @@ pub fn write_auth_record(game_root: String, payload_json: String) -> Result<(), 
 
 #[tauri::command]
 pub fn delete_auth_record(game_root: String) -> Result<(), String> {
-    let conn = open_identity_connection(Path::new(&game_root))?;
+    let Some(conn) = open_existing_identity_connection(Path::new(&game_root))? else {
+        return Ok(());
+    };
     conn.execute("DELETE FROM auth WHERE id = 1", [])
         .map_err(|err| format!("Cannot delete auth row: {err}"))?;
     Ok(())
