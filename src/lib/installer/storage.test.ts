@@ -1,7 +1,9 @@
 import { test, expect } from 'vitest';
 
 import {
+  loadPersistedDetectedGamePath,
   loadPersistedCustomGamePath,
+  persistDetectedGamePath,
   persistCustomGamePath
 } from './storage.ts';
 
@@ -38,6 +40,31 @@ test('persistCustomGamePath stores and clears the selected game path', () => {
 
     persistCustomGamePath('   ');
     expect(loadPersistedCustomGamePath()).toBe('');
+  } finally {
+    Object.defineProperty(globalThis, 'window', {
+      configurable: true,
+      value: originalWindow
+    });
+  }
+});
+
+test('persistDetectedGamePath stores and clears the detected game path cache', () => {
+  const originalWindow = globalThis.window;
+  const localStorage = createStorage();
+
+  Object.defineProperty(globalThis, 'window', {
+    configurable: true,
+    value: { localStorage }
+  });
+
+  try {
+    expect(loadPersistedDetectedGamePath()).toBe('');
+
+    persistDetectedGamePath('  /games/the-bazaar-auto  ');
+    expect(loadPersistedDetectedGamePath()).toBe('/games/the-bazaar-auto');
+
+    persistDetectedGamePath('   ');
+    expect(loadPersistedDetectedGamePath()).toBe('');
   } finally {
     Object.defineProperty(globalThis, 'window', {
       configurable: true,

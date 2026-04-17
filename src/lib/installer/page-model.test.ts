@@ -61,6 +61,7 @@ test('createInstallPageModel centralizes install page derivations', () => {
     },
     bazaarFound: true,
     customGamePath: '  D:\\Bazaar Custom  ',
+    cachedDetectedGamePath: '',
     actionBusy: 'idle',
     showStreamMode: false,
     locale: 'en',
@@ -100,4 +101,40 @@ test('createInstallPageModel centralizes install page derivations', () => {
   expect(model.canContinueIdentity).toBe(true);
   expect(model.updaterButtonLabel).toBe('Ready 3.1.0');
   expect(model.steamModalTitle).toBe('installRiskTitle');
+});
+
+test('createInstallPageModel hydrates effectiveGamePath from cached detection before env loads', () => {
+  const model = createInstallPageModel({
+    env: null,
+    bazaarFound: false,
+    customGamePath: '',
+    cachedDetectedGamePath: '  C:\\Games\\The Bazaar  ',
+    actionBusy: 'idle',
+    showStreamMode: false,
+    locale: 'en',
+    isDebugInstallPreview: false,
+    updaterSnapshot: {
+      status: 'idle',
+      currentVersion: null,
+      availableVersion: null,
+      errorMessage: null,
+      progress: {
+        downloadedBytes: 0,
+        totalBytes: null
+      }
+    },
+    hasPendingUpdate: false,
+    pendingSteamAction: null,
+    playerObservation: null,
+    authRecord: null,
+    identityLoadState: 'idle',
+    identityActionBusy: 'idle',
+    identityPassword: '',
+    localized,
+    t
+  });
+
+  expect(model.pageState.effectiveGamePath).toBe('C:\\Games\\The Bazaar');
+  expect(model.hasPath).toBe(true);
+  expect(model.canInstall).toBe(false);
 });

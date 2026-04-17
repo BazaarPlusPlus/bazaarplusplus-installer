@@ -32,6 +32,7 @@ export interface InstallPageModelInput {
   env: EnvironmentInfo | null;
   bazaarFound: boolean;
   customGamePath: string;
+  cachedDetectedGamePath: string;
   actionBusy: ActionBusy;
   showStreamMode: boolean;
   locale: string;
@@ -196,6 +197,7 @@ export function createInstallPageModel(
     env: input.env,
     bazaarFound: input.bazaarFound,
     customGamePath: input.customGamePath,
+    cachedDetectedGamePath: input.cachedDetectedGamePath,
     actionBusy: input.actionBusy,
     isDebugInstallPreview: input.isDebugInstallPreview
   });

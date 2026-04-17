@@ -26,10 +26,12 @@ export function selectInstallGates(input: {
   env: EnvironmentInfo | null;
   bazaarFound: boolean;
   customGamePath: string;
+  cachedDetectedGamePath: string;
   actionBusy: ActionBusy;
   isDebugInstallPreview: boolean;
 }): InstallGatesSelection {
   const selectedPath = selectCustomGamePath(input.customGamePath);
+  const cachedDetectedPath = input.cachedDetectedGamePath.trim() || null;
   const modInstalled = Boolean(input.env?.bpp_version);
   const bundledBppVersion = input.env?.bundled_bpp_version ?? null;
   const installedBppVersion = input.env?.bpp_version ?? null;
@@ -41,7 +43,7 @@ export function selectInstallGates(input: {
     bazaarFound: input.bazaarFound,
     bppDataResetRequired,
     selectedGamePath: selectedPath,
-    detectedGamePath: input.env?.game_path ?? null,
+    detectedGamePath: input.env?.game_path ?? cachedDetectedPath,
     isDebugInstallPreview: input.isDebugInstallPreview,
     bundledBppVersion,
     installedBppVersion

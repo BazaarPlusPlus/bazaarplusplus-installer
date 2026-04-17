@@ -29,7 +29,9 @@
     verifyGamePath as verifyGamePathApi
   } from '$lib/installer/api';
   import {
+    loadPersistedDetectedGamePath,
     loadPersistedCustomGamePath,
+    persistDetectedGamePath,
     persistCustomGamePath
   } from '$lib/installer/storage';
   import {
@@ -98,11 +100,13 @@
     getInstallRuntimeRisks,
     shouldShowInstallRiskModal,
     persistCustomGamePath,
+    persistDetectedGamePath,
     localized,
     t,
     formatByteLabel
   });
   installController.initializeCustomGamePath(loadPersistedCustomGamePath());
+  installController.initializeDetectedGamePath(loadPersistedDetectedGamePath());
 
   const updaterController = createUpdaterController({
     hasTauriRuntime
@@ -121,6 +125,7 @@
   const bazaarChecking = installController.bazaarChecking;
   const bazaarInvalid = installController.bazaarInvalid;
   const customGamePath = installController.customGamePath;
+  const detectedGamePath = installController.detectedGamePath;
   const actionBusy = installController.actionBusy;
   const showInstallModal = installController.showInstallModal;
   const showRepairModal = installController.showRepairModal;
@@ -155,6 +160,7 @@
     env: null,
     bazaarFound: false,
     customGamePath: '',
+    cachedDetectedGamePath: $detectedGamePath,
     actionBusy: 'idle',
     showStreamMode: false,
     locale: 'zh',
@@ -174,6 +180,7 @@
     env: $env,
     bazaarFound: $bazaarFound,
     customGamePath: $customGamePath,
+    cachedDetectedGamePath: $detectedGamePath,
     actionBusy: $actionBusy,
     showStreamMode: $showStreamMode,
     locale: $locale,

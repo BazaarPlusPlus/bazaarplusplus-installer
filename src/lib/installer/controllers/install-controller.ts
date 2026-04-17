@@ -54,6 +54,7 @@ export function createInstallController(input: {
   }) => InstallRuntimeRisk[];
   shouldShowInstallRiskModal: (risks: InstallRuntimeRisk[]) => boolean;
   persistCustomGamePath: (path: string) => void;
+  persistDetectedGamePath: (path: string) => void;
   localized: (zh: string, en: string) => string;
   t: TranslateText;
   formatByteLabel: (bytes: number) => string;
@@ -64,6 +65,7 @@ export function createInstallController(input: {
   const bazaarChecking = writable(false);
   const bazaarInvalid = writable(false);
   const customGamePath = writable('');
+  const detectedGamePath = writable('');
   const actionBusy = writable<ActionBusy>('idle');
   const showInstallModal = writable(false);
   const showRepairModal = writable(false);
@@ -81,8 +83,25 @@ export function createInstallController(input: {
     customGamePath.set(path);
   }
 
+  function initializeDetectedGamePath(path: string) {
+    detectedGamePath.set(path);
+  }
+
   function persistCurrentGamePath() {
     input.persistCustomGamePath(get(customGamePath));
+  }
+
+  function syncDetectedGamePathCache(
+    selectedPath: string | null,
+    resolvedGamePath: string | null | undefined
+  ) {
+    if (selectedPath) {
+      return;
+    }
+
+    const normalizedPath = resolvedGamePath?.trim() ?? '';
+    detectedGamePath.set(normalizedPath);
+    input.persistDetectedGamePath(normalizedPath);
   }
 
   function applyInstallDebugState() {
@@ -136,6 +155,7 @@ export function createInstallController(input: {
         selectedPath,
         result
       });
+      syncDetectedGamePathCache(selectedPath, result.env?.game_path ?? null);
       env.set(result.env);
       dotnetState.set(result.dotnetState);
       bazaarFound.set(result.bazaarFound);
@@ -147,6 +167,8 @@ export function createInstallController(input: {
 
   async function checkPath(effectiveGamePath: string) {
     if (!effectiveGamePath) return;
+
+    const customPathAtStart = get(customGamePath).trim() || null;
 
     bazaarChecking.set(true);
     bazaarInvalid.set(false);
@@ -161,12 +183,18 @@ export function createInstallController(input: {
         effectiveGamePath,
         result
       });
+      syncDetectedGamePathCache(
+        customPathAtStart,
+        result.env?.game_path ?? null
+      );
       env.set(result.env);
       dotnetState.set(result.dotnetState);
       bazaarFound.set(result.bazaarFound);
       bazaarInvalid.set(result.bazaarInvalid);
     } catch (error) {
       console.error(error);
+      // Intentionally keep the cached detected path: a failed check (e.g.,
+      // transient IO/network error) shouldn't wipe the last known-good value.
       bazaarFound.set(false);
       bazaarInvalid.set(true);
     } finally {
@@ -497,6 +525,7 @@ export function createInstallController(input: {
     bazaarChecking,
     bazaarInvalid,
     customGamePath,
+    detectedGamePath,
     actionBusy,
     showInstallModal,
     showRepairModal,
@@ -510,6 +539,7 @@ export function createInstallController(input: {
     steamActionBusy,
     showStreamMode,
     initializeCustomGamePath,
+    initializeDetectedGamePath,
     persistCurrentGamePath,
     requestInstall,
     closeLaunchOptionsWarningModal,
