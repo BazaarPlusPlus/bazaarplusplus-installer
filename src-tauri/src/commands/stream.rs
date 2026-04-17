@@ -332,7 +332,7 @@ fn reveal_in_file_browser(path: &std::path::Path) -> Result<(), String> {
     #[cfg(target_os = "windows")]
     {
         Command::new("explorer")
-            .args(["/select,", &path.to_string_lossy()])
+            .arg(format!("/select,{}", path.to_string_lossy()))
             .spawn()
             .map_err(|err| format!("failed to reveal image in Explorer: {err}"))?;
         return Ok(());
