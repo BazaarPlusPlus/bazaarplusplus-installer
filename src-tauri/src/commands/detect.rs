@@ -8,10 +8,11 @@ mod dotnet;
 mod game;
 
 pub use game::BppDataIssue;
-pub(crate) use game::{is_bepinex_installed, is_valid_game_path, read_installed_bpp_version};
+pub(crate) use game::is_valid_game_path;
 
 use game::{
-    BppDataDirectoryState, inspect_bpp_data_directory, normalize_game_path, resolve_game_path,
+    BppDataDirectoryState, inspect_bpp_data_directory, is_bepinex_installed, normalize_game_path,
+    read_installed_bpp_version, resolve_game_path,
 };
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
