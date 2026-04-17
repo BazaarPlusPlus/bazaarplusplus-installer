@@ -1,6 +1,8 @@
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 
+use super::steam;
+
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
 pub enum BppDataIssue {
@@ -29,10 +31,10 @@ pub(super) fn resolve_game_path(
 ) -> Option<PathBuf> {
     requested_game_path
         .map(Path::to_path_buf)
-        .or_else(|| steam_path.and_then(super::steam::get_game_path))
+        .or_else(|| steam_path.and_then(steam::get_game_path))
 }
 
-pub(crate) fn is_bepinex_installed(game_path: &Path) -> bool {
+pub(super) fn is_bepinex_installed(game_path: &Path) -> bool {
     if !game_path
         .join("BepInEx/core/BepInEx.Preloader.dll")
         .exists()
@@ -52,7 +54,7 @@ pub(crate) fn is_bepinex_installed(game_path: &Path) -> bool {
     return true;
 }
 
-pub(crate) fn read_installed_bpp_version(game_path: &Path) -> Option<String> {
+pub(super) fn read_installed_bpp_version(game_path: &Path) -> Option<String> {
     let version_path = game_path.join("BepInEx/plugins/BazaarPlusPlus.version");
     let version = std::fs::read_to_string(version_path).ok()?;
     let version = version.trim();
@@ -118,7 +120,6 @@ pub(crate) fn is_valid_game_path(base: &Path) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::path::{Path, PathBuf};
 
     #[test]
     fn test_read_installed_bpp_version_trims_contents() {
