@@ -5,7 +5,8 @@ use serde::Serialize;
 use super::image::resolve_overlay_image_path;
 use super::repo::OverlayRecordRow;
 
-#[derive(Clone, Debug, Serialize)]
+#[derive(Clone, Debug, Serialize, ts_rs::TS)]
+#[ts(export, rename = "StreamRecordSummary")]
 pub struct OverlayRecord {
     pub id: String,
     pub title: String,

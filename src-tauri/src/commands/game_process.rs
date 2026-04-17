@@ -5,7 +5,8 @@ use std::process::Command;
 #[cfg_attr(not(any(target_os = "windows", test)), allow(dead_code))]
 const BAZAAR_PROCESS_NAME: &str = "TheBazaar.exe";
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, ts_rs::TS)]
+#[ts(export)]
 pub struct GameRunningInfo {
     pub running: bool,
 }

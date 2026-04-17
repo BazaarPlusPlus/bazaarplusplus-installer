@@ -9,7 +9,8 @@ use super::{debug_error, debug_log};
 const THE_BAZAAR_APP_ID: &str = "1617400";
 const LAUNCH_OPTIONS_KEY: &str = "LaunchOptions";
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, ts_rs::TS)]
+#[ts(export)]
 pub struct LaunchOptionsPatchResult {
     pub verified: bool,
 }

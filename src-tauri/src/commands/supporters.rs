@@ -16,7 +16,8 @@ static SUPPORTERS_REFRESH_IN_FLIGHT: AtomicBool = AtomicBool::new(false);
 
 pub const SUPPORTER_REFRESH_INTERVAL_SECS: u64 = 12 * 60 * 60;
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, ts_rs::TS)]
+#[ts(export)]
 pub struct SupporterEntry {
     pub name: String,
     pub tier: u8,
@@ -29,7 +30,8 @@ pub struct SupportersPayload {
     pub fetched_at: Option<u64>,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, ts_rs::TS)]
+#[ts(export)]
 #[serde(rename_all = "lowercase")]
 pub enum SupportersSource {
     Bundled,
@@ -37,7 +39,8 @@ pub enum SupportersSource {
     Remote,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, ts_rs::TS)]
+#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct SupportersResponse {
     pub entries: Vec<SupporterEntry>,

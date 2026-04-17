@@ -5,7 +5,8 @@ use std::path::PathBuf;
 const SETTINGS_DIRECTORY: &str = "BazaarPlusPlus";
 const SETTINGS_FILE_NAME: &str = "stream-overlay-crop.json";
 
-#[derive(Clone, Copy, Debug, Deserialize, Serialize, PartialEq)]
+#[derive(Clone, Copy, Debug, Deserialize, Serialize, PartialEq, ts_rs::TS)]
+#[ts(export, rename = "StreamOverlayCropSettings")]
 pub struct OverlayCropSettings {
     pub left: f64,
     pub top: f64,
@@ -13,7 +14,8 @@ pub struct OverlayCropSettings {
     pub height: f64,
 }
 
-#[derive(Clone, Copy, Debug, Deserialize, Serialize, PartialEq, Eq, Default)]
+#[derive(Clone, Copy, Debug, Deserialize, Serialize, PartialEq, Eq, Default, ts_rs::TS)]
+#[ts(export, rename = "StreamOverlayDisplayMode")]
 #[serde(rename_all = "snake_case")]
 pub enum OverlayDisplayMode {
     #[default]
@@ -56,7 +58,8 @@ struct OverlayCropDocument {
     settings: OverlaySettings,
 }
 
-#[derive(Clone, Debug, Serialize, PartialEq)]
+#[derive(Clone, Debug, Serialize, PartialEq, ts_rs::TS)]
+#[ts(export, rename = "StreamOverlayCropSettingsPayload")]
 pub struct OverlayCropSettingsPayload {
     pub crop: OverlayCropSettings,
     pub code: String,

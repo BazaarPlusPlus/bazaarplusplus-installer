@@ -1,39 +1,19 @@
-export type BppDataIssue = 'missing_version_file' | 'incompatible_version';
-
-export interface EnvironmentInfo {
-  steam_path: string | null;
-  steam_launch_options_supported: boolean;
-  game_path: string | null;
-  dotnet_version: string | null;
-  dotnet_ok: boolean;
-  bepinex_installed: boolean;
-  bpp_version: string | null;
-  bundled_bpp_version: string | null;
-  bpp_data_version: string | null;
-  bpp_data_reset_required: boolean;
-  bpp_data_issue: BppDataIssue | null;
-}
-
-export interface DotnetInfo {
-  dotnet_version: string | null;
-  dotnet_ok: boolean;
-}
-
-export interface LaunchOptionsPatchResult {
-  verified: boolean;
-}
-
-export interface SteamRunningInfo {
-  running: boolean;
-}
-
-export interface GameRunningInfo {
-  running: boolean;
-}
-
-export interface LegacyRecordDirectoryInfo {
-  total_bytes: number;
-}
+export type {
+  BppDataIssue,
+  DotnetInfo,
+  EnvironmentInfo,
+  GameRunningInfo,
+  IdentityHttpResponse,
+  LaunchOptionsPatchResult,
+  LegacyRecordDirectoryInfo,
+  SteamRunningInfo,
+  StreamDbPathInfo,
+  StreamOverlayCropSettings,
+  StreamOverlayCropSettingsPayload,
+  StreamOverlayDisplayMode,
+  StreamRecordSummary,
+  StreamServiceStatus
+} from './generated/commands';
 
 export type SupporterTierId = 1 | 2 | 3 | 4;
 
@@ -51,55 +31,8 @@ export interface SupportersResponse {
   stale: boolean;
 }
 
-export interface StreamServiceStatus {
-  running: boolean;
-  host: string;
-  port: number | null;
-  overlay_url: string | null;
-  using_fallback_port: boolean;
-  last_error: string | null;
-  started_at: string | null;
-  active_from: string | null;
-  active_window_offset: number;
-}
-
-export interface StreamRecordSummary {
-  id: string;
-  title: string;
-  subtitle: string;
-  captured_at: string;
-  captured_at_utc: string;
-  image_url?: string | null;
-  image_path?: string | null;
-  wins?: number | null;
-  position?: number | null;
-  battle_count?: number | null;
-  rank?: string | null;
-  rating?: number | null;
-}
-
 export interface StreamRecordWindowSummary {
   total: number;
   existing_before_start: number;
   captured_since_start: number;
-}
-
-export interface StreamOverlayCropSettings {
-  left: number;
-  top: number;
-  width: number;
-  height: number;
-}
-
-export type StreamOverlayDisplayMode = 'current' | 'hero' | 'herohalf';
-
-export interface StreamOverlayCropSettingsPayload {
-  crop: StreamOverlayCropSettings;
-  code: string;
-  display_mode: StreamOverlayDisplayMode;
-}
-
-export interface StreamDbPathInfo {
-  found: boolean;
-  path: string | null;
 }

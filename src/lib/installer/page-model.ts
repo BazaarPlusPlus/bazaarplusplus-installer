@@ -1,29 +1,32 @@
-import type { MessageKey } from '../i18n.ts';
 import { createIdentityState, type IdentityState } from '../identity/state.ts';
 import type {
   InstallationRecordPayload,
   PlayerObservationPayload
 } from '../identity/types.ts';
 import type { BppDataIssue, EnvironmentInfo } from '../types.ts';
+import type { ActionBusy, PageState } from './state.ts';
+import type { UpdaterSnapshot } from '../updater.ts';
 import {
-  createPageState,
-  selectCustomGamePath,
-  type ActionBusy,
-  type PageState
-} from './state.ts';
-import {
-  createProgressLabel,
-  type UpdaterSnapshot
-} from '../updater.ts';
+  type IdentityActionBusy,
+  type IdentityLoadState,
+  type LocalizedText,
+  type PendingSteamAction,
+  type TranslateText
+} from './selectors/types.ts';
+import { selectIdentityGates } from './selectors/identity-gates.ts';
+import { selectIdentityPanel } from './selectors/identity-panel.ts';
+import { selectInstallGates } from './selectors/install-gates.ts';
+import { selectModeLabels } from './selectors/mode-labels.ts';
+import { selectSteamModal } from './selectors/steam-modal.ts';
+import { selectUpdaterButton } from './selectors/updater-button.ts';
 
-export type PendingSteamAction = 'install' | 'uninstall' | null;
-export type IdentityLoadState = 'idle' | 'loading';
-export type IdentityActionBusy = 'idle' | 'activating' | 'logging_in';
-export type LocalizedText = (zh: string, en: string) => string;
-export type TranslateText = (
-  key: MessageKey,
-  params?: Record<string, string | number>
-) => string;
+export type {
+  PendingSteamAction,
+  IdentityLoadState,
+  IdentityActionBusy,
+  LocalizedText,
+  TranslateText
+} from './selectors/types.ts';
 
 export interface InstallPageModelInput {
   env: EnvironmentInfo | null;
@@ -162,161 +165,83 @@ export function formatByteLabel(bytes: number): string {
 export function createInstallPageModel(
   input: InstallPageModelInput
 ): InstallPageModel {
-  const selectedPath = selectCustomGamePath(input.customGamePath);
-  const modInstalled = Boolean(input.env?.bpp_version);
-  const bundledBppVersion = input.env?.bundled_bpp_version ?? null;
-  const installedBppVersion = input.env?.bpp_version ?? null;
-  const bppDataVersion = input.env?.bpp_data_version ?? null;
-  const bppDataIssue = input.env?.bpp_data_issue ?? null;
-  const bppDataResetRequired = Boolean(input.env?.bpp_data_reset_required);
-  const pageState = createPageState({
-    actionBusy: input.actionBusy,
+  const installGates = selectInstallGates({
+    env: input.env,
     bazaarFound: input.bazaarFound,
-    bppDataResetRequired,
-    selectedGamePath: selectedPath,
-    detectedGamePath: input.env?.game_path ?? null,
-    isDebugInstallPreview: input.isDebugInstallPreview,
-    bundledBppVersion,
-    installedBppVersion
+    customGamePath: input.customGamePath,
+    actionBusy: input.actionBusy,
+    isDebugInstallPreview: input.isDebugInstallPreview
   });
   const identityState = createIdentityState({
     observation: input.playerObservation,
     installation: input.installationRecord,
     hasInstallationPrivateKey: input.hasInstallationPrivateKey
   });
-  const updaterProgressLabel = createProgressLabel(input.updaterSnapshot.progress);
-  const activationPasswordMatches =
-    !input.identityPassword.trim() ||
-    !input.identityPasswordConfirm.trim() ||
-    input.identityPassword.trim() === input.identityPasswordConfirm.trim();
-  const identityBusy =
-    input.identityLoadState === 'loading' || input.identityActionBusy !== 'idle';
-
-  const updaterButtonLabel =
-    input.updaterSnapshot.status === 'checking'
-      ? input.t('updaterChecking')
-      : input.updaterSnapshot.status === 'available'
-        ? input.t('updaterReady', {
-            version: input.updaterSnapshot.availableVersion ?? '...'
-          })
-        : input.updaterSnapshot.status === 'downloading'
-          ? input.t('updaterDownloading', {
-              progress: updaterProgressLabel ?? '...'
-            })
-          : input.updaterSnapshot.status === 'installed'
-            ? input.t('updaterInstallReady', {
-                version: input.updaterSnapshot.availableVersion ?? '...'
-              })
-            : input.updaterSnapshot.status === 'error'
-              ? input.hasPendingUpdate
-                ? input.t('updaterRetry')
-                : input.t('updaterErrorState')
-              : input.updaterSnapshot.status === 'unsupported'
-                ? input.t('updaterUnsupported')
-                : input.t('updaterCurrent');
-
-  const updaterButtonTitle =
-    input.updaterSnapshot.status === 'available'
-      ? input.t('updaterReadyTitle')
-      : input.updaterSnapshot.status === 'downloading'
-        ? input.t('updaterInstalling')
-        : input.updaterSnapshot.status === 'installed'
-          ? input.t('updaterInstalledTitle')
-          : input.updaterSnapshot.status === 'error'
-            ? input.t('updaterErrorTitle')
-            : updaterButtonLabel;
+  const updaterButton = selectUpdaterButton({
+    snapshot: input.updaterSnapshot,
+    hasPendingUpdate: input.hasPendingUpdate,
+    t: input.t
+  });
+  const steamModal = selectSteamModal({
+    pendingSteamAction: input.pendingSteamAction,
+    t: input.t
+  });
+  const identityPanel = selectIdentityPanel({
+    identityState,
+    identityLoadState: input.identityLoadState,
+    localized: input.localized
+  });
+  const modeLabels = selectModeLabels({
+    showStreamMode: input.showStreamMode,
+    locale: input.locale,
+    localized: input.localized,
+    t: input.t
+  });
+  const identityGates = selectIdentityGates({
+    identityState,
+    pageState: installGates.pageState,
+    playerObservationPresent: Boolean(input.playerObservation),
+    identityLoadState: input.identityLoadState,
+    identityActionBusy: input.identityActionBusy,
+    identityPassword: input.identityPassword,
+    identityPasswordConfirm: input.identityPasswordConfirm,
+    identityConfirmed: input.identityConfirmed
+  });
 
   return {
-    selectedPath,
-    modInstalled,
-    bundledBppVersion,
-    installedBppVersion,
-    bppDataVersion,
-    bppDataIssue,
-    bppDataResetRequired,
-    pageState,
-    hasPath: pageState.hasPath,
-    isBusy: pageState.isBusy,
-    canInstall: pageState.canInstall,
-    canLaunchGame: pageState.canLaunchGame,
-    versionMismatch: pageState.versionMismatch,
-    modeTitle: input.showStreamMode ? input.t('streamTitle') : input.t('subtitle'),
-    modeToggleLabel: input.showStreamMode
-      ? input.localized('安装模式', 'Install Mode')
-      : input.localized('直播模式', 'Stream Mode'),
-    dotnetDownloadUrl:
-      input.locale === 'zh'
-        ? 'https://dotnet.microsoft.com/zh-cn/download'
-        : 'https://dotnet.microsoft.com/en-us/download',
-    localeBadge: input.locale === 'zh' ? '中' : 'EN',
-    localeButtonLabel:
-      input.locale === 'zh' ? 'Switch to English' : '切换到中文',
-    updaterProgressLabel,
-    updaterButtonLabel,
-    updaterButtonTitle,
-    updaterButtonDisabled:
-      input.updaterSnapshot.status === 'checking' ||
-      input.updaterSnapshot.status === 'downloading',
-    updaterButtonHighlighted:
-      input.updaterSnapshot.status === 'available' ||
-      input.updaterSnapshot.status === 'installed',
-    steamModalTitle:
-      input.pendingSteamAction === 'install'
-        ? input.t('installRiskTitle')
-        : input.t('steamQuitTitle'),
-    steamModalBody:
-      input.pendingSteamAction === 'install'
-        ? `${input.t('installRiskSteamDetected')}\n\n${input.t('installRiskBody')}`
-        : input.t('steamQuitBody'),
-    steamModalCancelText:
-      input.pendingSteamAction === 'install'
-        ? input.t('actionContinueInstall')
-        : input.t('actionClose'),
+    selectedPath: installGates.selectedPath,
+    modInstalled: installGates.modInstalled,
+    bundledBppVersion: installGates.bundledBppVersion,
+    installedBppVersion: installGates.installedBppVersion,
+    bppDataVersion: installGates.bppDataVersion,
+    bppDataIssue: installGates.bppDataIssue,
+    bppDataResetRequired: installGates.bppDataResetRequired,
+    pageState: installGates.pageState,
+    hasPath: installGates.hasPath,
+    isBusy: installGates.isBusy,
+    canInstall: installGates.canInstall,
+    canLaunchGame: installGates.canLaunchGame,
+    versionMismatch: installGates.versionMismatch,
+    modeTitle: modeLabels.modeTitle,
+    modeToggleLabel: modeLabels.modeToggleLabel,
+    dotnetDownloadUrl: modeLabels.dotnetDownloadUrl,
+    localeBadge: modeLabels.localeBadge,
+    localeButtonLabel: modeLabels.localeButtonLabel,
+    updaterProgressLabel: updaterButton.progressLabel,
+    updaterButtonLabel: updaterButton.label,
+    updaterButtonTitle: updaterButton.title,
+    updaterButtonDisabled: updaterButton.disabled,
+    updaterButtonHighlighted: updaterButton.highlighted,
+    steamModalTitle: steamModal.title,
+    steamModalBody: steamModal.body,
+    steamModalCancelText: steamModal.cancelText,
     identityState,
-    identityPanelTitle:
-      identityState.kind === 'observation_required'
-        ? input.localized('尚未检测到游戏账号', 'No game account detected yet')
-        : identityState.kind === 'activate_first_account'
-          ? input.localized('已检测到游戏账号', 'Game account detected')
-          : identityState.kind === 'relogin_required'
-            ? input.localized('检测到账号切换', 'Game account changed')
-            : input.localized('账号已连接', 'Account connected'),
-    identityPanelSummary:
-      input.identityLoadState === 'loading'
-        ? input.localized('正在读取账号状态…', 'Reading account status...')
-        : identityState.kind === 'observation_required'
-          ? input.localized(
-              '请先安装最新版 MOD，运行一次游戏，再回来绑定账号。',
-              'Install the latest mod, run the game once, then come back to bind the account.'
-            )
-          : identityState.kind === 'activate_first_account'
-            ? input.localized(
-                `当前账号：${identityState.observation.player_username}，点击展开继续。`,
-                `Current account: ${identityState.observation.player_username}. Click to continue.`
-              )
-            : identityState.kind === 'relogin_required'
-              ? input.localized(
-                  `当前账号：${identityState.observation.player_username}，点击展开重新登录。`,
-                  `Current account: ${identityState.observation.player_username}. Click to re-login.`
-                )
-              : '',
-    shouldCollapseIdentityPanel: identityState.kind === 'ready',
-    activationPasswordMatches,
-    identityBusy,
-    canActivateObservedAccount:
-      identityState.kind === 'activate_first_account' &&
-      Boolean(pageState.effectiveGamePath) &&
-      Boolean(input.playerObservation) &&
-      Boolean(input.identityPassword.trim()) &&
-      Boolean(input.identityPasswordConfirm.trim()) &&
-      activationPasswordMatches &&
-      input.identityConfirmed &&
-      !identityBusy,
-    canLoginIdentity:
-      Boolean(pageState.effectiveGamePath) &&
-      Boolean(input.playerObservation) &&
-      Boolean(input.identityPassword.trim()) &&
-      input.identityConfirmed &&
-      !identityBusy
+    identityPanelTitle: identityPanel.title,
+    identityPanelSummary: identityPanel.summary,
+    shouldCollapseIdentityPanel: identityPanel.shouldCollapse,
+    activationPasswordMatches: identityGates.activationPasswordMatches,
+    identityBusy: identityGates.identityBusy,
+    canActivateObservedAccount: identityGates.canActivateObservedAccount,
+    canLoginIdentity: identityGates.canLoginIdentity
   };
 }

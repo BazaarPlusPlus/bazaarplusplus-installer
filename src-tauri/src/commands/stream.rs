@@ -6,6 +6,9 @@ use crate::stream::{
     records::{OverlayRecord, OverlayRecordRepository},
     state::{StreamRuntimeState, StreamServiceStatus},
 };
+use crate::config::{BAZAAR_DATA_DIRECTORY, DATABASE_FILE_NAME};
+#[cfg(target_os = "windows")]
+use crate::config::STEAM_LIBRARY_FALLBACK_CANDIDATES;
 use base64::{engine::general_purpose::STANDARD, Engine as _};
 use image::{DynamicImage, ImageFormat};
 use std::collections::HashMap;
@@ -47,17 +50,9 @@ fn resolve_game_path_with_fallback(
     //    We only need BazaarPlusPlus/bazaarplusplus.db to exist — no need for TheBazaar.exe.
     #[cfg(target_os = "windows")]
     {
-        let candidates = [
-            r"C:\Program Files (x86)\Steam\steamapps\common\The Bazaar",
-            r"C:\Program Files\Steam\steamapps\common\The Bazaar",
-            r"D:\Steam\steamapps\common\The Bazaar",
-            r"D:\SteamLibrary\steamapps\common\The Bazaar",
-            r"E:\Steam\steamapps\common\The Bazaar",
-            r"E:\SteamLibrary\steamapps\common\The Bazaar",
-        ];
-        for candidate in &candidates {
+        for candidate in STEAM_LIBRARY_FALLBACK_CANDIDATES {
             let path = PathBuf::from(candidate);
-            let db = path.join("BazaarPlusPlus").join("bazaarplusplus.db");
+            let db = path.join(BAZAAR_DATA_DIRECTORY).join(DATABASE_FILE_NAME);
             if db.exists() {
                 return Some(path);
             }
@@ -174,7 +169,7 @@ pub fn detect_stream_db_path(
             path: None,
         },
         Some(game_path) => {
-            let db = game_path.join("BazaarPlusPlus").join("bazaarplusplus.db");
+            let db = game_path.join(BAZAAR_DATA_DIRECTORY).join(DATABASE_FILE_NAME);
             let found = db.exists();
             StreamDbPathInfo {
                 found,
@@ -184,7 +179,8 @@ pub fn detect_stream_db_path(
     }
 }
 
-#[derive(serde::Serialize)]
+#[derive(serde::Serialize, ts_rs::TS)]
+#[ts(export)]
 pub struct StreamDbPathInfo {
     pub found: bool,
     pub path: Option<String>,

@@ -3,7 +3,8 @@ use std::path::{Path, PathBuf};
 
 use super::steam;
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, ts_rs::TS)]
+#[ts(export)]
 #[serde(rename_all = "snake_case")]
 pub enum BppDataIssue {
     MissingVersionFile,

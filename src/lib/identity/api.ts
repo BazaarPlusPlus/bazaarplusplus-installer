@@ -21,6 +21,7 @@ import {
   readJsonOrError,
   type IdentityTransportResponse
 } from './transport.ts';
+import { V3_API_BASE_URL } from '../config/endpoints.ts';
 import type {
   InstallationActivationResponse,
   InstallationKeyPair,
@@ -33,7 +34,7 @@ import type {
 
 export type { IdentityTransportResponse } from './transport.ts';
 
-export const DEFAULT_V3_API_BASE_URL = 'https://mod-api-v3.bazaarplusplus.com';
+export const DEFAULT_V3_API_BASE_URL = V3_API_BASE_URL;
 
 export interface IdentityApiDeps {
   postJsonImpl?: (input: {

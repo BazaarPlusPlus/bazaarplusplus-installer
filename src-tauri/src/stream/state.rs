@@ -7,7 +7,8 @@ use tokio::sync::oneshot;
 
 const DEFAULT_HOST: &str = "127.0.0.1";
 
-#[derive(Clone, Debug, Serialize)]
+#[derive(Clone, Debug, Serialize, ts_rs::TS)]
+#[ts(export)]
 pub struct StreamServiceStatus {
     pub running: bool,
     pub host: String,

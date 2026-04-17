@@ -30,7 +30,8 @@ macro_rules! debug_error {
     };
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, ts_rs::TS)]
+#[ts(export)]
 pub struct LegacyRecordDirectoryInfo {
     pub total_bytes: u64,
 }

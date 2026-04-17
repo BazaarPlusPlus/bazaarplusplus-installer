@@ -13,7 +13,8 @@ use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use tauri::AppHandle;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, ts_rs::TS)]
+#[ts(export)]
 pub struct EnvironmentInfo {
     pub steam_path: Option<String>,
     pub steam_launch_options_supported: bool,
@@ -28,7 +29,8 @@ pub struct EnvironmentInfo {
     pub bpp_data_issue: Option<BppDataIssue>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, ts_rs::TS)]
+#[ts(export)]
 pub struct DotnetInfo {
     pub dotnet_version: Option<String>,
     pub dotnet_ok: bool,

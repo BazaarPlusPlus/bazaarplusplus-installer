@@ -1,4 +1,4 @@
-import { invoke } from '@tauri-apps/api/core';
+import { call } from '../bridge/commands.ts';
 import { hasTauriRuntime } from '$lib/installer/runtime';
 import { buildStreamCommandArgs } from '$lib/stream/command-args';
 import type {
@@ -28,7 +28,7 @@ export async function getStreamServiceStatus(): Promise<StreamServiceStatus> {
     return idleStatus;
   }
 
-  return invoke<StreamServiceStatus>('get_stream_service_status');
+  return call('get_stream_service_status');
 }
 
 export async function startStreamService(
@@ -38,10 +38,7 @@ export async function startStreamService(
     return idleStatus;
   }
 
-  return invoke<StreamServiceStatus>(
-    'start_stream_service',
-    buildStreamCommandArgs(gamePath, {})
-  );
+  return call('start_stream_service', buildStreamCommandArgs(gamePath, {}));
 }
 
 export async function stopStreamService(): Promise<StreamServiceStatus> {
@@ -49,7 +46,7 @@ export async function stopStreamService(): Promise<StreamServiceStatus> {
     return idleStatus;
   }
 
-  return invoke<StreamServiceStatus>('stop_stream_service');
+  return call('stop_stream_service');
 }
 
 export async function setStreamOverlayWindowOffset(
@@ -60,7 +57,7 @@ export async function setStreamOverlayWindowOffset(
     return idleStatus;
   }
 
-  return invoke<StreamServiceStatus>(
+  return call(
     'set_stream_overlay_window_offset',
     buildStreamCommandArgs(gamePath, {
       offset: Math.max(0, Math.trunc(offset))
@@ -159,10 +156,7 @@ export async function loadStreamRecordList(
           limit: Math.max(1, Math.trunc(limit))
         })
       : buildStreamCommandArgs(gamePath, {});
-  const payload = await invoke<StreamRecordSummary[]>(
-    'list_stream_overlay_records',
-    invokeArgs
-  );
+  const payload = await call('list_stream_overlay_records', invokeArgs);
   return Array.isArray(payload)
     ? payload.filter((item) => item && typeof item.id === 'string')
     : [];
@@ -176,7 +170,7 @@ export async function revealStreamRecordImage(
     return;
   }
 
-  await invoke(
+  await call(
     'reveal_stream_record_image',
     buildStreamCommandArgs(gamePath, {
       recordId
@@ -192,7 +186,7 @@ export async function deleteStreamRecord(
     return;
   }
 
-  await invoke(
+  await call(
     'delete_stream_record',
     buildStreamCommandArgs(gamePath, {
       recordId
@@ -208,7 +202,7 @@ export async function loadStreamRecordStripPreview(
     return null;
   }
 
-  return invoke<string | null>(
+  return call(
     'load_stream_record_strip_preview',
     buildStreamCommandArgs(gamePath, {
       recordId
@@ -224,7 +218,7 @@ export async function loadStreamRecordStripPreviews(
     return {};
   }
 
-  return invoke<Record<string, string>>(
+  return call(
     'load_stream_record_strip_previews',
     buildStreamCommandArgs(gamePath, {
       recordIds
@@ -246,9 +240,7 @@ export async function getStreamOverlayCropSettings(): Promise<StreamOverlayCropS
     };
   }
 
-  return invoke<StreamOverlayCropSettingsPayload>(
-    'get_stream_overlay_crop_settings'
-  );
+  return call('get_stream_overlay_crop_settings');
 }
 
 export async function saveStreamOverlayCropSettings(
@@ -262,12 +254,7 @@ export async function saveStreamOverlayCropSettings(
     };
   }
 
-  return invoke<StreamOverlayCropSettingsPayload>(
-    'save_stream_overlay_crop_settings',
-    {
-      crop
-    }
-  );
+  return call('save_stream_overlay_crop_settings', { crop });
 }
 
 export async function importStreamOverlayCropCode(
@@ -286,12 +273,7 @@ export async function importStreamOverlayCropCode(
     };
   }
 
-  return invoke<StreamOverlayCropSettingsPayload>(
-    'import_stream_overlay_crop_code',
-    {
-      code
-    }
-  );
+  return call('import_stream_overlay_crop_code', { code });
 }
 
 export async function saveStreamOverlayDisplayMode(
@@ -310,12 +292,7 @@ export async function saveStreamOverlayDisplayMode(
     };
   }
 
-  return invoke<StreamOverlayCropSettingsPayload>(
-    'save_stream_overlay_display_mode',
-    {
-      displayMode
-    }
-  );
+  return call('save_stream_overlay_display_mode', { displayMode });
 }
 
 export async function detectStreamDbPath(
@@ -325,8 +302,5 @@ export async function detectStreamDbPath(
     return { found: false, path: null };
   }
 
-  return invoke<StreamDbPathInfo>(
-    'detect_stream_db_path',
-    buildStreamCommandArgs(gamePath, {})
-  );
+  return call('detect_stream_db_path', buildStreamCommandArgs(gamePath, {}));
 }

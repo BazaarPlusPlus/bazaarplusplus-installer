@@ -36,6 +36,7 @@ rusqlite = { version = "0.32", features = ["bundled"] }
 chrono = { version = "0.4", features = ["clock", "serde"] }
 image = { version = "0.25", default-features = false, features = ["jpeg", "png", "webp"] }
 include_dir = "0.7"
+ts-rs = "12"
 
 [target.'cfg(windows)'.dependencies]
 winreg = "0.52"

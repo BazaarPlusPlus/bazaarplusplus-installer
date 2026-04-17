@@ -9,7 +9,8 @@ const PLAYER_OBSERVATION_FILE_NAME: &str = "player-observation.bpp";
 const INSTALLATION_RECORD_FILE_NAME: &str = "installation.bpp";
 const INSTALLATION_PRIVATE_KEY_FILE_NAME: &str = "installation.key";
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, ts_rs::TS)]
+#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct IdentityHttpResponse {
     pub status: u16,
