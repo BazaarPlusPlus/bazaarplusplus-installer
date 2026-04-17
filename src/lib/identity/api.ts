@@ -4,15 +4,23 @@ import {
   readPlayerObservation,
   writeInstallationPrivateKey,
   writeInstallationRecord
-} from '../installer/api.ts';
+} from './repository.ts';
 import {
-  base64ToBase64Url,
   base64ToBytes,
-  base64UrlToBase64,
   decodePayloadEnvelope,
   encodePayloadEnvelope,
   bytesToBase64
 } from './codec.ts';
+import { generateInstallationKeyPair } from './crypto.ts';
+import {
+  normalizeInstallationRecord,
+  normalizePlayerObservation
+} from './normalize.ts';
+import {
+  postJsonWithFetch,
+  readJsonOrError,
+  type IdentityTransportResponse
+} from './transport.ts';
 import type {
   InstallationActivationResponse,
   InstallationKeyPair,
@@ -23,12 +31,9 @@ import type {
   PlayerObservationPayload
 } from './types.ts';
 
-export const DEFAULT_V3_API_BASE_URL = 'https://mod-api-v3.bazaarplusplus.com';
+export type { IdentityTransportResponse } from './transport.ts';
 
-export interface IdentityTransportResponse {
-  status: number;
-  body: string;
-}
+export const DEFAULT_V3_API_BASE_URL = 'https://mod-api-v3.bazaarplusplus.com';
 
 export interface IdentityApiDeps {
   postJsonImpl?: (input: {
@@ -42,87 +47,6 @@ export interface IdentityApiDeps {
   writeInstallationRecordImpl?: typeof writeInstallationRecord;
   writeInstallationPrivateKeyImpl?: typeof writeInstallationPrivateKey;
   generateInstallationKeyPairImpl?: () => Promise<InstallationKeyPair>;
-}
-
-async function readJsonOrError<T>(
-  response: IdentityTransportResponse
-): Promise<T> {
-  const body = ((): { error?: string } | T | null => {
-    try {
-      return (JSON.parse(response.body || 'null') as { error?: string } | T | null) ?? null;
-    } catch {
-      return null;
-    }
-  })();
-
-  if (response.status < 200 || response.status >= 300) {
-    const errorCode =
-      body && typeof body === 'object' && 'error' in body
-        ? String(body.error ?? 'identity_request_failed')
-        : 'identity_request_failed';
-    throw new Error(errorCode);
-  }
-
-  return body as T;
-}
-
-async function postJsonWithFetch(input: {
-  url: string;
-  body: string;
-  authorization?: string;
-}): Promise<IdentityTransportResponse> {
-  const response = await fetch(input.url, {
-    method: 'POST',
-    headers: {
-      'content-type': 'application/json',
-      ...(input.authorization
-        ? { authorization: `Bearer ${input.authorization}` }
-        : {})
-    },
-    body: input.body
-  });
-
-  return {
-    status: response.status,
-    body: await response.text()
-  };
-}
-
-export async function generateInstallationKeyPair(): Promise<InstallationKeyPair> {
-  if (typeof crypto === 'undefined' || !crypto.subtle) {
-    throw new Error('webcrypto_unavailable');
-  }
-
-  const keyPair = await crypto.subtle.generateKey(
-    {
-      name: 'RSASSA-PKCS1-v1_5',
-      hash: 'SHA-256',
-      modulusLength: 2048,
-      publicExponent: new Uint8Array([1, 0, 1])
-    },
-    true,
-    ['sign', 'verify']
-  );
-
-  const jwk = (await crypto.subtle.exportKey(
-    'jwk',
-    keyPair.publicKey
-  )) as JsonWebKey;
-  const pkcs8 = new Uint8Array(
-    await crypto.subtle.exportKey('pkcs8', keyPair.privateKey)
-  );
-
-  if (!jwk.n || !jwk.e) {
-    throw new Error('installation_key_export_failed');
-  }
-
-  return {
-    publicKey: {
-      modulus_b64: base64UrlToBase64(jwk.n),
-      exponent_b64: base64UrlToBase64(jwk.e)
-    },
-    privateKeyPkcs8B64: bytesToBase64(pkcs8)
-  };
 }
 
 function buildInstallationRecord(input: {
@@ -181,13 +105,15 @@ export function createIdentityApi(deps: IdentityApiDeps = {}) {
       ]);
 
       const observation = observationEnvelopeB64
-        ? await decodePayloadEnvelope<PlayerObservationPayload>(
-            base64ToBytes(observationEnvelopeB64)
+        ? normalizePlayerObservation(
+            await decodePayloadEnvelope<unknown>(base64ToBytes(observationEnvelopeB64))
           )
         : null;
       const installation = installationEnvelopeB64
-        ? await decodePayloadEnvelope<InstallationRecordPayload>(
-            base64ToBytes(installationEnvelopeB64)
+        ? normalizeInstallationRecord(
+            await decodePayloadEnvelope<unknown>(
+              base64ToBytes(installationEnvelopeB64)
+            )
           )
         : null;
 
@@ -283,13 +209,6 @@ export function createIdentityApi(deps: IdentityApiDeps = {}) {
       );
 
       return installation;
-    },
-
-    exportPrivateKeyToJwk(privateKeyPkcs8B64: string) {
-      return {
-        pkcs8_b64: privateKeyPkcs8B64,
-        pkcs8_b64url: base64ToBase64Url(privateKeyPkcs8B64)
-      };
     }
   };
 }

@@ -113,3 +113,20 @@ test('loginAndCreateInstallation rejects mismatched observed player account', as
     /observed_player_account_mismatch/
   );
 });
+
+test('loadLocalIdentity returns null observation when envelope payload is malformed', async () => {
+  const malformedBytes = await encodePayloadEnvelope({ unexpected: 'shape' });
+  const malformedB64 = Buffer.from(malformedBytes).toString('base64');
+
+  const api = createIdentityApi({
+    readPlayerObservationImpl: async () => malformedB64,
+    readInstallationRecordImpl: async () => null,
+    readInstallationPrivateKeyImpl: async () => null
+  });
+
+  const snapshot = await api.loadLocalIdentity('/games/The Bazaar');
+
+  assert.equal(snapshot.observation, null);
+  assert.equal(snapshot.installation, null);
+  assert.equal(snapshot.installationPrivateKeyPkcs8B64, null);
+});
