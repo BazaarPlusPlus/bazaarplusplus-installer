@@ -13,6 +13,12 @@ import type {
   PlayerObservationPayload
 } from '../../identity/types.ts';
 
+export type IdentitySuccessState =
+  | { kind: 'registered'; password: string }
+  | { kind: 'logged_in' }
+  | { kind: 'logged_in_mismatch' }
+  | null;
+
 function debugIdentityControllerLog(
   message: string,
   payload: Record<string, unknown>
@@ -37,7 +43,7 @@ export function createIdentityController(input: {
   >('idle');
   const identityPassword = writable('');
   const identityError = writable('');
-  const identitySuccess = writable('');
+  const identitySuccess = writable<IdentitySuccessState>(null);
   const identityLoadedGamePath = writable('');
   let identityLoadRequestId = 0;
 
@@ -61,12 +67,12 @@ export function createIdentityController(input: {
     playerObservation.set(null);
     authRecord.set(null);
     identityError.set('');
-    identitySuccess.set('');
+    identitySuccess.set(null);
   }
 
   function resetIdentityMessages() {
     identityError.set('');
-    identitySuccess.set('');
+    identitySuccess.set(null);
   }
 
   async function refreshIdentity(gameRoot: string) {
@@ -153,7 +159,10 @@ export function createIdentityController(input: {
       });
       applySnapshot(result.snapshot, inputArgs.gameRoot);
       clearFormState();
-      identitySuccess.set(result.successMessage);
+      identitySuccess.set({
+        kind: 'registered',
+        password
+      });
       return;
     } catch (error) {
       const errorCode = error instanceof Error ? error.message : String(error);
@@ -190,14 +199,9 @@ export function createIdentityController(input: {
         refreshedAuth &&
         refreshedObservation.player_account_id !== refreshedAuth.player_account_id
       ) {
-        identitySuccess.set(
-          input.localized(
-            '已登录，但与当前游戏账号不一致。',
-            "Signed in, but doesn't match the current game account."
-          )
-        );
+        identitySuccess.set({ kind: 'logged_in_mismatch' });
       } else {
-        identitySuccess.set(result.successMessage);
+        identitySuccess.set({ kind: 'logged_in' });
       }
     } catch (error) {
       if (error instanceof Error && error.message === 'invalid_credentials') {
@@ -251,7 +255,7 @@ export function createIdentityController(input: {
       });
       applySnapshot(result.snapshot, inputArgs.gameRoot);
       clearFormState();
-      identitySuccess.set(result.successMessage);
+      identitySuccess.set(null);
     } catch (error) {
       identityError.set(input.formatIdentityErrorMessage(error, input.localized));
     } finally {

@@ -296,6 +296,7 @@
     identitySuccess={$identitySuccess}
     {localized}
     onDismissError={() => identityController.identityError.set('')}
+    onDismissSuccess={() => identityController.identitySuccess.set(null)}
     onContinue={() =>
       identityController.continueIdentity({
         identityState,

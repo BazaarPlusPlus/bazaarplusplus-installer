@@ -2,6 +2,7 @@
   import { onDestroy } from 'svelte';
   import type { IdentityState } from '$lib/identity/state';
   import type { InstallPageModel } from '$lib/installer/page-model';
+  import type { IdentitySuccessState } from '$lib/installer/controllers/identity-controller';
 
   export let visible: boolean;
   export let identityState: IdentityState;
@@ -14,22 +15,34 @@
     | 'logging_in'
     | 'logging_out';
   export let identityError: string;
-  export let identitySuccess: string;
+  export let identitySuccess: IdentitySuccessState;
   export let localized: (zh: string, en: string) => string;
   export let onContinue: () => void;
   export let onDismissError: () => void = () => {};
+  export let onDismissSuccess: () => void = () => {};
   export let onLogout: () => void;
   export let onRefresh: () => Promise<void> | void;
 
   let refreshPending = false;
   let dismissErrorTimer: ReturnType<typeof setTimeout> | null = null;
+  let resetCopyStateTimer: ReturnType<typeof setTimeout> | null = null;
   let lastIdentityError = '';
+  let copyState: 'idle' | 'copied' | 'failed' = 'idle';
 
   $: refreshBusy = refreshPending || identityLoadState === 'loading';
-  $: identitySuccess;
+  $: showRegisteredSuccess = identitySuccess?.kind === 'registered';
+  $: showLoggedInMismatch = identitySuccess?.kind === 'logged_in_mismatch';
+  $: registeredPassword =
+    identitySuccess?.kind === 'registered' ? identitySuccess.password : '';
   $: refreshButtonLabel = refreshBusy
     ? localized('重新检测中…', 'Checking again...')
     : localized('重新检测', 'Check again');
+  $: copyButtonLabel =
+    copyState === 'copied'
+      ? localized('已复制', 'Copied')
+      : copyState === 'failed'
+        ? localized('复制失败', 'Copy failed')
+        : localized('复制密码', 'Copy password');
   $: statusTone =
     identityLoadState === 'loading'
       ? 'loading'
@@ -69,6 +82,8 @@
 
   onDestroy(() => {
     clearDismissErrorTimer();
+    clearResetCopyStateTimer();
+    onDismissSuccess();
   });
 
   function handleContinueShortcut(event: KeyboardEvent) {
@@ -105,6 +120,31 @@
     if (dismissErrorTimer !== null) {
       clearTimeout(dismissErrorTimer);
       dismissErrorTimer = null;
+    }
+  }
+
+  async function handleCopyPassword() {
+    if (!registeredPassword) {
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(registeredPassword);
+      copyState = 'copied';
+    } catch {
+      copyState = 'failed';
+    }
+
+    clearResetCopyStateTimer();
+    resetCopyStateTimer = setTimeout(() => {
+      copyState = 'idle';
+    }, 1800);
+  }
+
+  function clearResetCopyStateTimer() {
+    if (resetCopyStateTimer !== null) {
+      clearTimeout(resetCopyStateTimer);
+      resetCopyStateTimer = null;
     }
   }
 </script>
@@ -186,6 +226,51 @@
           </button>
         </div>
       </div>
+    {/if}
+
+    {#if showRegisteredSuccess}
+      <div class="identity-feedback identity-feedback-success">
+        <p class="identity-success-title">
+          {localized('账号注册完成，请立即记下这次设置的密码。', 'Account registered. Save this password now.')}
+        </p>
+        <label class="identity-field">
+          <span>{localized('本次注册密码', 'Registered password')}</span>
+          <input value={registeredPassword} readonly />
+        </label>
+        <div class="identity-success-actions">
+          <button
+            type="button"
+            class="identity-button"
+            onclick={handleCopyPassword}
+          >
+            {copyButtonLabel}
+          </button>
+          <button
+            type="button"
+            class="identity-button"
+            onclick={onDismissSuccess}
+          >
+            {localized('我已记下', 'I saved it')}
+          </button>
+        </div>
+      </div>
+    {/if}
+
+    {#if showLoggedInMismatch}
+      <p class="identity-feedback identity-feedback-warning">
+        {localized(
+          '已登录，但与当前游戏账号不一致。',
+          "Signed in, but doesn't match the current game account."
+        )}
+        <button
+          type="button"
+          class="identity-feedback-close"
+          onclick={onDismissSuccess}
+          aria-label={localized('关闭提示', 'Dismiss message')}
+        >
+          ×
+        </button>
+      </p>
     {/if}
 
     {#if identityError}
@@ -355,6 +440,32 @@
     background: rgba(120, 46, 40, 0.17);
     color: #f6d4cf;
     padding-right: 2.1rem;
+  }
+
+  .identity-feedback-success {
+    border: 1px solid rgba(123, 170, 112, 0.26);
+    background: rgba(53, 83, 42, 0.16);
+    color: #deeed2;
+    display: grid;
+    gap: 0.75rem;
+  }
+
+  .identity-feedback-warning {
+    border: 1px solid rgba(214, 178, 90, 0.28);
+    background: rgba(98, 72, 26, 0.18);
+    color: #f0e1b8;
+    padding-right: 2.1rem;
+  }
+
+  .identity-success-title {
+    margin: 0;
+    line-height: 1.45;
+  }
+
+  .identity-success-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.65rem;
   }
 
   .identity-feedback-close {

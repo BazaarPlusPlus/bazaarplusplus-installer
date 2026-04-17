@@ -70,8 +70,52 @@ test('continueIdentity falls back to login when the observed account already exi
 
   expect(loginCalls).toBe(1);
   expect(get(controller.authRecord)?.token).toBe('token-1');
-  expect(get(controller.identitySuccess)).toBe('Signed in.');
+  expect(get(controller.identitySuccess)).toEqual({ kind: 'logged_in' });
   expect(get(controller.identityError)).toBe('');
+});
+
+test('continueIdentity keeps the just-registered password only in memory on registration success', async () => {
+  let snapshot = createSnapshot(null);
+
+  const controller = createIdentityController({
+    hasTauriRuntime: () => true,
+    identityApi: {
+      async loadLocalIdentity() {
+        return snapshot;
+      },
+      async activateObservedAccount() {
+        snapshot = createSnapshot({
+          token: 'token-1',
+          player_account_id: observation.player_account_id,
+          player_username: observation.player_username,
+          issued_at_utc: '2026-04-12T00:00:00Z'
+        });
+        return snapshot.auth!;
+      }
+    } as never,
+    localized,
+    formatIdentityErrorMessage: (error) =>
+      error instanceof Error ? error.message : String(error)
+  });
+
+  controller.playerObservation.set(observation);
+  controller.identityPassword.set('secret');
+
+  await controller.continueIdentity({
+    identityState: {
+      kind: 'login_or_register',
+      auth: null,
+      observation
+    },
+    gameRoot: '/games/The Bazaar'
+  });
+
+  expect(get(controller.authRecord)?.token).toBe('token-1');
+  expect(get(controller.identitySuccess)).toEqual({
+    kind: 'registered',
+    password: 'secret'
+  });
+  expect(get(controller.identityPassword)).toBe('');
 });
 
 test('continueIdentity surfaces a password error after fallback login fails', async () => {
@@ -108,7 +152,7 @@ test('continueIdentity surfaces a password error after fallback login fails', as
   expect(get(controller.identityError)).toBe(
     'existing_account_invalid_credentials'
   );
-  expect(get(controller.identitySuccess)).toBe('');
+  expect(get(controller.identitySuccess)).toBeNull();
 });
 
 test('logoutIdentity keeps the local-only warning when remote logout fails', async () => {
@@ -149,5 +193,5 @@ test('logoutIdentity keeps the local-only warning when remote logout fails', asy
     gameRoot: '/games/The Bazaar'
   });
 
-  expect(get(controller.identitySuccess)).toBe('Signed out (offline).');
+  expect(get(controller.identitySuccess)).toBeNull();
 });
