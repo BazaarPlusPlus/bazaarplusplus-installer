@@ -23,7 +23,7 @@ fn library_has_app(folder: &Obj<'_>, app_id: &str) -> bool {
         .unwrap_or(false)
 }
 
-pub fn find_game_in_library_vdf(vdf_content: &str, app_id: &str) -> Option<String> {
+fn find_game_in_library_vdf(vdf_content: &str, app_id: &str) -> Option<String> {
     let parsed = Parser::new()
         .literal_special_chars(true)
         .parse(vdf_content)
