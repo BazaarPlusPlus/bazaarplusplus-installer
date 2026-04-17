@@ -27,12 +27,10 @@ export function createIdentityController(input: {
   const identityLoadState = writable<'idle' | 'loading'>('idle');
   const identityActionBusy = writable<'idle' | 'activating' | 'logging_in'>('idle');
   const identityPassword = writable('');
-  const identityPasswordConfirm = writable('');
   const identityConfirmed = writable(false);
   const identityError = writable('');
   const identitySuccess = writable('');
   const identityLoadedGamePath = writable('');
-  const identityPanelExpanded = writable(false);
   let identityLoadRequestId = 0;
 
   function applySnapshot(snapshot: InstallIdentitySnapshot, gameRoot: string) {
@@ -100,44 +98,25 @@ export function createIdentityController(input: {
     }
   }
 
-  function toggleIdentityPanel(identityState: IdentityState) {
-    if (get(identityLoadState) === 'loading') {
-      return;
-    }
-
-    if (
-      identityState.kind === 'observation_required' ||
-      identityState.kind === 'ready'
-    ) {
-      return;
-    }
-
-    identityPanelExpanded.update((value) => !value);
-  }
-
-  function collapseIdentityPanel() {
-    identityPanelExpanded.set(false);
-  }
-
-  async function activateObservedAccount(inputArgs: {
+  async function continueIdentity(inputArgs: {
     identityState: IdentityState;
     gameRoot: string;
   }) {
+    if (inputArgs.identityState.kind === 'relogin_required') {
+      await loginAndRefreshInstallation({ gameRoot: inputArgs.gameRoot });
+      return;
+    }
+
+    if (inputArgs.identityState.kind !== 'activate_first_account') {
+      return;
+    }
+
     const observation = get(playerObservation);
     const password = get(identityPassword).trim();
-    const passwordConfirm = get(identityPasswordConfirm).trim();
     const confirmed = get(identityConfirmed);
     const actionBusy = get(identityActionBusy);
 
-    if (
-      !inputArgs.gameRoot ||
-      !observation ||
-      inputArgs.identityState.kind !== 'activate_first_account' ||
-      !confirmed ||
-      !password ||
-      password !== passwordConfirm ||
-      actionBusy !== 'idle'
-    ) {
+    if (!inputArgs.gameRoot || !observation || !confirmed || !password || actionBusy !== 'idle') {
       return;
     }
 
@@ -151,19 +130,55 @@ export function createIdentityController(input: {
         observation,
         password,
         successMessage: input.localized(
-          '新的 installation 身份已写入本地共享目录。',
-          'A new installation identity was written to the shared local directory.'
+          '当前账号的 installation 身份已写入本地共享目录。',
+          'Installation identity for the current account was written to the shared local directory.'
         )
       });
       applySnapshot(result.snapshot, inputArgs.gameRoot);
       identityPassword.set('');
-      identityPasswordConfirm.set('');
+      identityConfirmed.set(false);
+      identitySuccess.set(result.successMessage);
+      return;
+    } catch (error) {
+      if (!(error instanceof Error) || error.message !== 'player_account_id_claimed') {
+        identityError.set(
+          input.formatIdentityErrorMessage(error, input.localized)
+        );
+        identityActionBusy.set('idle');
+        return;
+      }
+    }
+
+    identityActionBusy.set('logging_in');
+
+    try {
+      const result = await reloginInstallIdentity({
+        identityApi: input.identityApi,
+        gameRoot: inputArgs.gameRoot,
+        observation,
+        password,
+        successMessage: input.localized(
+          '检测到这个账号已经存在，已按当前账号刷新本地 installation 身份。',
+          'This account already existed, so the local installation identity was refreshed for the current account.'
+        )
+      });
+      applySnapshot(result.snapshot, inputArgs.gameRoot);
+      identityPassword.set('');
       identityConfirmed.set(false);
       identitySuccess.set(result.successMessage);
     } catch (error) {
-      identityError.set(
-        input.formatIdentityErrorMessage(error, input.localized)
-      );
+      if (error instanceof Error && error.message === 'invalid_credentials') {
+        identityError.set(
+          input.formatIdentityErrorMessage(
+            new Error('existing_account_invalid_credentials'),
+            input.localized
+          )
+        );
+      } else {
+        identityError.set(
+          input.formatIdentityErrorMessage(error, input.localized)
+        );
+      }
     } finally {
       identityActionBusy.set('idle');
     }
@@ -197,7 +212,6 @@ export function createIdentityController(input: {
       });
       applySnapshot(result.snapshot, inputArgs.gameRoot);
       identityPassword.set('');
-      identityPasswordConfirm.set('');
       identityConfirmed.set(false);
       identitySuccess.set(result.successMessage);
     } catch (error) {
@@ -216,19 +230,15 @@ export function createIdentityController(input: {
     identityLoadState,
     identityActionBusy,
     identityPassword,
-    identityPasswordConfirm,
     identityConfirmed,
     identityError,
     identitySuccess,
     identityLoadedGamePath,
-    identityPanelExpanded,
     resetIdentitySnapshot,
     resetIdentityMessages,
     refreshIdentity,
     syncGameRoot,
-    toggleIdentityPanel,
-    collapseIdentityPanel,
-    activateObservedAccount,
+    continueIdentity,
     loginAndRefreshInstallation
   };
 }

@@ -160,11 +160,9 @@
   const identityLoadState = identityController.identityLoadState;
   const identityActionBusy = identityController.identityActionBusy;
   const identityPassword = identityController.identityPassword;
-  const identityPasswordConfirm = identityController.identityPasswordConfirm;
   const identityConfirmed = identityController.identityConfirmed;
   const identityError = identityController.identityError;
   const identitySuccess = identityController.identitySuccess;
-  const identityPanelExpanded = identityController.identityPanelExpanded;
 
   function buildPageModelInput(): InstallPageModelInput {
     return {
@@ -184,7 +182,6 @@
       identityLoadState: $identityLoadState,
       identityActionBusy: $identityActionBusy,
       identityPassword: $identityPassword,
-      identityPasswordConfirm: $identityPasswordConfirm,
       identityConfirmed: $identityConfirmed,
       localized,
       t
@@ -198,9 +195,6 @@
   $: pageModel = createInstallPageModel(buildPageModelInput());
   $: pageState = pageModel.pageState;
   $: identityState = pageModel.identityState;
-  $: if (pageModel.shouldCollapseIdentityPanel) {
-    identityController.collapseIdentityPanel();
-  }
   $: installController.persistCurrentGamePath();
   $: identityController.syncGameRoot(pageState.effectiveGamePath);
 
@@ -283,8 +277,6 @@
     subtitle={pageModel.modeTitle}
     localeBadge={pageModel.localeBadge}
     localeButtonLabel={pageModel.localeButtonLabel}
-    bilibiliUrl={BILIBILI_URL}
-    onOpenBilibili={installController.openBilibili}
     updaterButtonLabel={pageModel.updaterButtonLabel}
     updaterButtonTitle={pageModel.updaterButtonTitle}
     updaterButtonDisabled={pageModel.updaterButtonDisabled}
@@ -296,26 +288,19 @@
   />
 
   <InstallerIdentityCard
-    visible={!$showStreamMode && hasTauriRuntime() && pageModel.hasPath}
+    visible={!$showStreamMode && hasTauriRuntime()}
     {identityState}
     {pageModel}
     identityLoadState={$identityLoadState}
-    identityPanelExpanded={$identityPanelExpanded}
     bind:identityPassword={$identityPassword}
-    bind:identityPasswordConfirm={$identityPasswordConfirm}
     bind:identityConfirmed={$identityConfirmed}
     identityActionBusy={$identityActionBusy}
     identityError={$identityError}
     identitySuccess={$identitySuccess}
     {localized}
-    onTogglePanel={() => identityController.toggleIdentityPanel(identityState)}
-    onActivate={() =>
-      identityController.activateObservedAccount({
+    onContinue={() =>
+      identityController.continueIdentity({
         identityState,
-        gameRoot: pageState.effectiveGamePath
-      })}
-    onLogin={() =>
-      identityController.loginAndRefreshInstallation({
         gameRoot: pageState.effectiveGamePath
       })}
   />
@@ -371,11 +356,11 @@
 <style>
   .shell {
     width: 100%;
-    max-width: 560px;
+    max-width: 900px;
     margin: 0 auto;
-    padding: 1.25rem 1rem 1.75rem;
+    padding: 1rem 1rem 1.45rem;
     display: grid;
-    gap: 0.85rem;
+    gap: 0.7rem;
     animation: fade-up 0.5s ease both;
   }
   @keyframes fade-up {
@@ -390,7 +375,7 @@
   }
   @media (max-width: 520px) {
     .shell {
-      padding: 1rem 0.85rem 1.5rem;
+      padding: 0.9rem 0.82rem 1.35rem;
     }
   }
 </style>

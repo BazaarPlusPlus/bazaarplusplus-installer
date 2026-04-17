@@ -22,12 +22,12 @@ test('installer header no longer renders the featured whats new card', () => {
   assert.equal(headerSource.includes("Open What's New"), false);
 });
 
-test('step I uses a fixed right-side action rail for whats new', () => {
-  assert.equal(statusStepsSource.includes('step-bpp-action'), true);
-  assert.equal(statusStepsSource.includes('step-bpp-content'), true);
-  assert.equal(statusStepsSource.includes('mismatch-action-rail'), false);
-  assert.equal(statusStepsSource.includes('mismatch-main'), false);
-  assert.equal(statusStepsSource.includes('mismatch-link-button'), true);
+test('step I no longer renders a whats new action rail', () => {
+  assert.equal(statusStepsSource.includes('step-body step-body-bpp'), false);
+  assert.equal(statusStepsSource.includes('step-bpp-action'), false);
+  assert.equal(statusStepsSource.includes('step-bpp-content'), false);
+  assert.equal(statusStepsSource.includes('mismatch-link-button'), false);
+  assert.equal(statusStepsSource.includes("What's New"), false);
 });
 
 test('version mismatch section removes the old inline link copy', () => {

@@ -45,7 +45,6 @@ export interface InstallPageModelInput {
   identityLoadState: IdentityLoadState;
   identityActionBusy: IdentityActionBusy;
   identityPassword: string;
-  identityPasswordConfirm: string;
   identityConfirmed: boolean;
   localized: LocalizedText;
   t: TranslateText;
@@ -81,10 +80,7 @@ export interface InstallPageModel {
   identityState: IdentityState;
   identityPanelTitle: string;
   identityPanelSummary: string;
-  shouldCollapseIdentityPanel: boolean;
-  activationPasswordMatches: boolean;
   identityBusy: boolean;
-  canActivateObservedAccount: boolean;
   canLoginIdentity: boolean;
 }
 
@@ -113,6 +109,11 @@ export function formatIdentityErrorMessage(
   switch (code) {
     case 'invalid_credentials':
       return localized('用户名或密码不正确。', 'Username or password is incorrect.');
+    case 'existing_account_invalid_credentials':
+      return localized(
+        '这个游戏账号已经存在，但输入的密码不正确。',
+        'This game account already exists, but the password is incorrect.'
+      );
     case 'player_account_id_claimed':
       return localized(
         '这个游戏账号已经注册过，请使用登录入口。',
@@ -204,7 +205,6 @@ export function createInstallPageModel(
     identityLoadState: input.identityLoadState,
     identityActionBusy: input.identityActionBusy,
     identityPassword: input.identityPassword,
-    identityPasswordConfirm: input.identityPasswordConfirm,
     identityConfirmed: input.identityConfirmed
   });
 
@@ -238,10 +238,7 @@ export function createInstallPageModel(
     identityState,
     identityPanelTitle: identityPanel.title,
     identityPanelSummary: identityPanel.summary,
-    shouldCollapseIdentityPanel: identityPanel.shouldCollapse,
-    activationPasswordMatches: identityGates.activationPasswordMatches,
     identityBusy: identityGates.identityBusy,
-    canActivateObservedAccount: identityGates.canActivateObservedAccount,
     canLoginIdentity: identityGates.canLoginIdentity
   };
 }

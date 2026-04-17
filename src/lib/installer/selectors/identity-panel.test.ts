@@ -19,7 +19,6 @@ test('selectIdentityPanel describes the observation-required state', () => {
 
   assert.equal(selection.title, 'No game account detected yet');
   assert.match(selection.summary, /Install the latest mod/);
-  assert.equal(selection.shouldCollapse, false);
 });
 
 test('selectIdentityPanel describes activation and relogin states', () => {
@@ -57,13 +56,15 @@ test('selectIdentityPanel describes activation and relogin states', () => {
     localized
   });
 
-  assert.equal(activate.title, 'Game account detected');
+  assert.equal(activate.title, 'Identity verification required');
   assert.match(activate.summary, /Current account: Tester/);
-  assert.equal(relogin.title, 'Game account changed');
+  assert.match(activate.summary, /create local credentials for this machine/);
+  assert.equal(relogin.title, 'Reconnect current account');
   assert.match(relogin.summary, /Current account: OtherTester/);
+  assert.match(relogin.summary, /refresh the local credentials on this machine/);
 });
 
-test('selectIdentityPanel collapses only when ready and prefers loading summary', () => {
+test('selectIdentityPanel prefers loading summary over ready summary', () => {
   const loading = selectIdentityPanel({
     identityState: {
       kind: 'ready',
@@ -83,5 +84,4 @@ test('selectIdentityPanel collapses only when ready and prefers loading summary'
 
   assert.equal(loading.title, 'Account connected');
   assert.equal(loading.summary, 'Reading account status...');
-  assert.equal(loading.shouldCollapse, true);
 });

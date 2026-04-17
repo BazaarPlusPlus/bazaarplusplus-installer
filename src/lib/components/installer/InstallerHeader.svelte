@@ -5,8 +5,6 @@
   export let subtitle: string;
   export let localeBadge: string;
   export let localeButtonLabel: string;
-  export let bilibiliUrl: string;
-  export let onOpenBilibili: (event?: MouseEvent) => void;
   export let updaterButtonLabel: string;
   export let updaterButtonTitle: string;
   export let updaterButtonDisabled = false;
@@ -64,38 +62,6 @@
         />
       </svg>
     </a>
-
-    <a
-      class="about-toggle social-toggle"
-      href={bilibiliUrl}
-      rel="noreferrer"
-      target="_blank"
-      title={$locale === 'zh' ? '打开 Bilibili 主页' : 'Open Bilibili'}
-      aria-label={$locale === 'zh' ? '打开 Bilibili 主页' : 'Open Bilibili'}
-      onclick={onOpenBilibili}
-    >
-      <svg class="about-icon" viewBox="0 0 24 24" aria-hidden="true">
-        <rect
-          x="4.5"
-          y="7.5"
-          width="15"
-          height="10"
-          rx="2.2"
-          stroke="currentColor"
-          stroke-width="1.5"
-          fill="none"
-        />
-        <path
-          d="M9 5.5L7.4 3.8M15 5.5l1.6-1.7M9 11.2h1.8M13.2 11.2H15M9.3 14.1c1 .7 4.4.7 5.4 0"
-          stroke="currentColor"
-          stroke-width="1.5"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          fill="none"
-        />
-      </svg>
-    </a>
-
     <button
       class="about-toggle updater-toggle"
       class:is-highlighted={updaterButtonHighlighted}
@@ -187,19 +153,19 @@
   .header {
     position: relative;
     text-align: center;
-    padding: 1.45rem 1.75rem 1.15rem;
+    padding: 0.95rem 1.35rem 0.85rem;
     background: linear-gradient(
       175deg,
-      rgba(38, 23, 9, 0.92),
-      rgba(16, 10, 5, 0.88)
+      rgba(36, 22, 9, 0.9),
+      rgba(15, 9, 5, 0.86)
     );
     border: 1px solid rgba(200, 148, 55, 0.18);
     border-radius: 3px;
     box-shadow:
       0 0 0 1px rgba(200, 148, 55, 0.06) inset,
-      0 24px 64px rgba(0, 0, 0, 0.5);
+      0 16px 42px rgba(0, 0, 0, 0.42);
     display: grid;
-    gap: 0.15rem;
+    gap: 0.28rem;
     justify-items: center;
   }
 
@@ -218,16 +184,16 @@
 
   .header-corner-links {
     position: absolute;
-    top: 0.9rem;
-    left: 0.9rem;
+    top: 0.72rem;
+    left: 0.72rem;
     display: flex;
-    gap: 0.45rem;
+    gap: 0.38rem;
     z-index: 2;
   }
 
   .about-toggle {
-    width: 2rem;
-    height: 2rem;
+    min-width: 1.9rem;
+    height: 1.9rem;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -265,22 +231,16 @@
     height: 1rem;
     opacity: 0.9;
   }
-
-  .social-toggle {
-    padding: 0;
-    cursor: pointer;
-  }
-
   .updater-toggle,
   .stream-toggle {
     width: auto;
-    min-width: 2rem;
-    padding: 0 0.45rem;
-    gap: 0.32rem;
+    min-width: 1.9rem;
+    padding: 0 0.42rem;
+    gap: 0.28rem;
     cursor: pointer;
     font-family: 'Cinzel', serif;
-    font-size: 0.5rem;
-    letter-spacing: 0.12em;
+    font-size: 0.47rem;
+    letter-spacing: 0.1em;
     text-transform: uppercase;
     white-space: nowrap;
   }
@@ -325,11 +285,11 @@
 
   .locale-toggle {
     position: absolute;
-    top: 0.9rem;
-    right: 0.9rem;
-    min-width: 3.2rem;
-    height: 2rem;
-    padding: 0.3rem 0.55rem;
+    top: 0.72rem;
+    right: 0.72rem;
+    min-width: 3rem;
+    height: 1.9rem;
+    padding: 0.28rem 0.5rem;
     border: 1px solid rgba(200, 148, 55, 0.24);
     border-radius: 2px;
     background: linear-gradient(
@@ -339,8 +299,8 @@
     );
     color: rgba(228, 216, 191, 0.82);
     font-family: 'Cinzel', serif;
-    font-size: 0.54rem;
-    letter-spacing: 0.14em;
+    font-size: 0.5rem;
+    letter-spacing: 0.12em;
     text-transform: uppercase;
     display: inline-flex;
     align-items: center;
@@ -381,7 +341,8 @@
 
   .sigil {
     color: rgba(205, 150, 60, 0.65);
-    margin-bottom: 0.2rem;
+    margin-top: 0.1rem;
+    margin-bottom: 0.05rem;
     animation: slow-spin 45s linear infinite;
     filter: drop-shadow(0 0 7px rgba(205, 150, 60, 0.22));
   }
@@ -398,16 +359,16 @@
   .kicker {
     margin: 0;
     font-family: 'Cinzel', serif;
-    font-size: 0.5rem;
-    letter-spacing: 0.38em;
+    font-size: 0.46rem;
+    letter-spacing: 0.3em;
     text-transform: uppercase;
     color: rgba(205, 150, 60, 0.55);
   }
 
   h1 {
-    margin: 0.1rem 0 0;
+    margin: 0;
     font-family: 'Cinzel Decorative', serif;
-    font-size: clamp(1.35rem, 4.2vw, 2.1rem);
+    font-size: clamp(1.2rem, 3.6vw, 1.86rem);
     font-weight: 700;
     line-height: 1;
     background: linear-gradient(155deg, #e8c87a 0%, #bf852e 55%, #e8c87a 100%);
@@ -418,11 +379,11 @@
   }
 
   .subtitle {
-    margin: 0.22rem 0 0.5rem;
+    margin: 0.08rem 0 0.32rem;
     font-family: 'IM Fell English', serif;
     font-style: italic;
-    font-size: 0.78rem;
-    color: rgba(200, 170, 120, 0.55);
+    font-size: 0.7rem;
+    color: rgba(200, 170, 120, 0.58);
   }
 
   .rule {
@@ -453,21 +414,21 @@
 
   @media (max-width: 640px) {
     .header {
-      padding: 1.2rem 1rem 1rem;
+      padding: 0.88rem 0.92rem 0.8rem;
     }
 
     .header-corner-links {
       position: static;
       width: 100%;
       justify-content: flex-start;
-      margin-bottom: 0.75rem;
-      padding-right: 3.7rem;
+      margin-bottom: 0.55rem;
+      padding-right: 3.3rem;
       flex-wrap: wrap;
     }
 
     .locale-toggle {
-      top: 0.7rem;
-      right: 0.7rem;
+      top: 0.58rem;
+      right: 0.58rem;
     }
   }
 </style>

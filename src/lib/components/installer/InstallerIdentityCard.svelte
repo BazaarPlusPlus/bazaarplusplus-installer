@@ -6,433 +6,516 @@
   export let identityState: IdentityState;
   export let pageModel: InstallPageModel;
   export let identityLoadState: 'idle' | 'loading';
-  export let identityPanelExpanded: boolean;
   export let identityPassword: string;
-  export let identityPasswordConfirm: string;
   export let identityConfirmed: boolean;
   export let identityActionBusy: 'idle' | 'activating' | 'logging_in';
   export let identityError: string;
   export let identitySuccess: string;
   export let localized: (zh: string, en: string) => string;
-  export let onTogglePanel: () => void;
-  export let onActivate: () => void;
-  export let onLogin: () => void;
+  export let onContinue: () => void;
+
+  $: isInteractive =
+    identityState.kind === 'activate_first_account' ||
+    identityState.kind === 'relogin_required';
+  $: statusTone =
+    identityLoadState === 'loading'
+      ? 'loading'
+      : identityState.kind === 'ready'
+        ? 'ready'
+        : identityState.kind === 'observation_required'
+          ? 'prompt'
+          : 'attention';
+  $: statusLabel =
+    identityLoadState === 'loading'
+      ? localized('读取中', 'Loading')
+      : identityState.kind === 'ready'
+        ? localized('已连接', 'Ready')
+        : identityState.kind === 'observation_required'
+          ? localized('等待游戏检测', 'Awaiting game detection')
+          : identityState.kind === 'activate_first_account'
+            ? localized('需要验证', 'Verification needed')
+            : localized('需要重新连接', 'Reconnect required');
+  $: accountName = identityState.observation?.player_username ?? null;
+  $: helperCopy =
+    identityState.kind === 'activate_first_account'
+      ? localized(
+          '输入当前游戏账号密码后继续。如果这个账号已经注册过，安装器会自动直接登录，不需要你再选一次。',
+          'Enter the current game account password and continue. If this account already exists, the installer will sign in automatically without asking you to choose again.'
+        )
+      : identityState.kind === 'relogin_required'
+        ? localized(
+            '输入当前游戏账号密码后继续，安装器会按当前观察到的账号刷新这台电脑上的本地凭证。',
+            'Enter the current game account password and continue. The installer will refresh this machine\'s local credentials for the currently observed account.'
+          )
+        : '';
+  $: primaryActionLabel =
+    identityState.kind === 'relogin_required'
+      ? localized('继续并刷新本地凭证', 'Continue and refresh local credentials')
+      : localized('继续', 'Continue');
+  $: busyActionLabel =
+    identityActionBusy === 'logging_in'
+      ? localized('正在连接…', 'Connecting...')
+      : localized('正在继续…', 'Continuing...');
+  $: showInlineError = Boolean(identityError) && isInteractive;
+  $: passivePanelTitle =
+    identityState.kind === 'observation_required'
+      ? localized('下一步', 'Next step')
+      : localized('当前状态', 'Current status');
+  $: passivePanelLead =
+    identityState.kind === 'observation_required'
+      ? localized('先完成下面 3 步，安装器就会自动识别账号。', 'Finish these 3 steps and the installer will detect the account automatically.')
+      : localized(
+          '当前设备上的本地安装凭证已经就绪。',
+          'Local installation credentials are ready on this device.'
+        );
+  $: passiveChecklist =
+    identityState.kind === 'observation_required'
+      ? [
+          localized('确认游戏安装路径', 'Confirm the game path'),
+          localized('完成 MOD 安装', 'Install the mod'),
+          localized('启动一次带 MOD 的游戏', 'Launch the modded game once')
+        ]
+      : [
+          localized('可以直接继续安装、修复或启动游戏', 'You can continue with install, repair, or launch'),
+          localized('如果切换了游戏账号，这里会自动提示重新连接', 'If the in-game account changes, this panel will prompt you to reconnect')
+        ];
+
+  function handleContinueShortcut(event: KeyboardEvent) {
+    if (event.key !== 'Enter' || pageModel.identityBusy || !pageModel.canLoginIdentity) {
+      return;
+    }
+
+    event.preventDefault();
+    onContinue();
+  }
 </script>
 
 {#if visible}
-  <section class="identity-card">
-    <button
-      type="button"
-      class="identity-toggle"
-      class:is-static={identityState.kind === 'observation_required' || identityState.kind === 'ready'}
-      class:is-expanded={identityPanelExpanded}
-      on:click={onTogglePanel}
-      disabled={identityState.kind === 'observation_required' ||
-        identityState.kind === 'ready' ||
-        identityLoadState === 'loading'}
-      aria-expanded={identityState.kind === 'observation_required'
-        ? undefined
-        : identityState.kind === 'ready'
-          ? undefined
-          : identityPanelExpanded}
-    >
-      <div class="identity-toggle-copy">
-        <p class="identity-kicker">
-          {localized('身份状态', 'Identity Status')}
-        </p>
+  <section
+    class="identity-card"
+    class:tone-ready={statusTone === 'ready'}
+    class:tone-prompt={statusTone === 'prompt'}
+    class:tone-attention={statusTone === 'attention'}
+  >
+    <div class="identity-header">
+      <div class="identity-title-block">
+        <p class="identity-kicker">{localized('身份状态', 'Identity Status')}</p>
         <h2>{pageModel.identityPanelTitle}</h2>
-        {#if pageModel.identityPanelSummary}
-          <p class="identity-toggle-summary">{pageModel.identityPanelSummary}</p>
-        {/if}
       </div>
+      <span class={`identity-status-pill tone-${statusTone}`}>{statusLabel}</span>
+    </div>
 
-      {#if identityState.kind !== 'observation_required' &&
-        identityState.kind !== 'ready' &&
-        identityLoadState !== 'loading'}
-        <span class="identity-toggle-icon" aria-hidden="true">
-          {identityPanelExpanded ? '−' : '+'}
-        </span>
-      {/if}
-    </button>
+    <div class="identity-main">
+      <div class="identity-overview">
+        {#if pageModel.identityPanelSummary}
+          <p class="identity-summary">{pageModel.identityPanelSummary}</p>
+        {/if}
 
-    {#if identityPanelExpanded && identityLoadState !== 'loading'}
-      {#if identityState.kind === 'observation_required'}
-        <div class="identity-note-stack">
-          <p class="identity-note">
-            {localized(
-              '先启动带 mod 的游戏，安装器会自动识别当前账号。',
-              'Launch the modded game first. The installer will detect the current account automatically.'
-            )}
-          </p>
-        </div>
-      {:else if identityState.kind === 'activate_first_account'}
-        <dl class="identity-account">
-          <div>
-            <dt>{localized('当前游戏账号', 'Current game account')}</dt>
-            <dd>{identityState.observation.player_username}</dd>
-          </div>
-        </dl>
-        <div class="identity-note-stack">
-          <p class="identity-note">
-            {localized(
-              '第一次使用就设置密码并激活。',
-              'Set a password and activate if this is your first time here.'
-            )}
-          </p>
-          <p class="identity-note">
-            {localized(
-              '如果这个账号已经注册过，直接点“已有账号登录”。',
-              'If this account already exists, use “Log in existing account”.'
-            )}
-          </p>
-        </div>
-      {:else if identityState.kind === 'relogin_required'}
-        <dl class="identity-account">
-          <div>
-            <dt>{localized('当前游戏账号', 'Current game account')}</dt>
-            <dd>{identityState.observation.player_username}</dd>
-          </div>
-        </dl>
-        <div class="identity-note-stack">
-          <p class="identity-note">
-            {localized(
-              '检测到游戏里已经切到另一个账号。',
-              'The game is currently using a different account.'
-            )}
-          </p>
-          <p class="identity-note">
-            {localized(
-              '重新登录后会更新这台电脑上的本地安装凭证。',
-              'Re-login will refresh the local installation credentials on this computer.'
-            )}
-          </p>
-        </div>
-      {:else}
-        {#if identityState.observation}
+        {#if accountName}
           <dl class="identity-account">
             <div>
               <dt>{localized('当前游戏账号', 'Current game account')}</dt>
-              <dd>{identityState.observation.player_username}</dd>
+              <dd>{accountName}</dd>
             </div>
           </dl>
         {/if}
-        <div class="identity-note-stack">
-          <p class="identity-note">
-            {identityState.observation
-              ? localized(
-                  '当前检测到的游戏账号和本地安装凭证一致。',
-                  'The detected game account matches the local installation credentials.'
-                )
-              : localized(
-                  '本地安装凭证已经就绪。',
-                  'The local installation credentials are ready.'
-                )}
-          </p>
-          <p class="identity-note">
-            {identityState.observation
-              ? localized(
-                  '可以直接继续安装、修复或启动游戏。',
-                  'You can continue with install, repair, or launch.'
-                )
-              : localized(
-                  '启动游戏后，安装器会再次自动识别当前账号。',
-                  'The installer will detect the current account again after you launch the game.'
-                )}
-          </p>
-        </div>
-      {/if}
 
-      {#if identityState.kind !== 'observation_required' && identityState.kind !== 'ready'}
-        <label class="identity-field">
-          <span>{localized('账号密码', 'Account password')}</span>
-          <input
-            bind:value={identityPassword}
-            type="password"
-            autocomplete="current-password"
-            placeholder={localized('输入当前账号密码', 'Enter the current account password')}
-          />
-        </label>
-
-        {#if identityState.kind === 'activate_first_account'}
-          <label class="identity-field">
-            <span>{localized('再次输入密码', 'Confirm password')}</span>
-            <input
-              bind:value={identityPasswordConfirm}
-              type="password"
-              autocomplete="new-password"
-              placeholder={localized('再次输入一次密码', 'Enter the password again')}
-            />
-          </label>
-
-          {#if identityPasswordConfirm.trim() && !pageModel.activationPasswordMatches}
-            <p class="identity-error">
-              {localized('两次输入的密码不一致。', 'The two passwords do not match.')}
-            </p>
-          {/if}
+        {#if identitySuccess}
+          <p class="identity-feedback identity-feedback-success">{identitySuccess}</p>
         {/if}
+      </div>
 
-        <label class="identity-confirm">
-          <input bind:checked={identityConfirmed} type="checkbox" />
-          <span>
-            {localized(
-              '我确认要为当前游戏账号写入本地安装凭证。',
-              'I confirm that local installation credentials should be written for the current game account.'
-            )}
-          </span>
-        </label>
+      <aside class="identity-panel" class:is-interactive={isInteractive}>
+        {#if isInteractive && identityLoadState !== 'loading'}
+          <div class="identity-form-shell">
+            <p class="identity-panel-title">
+              {localized('继续当前账号验证', 'Continue current account verification')}
+            </p>
+            <p class="identity-panel-intro">{helperCopy}</p>
 
-        <div class="identity-actions">
-          {#if identityState.kind === 'activate_first_account'}
+            <label class="identity-field">
+              <span>{localized('账号密码', 'Account password')}</span>
+              <input
+                bind:value={identityPassword}
+                type="password"
+                autocomplete="current-password"
+                placeholder={localized('输入当前账号密码', 'Enter the current account password')}
+                aria-invalid={showInlineError}
+                onkeydown={handleContinueShortcut}
+              />
+            </label>
+
+            {#if showInlineError}
+              <p class="identity-field-error">{identityError}</p>
+            {/if}
+
+            <label class="identity-confirm">
+              <input bind:checked={identityConfirmed} type="checkbox" />
+              <span>
+                {localized(
+                  '我确认要为当前观察到的游戏账号更新这台电脑上的本地凭证。',
+                  'I confirm that the local credentials on this machine should be updated for the currently observed game account.'
+                )}
+              </span>
+            </label>
+
             <button
               type="button"
               class="identity-button primary"
-              on:click={onActivate}
-              disabled={!pageModel.canActivateObservedAccount}
-            >
-              {identityActionBusy === 'activating'
-                ? localized('正在激活…', 'Activating...')
-                : localized('首次激活', 'Create first account')}
-            </button>
-            <button
-              type="button"
-              class="identity-button"
-              on:click={onLogin}
+              onclick={onContinue}
               disabled={!pageModel.canLoginIdentity}
             >
-              {identityActionBusy === 'logging_in'
-                ? localized('正在登录…', 'Logging in...')
-                : localized('已有账号登录', 'Log in existing account')}
+              {pageModel.identityBusy ? busyActionLabel : primaryActionLabel}
             </button>
-          {:else if identityState.kind === 'relogin_required'}
-            <button
-              type="button"
-              class="identity-button primary"
-              on:click={onLogin}
-              disabled={!pageModel.canLoginIdentity}
-            >
-              {identityActionBusy === 'logging_in'
-                ? localized('正在重新登录…', 'Re-logging in...')
-                : localized('重新登录并刷新 installation', 'Re-login and refresh installation')}
-            </button>
-          {/if}
-        </div>
-      {/if}
-    {/if}
+          </div>
+        {:else}
+          <div class="identity-passive-shell">
+            <p class="identity-panel-title">{passivePanelTitle}</p>
+            <p class="identity-panel-intro">{passivePanelLead}</p>
+            <ul class="identity-checklist">
+              {#each passiveChecklist as item}
+                <li>{item}</li>
+              {/each}
+            </ul>
+          </div>
+        {/if}
+      </aside>
+    </div>
 
-    {#if identityError}
-      <p class="identity-error">{identityError}</p>
-    {/if}
-
-    {#if identitySuccess && identityState.kind !== 'ready'}
-      <p class="identity-success">{identitySuccess}</p>
+    {#if identityError && !showInlineError}
+      <p class="identity-feedback identity-feedback-error">{identityError}</p>
     {/if}
   </section>
 {/if}
 
 <style>
   .identity-card {
-    display: grid;
-    gap: 0.75rem;
-    border-radius: 3px;
-    border: 1px solid rgba(200, 148, 55, 0.18);
+    border-radius: 4px;
+    border: 1px solid rgba(214, 170, 86, 0.18);
     background:
       radial-gradient(
         circle at top left,
-        rgba(255, 214, 140, 0.09),
-        transparent 38%
+        rgba(255, 214, 140, 0.1),
+        transparent 34%
       ),
-      linear-gradient(180deg, rgba(24, 14, 8, 0.97), rgba(14, 8, 5, 0.95));
+      linear-gradient(180deg, rgba(27, 16, 8, 0.96), rgba(14, 8, 5, 0.94));
     box-shadow:
-      0 8px 26px rgba(0, 0, 0, 0.28),
+      0 10px 22px rgba(0, 0, 0, 0.24),
       inset 0 0 0 1px rgba(255, 214, 140, 0.04);
+    display: grid;
+    gap: 1rem;
+    padding: 1rem 1.1rem 1.05rem;
   }
 
-  .identity-toggle {
-    width: 100%;
-    padding: 0.95rem 1.05rem;
+  .identity-card.tone-ready {
+    border-color: rgba(96, 188, 132, 0.24);
+    box-shadow:
+      0 10px 22px rgba(0, 0, 0, 0.24),
+      0 0 18px rgba(96, 188, 132, 0.05),
+      inset 0 0 0 1px rgba(96, 188, 132, 0.05);
+  }
+
+  .identity-card.tone-attention {
+    border-color: rgba(224, 176, 88, 0.3);
+    box-shadow:
+      0 12px 28px rgba(0, 0, 0, 0.28),
+      0 0 26px rgba(224, 176, 88, 0.08),
+      inset 0 0 0 1px rgba(255, 214, 140, 0.05);
+  }
+
+  .identity-header {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: space-between;
     gap: 0.9rem;
-    border: 0;
-    background: transparent;
-    color: inherit;
-    text-align: left;
-    cursor: pointer;
   }
 
-  .identity-toggle.is-static {
-    cursor: default;
-  }
-
-  .identity-toggle-copy {
+  .identity-title-block {
     display: grid;
-    gap: 0.22rem;
+    gap: 0.28rem;
   }
 
   .identity-kicker {
     margin: 0;
-    font-size: 0.62rem;
-    letter-spacing: 0.24em;
+    font-size: 0.58rem;
+    letter-spacing: 0.26em;
     text-transform: uppercase;
     color: rgba(216, 182, 109, 0.72);
   }
 
-  .identity-toggle-copy h2 {
+  .identity-title-block h2 {
     margin: 0;
     font-family: 'Cinzel', serif;
-    font-size: 1rem;
-    color: rgba(248, 232, 196, 0.95);
+    font-size: 1.04rem;
+    color: rgba(248, 232, 196, 0.96);
   }
 
-  .identity-toggle-summary {
-    margin: 0;
-    line-height: 1.5;
-    font-size: 0.9rem;
-    color: rgba(240, 222, 188, 0.78);
-  }
-
-  .identity-toggle-icon {
-    flex: none;
-    width: 1.9rem;
-    height: 1.9rem;
+  .identity-status-pill {
     display: inline-flex;
     align-items: center;
-    justify-content: center;
-    border: 1px solid rgba(205, 177, 118, 0.2);
+    min-height: 1.7rem;
+    padding: 0.22rem 0.62rem;
     border-radius: 999px;
-    color: rgba(248, 232, 196, 0.9);
-    font-size: 1.2rem;
-    line-height: 1;
+    font-family: 'Cinzel', serif;
+    font-size: 0.54rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    border: 1px solid rgba(200, 148, 55, 0.22);
+    color: rgba(244, 230, 201, 0.88);
+    background: rgba(200, 148, 55, 0.08);
+    white-space: nowrap;
   }
 
-  .identity-note,
-  .identity-error,
-  .identity-success {
-    margin: 0 1.05rem;
-    line-height: 1.55;
-    font-size: 0.92rem;
+  .identity-status-pill.tone-ready {
+    color: rgba(214, 244, 225, 0.94);
+    border-color: rgba(96, 188, 132, 0.3);
+    background: rgba(96, 188, 132, 0.12);
   }
 
-  .identity-note {
-    color: rgba(240, 222, 188, 0.78);
+  .identity-status-pill.tone-prompt {
+    color: rgba(235, 214, 172, 0.9);
+    border-color: rgba(214, 170, 86, 0.26);
+    background: rgba(214, 170, 86, 0.1);
   }
 
-  .identity-note-stack {
+  .identity-status-pill.tone-attention {
+    color: rgba(247, 227, 184, 0.92);
+    border-color: rgba(224, 176, 88, 0.32);
+    background: rgba(224, 176, 88, 0.12);
+  }
+
+  .identity-status-pill.tone-loading {
+    color: rgba(180, 212, 230, 0.9);
+    border-color: rgba(112, 170, 210, 0.28);
+    background: rgba(112, 170, 210, 0.12);
+  }
+
+  .identity-main {
     display: grid;
-    gap: 0.35rem;
-    padding: 0 1.05rem;
+    grid-template-columns: minmax(0, 1.25fr) minmax(280px, 0.85fr);
+    gap: 1rem;
+    align-items: stretch;
   }
 
-  .identity-error {
-    color: rgba(255, 162, 142, 0.92);
+  .identity-overview {
+    display: grid;
+    align-content: start;
+    gap: 0.8rem;
   }
 
-  .identity-success {
-    color: rgba(169, 223, 161, 0.92);
+  .identity-summary {
+    margin: 0;
+    line-height: 1.6;
+    font-size: 0.9rem;
+    color: rgba(240, 222, 188, 0.76);
+    max-width: 42rem;
   }
 
   .identity-account {
-    margin: 0 1.05rem;
+    margin: 0;
   }
 
   .identity-account div {
     display: grid;
-    gap: 0.28rem;
+    gap: 0.22rem;
     width: fit-content;
-    min-width: min(100%, 240px);
-    padding: 0.75rem 0.9rem;
-    border: 1px solid rgba(205, 177, 118, 0.16);
-    border-radius: 2px;
-    background: rgba(14, 8, 5, 0.42);
+    min-width: min(100%, 280px);
+    padding: 0.78rem 0.88rem;
+    border: 1px solid rgba(205, 177, 118, 0.14);
+    border-radius: 3px;
+    background: rgba(12, 7, 4, 0.44);
   }
 
   .identity-account dt {
-    font-size: 0.68rem;
-    letter-spacing: 0.18em;
+    font-size: 0.64rem;
+    letter-spacing: 0.16em;
     text-transform: uppercase;
-    color: rgba(205, 177, 118, 0.62);
+    color: rgba(205, 177, 118, 0.6);
   }
 
   .identity-account dd {
     margin: 0;
-    font-size: 1.02rem;
+    font-size: 1rem;
     font-weight: 600;
     color: rgba(249, 236, 211, 0.94);
     word-break: break-word;
   }
 
+  .identity-panel {
+    border: 1px solid rgba(214, 170, 86, 0.14);
+    border-radius: 3px;
+    background: rgba(9, 5, 3, 0.5);
+    padding: 0.86rem 0.9rem;
+    display: grid;
+    align-content: start;
+  }
+
+  .identity-panel.is-interactive {
+    background:
+      linear-gradient(180deg, rgba(214, 170, 86, 0.07), rgba(214, 170, 86, 0.02)),
+      rgba(9, 5, 3, 0.6);
+    border-color: rgba(214, 170, 86, 0.18);
+  }
+
+  .identity-form-shell,
+  .identity-passive-shell {
+    display: grid;
+    gap: 0.7rem;
+  }
+
+  .identity-panel-title {
+    margin: 0;
+    font-family: 'Cinzel', serif;
+    font-size: 0.68rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgba(240, 222, 188, 0.88);
+  }
+
+  .identity-panel-intro {
+    margin: 0;
+    font-size: 0.82rem;
+    line-height: 1.55;
+    color: rgba(234, 219, 188, 0.74);
+  }
+
+  .identity-checklist {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: 0.42rem;
+  }
+
+  .identity-checklist li {
+    position: relative;
+    padding-left: 0.9rem;
+    font-size: 0.78rem;
+    line-height: 1.45;
+    color: rgba(240, 222, 188, 0.8);
+  }
+
+  .identity-checklist li::before {
+    content: '•';
+    position: absolute;
+    left: 0;
+    top: 0;
+    color: rgba(214, 170, 86, 0.72);
+  }
+
   .identity-field {
     display: grid;
-    gap: 0.4rem;
-    padding: 0 1.05rem;
+    gap: 0.36rem;
   }
 
   .identity-field span {
-    font-size: 0.74rem;
+    font-size: 0.68rem;
     letter-spacing: 0.14em;
     text-transform: uppercase;
-    color: rgba(205, 177, 118, 0.7);
+    color: rgba(205, 177, 118, 0.68);
   }
 
   .identity-field input {
     width: 100%;
-    padding: 0.72rem 0.82rem;
-    border-radius: 2px;
-    border: 1px solid rgba(200, 148, 55, 0.24);
-    background: rgba(10, 6, 4, 0.72);
+    padding: 0.76rem 0.84rem;
+    border-radius: 3px;
+    border: 1px solid rgba(200, 148, 55, 0.2);
+    background: rgba(10, 6, 4, 0.78);
     color: rgba(251, 240, 220, 0.96);
-    font-size: 0.95rem;
+    font-size: 0.92rem;
   }
 
   .identity-field input::placeholder {
     color: rgba(208, 181, 127, 0.42);
   }
 
-  .identity-confirm {
-    display: flex;
-    gap: 0.55rem;
-    align-items: flex-start;
-    padding: 0 1.05rem;
-    color: rgba(240, 222, 188, 0.82);
-    font-size: 0.85rem;
+  .identity-field input[aria-invalid='true'] {
+    border-color: rgba(224, 114, 94, 0.38);
+    box-shadow: 0 0 0 1px rgba(224, 114, 94, 0.08) inset;
+  }
+
+  .identity-field-error {
+    margin: -0.08rem 0 0;
+    color: rgba(255, 182, 167, 0.95);
+    font-size: 0.78rem;
     line-height: 1.45;
   }
 
-  .identity-confirm input {
-    margin-top: 0.18rem;
+  .identity-confirm {
+    display: flex;
+    gap: 0.52rem;
+    align-items: flex-start;
+    color: rgba(240, 222, 188, 0.8);
+    font-size: 0.8rem;
+    line-height: 1.5;
   }
 
-  .identity-actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.65rem;
-    padding: 0 1.05rem 1.05rem;
+  .identity-confirm input {
+    margin-top: 0.15rem;
+  }
+
+  .identity-field input:focus-visible,
+  .identity-button:focus-visible {
+    outline: 2px solid rgba(255, 214, 140, 0.9);
+    outline-offset: 2px;
   }
 
   .identity-button {
-    border: 1px solid rgba(208, 170, 94, 0.32);
-    background: rgba(31, 18, 10, 0.84);
-    color: rgba(251, 240, 220, 0.95);
-    padding: 0.72rem 0.95rem;
+    border: 1px solid rgba(208, 170, 94, 0.3);
+    background: linear-gradient(135deg, #d4a040 0%, #9e5c1e 50%, #d4a040 100%);
+    color: #1c0e03;
+    padding: 0.82rem 0.95rem;
+    border-radius: 3px;
     font-family: 'Cinzel', serif;
-    letter-spacing: 0.08em;
+    font-size: 0.64rem;
+    font-weight: 700;
+    letter-spacing: 0.18em;
     text-transform: uppercase;
-    font-size: 0.72rem;
-    cursor: pointer;
-  }
-
-  .identity-button.primary {
-    background: linear-gradient(
-      180deg,
-      rgba(188, 141, 57, 0.92),
-      rgba(136, 89, 28, 0.95)
-    );
-    color: rgba(18, 10, 4, 0.95);
+    box-shadow:
+      0 0 0 1px rgba(255, 198, 98, 0.12) inset,
+      0 6px 18px rgba(170, 100, 25, 0.22);
   }
 
   .identity-button:disabled {
-    opacity: 0.45;
+    opacity: 0.4;
     cursor: not-allowed;
+    box-shadow: none;
+  }
+
+  .identity-feedback {
+    margin: 0;
+    padding: 0.68rem 0.82rem;
+    border-radius: 3px;
+    font-size: 0.8rem;
+    line-height: 1.5;
+  }
+
+  .identity-feedback-error {
+    border: 1px solid rgba(224, 114, 94, 0.2);
+    background: rgba(160, 56, 39, 0.1);
+    color: rgba(255, 182, 167, 0.95);
+  }
+
+  .identity-feedback-success {
+    border: 1px solid rgba(96, 188, 132, 0.2);
+    background: rgba(66, 132, 84, 0.12);
+    color: rgba(188, 237, 198, 0.95);
+  }
+
+  @media (max-width: 760px) {
+    .identity-main {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 520px) {
+    .identity-card {
+      padding: 0.9rem 0.92rem 0.96rem;
+    }
+
+    .identity-header {
+      flex-direction: column;
+      align-items: flex-start;
+    }
   }
 </style>

@@ -57,70 +57,58 @@
     class:step-error={versionMismatch}
   >
     <div class="step-index" aria-hidden="true">I</div>
-    <div class="step-body step-body-bpp">
-      <div class="step-bpp-content">
-        <span class="step-title">
-          {t('stepBpp')}
-          {#if versionMismatch}
-            <span class="tag tag-danger"
-              >{$locale === 'zh' ? '版本不一致' : 'Version mismatch'}</span
-            >
-          {:else if actionBusy === 'detect'}
-            <span class="tag">{t('statusChecking')}</span>
-          {:else if !modInstalled}
-            <span class="tag tag-warn">{t('statusNotInstalled')}</span>
-          {/if}
-        </span>
+    <div class="step-body">
+      <span class="step-title">
+        {t('stepBpp')}
         {#if versionMismatch}
-          <div class="mismatch-summary">
-            <p class="detail-line detail-muted">
-              {$locale === 'zh'
-                ? '已安装版本和安装器版本不同，建议重新安装'
-                : 'The installed version differs from the bundled one. Check what changed before reinstalling.'}
-            </p>
-          </div>
-          <div class="mismatch-versions">
-            <span class="mismatch-version">
-              <span class="mismatch-version-label"
-                >{$locale === 'zh' ? '本地已安装' : 'Installed'}</span
-              >
-              <span class="mismatch-version-value">v{installedBppVersion}</span>
-            </span>
-            <span class="mismatch-version">
-              <span class="mismatch-version-label"
-                >{$locale === 'zh' ? '安装器版本' : 'Installer bundle'}</span
-              >
-              <span class="mismatch-version-value">v{bundledBppVersion}</span>
-            </span>
-          </div>
-        {:else if modInstalled}
-          <div class="mismatch-versions">
-            <span class="mismatch-version mismatch-version-ok">
-              <span class="mismatch-version-label"
-                >{$locale === 'zh' ? '本地已安装' : 'Installed'}</span
-              >
-              <span class="mismatch-version-value">v{env?.bpp_version}</span>
-            </span>
-          </div>
+          <span class="tag tag-danger"
+            >{$locale === 'zh' ? '版本不一致' : 'Version mismatch'}</span
+          >
+        {:else if actionBusy === 'detect'}
+          <span class="tag">{t('statusChecking')}</span>
+        {:else if !modInstalled}
+          <span class="tag tag-warn">{t('statusNotInstalled')}</span>
+        {/if}
+      </span>
+      {#if versionMismatch}
+        <div class="mismatch-summary">
           <p class="detail-line detail-muted">
             {$locale === 'zh'
-              ? 'BazaarPlusPlus 当前已处于最新状态'
-              : 'BazaarPlusPlus is already up to date'}
+              ? '已安装版本和安装器版本不同，建议重新安装'
+              : 'The installed version differs from the bundled one. Check what changed before reinstalling.'}
           </p>
-        {:else}
-          <p class="detail-line detail-muted">{t('detectInstalledHint')}</p>
-        {/if}
-      </div>
-      <div class="step-bpp-action">
-        <a
-          class="secondary-btn mismatch-link-button"
-          href={bundledBppVersion
-            ? `/whats-new?version=${encodeURIComponent(bundledBppVersion)}`
-            : '/whats-new'}
-        >
-          {$locale === 'zh' ? "What's New" : "What's New"}
-        </a>
-      </div>
+        </div>
+        <div class="mismatch-versions">
+          <span class="mismatch-version">
+            <span class="mismatch-version-label"
+              >{$locale === 'zh' ? '本地已安装' : 'Installed'}</span
+            >
+            <span class="mismatch-version-value">v{installedBppVersion}</span>
+          </span>
+          <span class="mismatch-version">
+            <span class="mismatch-version-label"
+              >{$locale === 'zh' ? '安装器版本' : 'Installer bundle'}</span
+            >
+            <span class="mismatch-version-value">v{bundledBppVersion}</span>
+          </span>
+        </div>
+      {:else if modInstalled}
+        <div class="mismatch-versions">
+          <span class="mismatch-version mismatch-version-ok">
+            <span class="mismatch-version-label"
+              >{$locale === 'zh' ? '本地已安装' : 'Installed'}</span
+            >
+            <span class="mismatch-version-value">v{env?.bpp_version}</span>
+          </span>
+        </div>
+        <p class="detail-line detail-muted">
+          {$locale === 'zh'
+            ? 'BazaarPlusPlus 当前已处于最新状态'
+            : 'BazaarPlusPlus is already up to date'}
+        </p>
+      {:else}
+        <p class="detail-line detail-muted">{t('detectInstalledHint')}</p>
+      {/if}
     </div>
   </div>
 
@@ -324,13 +312,13 @@
 
   .step {
     display: flex;
-    gap: 1rem;
+    gap: 0.85rem;
     align-items: flex-start;
-    padding: 0.95rem 1.05rem;
-    background: rgba(18, 11, 5, 0.88);
-    border: 1px solid rgba(180, 130, 48, 0.13);
+    padding: 0.82rem 0.92rem;
+    background: rgba(18, 11, 5, 0.76);
+    border: 1px solid rgba(180, 130, 48, 0.11);
     border-radius: 3px;
-    box-shadow: 0 6px 28px rgba(0, 0, 0, 0.35);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.22);
     transition:
       border-color 0.3s ease,
       box-shadow 0.3s ease;
@@ -339,14 +327,14 @@
   .step-found {
     border-color: rgba(90, 200, 130, 0.25);
     box-shadow:
-      0 6px 28px rgba(0, 0, 0, 0.35),
+      0 6px 18px rgba(0, 0, 0, 0.22),
       0 0 18px rgba(90, 200, 130, 0.05);
   }
 
   .step-error {
     border-color: rgba(196, 98, 76, 0.28);
     box-shadow:
-      0 6px 28px rgba(0, 0, 0, 0.35),
+      0 6px 18px rgba(0, 0, 0, 0.22),
       0 0 14px rgba(196, 98, 76, 0.04);
   }
 
@@ -356,52 +344,32 @@
 
   .step-index {
     font-family: 'Cinzel', serif;
-    font-size: 0.55rem;
+    font-size: 0.5rem;
     letter-spacing: 0.15em;
-    color: rgba(200, 148, 55, 0.4);
-    padding-top: 0.25rem;
+    color: rgba(200, 148, 55, 0.34);
+    padding-top: 0.2rem;
     flex-shrink: 0;
-    width: 1.4rem;
+    width: 1.2rem;
     text-align: center;
   }
 
   .step-body {
     flex: 1;
     display: grid;
-    gap: 0.7rem;
+    gap: 0.58rem;
     min-width: 0;
     overflow: visible;
   }
 
-  .step-body-bpp {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 8.8rem;
-    align-items: stretch;
-    gap: 1.1rem;
-  }
-
-  .step-bpp-content {
-    display: grid;
-    gap: 0.7rem;
-    min-width: 0;
-  }
-
-  .step-bpp-action {
-    display: flex;
-    align-items: flex-end;
-    justify-content: center;
-    min-width: 0;
-  }
-
   .step-title {
     font-family: 'Cinzel', serif;
-    font-size: 0.72rem;
-    letter-spacing: 0.12em;
+    font-size: 0.66rem;
+    letter-spacing: 0.1em;
     text-transform: uppercase;
-    color: rgba(220, 195, 145, 0.8);
+    color: rgba(220, 195, 145, 0.74);
     display: flex;
     align-items: center;
-    gap: 0.65rem;
+    gap: 0.55rem;
     min-width: 0;
   }
 
@@ -415,7 +383,7 @@
 
   .tag {
     font-family: 'Fira Code', monospace;
-    font-size: 0.65rem;
+    font-size: 0.6rem;
     letter-spacing: 0;
     text-transform: none;
     padding: 0.18rem 0.55rem;
@@ -446,7 +414,7 @@
   .runtime-chip {
     flex: 0 0 auto;
     min-width: 0;
-    padding: 0.32rem 0.58rem;
+    padding: 0.28rem 0.52rem;
     border: 1px solid rgba(92, 146, 176, 0.16);
     border-radius: 999px;
     background: rgba(92, 146, 176, 0.06);
@@ -479,7 +447,7 @@
 
   .runtime-chip-label {
     font-family: 'Cinzel', serif;
-    font-size: 0.5rem;
+    font-size: 0.46rem;
     letter-spacing: 0.12em;
     text-transform: uppercase;
     color: rgba(196, 168, 120, 0.72);
@@ -487,7 +455,7 @@
 
   .runtime-chip-value {
     font-family: 'Fira Code', monospace;
-    font-size: 0.62rem;
+    font-size: 0.58rem;
     letter-spacing: 0;
     text-transform: none;
     color: currentColor;
@@ -504,13 +472,13 @@
     white-space: nowrap;
     user-select: text;
     font-family: 'Fira Code', monospace;
-    font-size: 0.73rem;
+    font-size: 0.7rem;
     color: rgba(228, 216, 191, 0.82);
   }
 
   .detail-muted {
-    font-size: 0.8rem;
-    color: rgba(200, 170, 120, 0.6);
+    font-size: 0.76rem;
+    color: rgba(200, 170, 120, 0.58);
   }
 
   .mismatch-summary {
@@ -526,22 +494,12 @@
     align-items: flex-start;
   }
 
-  .mismatch-link-button {
-    text-decoration: none;
-    width: 100%;
-    min-height: 3.4rem;
-    padding-left: 0.8rem;
-    padding-right: 0.8rem;
-    line-height: 1.5;
-    text-align: center;
-  }
-
   .mismatch-version {
     display: inline-flex;
     align-items: center;
     gap: 0.45rem;
     min-width: 0;
-    padding: 0.32rem 0.52rem;
+    padding: 0.28rem 0.48rem;
     border: 1px solid rgba(191, 104, 81, 0.14);
     border-radius: 999px;
     background: rgba(191, 104, 81, 0.06);
@@ -555,7 +513,7 @@
 
   .mismatch-version-label {
     color: rgba(214, 182, 126, 0.62);
-    font-size: 0.68rem;
+    font-size: 0.63rem;
     white-space: nowrap;
   }
 
@@ -566,7 +524,7 @@
   .mismatch-version-value {
     color: rgba(235, 223, 198, 0.86);
     font-family: 'Fira Code', monospace;
-    font-size: 0.72rem;
+    font-size: 0.66rem;
     white-space: nowrap;
   }
 
@@ -590,10 +548,10 @@
 
   .locate-browse {
     flex-shrink: 0;
-    padding: 0.68rem 0.9rem;
+    padding: 0.62rem 0.84rem;
     font-family: 'Cinzel', serif;
-    font-size: 0.58rem;
-    letter-spacing: 0.16em;
+    font-size: 0.54rem;
+    letter-spacing: 0.14em;
     text-transform: uppercase;
     color: rgba(200, 155, 72, 0.7);
     background: rgba(200, 148, 55, 0.06);
@@ -625,7 +583,7 @@
     border: none;
     color: rgba(225, 210, 185, 0.88);
     font-family: 'Fira Code', monospace;
-    font-size: 0.78rem;
+    font-size: 0.74rem;
     min-width: 0;
     user-select: text;
   }
@@ -637,10 +595,10 @@
 
   .locate-confirm {
     flex-shrink: 0;
-    padding: 0.68rem 0.9rem;
+    padding: 0.62rem 0.84rem;
     font-family: 'Cinzel', serif;
-    font-size: 0.58rem;
-    letter-spacing: 0.16em;
+    font-size: 0.54rem;
+    letter-spacing: 0.14em;
     text-transform: uppercase;
     color: rgba(200, 155, 72, 0.7);
     background: rgba(200, 148, 55, 0.06);
@@ -670,7 +628,7 @@
   .locate-error {
     margin: 0;
     font-family: 'Fira Code', monospace;
-    font-size: 0.72rem;
+    font-size: 0.68rem;
     color: rgba(220, 100, 80, 0.8);
     animation: fade-up 0.2s ease both;
   }
@@ -678,7 +636,7 @@
   .locate-warning-panel {
     display: grid;
     gap: 0.35rem;
-    padding: 0.8rem 0.88rem;
+    padding: 0.72rem 0.78rem;
     border: 1px solid rgba(191, 104, 81, 0.24);
     border-radius: 4px;
     background:
@@ -697,14 +655,14 @@
 
   .locate-warning-title {
     font-family: 'Cinzel', serif;
-    font-size: 0.62rem;
+    font-size: 0.58rem;
     letter-spacing: 0.16em;
     text-transform: uppercase;
     color: rgba(240, 178, 162, 0.88);
   }
 
   .locate-warning {
-    font-size: 0.8rem;
+    font-size: 0.76rem;
     line-height: 1.55;
     color: rgba(228, 216, 191, 0.82);
   }
@@ -722,10 +680,10 @@
   }
 
   .secondary-btn {
-    padding: 0.68rem 0.9rem;
+    padding: 0.62rem 0.84rem;
     font-family: 'Cinzel', serif;
-    font-size: 0.58rem;
-    letter-spacing: 0.16em;
+    font-size: 0.54rem;
+    letter-spacing: 0.14em;
     text-transform: uppercase;
     color: rgba(200, 155, 72, 0.78);
     background: rgba(200, 148, 55, 0.06);
@@ -824,10 +782,10 @@
 
   .redetect-btn {
     align-self: start;
-    padding: 0.38rem 0.8rem;
+    padding: 0.34rem 0.7rem;
     font-family: 'Cinzel', serif;
-    font-size: 0.54rem;
-    letter-spacing: 0.18em;
+    font-size: 0.5rem;
+    letter-spacing: 0.16em;
     text-transform: uppercase;
     color: rgba(160, 120, 55, 0.55);
     border: 1px solid rgba(160, 120, 55, 0.18);
@@ -845,11 +803,11 @@
     flex: 1 1 0;
     width: auto;
     min-width: 0;
-    padding: 0.95rem 1rem;
+    padding: 0.86rem 0.96rem;
     font-family: 'Cinzel', serif;
-    font-size: 0.72rem;
+    font-size: 0.66rem;
     font-weight: 600;
-    letter-spacing: 0.24em;
+    letter-spacing: 0.2em;
     text-transform: uppercase;
     color: #1c0e03;
     background: linear-gradient(135deg, #d4a040 0%, #9e5c1e 50%, #d4a040 100%);
@@ -858,7 +816,7 @@
     border-radius: 2px;
     box-shadow:
       0 0 0 1px rgba(255, 198, 98, 0.14) inset,
-      0 4px 22px rgba(170, 100, 25, 0.3);
+      0 4px 18px rgba(170, 100, 25, 0.22);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -957,15 +915,6 @@
 
     .action-primary {
       flex-direction: column;
-    }
-
-    .step-body-bpp {
-      grid-template-columns: 1fr;
-      gap: 0.7rem;
-    }
-
-    .step-bpp-action {
-      justify-content: stretch;
     }
 
     .menu-trigger {

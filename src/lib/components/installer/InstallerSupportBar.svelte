@@ -157,67 +157,67 @@
 
 <style>
   .support-strip {
-    padding: 0.95rem 1.05rem;
+    padding: 0.78rem 0.92rem;
     background:
       radial-gradient(
         circle at top left,
-        rgba(255, 214, 140, 0.08),
+        rgba(255, 214, 140, 0.04),
         transparent 42%
       ),
-      linear-gradient(180deg, rgba(20, 12, 6, 0.96), rgba(12, 7, 4, 0.94));
-    border: 1px solid rgba(200, 148, 55, 0.15);
+      linear-gradient(180deg, rgba(18, 11, 6, 0.88), rgba(11, 7, 4, 0.86));
+    border: 1px solid rgba(200, 148, 55, 0.11);
     border-radius: 3px;
-    box-shadow:
-      0 8px 28px rgba(0, 0, 0, 0.3),
-      inset 0 0 0 1px rgba(255, 214, 140, 0.04);
+    box-shadow: inset 0 0 0 1px rgba(255, 214, 140, 0.03);
     display: grid;
-    gap: 0.85rem;
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+    gap: 0.85rem 1rem;
+    align-items: end;
   }
 
   .support-copy {
     display: grid;
-    gap: 0.2rem;
+    gap: 0.14rem;
   }
 
   .support-eyebrow {
     margin: 0;
     font-family: 'Cinzel', serif;
-    font-size: 0.5rem;
+    font-size: 0.46rem;
     letter-spacing: 0.24em;
     text-transform: uppercase;
-    color: rgba(200, 148, 55, 0.52);
+    color: rgba(200, 148, 55, 0.44);
   }
 
   .support-copy h2 {
     margin: 0;
     font-family: 'Cinzel', serif;
-    font-size: 0.82rem;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: rgba(232, 220, 194, 0.92);
+    font-size: 0.9rem;
+    letter-spacing: 0.03em;
+    color: rgba(232, 220, 194, 0.9);
   }
 
   .support-body {
     margin: 0;
-    font-size: 0.78rem;
-    line-height: 1.55;
-    color: rgba(208, 188, 150, 0.74);
+    max-width: 36rem;
+    font-size: 0.75rem;
+    line-height: 1.5;
+    color: rgba(208, 188, 150, 0.62);
   }
 
   .support-actions {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 0.6rem;
+    gap: 0.42rem;
   }
 
   .support-action {
-    padding: 0.7rem 0.8rem;
-    border: 1px solid rgba(200, 148, 55, 0.14);
+    padding: 0.58rem 0.68rem;
+    border: 1px solid rgba(200, 148, 55, 0.11);
     border-radius: 3px;
     background: linear-gradient(
       180deg,
-      rgba(200, 148, 55, 0.06),
-      rgba(200, 148, 55, 0.02)
+      rgba(200, 148, 55, 0.04),
+      rgba(200, 148, 55, 0.01)
     );
     display: grid;
     gap: 0.14rem;
@@ -229,11 +229,11 @@
   }
 
   .support-action:hover {
-    border-color: rgba(220, 168, 76, 0.28);
+    border-color: rgba(220, 168, 76, 0.22);
     background: linear-gradient(
       180deg,
-      rgba(200, 148, 55, 0.12),
-      rgba(200, 148, 55, 0.05)
+      rgba(200, 148, 55, 0.09),
+      rgba(200, 148, 55, 0.03)
     );
     transform: translateY(-1px);
   }
@@ -245,16 +245,16 @@
 
   .support-action-title {
     font-family: 'Cinzel', serif;
-    font-size: 0.66rem;
-    letter-spacing: 0.1em;
+    font-size: 0.6rem;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: rgba(236, 224, 196, 0.9);
+    color: rgba(236, 224, 196, 0.86);
   }
 
   .support-action-subtitle {
     font-family: 'Fira Code', monospace;
-    font-size: 0.62rem;
-    color: rgba(200, 170, 120, 0.58);
+    font-size: 0.58rem;
+    color: rgba(200, 170, 120, 0.5);
   }
 
   :global(.support-modal-body) {
@@ -356,6 +356,19 @@
     font-size: 0.66rem;
     line-height: 1.45;
     color: rgba(200, 170, 120, 0.8);
+  }
+
+  @media (max-width: 760px) {
+    .support-strip {
+      grid-template-columns: 1fr;
+      align-items: stretch;
+    }
+  }
+
+  @media (max-width: 520px) {
+    .support-actions {
+      grid-template-columns: 1fr;
+    }
   }
 
   .payment-image {

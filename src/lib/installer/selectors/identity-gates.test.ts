@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 
 import { selectIdentityGates } from './identity-gates.ts';
 
-test('selectIdentityGates treats blank passwords as matching but not actionable', () => {
+test('selectIdentityGates blocks login when required fields are missing', () => {
   const selection = selectIdentityGates({
     identityState: {
       kind: 'activate_first_account',
@@ -26,17 +26,14 @@ test('selectIdentityGates treats blank passwords as matching but not actionable'
     identityLoadState: 'idle',
     identityActionBusy: 'idle',
     identityPassword: '',
-    identityPasswordConfirm: '',
     identityConfirmed: false
   });
 
-  assert.equal(selection.activationPasswordMatches, true);
   assert.equal(selection.identityBusy, false);
-  assert.equal(selection.canActivateObservedAccount, false);
   assert.equal(selection.canLoginIdentity, false);
 });
 
-test('selectIdentityGates blocks activation on mismatched passwords and busy state', () => {
+test('selectIdentityGates blocks login while busy', () => {
   const selection = selectIdentityGates({
     identityState: {
       kind: 'activate_first_account',
@@ -59,17 +56,14 @@ test('selectIdentityGates blocks activation on mismatched passwords and busy sta
     identityLoadState: 'loading',
     identityActionBusy: 'idle',
     identityPassword: 'secret',
-    identityPasswordConfirm: 'mismatch',
     identityConfirmed: true
   });
 
-  assert.equal(selection.activationPasswordMatches, false);
   assert.equal(selection.identityBusy, true);
-  assert.equal(selection.canActivateObservedAccount, false);
   assert.equal(selection.canLoginIdentity, false);
 });
 
-test('selectIdentityGates preserves current login and activation rules', () => {
+test('selectIdentityGates allows login for both activation and relogin states', () => {
   const activate = selectIdentityGates({
     identityState: {
       kind: 'activate_first_account',
@@ -92,7 +86,6 @@ test('selectIdentityGates preserves current login and activation rules', () => {
     identityLoadState: 'idle',
     identityActionBusy: 'idle',
     identityPassword: 'secret',
-    identityPasswordConfirm: 'secret',
     identityConfirmed: true
   });
   const relogin = selectIdentityGates({
@@ -124,12 +117,9 @@ test('selectIdentityGates preserves current login and activation rules', () => {
     identityLoadState: 'idle',
     identityActionBusy: 'idle',
     identityPassword: 'secret',
-    identityPasswordConfirm: '',
     identityConfirmed: true
   });
 
-  assert.equal(activate.canActivateObservedAccount, true);
   assert.equal(activate.canLoginIdentity, true);
-  assert.equal(relogin.canActivateObservedAccount, false);
   assert.equal(relogin.canLoginIdentity, true);
 });

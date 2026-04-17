@@ -82,7 +82,6 @@ test('createInstallPageModel centralizes install page derivations', () => {
     identityLoadState: 'idle',
     identityActionBusy: 'idle',
     identityPassword: 'secret',
-    identityPasswordConfirm: 'secret',
     identityConfirmed: true,
     localized,
     t
@@ -92,7 +91,7 @@ test('createInstallPageModel centralizes install page derivations', () => {
   assert.equal(model.canInstall, true);
   assert.equal(model.versionMismatch, true);
   assert.equal(model.identityState.kind, 'activate_first_account');
-  assert.equal(model.identityPanelTitle, 'Game account detected');
+  assert.equal(model.identityPanelTitle, 'Identity verification required');
   assert.equal(model.updaterButtonLabel, 'Ready 3.1.0');
   assert.equal(model.steamModalTitle, 'installRiskTitle');
 });
