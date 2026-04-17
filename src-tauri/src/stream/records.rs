@@ -3,12 +3,13 @@ mod image;
 #[path = "records/locator.rs"]
 mod locator;
 
-#[allow(unused_imports)]
-pub use image::resolve_overlay_image_path;
-
 use rusqlite::Connection;
 use serde::Serialize;
 use std::path::{Path, PathBuf};
+
+const DATA_DIRECTORY: &str = "BazaarPlusPlus";
+const SCREENSHOTS_DIRECTORY: &str = "Screenshots";
+const DATABASE_FILE_NAME: &str = "bazaarplusplus.db";
 
 #[derive(Clone, Debug, Serialize)]
 pub struct OverlayRecord {
@@ -204,8 +205,8 @@ fn find_database_path_anywhere() -> Result<PathBuf, String> {
         ];
         for candidate in &candidates {
             let db = PathBuf::from(candidate)
-                .join(locator::DATA_DIRECTORY)
-                .join(locator::DATABASE_FILE_NAME);
+                .join(DATA_DIRECTORY)
+                .join(DATABASE_FILE_NAME);
             if db.exists() {
                 return Ok(db);
             }
@@ -218,7 +219,9 @@ fn find_database_path_anywhere() -> Result<PathBuf, String> {
 }
 
 pub fn resolve_database_path(game_path: &Path) -> Result<PathBuf, String> {
-    let data_dir = game_path.join(locator::DATA_DIRECTORY);
+    let _ = SCREENSHOTS_DIRECTORY;
+    let _ = locator::DATABASE_FILE_NAME;
+    let data_dir = game_path.join(DATA_DIRECTORY);
     if !data_dir.exists() {
         return Err(format!(
             "BazaarPlusPlus data directory not found: {}",
@@ -226,7 +229,7 @@ pub fn resolve_database_path(game_path: &Path) -> Result<PathBuf, String> {
         ));
     }
 
-    let candidate = data_dir.join(locator::DATABASE_FILE_NAME);
+    let candidate = data_dir.join(DATABASE_FILE_NAME);
     if candidate.exists() {
         return Ok(candidate);
     }
@@ -516,7 +519,7 @@ mod tests {
         load_latest_overlay_record, load_overlay_record_by_id, load_overlay_record_count,
         load_overlay_record_list, OverlayRecordRepository,
     };
-    use super::locator::DATABASE_FILE_NAME;
+    use super::DATABASE_FILE_NAME;
 
     fn create_run_screenshots_table(conn: &rusqlite::Connection) {
         conn.execute(
