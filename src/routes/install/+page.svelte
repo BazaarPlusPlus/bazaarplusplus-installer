@@ -308,6 +308,7 @@
         identityState,
         gameRoot: pageState.effectiveGamePath
       })}
+    onRefresh={() => identityController.refreshIdentity(pageState.effectiveGamePath)}
   />
 
   <InstallerPageContent

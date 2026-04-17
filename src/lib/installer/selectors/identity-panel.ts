@@ -14,7 +14,7 @@ export function selectIdentityPanel(input: {
   return {
     title:
       input.identityState.kind === 'observation_required'
-        ? input.localized('尚未检测到游戏账号', 'No game account detected yet')
+        ? input.localized('未检测到游戏账号', 'No game account detected')
         : input.identityState.kind === 'activate_first_account'
           ? input.localized('需要验证当前账号', 'Identity verification required')
           : input.identityState.kind === 'relogin_required'
@@ -25,8 +25,8 @@ export function selectIdentityPanel(input: {
         ? input.localized('正在读取账号状态…', 'Reading account status...')
         : input.identityState.kind === 'observation_required'
           ? input.localized(
-              '请先安装最新版 MOD，运行一次游戏，再回来绑定账号。',
-              'Install the latest mod, run the game once, then come back to bind the account.'
+              '请先启动一次游戏，以便完成账号识别',
+              'Launch the game once to complete account detection.'
             )
           : input.identityState.kind === 'activate_first_account'
             ? input.localized(

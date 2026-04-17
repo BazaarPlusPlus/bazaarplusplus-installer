@@ -17,8 +17,8 @@ test('selectIdentityPanel describes the observation-required state', () => {
     localized
   });
 
-  assert.equal(selection.title, 'No game account detected yet');
-  assert.match(selection.summary, /Install the latest mod/);
+  assert.equal(selection.title, 'No game account detected');
+  assert.equal(selection.summary, 'Launch the game once to complete account detection.');
 });
 
 test('selectIdentityPanel describes activation and relogin states', () => {

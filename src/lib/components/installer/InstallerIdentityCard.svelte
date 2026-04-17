@@ -13,6 +13,9 @@
   export let identitySuccess: string;
   export let localized: (zh: string, en: string) => string;
   export let onContinue: () => void;
+  export let onRefresh: () => Promise<void> | void;
+
+  let refreshPending = false;
 
   $: isInteractive =
     identityState.kind === 'activate_first_account' ||
@@ -31,10 +34,15 @@
       : identityState.kind === 'ready'
         ? localized('已连接', 'Ready')
         : identityState.kind === 'observation_required'
-          ? localized('等待游戏检测', 'Awaiting game detection')
+          ? localized('重新检测', 'Check again')
           : identityState.kind === 'activate_first_account'
             ? localized('需要验证', 'Verification needed')
             : localized('需要重新连接', 'Reconnect required');
+  $: refreshBusy = refreshPending || identityLoadState === 'loading';
+  $: refreshButtonLabel =
+    refreshBusy
+      ? localized('重新检测中…', 'Checking again...')
+      : localized('重新检测', 'Check again');
   $: accountName = identityState.observation?.player_username ?? null;
   $: helperCopy =
     identityState.kind === 'activate_first_account'
@@ -57,28 +65,8 @@
       ? localized('正在连接…', 'Connecting...')
       : localized('正在继续…', 'Continuing...');
   $: showInlineError = Boolean(identityError) && isInteractive;
-  $: passivePanelTitle =
-    identityState.kind === 'observation_required'
-      ? localized('下一步', 'Next step')
-      : localized('当前状态', 'Current status');
-  $: passivePanelLead =
-    identityState.kind === 'observation_required'
-      ? localized('先完成下面 3 步，安装器就会自动识别账号。', 'Finish these 3 steps and the installer will detect the account automatically.')
-      : localized(
-          '当前设备上的本地安装凭证已经就绪。',
-          'Local installation credentials are ready on this device.'
-        );
-  $: passiveChecklist =
-    identityState.kind === 'observation_required'
-      ? [
-          localized('确认游戏安装路径', 'Confirm the game path'),
-          localized('完成 MOD 安装', 'Install the mod'),
-          localized('启动一次带 MOD 的游戏', 'Launch the modded game once')
-        ]
-      : [
-          localized('可以直接继续安装、修复或启动游戏', 'You can continue with install, repair, or launch'),
-          localized('如果切换了游戏账号，这里会自动提示重新连接', 'If the in-game account changes, this panel will prompt you to reconnect')
-        ];
+  $: isReadyCompact = identityState.kind === 'ready' && !identitySuccess && !identityError;
+  $: showSidePanel = isInteractive;
 
   function handleContinueShortcut(event: KeyboardEvent) {
     if (event.key !== 'Enter' || pageModel.identityBusy || !pageModel.canLoginIdentity) {
@@ -88,6 +76,27 @@
     event.preventDefault();
     onContinue();
   }
+
+  async function handleRefresh() {
+    if (refreshBusy) {
+      return;
+    }
+
+    refreshPending = true;
+    const startedAt = Date.now();
+    const minVisibleMs = 700;
+
+    try {
+      await onRefresh();
+    } finally {
+      const elapsed = Date.now() - startedAt;
+      if (elapsed < minVisibleMs) {
+        await new Promise((resolve) => setTimeout(resolve, minVisibleMs - elapsed));
+      }
+
+      refreshPending = false;
+    }
+  }
 </script>
 
 {#if visible}
@@ -96,91 +105,110 @@
     class:tone-ready={statusTone === 'ready'}
     class:tone-prompt={statusTone === 'prompt'}
     class:tone-attention={statusTone === 'attention'}
+    class:compact-ready={isReadyCompact}
+    class:observation-compact={identityState.kind === 'observation_required'}
   >
     <div class="identity-header">
-      <div class="identity-title-block">
-        <p class="identity-kicker">{localized('身份状态', 'Identity Status')}</p>
-        <h2>{pageModel.identityPanelTitle}</h2>
-      </div>
-      <span class={`identity-status-pill tone-${statusTone}`}>{statusLabel}</span>
-    </div>
-
-    <div class="identity-main">
-      <div class="identity-overview">
-        {#if pageModel.identityPanelSummary}
-          <p class="identity-summary">{pageModel.identityPanelSummary}</p>
-        {/if}
-
-        {#if accountName}
-          <dl class="identity-account">
-            <div>
-              <dt>{localized('当前游戏账号', 'Current game account')}</dt>
-              <dd>{accountName}</dd>
-            </div>
-          </dl>
-        {/if}
-
-        {#if identitySuccess}
-          <p class="identity-feedback identity-feedback-success">{identitySuccess}</p>
-        {/if}
-      </div>
-
-      <aside class="identity-panel" class:is-interactive={isInteractive}>
-        {#if isInteractive && identityLoadState !== 'loading'}
-          <div class="identity-form-shell">
-            <p class="identity-panel-title">
-              {localized('继续当前账号验证', 'Continue current account verification')}
-            </p>
-            <p class="identity-panel-intro">{helperCopy}</p>
-
-            <label class="identity-field">
-              <span>{localized('账号密码', 'Account password')}</span>
-              <input
-                bind:value={identityPassword}
-                type="password"
-                autocomplete="current-password"
-                placeholder={localized('输入当前账号密码', 'Enter the current account password')}
-                aria-invalid={showInlineError}
-                onkeydown={handleContinueShortcut}
-              />
-            </label>
-
-            {#if showInlineError}
-              <p class="identity-field-error">{identityError}</p>
-            {/if}
-
-            <label class="identity-confirm">
-              <input bind:checked={identityConfirmed} type="checkbox" />
-              <span>
-                {localized(
-                  '我确认要为当前观察到的游戏账号更新这台电脑上的本地凭证。',
-                  'I confirm that the local credentials on this machine should be updated for the currently observed game account.'
-                )}
-              </span>
-            </label>
-
-            <button
-              type="button"
-              class="identity-button primary"
-              onclick={onContinue}
-              disabled={!pageModel.canLoginIdentity}
-            >
-              {pageModel.identityBusy ? busyActionLabel : primaryActionLabel}
-            </button>
-          </div>
+      <div
+        class="identity-title-block"
+        class:is-observation={identityState.kind === 'observation_required'}
+      >
+        <p class="identity-kicker">{localized('身份标识', 'Identity')}</p>
+        {#if identityState.kind === 'ready' && accountName}
+          <p class="identity-account-name">{accountName}</p>
         {:else}
-          <div class="identity-passive-shell">
-            <p class="identity-panel-title">{passivePanelTitle}</p>
-            <p class="identity-panel-intro">{passivePanelLead}</p>
-            <ul class="identity-checklist">
-              {#each passiveChecklist as item}
-                <li>{item}</li>
-              {/each}
-            </ul>
-          </div>
+          <h2>{pageModel.identityPanelTitle}</h2>
         {/if}
-      </aside>
+      </div>
+      {#if identityState.kind === 'observation_required'}
+        <button
+          type="button"
+          class={`identity-status-pill identity-status-button tone-${statusTone}`}
+          class:is-busy={refreshBusy}
+          onclick={handleRefresh}
+          disabled={refreshBusy}
+          aria-busy={refreshBusy}
+        >
+          {#if refreshBusy}
+            <span class="identity-status-spinner" aria-hidden="true"></span>
+          {/if}
+          {refreshButtonLabel}
+        </button>
+      {:else}
+        <span class={`identity-status-pill tone-${statusTone}`}>{statusLabel}</span>
+      {/if}
     </div>
+
+    {#if !isReadyCompact || identitySuccess}
+      <div class="identity-main" class:single-column={!showSidePanel}>
+        <div class="identity-overview">
+          {#if identityState.kind === 'observation_required' && pageModel.identityPanelSummary}
+            <p class="identity-summary">{pageModel.identityPanelSummary}</p>
+          {/if}
+
+          {#if accountName && identityState.kind !== 'ready'}
+            <dl class="identity-account">
+              <div>
+                <dt>{localized('账号', 'Account')}</dt>
+                <dd>{accountName}</dd>
+              </div>
+            </dl>
+          {/if}
+
+          {#if identitySuccess}
+            <p class="identity-feedback identity-feedback-success">{identitySuccess}</p>
+          {/if}
+        </div>
+
+        {#if showSidePanel}
+          <aside class="identity-panel" class:is-interactive={isInteractive}>
+            {#if isInteractive && identityLoadState !== 'loading'}
+              <div class="identity-form-shell">
+                <p class="identity-panel-title">
+                  {localized('继续当前账号验证', 'Continue current account verification')}
+                </p>
+                <p class="identity-panel-intro">{helperCopy}</p>
+
+                <label class="identity-field">
+                  <span>{localized('账号密码', 'Account password')}</span>
+                  <input
+                    bind:value={identityPassword}
+                    type="password"
+                    autocomplete="current-password"
+                    placeholder={localized('输入当前账号密码', 'Enter the current account password')}
+                    aria-invalid={showInlineError}
+                    onkeydown={handleContinueShortcut}
+                  />
+                </label>
+
+                {#if showInlineError}
+                  <p class="identity-field-error">{identityError}</p>
+                {/if}
+
+                <label class="identity-confirm">
+                  <input bind:checked={identityConfirmed} type="checkbox" />
+                  <span>
+                    {localized(
+                      '我确认要为当前观察到的游戏账号更新这台电脑上的本地凭证。',
+                      'I confirm that the local credentials on this machine should be updated for the currently observed game account.'
+                    )}
+                  </span>
+                </label>
+
+                <button
+                  type="button"
+                  class="identity-button primary"
+                  onclick={onContinue}
+                  disabled={!pageModel.canLoginIdentity}
+                >
+                  {pageModel.identityBusy ? busyActionLabel : primaryActionLabel}
+                </button>
+              </div>
+            {/if}
+          </aside>
+        {/if}
+      </div>
+    {/if}
 
     {#if identityError && !showInlineError}
       <p class="identity-feedback identity-feedback-error">{identityError}</p>
@@ -205,6 +233,15 @@
     display: grid;
     gap: 1rem;
     padding: 1rem 1.1rem 1.05rem;
+  }
+
+  .identity-card.compact-ready {
+    gap: 0.55rem;
+    padding-bottom: 0.88rem;
+  }
+
+  .identity-card.observation-compact {
+    gap: 0.45rem;
   }
 
   .identity-card.tone-ready {
@@ -232,7 +269,11 @@
 
   .identity-title-block {
     display: grid;
-    gap: 0.28rem;
+    gap: 0.14rem;
+  }
+
+  .identity-title-block.is-observation {
+    gap: 0.08rem;
   }
 
   .identity-kicker {
@@ -250,9 +291,21 @@
     color: rgba(248, 232, 196, 0.96);
   }
 
+  .identity-account-name {
+    margin: 0;
+    font-size: 1.08rem;
+    line-height: 1.2;
+    font-weight: 600;
+    font-family: 'Noto Sans SC', 'Microsoft YaHei', sans-serif;
+    color: rgba(248, 232, 196, 0.96);
+    word-break: break-word;
+  }
+
   .identity-status-pill {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
+    align-self: center;
     min-height: 1.7rem;
     padding: 0.22rem 0.62rem;
     border-radius: 999px;
@@ -264,6 +317,41 @@
     color: rgba(244, 230, 201, 0.88);
     background: rgba(200, 148, 55, 0.08);
     white-space: nowrap;
+  }
+
+  .identity-status-button {
+    cursor: pointer;
+    transition:
+      transform 120ms ease,
+      box-shadow 120ms ease,
+      border-color 120ms ease;
+  }
+
+  .identity-status-button:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.18);
+  }
+
+  .identity-status-button:disabled {
+    cursor: wait;
+    opacity: 0.82;
+  }
+
+  .identity-status-button.is-busy {
+    box-shadow:
+      0 0 0 1px rgba(112, 170, 210, 0.1) inset,
+      0 6px 16px rgba(50, 95, 128, 0.16);
+  }
+
+  .identity-status-spinner {
+    width: 0.72rem;
+    height: 0.72rem;
+    border-radius: 999px;
+    border: 1.5px solid currentColor;
+    border-right-color: transparent;
+    animation: identity-spin 0.7s linear infinite;
+    flex: 0 0 auto;
+    margin-right: 0.1rem;
   }
 
   .identity-status-pill.tone-ready {
@@ -290,11 +378,21 @@
     background: rgba(112, 170, 210, 0.12);
   }
 
+  @keyframes identity-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
   .identity-main {
     display: grid;
     grid-template-columns: minmax(0, 1.25fr) minmax(280px, 0.85fr);
     gap: 1rem;
     align-items: stretch;
+  }
+
+  .identity-main.single-column {
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .identity-overview {
@@ -303,12 +401,16 @@
     gap: 0.8rem;
   }
 
+  .identity-card.observation-compact .identity-overview {
+    gap: 0.28rem;
+  }
+
   .identity-summary {
     margin: 0;
-    line-height: 1.6;
+    max-width: 34rem;
     font-size: 0.9rem;
+    line-height: 1.6;
     color: rgba(240, 222, 188, 0.76);
-    max-width: 42rem;
   }
 
   .identity-account {
@@ -317,12 +419,12 @@
 
   .identity-account div {
     display: grid;
-    gap: 0.22rem;
-    width: fit-content;
-    min-width: min(100%, 280px);
+    gap: 0.28rem;
     padding: 0.78rem 0.88rem;
-    border: 1px solid rgba(205, 177, 118, 0.14);
     border-radius: 3px;
+    width: fit-content;
+    min-width: min(100%, 320px);
+    border: 1px solid rgba(205, 177, 118, 0.14);
     background: rgba(12, 7, 4, 0.44);
   }
 
@@ -357,8 +459,7 @@
     border-color: rgba(214, 170, 86, 0.18);
   }
 
-  .identity-form-shell,
-  .identity-passive-shell {
+  .identity-form-shell {
     display: grid;
     gap: 0.7rem;
   }
@@ -377,30 +478,6 @@
     font-size: 0.82rem;
     line-height: 1.55;
     color: rgba(234, 219, 188, 0.74);
-  }
-
-  .identity-checklist {
-    margin: 0;
-    padding: 0;
-    list-style: none;
-    display: grid;
-    gap: 0.42rem;
-  }
-
-  .identity-checklist li {
-    position: relative;
-    padding-left: 0.9rem;
-    font-size: 0.78rem;
-    line-height: 1.45;
-    color: rgba(240, 222, 188, 0.8);
-  }
-
-  .identity-checklist li::before {
-    content: '•';
-    position: absolute;
-    left: 0;
-    top: 0;
-    color: rgba(214, 170, 86, 0.72);
   }
 
   .identity-field {
