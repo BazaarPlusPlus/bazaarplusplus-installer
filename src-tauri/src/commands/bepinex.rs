@@ -1,5 +1,8 @@
+#[path = "bepinex/zip_archive.rs"]
+mod zip_archive;
+pub(crate) use zip_archive::read_bundled_bpp_version;
+
 use serde::Serialize;
-use std::io::{Cursor, Read};
 use std::path::Path;
 use tauri::Manager;
 
@@ -15,10 +18,6 @@ macro_rules! debug_error {
         #[cfg(debug_assertions)]
         eprintln!($($arg)*);
     };
-}
-
-pub fn bundled_zip_relative_path() -> &'static str {
-    "BepInExSource/BepInEx.zip"
 }
 
 const BPP_CONFIG_RELATIVE_PATH: &str = "BepInEx/config/BazaarPlusPlus.cfg";
@@ -40,32 +39,6 @@ pub(crate) struct BppDataVersionPolicy {
 struct PreservedFile {
     relative_path: &'static str,
     contents: Vec<u8>,
-}
-
-pub fn read_bundled_bpp_version(app: &tauri::AppHandle) -> Result<Option<String>, String> {
-    let resource_path = app
-        .path()
-        .resource_dir()
-        .map_err(|err| err.to_string())?
-        .join(bundled_zip_relative_path());
-    let zip_bytes = std::fs::read(&resource_path)
-        .map_err(|err| format!("Cannot read bundled BepInEx.zip: {err}"))?;
-
-    let reader = Cursor::new(zip_bytes);
-    let mut archive = zip::ZipArchive::new(reader).map_err(|err| err.to_string())?;
-
-    for index in 0..archive.len() {
-        let mut file = archive.by_index(index).map_err(|err| err.to_string())?;
-        if file.name().ends_with("BazaarPlusPlus.version") {
-            let mut version = String::new();
-            file.read_to_string(&mut version)
-                .map_err(|err| err.to_string())?;
-            let version = version.trim();
-            return Ok((!version.is_empty()).then(|| version.to_string()));
-        }
-    }
-
-    Ok(None)
 }
 
 pub(crate) fn default_bpp_data_version_policy() -> BppDataVersionPolicy {
@@ -118,37 +91,6 @@ fn compare_version_strings(left: &str, right: &str) -> Option<std::cmp::Ordering
     }
 
     Some(std::cmp::Ordering::Equal)
-}
-
-pub fn extract_zip(zip_bytes: &[u8], dest_dir: &Path) -> Result<Vec<String>, String> {
-    let reader = Cursor::new(zip_bytes);
-    let mut archive = zip::ZipArchive::new(reader).map_err(|err| err.to_string())?;
-    let mut extracted = Vec::new();
-
-    for index in 0..archive.len() {
-        let mut file = archive.by_index(index).map_err(|err| err.to_string())?;
-        let Some(relative_path) = file.enclosed_name().map(|path| path.to_path_buf()) else {
-            return Err(format!("Zip entry has unsafe path: {}", file.name()));
-        };
-        let output_path = dest_dir.join(relative_path);
-
-        if file.is_dir() {
-            std::fs::create_dir_all(&output_path).map_err(|err| err.to_string())?;
-            continue;
-        }
-
-        if let Some(parent) = output_path.parent() {
-            std::fs::create_dir_all(parent).map_err(|err| err.to_string())?;
-        }
-
-        let mut contents = Vec::new();
-        file.read_to_end(&mut contents)
-            .map_err(|err| err.to_string())?;
-        std::fs::write(&output_path, contents).map_err(|err| err.to_string())?;
-        extracted.push(output_path.to_string_lossy().into_owned());
-    }
-
-    Ok(extracted)
 }
 
 fn remove_path_if_exists(path: &Path) -> Result<(), String> {
@@ -328,7 +270,7 @@ pub fn install_bepinex(
 
     let install_result = (|| -> Result<(), String> {
         debug_log!("Reading bundled BepInEx.zip...");
-        let relative_zip_path = bundled_zip_relative_path();
+        let relative_zip_path = zip_archive::bundled_zip_relative_path();
         let resource_path = app
             .path()
             .resource_dir()
@@ -340,7 +282,7 @@ pub fn install_bepinex(
         })?;
 
         debug_log!("Extracting BepInEx...");
-        let extracted = extract_zip(&zip_bytes, game_path)?;
+        let extracted = zip_archive::extract_zip(&zip_bytes, game_path)?;
         debug_log!("Extracted {} files.", extracted.len());
 
         Ok(())
@@ -390,35 +332,6 @@ pub fn uninstall_bpp(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::io::Write;
-
-    fn make_test_zip() -> Vec<u8> {
-        let buffer = Cursor::new(Vec::new());
-        let mut zip = zip::ZipWriter::new(buffer);
-        let options = zip::write::SimpleFileOptions::default();
-
-        zip.add_directory("BepInEx/", options).unwrap();
-        zip.start_file("BepInEx/core/BepInEx.Core.dll", options)
-            .unwrap();
-        zip.write_all(b"fake dll content").unwrap();
-
-        zip.finish().unwrap().into_inner()
-    }
-
-    #[test]
-    fn test_extract_zip_creates_files() {
-        let zip_bytes = make_test_zip();
-        let tmp = tempfile::tempdir().unwrap();
-
-        let extracted = extract_zip(&zip_bytes, tmp.path()).unwrap();
-        assert!(!extracted.is_empty());
-        assert!(tmp.path().join("BepInEx/core/BepInEx.Core.dll").exists());
-    }
-
-    #[test]
-    fn test_bundled_zip_relative_path_matches_supported_targets() {
-        assert_eq!(bundled_zip_relative_path(), "BepInExSource/BepInEx.zip");
-    }
 
     #[test]
     fn test_ensure_valid_game_path_rejects_non_game_directory() {
