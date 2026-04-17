@@ -8,15 +8,14 @@ mod mapper;
 mod repo;
 
 use mapper::to_overlay_record;
+pub use locator::resolve_database_path;
 pub use mapper::OverlayRecord;
+use locator::find_database_path_anywhere;
 use repo::{
     delete_overlay_record_row, load_latest_overlay_record, load_overlay_record_by_id,
     load_overlay_record_count, load_overlay_record_list,
 };
-use std::path::{Path, PathBuf};
-
-const DATA_DIRECTORY: &str = "BazaarPlusPlus";
-const DATABASE_FILE_NAME: &str = "bazaarplusplus.db";
+use std::path::PathBuf;
 
 #[derive(Clone, Debug)]
 pub struct OverlayRecordRepository {
@@ -111,56 +110,10 @@ impl OverlayRecordRepository {
     }
 }
 
-fn find_database_path_anywhere() -> Result<PathBuf, String> {
-    #[cfg(target_os = "windows")]
-    {
-        let candidates = [
-            r"C:\Program Files (x86)\Steam\steamapps\common\The Bazaar",
-            r"C:\Program Files\Steam\steamapps\common\The Bazaar",
-            r"D:\Steam\steamapps\common\The Bazaar",
-            r"D:\SteamLibrary\steamapps\common\The Bazaar",
-            r"E:\Steam\steamapps\common\The Bazaar",
-            r"E:\SteamLibrary\steamapps\common\The Bazaar",
-        ];
-        for candidate in &candidates {
-            let db = PathBuf::from(candidate)
-                .join(DATA_DIRECTORY)
-                .join(DATABASE_FILE_NAME);
-            if db.exists() {
-                return Ok(db);
-            }
-        }
-    }
-    Err(
-        "bazaarplusplus.db not found: game path is not configured and no known Steam library path contains it."
-            .to_string(),
-    )
-}
-
-pub fn resolve_database_path(game_path: &Path) -> Result<PathBuf, String> {
-    let data_dir = game_path.join(DATA_DIRECTORY);
-    if !data_dir.exists() {
-        return Err(format!(
-            "BazaarPlusPlus data directory not found: {}",
-            data_dir.display()
-        ));
-    }
-
-    let candidate = data_dir.join(DATABASE_FILE_NAME);
-    if candidate.exists() {
-        return Ok(candidate);
-    }
-
-    Err(format!(
-        "Expected stream database at {}, but bazaarplusplus.db was not found.",
-        candidate.display()
-    ))
-}
-
 #[cfg(test)]
 mod tests {
     use super::OverlayRecordRepository;
-    use super::DATABASE_FILE_NAME;
+    use super::locator::DATABASE_FILE_NAME;
 
     fn create_run_screenshots_table(conn: &rusqlite::Connection) {
         conn.execute(
