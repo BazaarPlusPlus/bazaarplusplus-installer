@@ -1,10 +1,14 @@
+#[path = "records/image.rs"]
+mod image;
+#[path = "records/locator.rs"]
+mod locator;
+
+#[allow(unused_imports)]
+pub use image::resolve_overlay_image_path;
+
 use rusqlite::Connection;
 use serde::Serialize;
 use std::path::{Path, PathBuf};
-
-const DATA_DIRECTORY: &str = "BazaarPlusPlus";
-const SCREENSHOTS_DIRECTORY: &str = "Screenshots";
-const DATABASE_FILE_NAME: &str = "bazaarplusplus.db";
 
 #[derive(Clone, Debug, Serialize)]
 pub struct OverlayRecord {
@@ -148,7 +152,7 @@ where capture_source = 'end_of_run_auto'
     }
 
     fn resolve_image_path(&self, raw_path: Option<&str>) -> Option<PathBuf> {
-        resolve_overlay_image_path(self.game_path.clone(), raw_path)
+        image::resolve_overlay_image_path(self.game_path.clone(), raw_path)
     }
 
     fn to_overlay_record(&self, row: OverlayRecordRow) -> OverlayRecord {
@@ -200,8 +204,8 @@ fn find_database_path_anywhere() -> Result<PathBuf, String> {
         ];
         for candidate in &candidates {
             let db = PathBuf::from(candidate)
-                .join(DATA_DIRECTORY)
-                .join(DATABASE_FILE_NAME);
+                .join(locator::DATA_DIRECTORY)
+                .join(locator::DATABASE_FILE_NAME);
             if db.exists() {
                 return Ok(db);
             }
@@ -214,7 +218,7 @@ fn find_database_path_anywhere() -> Result<PathBuf, String> {
 }
 
 pub fn resolve_database_path(game_path: &Path) -> Result<PathBuf, String> {
-    let data_dir = game_path.join(DATA_DIRECTORY);
+    let data_dir = game_path.join(locator::DATA_DIRECTORY);
     if !data_dir.exists() {
         return Err(format!(
             "BazaarPlusPlus data directory not found: {}",
@@ -222,7 +226,7 @@ pub fn resolve_database_path(game_path: &Path) -> Result<PathBuf, String> {
         ));
     }
 
-    let candidate = data_dir.join(DATABASE_FILE_NAME);
+    let candidate = data_dir.join(locator::DATABASE_FILE_NAME);
     if candidate.exists() {
         return Ok(candidate);
     }
@@ -231,43 +235,6 @@ pub fn resolve_database_path(game_path: &Path) -> Result<PathBuf, String> {
         "Expected stream database at {}, but bazaarplusplus.db was not found.",
         candidate.display()
     ))
-}
-
-pub fn resolve_overlay_image_path(
-    game_path: Option<PathBuf>,
-    raw_path: Option<&str>,
-) -> Option<PathBuf> {
-    let raw_path = raw_path?.trim();
-    if raw_path.is_empty() {
-        return None;
-    }
-
-    let candidate = PathBuf::from(raw_path);
-    if candidate.is_absolute() {
-        return Some(candidate);
-    }
-
-    let game_path = game_path?;
-    let screenshots_directory = game_path.join(DATA_DIRECTORY).join(SCREENSHOTS_DIRECTORY);
-    let normalized_relative_path = normalized_relative_image_path(raw_path);
-    let from_screenshots = Some(screenshots_directory.join(normalized_relative_path));
-    if let Some(path) = from_screenshots.as_ref().filter(|path| path.exists()) {
-        return Some(path.clone());
-    }
-
-    from_screenshots
-}
-
-fn normalized_relative_image_path(raw_path: &str) -> PathBuf {
-    let mut normalized = PathBuf::new();
-    for segment in raw_path.split(['/', '\\']) {
-        let trimmed = segment.trim();
-        if !trimmed.is_empty() {
-            normalized.push(trimmed);
-        }
-    }
-
-    normalized
 }
 
 pub(crate) fn load_latest_overlay_record(
@@ -547,10 +514,9 @@ fn map_overlay_record_row(row: &rusqlite::Row<'_>) -> Result<OverlayRecordRow, S
 mod tests {
     use super::{
         load_latest_overlay_record, load_overlay_record_by_id, load_overlay_record_count,
-        load_overlay_record_list, resolve_overlay_image_path, OverlayRecordRepository,
-        DATABASE_FILE_NAME,
+        load_overlay_record_list, OverlayRecordRepository,
     };
-    use std::path::PathBuf;
+    use super::locator::DATABASE_FILE_NAME;
 
     fn create_run_screenshots_table(conn: &rusqlite::Connection) {
         conn.execute(
@@ -725,57 +691,6 @@ mod tests {
             load_overlay_record_count(temp.path(), Some("2026-04-10T20:00:00+00:00")).unwrap();
 
         assert_eq!(count, 2);
-    }
-
-    #[test]
-    fn resolve_overlay_image_path_supports_relative_and_absolute_inputs() {
-        let game_path = Some(PathBuf::from("/tmp/TheBazaar"));
-        let relative = resolve_overlay_image_path(game_path.clone(), Some("match-1.png")).unwrap();
-        let absolute = resolve_overlay_image_path(
-            game_path,
-            Some("/tmp/BazaarPlusPlus/Screenshots/match-2.png"),
-        )
-        .unwrap();
-
-        assert_eq!(
-            relative,
-            PathBuf::from("/tmp/TheBazaar/BazaarPlusPlus/Screenshots/match-1.png")
-        );
-        assert_eq!(
-            absolute,
-            PathBuf::from("/tmp/BazaarPlusPlus/Screenshots/match-2.png")
-        );
-    }
-
-    #[test]
-    fn resolve_overlay_image_path_supports_bazaarplusplus_screenshots_directory() {
-        let temp_dir = tempfile::tempdir().unwrap();
-        let game_path = temp_dir.path().join("TheBazaar");
-        let screenshots_dir = game_path.join("BazaarPlusPlus").join("Screenshots");
-        std::fs::create_dir_all(&screenshots_dir).unwrap();
-        std::fs::write(screenshots_dir.join("match-1.png"), b"png").unwrap();
-
-        let resolved = resolve_overlay_image_path(Some(game_path), Some("match-1.png")).unwrap();
-
-        assert_eq!(resolved, screenshots_dir.join("match-1.png"));
-    }
-
-    #[test]
-    fn resolve_overlay_image_path_normalizes_nested_backslash_relative_paths() {
-        let temp_dir = tempfile::tempdir().unwrap();
-        let game_path = temp_dir.path().join("TheBazaar");
-        let screenshots_dir = game_path.join("BazaarPlusPlus").join("Screenshots");
-        let dated_dir = screenshots_dir.join("2026-04-16");
-        std::fs::create_dir_all(&dated_dir).unwrap();
-        std::fs::write(dated_dir.join("match-1.png"), b"png").unwrap();
-
-        let resolved = resolve_overlay_image_path(
-            Some(game_path),
-            Some(r"2026-04-16\match-1.png"),
-        )
-        .unwrap();
-
-        assert_eq!(resolved, dated_dir.join("match-1.png"));
     }
 
     #[test]
