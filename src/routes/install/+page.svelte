@@ -1,6 +1,4 @@
 <script lang="ts">
-  import { goto } from '$app/navigation';
-  import { getVersion } from '@tauri-apps/api/app';
   import { open } from '@tauri-apps/plugin-dialog';
   import { openUrl } from '@tauri-apps/plugin-opener';
   import { onMount } from 'svelte';
@@ -39,11 +37,8 @@
     resolveInstallDebugPreview
   } from '$lib/installer/runtime';
   import {
-    clearPendingWhatsNewLaunch,
-    loadPendingWhatsNewLaunch,
-    markPendingWhatsNewLaunch
-  } from '$lib/post-update';
-  import type { PageState } from '$lib/installer/state';
+    type PageState
+  } from '$lib/installer/state';
   import {
     getInstallRuntimeRisks,
     shouldShowInstallRiskModal
@@ -110,12 +105,7 @@
   installController.initializeCustomGamePath(loadPersistedCustomGamePath());
 
   const updaterController = createUpdaterController({
-    hasTauriRuntime,
-    markPendingWhatsNewLaunch,
-    loadPendingWhatsNewLaunch,
-    clearPendingWhatsNewLaunch,
-    getVersion,
-    goto
+    hasTauriRuntime
   });
 
   const identityController = createIdentityController({
@@ -164,35 +154,54 @@
   const identityError = identityController.identityError;
   const identitySuccess = identityController.identitySuccess;
 
-  function buildPageModelInput(): InstallPageModelInput {
-    return {
-      env: $env,
-      bazaarFound: $bazaarFound,
-      customGamePath: $customGamePath,
-      actionBusy: $actionBusy,
-      showStreamMode: $showStreamMode,
-      locale: $locale,
-      isDebugInstallPreview,
-      updaterSnapshot: $updaterSnapshot,
-      hasPendingUpdate: Boolean($pendingUpdate),
-      pendingSteamAction: $pendingSteamAction,
-      playerObservation: $playerObservation,
-      installationRecord: $installationRecord,
-      hasInstallationPrivateKey: $hasInstallationPrivateKey,
-      identityLoadState: $identityLoadState,
-      identityActionBusy: $identityActionBusy,
-      identityPassword: $identityPassword,
-      identityConfirmed: $identityConfirmed,
-      localized,
-      t
-    };
-  }
+  let pageModelInput: InstallPageModelInput = {
+    env: null,
+    bazaarFound: false,
+    customGamePath: '',
+    actionBusy: 'idle',
+    showStreamMode: false,
+    locale: 'zh',
+    isDebugInstallPreview,
+    updaterSnapshot: $updaterSnapshot,
+    hasPendingUpdate: false,
+    pendingSteamAction: null,
+    playerObservation: null,
+    installationRecord: null,
+    hasInstallationPrivateKey: false,
+    identityLoadState: 'idle',
+    identityActionBusy: 'idle',
+    identityPassword: '',
+    identityConfirmed: false,
+    localized,
+    t
+  };
+  $: pageModelInput = {
+    env: $env,
+    bazaarFound: $bazaarFound,
+    customGamePath: $customGamePath,
+    actionBusy: $actionBusy,
+    showStreamMode: $showStreamMode,
+    locale: $locale,
+    isDebugInstallPreview,
+    updaterSnapshot: $updaterSnapshot,
+    hasPendingUpdate: Boolean($pendingUpdate),
+    pendingSteamAction: $pendingSteamAction,
+    playerObservation: $playerObservation,
+    installationRecord: $installationRecord,
+    hasInstallationPrivateKey: $hasInstallationPrivateKey,
+    identityLoadState: $identityLoadState,
+    identityActionBusy: $identityActionBusy,
+    identityPassword: $identityPassword,
+    identityConfirmed: $identityConfirmed,
+    localized,
+    t
+  };
 
-  let pageModel: InstallPageModel = createInstallPageModel(buildPageModelInput());
+  let pageModel: InstallPageModel = createInstallPageModel(pageModelInput);
   let pageState: PageState = pageModel.pageState;
   let identityState: IdentityState = pageModel.identityState;
 
-  $: pageModel = createInstallPageModel(buildPageModelInput());
+  $: pageModel = createInstallPageModel(pageModelInput);
   $: pageState = pageModel.pageState;
   $: identityState = pageModel.identityState;
   $: installController.persistCurrentGamePath();
@@ -201,10 +210,6 @@
   onMount(() => {
     locale.init();
     void (async () => {
-      if (await updaterController.maybeOpenPendingWhatsNewLaunch()) {
-        return;
-      }
-
       await installController.detectEnvironment(pageModel.selectedPath);
       await updaterController.checkForUpdatesOnStartup();
     })();

@@ -1,6 +1,12 @@
 use keyvalues_parser::{Obj, Parser, Value};
 use std::path::{Path, PathBuf};
 
+fn debug_paths_label(paths: &[PathBuf]) -> Vec<String> {
+    paths.iter()
+        .map(|path| path.display().to_string())
+        .collect()
+}
+
 fn first_obj<'a, 'text>(values: &'a [Value<'text>]) -> Option<&'a Obj<'text>>
 where
     'a: 'text,
@@ -23,12 +29,13 @@ fn library_has_app(folder: &Obj<'_>, app_id: &str) -> bool {
         .unwrap_or(false)
 }
 
-fn find_game_in_library_vdf(vdf_content: &str, app_id: &str) -> Option<String> {
+fn parse_library_folders(vdf_content: &str, app_id: &str) -> Option<Vec<(String, bool)>> {
     let parsed = Parser::new()
         .literal_special_chars(true)
         .parse(vdf_content)
         .ok()?;
     let libraries = parsed.value.get_obj()?;
+    let mut folders = Vec::new();
 
     for values in libraries.values() {
         let Some(folder) = first_obj(values) else {
@@ -38,36 +45,163 @@ fn find_game_in_library_vdf(vdf_content: &str, app_id: &str) -> Option<String> {
             continue;
         };
 
-        if library_has_app(folder, app_id) {
-            return Some(library_path.to_string());
-        }
+        folders.push((library_path.to_string(), library_has_app(folder, app_id)));
     }
 
-    None
+    (!folders.is_empty()).then_some(folders)
 }
 
-pub(super) fn get_steam_path() -> Option<PathBuf> {
+fn bazaar_app_id() -> &'static str {
+    "1617400"
+}
+
+fn find_game_in_library_vdf(vdf_content: &str, app_id: &str) -> Option<String> {
+    parse_library_folders(vdf_content, app_id)?
+        .into_iter()
+        .find_map(|(library_path, has_app)| has_app.then_some(library_path))
+}
+
+fn candidate_steam_paths() -> Vec<PathBuf> {
+    let mut candidates = Vec::new();
+
     #[cfg(target_os = "macos")]
     {
-        let path = dirs::home_dir()?.join("Library/Application Support/Steam");
-        if path.exists() {
-            return Some(path);
+        if let Some(path) = dirs::home_dir().map(|home| home.join("Library/Application Support/Steam")) {
+            if path.exists() {
+                candidates.push(path);
+            }
         }
     }
 
     #[cfg(target_os = "windows")]
     {
-        use winreg::enums::HKEY_CURRENT_USER;
+        use std::collections::HashSet;
+        use winreg::enums::{HKEY_CURRENT_USER, HKEY_LOCAL_MACHINE};
         use winreg::RegKey;
 
-        let hkcu = RegKey::predef(HKEY_CURRENT_USER);
-        if let Ok(key) = hkcu.open_subkey(r"Software\Valve\Steam") {
-            if let Ok(path) = key.get_value::<String, _>("SteamPath") {
-                let path = PathBuf::from(path);
-                if path.exists() {
-                    return Some(path);
+        let mut seen = HashSet::new();
+        let registry_candidates = [
+            (HKEY_CURRENT_USER, r"Software\Valve\Steam", "SteamPath"),
+            (HKEY_CURRENT_USER, r"Software\Valve\Steam", "InstallPath"),
+            (HKEY_LOCAL_MACHINE, r"Software\Valve\Steam", "InstallPath"),
+            (HKEY_LOCAL_MACHINE, r"Software\Valve\Steam", "SteamPath"),
+            (
+                HKEY_LOCAL_MACHINE,
+                r"Software\WOW6432Node\Valve\Steam",
+                "InstallPath",
+            ),
+            (
+                HKEY_LOCAL_MACHINE,
+                r"Software\WOW6432Node\Valve\Steam",
+                "SteamPath",
+            ),
+        ];
+
+        for (root, key_path, value_name) in registry_candidates {
+            let root_key = RegKey::predef(root);
+            if let Ok(key) = root_key.open_subkey(key_path) {
+                if let Ok(path) = key.get_value::<String, _>(value_name) {
+                    let path = PathBuf::from(path.trim());
+                    if path.exists() && seen.insert(path.clone()) {
+                        candidates.push(path);
+                    }
                 }
             }
+        }
+
+        let default_candidates = [
+            std::env::var_os("ProgramFiles(x86)")
+                .map(PathBuf::from)
+                .map(|path| path.join("Steam")),
+            std::env::var_os("ProgramFiles")
+                .map(PathBuf::from)
+                .map(|path| path.join("Steam")),
+            Some(PathBuf::from(r"C:\Program Files (x86)\Steam")),
+            Some(PathBuf::from(r"C:\Program Files\Steam")),
+        ];
+
+        for candidate in default_candidates.into_iter().flatten() {
+            if candidate.exists() && seen.insert(candidate.clone()) {
+                candidates.push(candidate);
+            }
+        }
+    }
+
+    crate::commands::debug_log!(
+        "[detect::steam] steam root candidates={:?}",
+        debug_paths_label(&candidates)
+    );
+
+    candidates
+}
+
+pub(super) fn get_steam_path() -> Option<PathBuf> {
+    let selected = candidate_steam_paths().into_iter().next();
+    crate::commands::debug_log!(
+        "[detect::steam] selected steam root={:?}",
+        selected.as_ref().map(|path| path.display().to_string())
+    );
+    selected
+}
+
+fn get_game_path_from_single_steam_root(steam_path: &Path) -> Option<PathBuf> {
+    crate::commands::debug_log!(
+        "[detect::steam] probing steam root={}",
+        steam_path.display()
+    );
+
+    if let Some(path) = get_game_path_from_vdf(steam_path) {
+        crate::commands::debug_log!(
+            "[detect::steam] hit from libraryfolders.vdf root={} game_path={}",
+            steam_path.display(),
+            path.display()
+        );
+        return Some(path);
+    }
+
+    let candidate = steam_path.join("steamapps/common/The Bazaar");
+    if candidate.exists() {
+        crate::commands::debug_log!(
+            "[detect::steam] hit from default steam library root={} game_path={}",
+            steam_path.display(),
+            candidate.display()
+        );
+        return Some(candidate);
+    }
+
+    crate::commands::debug_log!(
+        "[detect::steam] miss for steam root={}",
+        steam_path.display()
+    );
+    None
+}
+
+#[cfg(target_os = "windows")]
+fn windows_common_game_candidates() -> Vec<PathBuf> {
+    let mut candidates = Vec::new();
+
+    for drive in 'C'..='Z' {
+        for root in ["Steam", "SteamLibrary"] {
+            candidates.push(PathBuf::from(format!(
+                "{drive}:\\{root}\\steamapps\\common\\The Bazaar"
+            )));
+        }
+    }
+
+    for candidate in crate::config::STEAM_LIBRARY_FALLBACK_CANDIDATES {
+        candidates.push(PathBuf::from(candidate));
+    }
+
+    candidates
+}
+
+fn get_game_path_from_steam_roots<I>(steam_roots: I) -> Option<PathBuf>
+where
+    I: IntoIterator<Item = PathBuf>,
+{
+    for root in steam_roots {
+        if let Some(path) = get_game_path_from_single_steam_root(&root) {
+            return Some(path);
         }
     }
 
@@ -75,27 +209,92 @@ pub(super) fn get_steam_path() -> Option<PathBuf> {
 }
 
 pub(super) fn get_game_path(steam_path: &Path) -> Option<PathBuf> {
-    // Primary: scan library VDF for app 1617400
-    if let Some(path) = get_game_path_from_vdf(steam_path) {
+    let mut steam_roots = vec![steam_path.to_path_buf()];
+    for candidate in candidate_steam_paths() {
+        if !steam_roots.iter().any(|existing| existing == &candidate) {
+            steam_roots.push(candidate);
+        }
+    }
+
+    crate::commands::debug_log!(
+        "[detect::steam] ordered steam roots for game lookup={:?}",
+        debug_paths_label(&steam_roots)
+    );
+
+    if let Some(path) = get_game_path_from_steam_roots(steam_roots) {
         return Some(path);
     }
 
-    // Fallback: The Bazaar might be in the default Steam library (same root as Steam itself).
-    // This catches cases where VDF parsing fails or the default library is not listed.
-    let candidate = steam_path.join("steamapps/common/The Bazaar");
-    if candidate.exists() {
-        return Some(candidate);
+    #[cfg(target_os = "windows")]
+    {
+        crate::commands::debug_log!(
+            "[detect::steam] probing common Windows candidates count={}",
+            windows_common_game_candidates().len()
+        );
+        for path in windows_common_game_candidates() {
+            if path.exists() {
+                crate::commands::debug_log!(
+                    "[detect::steam] hit from common Windows candidate game_path={}",
+                    path.display()
+                );
+                return Some(path);
+            }
+        }
     }
 
+    crate::commands::debug_log!("[detect::steam] failed to resolve game path");
     None
 }
 
 fn get_game_path_from_vdf(steam_path: &Path) -> Option<PathBuf> {
-    let library_vdf =
-        std::fs::read_to_string(steam_path.join("steamapps/libraryfolders.vdf")).ok()?;
-    let library_root = find_game_in_library_vdf(&library_vdf, "1617400")?;
-    let candidate = PathBuf::from(library_root).join("steamapps/common/The Bazaar");
-    candidate.exists().then_some(candidate)
+    let library_vdf_path = steam_path.join("steamapps/libraryfolders.vdf");
+    let library_vdf = match std::fs::read_to_string(&library_vdf_path) {
+        Ok(content) => content,
+        Err(error) => {
+            crate::commands::debug_log!(
+                "[detect::steam] cannot read libraryfolders.vdf path={} error={}",
+                library_vdf_path.display(),
+                error
+            );
+            return None;
+        }
+    };
+
+    let parsed_folders = match parse_library_folders(&library_vdf, bazaar_app_id()) {
+        Some(folders) => folders,
+        None => {
+            crate::commands::debug_log!(
+                "[detect::steam] failed to parse libraryfolders.vdf path={}",
+                library_vdf_path.display()
+            );
+            return None;
+        }
+    };
+
+    crate::commands::debug_log!(
+        "[detect::steam] parsed libraryfolders path={} folders={:?}",
+        library_vdf_path.display(),
+        parsed_folders
+            .iter()
+            .map(|(path, has_app)| format!("{path} [has_app={has_app}]"))
+            .collect::<Vec<_>>()
+    );
+
+    if let Some(library_root) = find_game_in_library_vdf(&library_vdf, bazaar_app_id()) {
+        let candidate = PathBuf::from(&library_root).join("steamapps/common/The Bazaar");
+        if candidate.exists() {
+            return Some(candidate);
+        }
+    }
+
+    for (library_root, _has_app) in parsed_folders {
+        let candidate = PathBuf::from(library_root).join("steamapps/common/The Bazaar");
+        if candidate.exists() {
+            return Some(candidate);
+        }
+    }
+
+    None
 }
 
 #[cfg(test)]
@@ -148,5 +347,72 @@ mod tests {
         let path = find_game_in_library_vdf(vdf, "1617400");
 
         assert_eq!(path, None);
+    }
+
+    #[test]
+    fn test_parse_library_folders_keeps_paths_without_app_listing() {
+        let vdf = r#"
+"libraryfolders"
+{
+    "0"
+    {
+        "path"      "C:\Program Files (x86)\Steam"
+    }
+    "1"
+    {
+        "path"      "D:\SteamLibrary"
+        "apps"
+        {
+            "1617400"   "1"
+        }
+    }
+}"#;
+
+        let folders = parse_library_folders(vdf, bazaar_app_id()).expect("parsed folders");
+
+        assert_eq!(
+            folders,
+            vec![
+                (r"C:\Program Files (x86)\Steam".to_string(), false),
+                (r"D:\SteamLibrary".to_string(), true)
+            ]
+        );
+    }
+
+    #[test]
+    fn test_get_game_path_from_vdf_falls_back_to_existing_library_folder() {
+        let tmp = tempfile::tempdir().unwrap();
+        let steam_root = tmp.path().join("Steam");
+        let library_root = tmp.path().join("Library");
+        let steamapps_dir = steam_root.join("steamapps");
+        let game_dir = library_root.join("steamapps/common/The Bazaar");
+
+        std::fs::create_dir_all(&steamapps_dir).unwrap();
+        std::fs::create_dir_all(&game_dir).unwrap();
+
+        let library_root_string = library_root.to_string_lossy().replace('\\', "\\\\");
+        let vdf = format!(
+            "\"libraryfolders\"\n{{\n    \"0\"\n    {{\n        \"path\"      \"{library_root_string}\"\n    }}\n}}"
+        );
+        std::fs::write(steamapps_dir.join("libraryfolders.vdf"), vdf).unwrap();
+
+        let path = get_game_path_from_vdf(&steam_root);
+
+        assert_eq!(path, Some(game_dir));
+    }
+
+    #[test]
+    fn test_get_game_path_from_steam_roots_tries_secondary_root() {
+        let tmp = tempfile::tempdir().unwrap();
+        let primary_root = tmp.path().join("PrimarySteam");
+        let secondary_root = tmp.path().join("SecondarySteam");
+        let game_dir = secondary_root.join("steamapps/common/The Bazaar");
+
+        std::fs::create_dir_all(primary_root.join("steamapps")).unwrap();
+        std::fs::create_dir_all(&game_dir).unwrap();
+
+        let path = get_game_path_from_steam_roots(vec![primary_root, secondary_root]);
+
+        assert_eq!(path, Some(game_dir));
     }
 }

@@ -13,6 +13,11 @@ import type { InstallRuntimeRisk } from '../install-guards.ts';
 import { detectInstallerEnvironment } from '../detect-flow.ts';
 import type { TranslateText } from '../selectors/types.ts';
 
+function debugInstallLog(message: string, payload: Record<string, unknown>) {
+  if (!import.meta.env.DEV) return;
+  console.debug(`[install-controller] ${message}`, payload);
+}
+
 export function createInstallController(input: {
   hasTauriRuntime: () => boolean;
   isDebugInstallPreview: boolean;
@@ -127,6 +132,10 @@ export function createInstallController(input: {
         detectDotnetRuntime: input.detectDotnetRuntimeApi,
         verifyGamePath: input.verifyGamePathApi
       });
+      debugInstallLog('startup detectEnvironment result', {
+        selectedPath,
+        result
+      });
       env.set(result.env);
       dotnetState.set(result.dotnetState);
       bazaarFound.set(result.bazaarFound);
@@ -147,6 +156,10 @@ export function createInstallController(input: {
         detectEnvironment: input.detectEnvironmentApi,
         detectDotnetRuntime: input.detectDotnetRuntimeApi,
         verifyGamePath: input.verifyGamePathApi
+      });
+      debugInstallLog('manual checkPath result', {
+        effectiveGamePath,
+        result
       });
       env.set(result.env);
       dotnetState.set(result.dotnetState);

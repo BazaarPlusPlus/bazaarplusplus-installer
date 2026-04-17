@@ -3,6 +3,7 @@
 - Choose verification proportional to the change:
   - Docs-only and agent-instruction changes do not require `npm run check` or a build
   - Svelte or TypeScript UI changes should usually run `npm run check`
+  - In Svelte components, do not hide `$store` reads needed by a reactive assignment inside a helper function; Svelte tracks direct dependencies in the `$:` statement, so wrapping them can leave derived UI state stuck at its initial value
   - Changes under `scripts/` should run the smallest relevant `node --test` coverage if one exists, otherwise run the touched script directly when practical
   - Changes that affect versioning, bundled resources, Tauri config, or release packaging should run `npm run prebuild-check` before broader build validation
   - Run `./build.sh --prod` only when touching packaging, platform bundling, or release-oriented behavior; do not use it as the default smoke test

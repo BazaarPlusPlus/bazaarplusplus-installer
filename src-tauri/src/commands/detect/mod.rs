@@ -41,6 +41,10 @@ pub fn detect_environment(
     app: AppHandle,
     game_path: Option<String>,
 ) -> Result<EnvironmentInfo, String> {
+    crate::commands::debug_log!(
+        "[detect_environment] start requested_game_path={:?}",
+        game_path
+    );
     let steam_path = steam::get_steam_path();
     let requested_game_path = normalize_game_path(game_path);
     let game_path = resolve_game_path(steam_path.as_deref(), requested_game_path.as_deref());
@@ -74,6 +78,14 @@ pub fn detect_environment(
         .as_ref()
         .map(|path| is_bepinex_installed(path))
         .unwrap_or(false);
+
+    crate::commands::debug_log!(
+        "[detect_environment] resolved steam_path={:?} game_path={:?} bepinex_installed={} bundled_bpp_version={:?}",
+        steam_path.as_ref().map(|path| path.display().to_string()),
+        game_path.as_ref().map(|path| path.display().to_string()),
+        bepinex_installed,
+        bundled_bpp_version
+    );
 
     Ok(EnvironmentInfo {
         steam_path: steam_path.map(|path| path.to_string_lossy().into_owned()),

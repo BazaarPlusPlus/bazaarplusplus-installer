@@ -4,7 +4,6 @@ import type { Update } from '@tauri-apps/plugin-updater';
 import {
   createCheckingUpdaterSnapshot,
   downloadPendingUpdate,
-  maybeOpenWhatsNewAfterAutoUpdate,
   resolveUpdaterActionDecision,
   runStartupUpdaterCheck
 } from '../updater-flow.ts';
@@ -13,15 +12,6 @@ import type { TranslateText } from '../selectors/types.ts';
 
 export function createUpdaterController(input: {
   hasTauriRuntime: () => boolean;
-  markPendingWhatsNewLaunch: (payload: {
-    reason: 'auto-update';
-    fromVersion: string | null;
-    toVersion: string;
-  }) => void;
-  loadPendingWhatsNewLaunch: () => { toVersion: string } | null;
-  clearPendingWhatsNewLaunch: () => void;
-  getVersion: () => Promise<string>;
-  goto: (url: string) => Promise<void>;
 }) {
   const updaterSnapshot = writable(createInitialUpdaterSnapshot());
   const pendingUpdate = writable<Update | null>(null);
@@ -61,16 +51,6 @@ export function createUpdaterController(input: {
     });
   }
 
-  async function maybeOpenPendingWhatsNewLaunch() {
-    return maybeOpenWhatsNewAfterAutoUpdate({
-      hasTauriRuntime: input.hasTauriRuntime(),
-      loadPendingWhatsNewLaunch: input.loadPendingWhatsNewLaunch,
-      clearPendingWhatsNewLaunch: input.clearPendingWhatsNewLaunch,
-      getVersion: input.getVersion,
-      goto: input.goto
-    });
-  }
-
   async function checkForUpdatesOnStartup() {
     const requestId = ++updaterCheckRequestId;
 
@@ -95,7 +75,6 @@ export function createUpdaterController(input: {
       snapshot: get(updaterSnapshot),
       update,
       t,
-      markPendingWhatsNewLaunch: input.markPendingWhatsNewLaunch,
       onProgress: (snapshot) => {
         updaterSnapshot.set(snapshot);
       }
@@ -157,7 +136,6 @@ export function createUpdaterController(input: {
     closeUpdaterModal,
     openUpdaterReviewModal,
     closeUpdaterReviewModal,
-    maybeOpenPendingWhatsNewLaunch,
     checkForUpdatesOnStartup,
     confirmUpdaterReview,
     handleUpdaterAction

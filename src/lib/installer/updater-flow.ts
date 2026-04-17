@@ -55,49 +55,10 @@ export async function runStartupUpdaterCheck(input: {
   return checkForAppUpdateImpl();
 }
 
-export async function maybeOpenWhatsNewAfterAutoUpdate(input: {
-  hasTauriRuntime: boolean;
-  loadPendingWhatsNewLaunch: () => {
-    toVersion: string;
-  } | null;
-  clearPendingWhatsNewLaunch: () => void;
-  getVersion: () => Promise<string>;
-  goto: (url: string) => Promise<void>;
-}): Promise<boolean> {
-  if (!input.hasTauriRuntime) {
-    return false;
-  }
-
-  const pendingLaunch = input.loadPendingWhatsNewLaunch();
-  if (!pendingLaunch) {
-    return false;
-  }
-
-  try {
-    const currentVersion = (await input.getVersion()).trim();
-    if (currentVersion !== pendingLaunch.toVersion) {
-      return false;
-    }
-  } catch {
-    return false;
-  }
-
-  input.clearPendingWhatsNewLaunch();
-  await input.goto(
-    `/whats-new?version=${encodeURIComponent(pendingLaunch.toVersion)}`
-  );
-  return true;
-}
-
 export async function downloadPendingUpdate(input: {
   snapshot: UpdaterSnapshot;
   update: Update;
   t: TranslateText;
-  markPendingWhatsNewLaunch: (payload: {
-    reason: 'auto-update';
-    fromVersion: string | null;
-    toVersion: string;
-  }) => void;
   onProgress: (snapshot: UpdaterSnapshot) => void;
   downloadAndInstallUpdateImpl?: typeof downloadAndInstallUpdate;
 }): Promise<{
@@ -126,12 +87,6 @@ export async function downloadPendingUpdate(input: {
         progress
       };
       input.onProgress(nextSnapshot);
-    });
-
-    input.markPendingWhatsNewLaunch({
-      reason: 'auto-update',
-      fromVersion: input.update.currentVersion,
-      toVersion: input.update.version
     });
 
     nextSnapshot = {

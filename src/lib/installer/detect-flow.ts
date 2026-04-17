@@ -1,6 +1,11 @@
 import type { DotnetInfo, EnvironmentInfo } from '$lib/types';
 import type { StepState } from '$lib/installer/state';
 
+function debugDetectLog(message: string, payload: Record<string, unknown>) {
+  if (!import.meta.env.DEV) return;
+  console.debug(`[detect-flow] ${message}`, payload);
+}
+
 export interface DetectInstallerEnvironmentOptions {
   requestedGamePath: string | null;
   detectEnvironment: (gamePath?: string) => Promise<EnvironmentInfo>;
@@ -46,6 +51,10 @@ async function resolveBazaarState(
 > {
   const pathToVerify = requestedGamePath ?? detectedGamePath;
   if (!pathToVerify) {
+    debugDetectLog('skip verify: no path available', {
+      requestedGamePath,
+      detectedGamePath
+    });
     return {
       bazaarFound: false,
       bazaarInvalid: false
@@ -53,6 +62,12 @@ async function resolveBazaarState(
   }
 
   const bazaarFound = await verifyGamePath(pathToVerify);
+  debugDetectLog('verify_game_path resolved', {
+    requestedGamePath,
+    detectedGamePath,
+    pathToVerify,
+    bazaarFound
+  });
   return {
     bazaarFound,
     bazaarInvalid: !bazaarFound
@@ -68,6 +83,10 @@ export async function detectInstallerEnvironment(
     const env = await options.detectEnvironment(
       options.requestedGamePath ?? undefined
     );
+    debugDetectLog('detect_environment resolved', {
+      requestedGamePath: options.requestedGamePath,
+      env
+    });
     const [dotnetInfo, bazaarState] = await Promise.all([
       dotnetPromise,
       resolveBazaarState(
@@ -77,13 +96,24 @@ export async function detectInstallerEnvironment(
       )
     ]);
 
+    debugDetectLog('combined detection result', {
+      requestedGamePath: options.requestedGamePath,
+      env,
+      dotnetInfo,
+      bazaarState
+    });
+
     return {
       env: mergeEnvironmentWithDotnet(env, dotnetInfo),
       dotnetState: resolveDotnetState(dotnetInfo),
       bazaarFound: bazaarState.bazaarFound,
       bazaarInvalid: bazaarState.bazaarInvalid
     };
-  } catch {
+  } catch (error) {
+    debugDetectLog('detect_environment failed', {
+      requestedGamePath: options.requestedGamePath,
+      error: error instanceof Error ? error.message : String(error)
+    });
     await dotnetPromise;
 
     return {

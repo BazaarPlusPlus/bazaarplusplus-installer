@@ -4,7 +4,6 @@ import assert from 'node:assert/strict';
 import {
   createCheckingUpdaterSnapshot,
   downloadPendingUpdate,
-  maybeOpenWhatsNewAfterAutoUpdate,
   resolveUpdaterActionDecision
 } from './updater-flow.ts';
 
@@ -39,27 +38,6 @@ test('createCheckingUpdaterSnapshot clears updater errors', () => {
   assert.equal(snapshot.errorMessage, null);
 });
 
-test('maybeOpenWhatsNewAfterAutoUpdate navigates when versions match', async () => {
-  let cleared = false;
-  let navigatedTo = '';
-
-  const didNavigate = await maybeOpenWhatsNewAfterAutoUpdate({
-    hasTauriRuntime: true,
-    loadPendingWhatsNewLaunch: () => ({ toVersion: '3.1.0' }),
-    clearPendingWhatsNewLaunch: () => {
-      cleared = true;
-    },
-    getVersion: async () => '3.1.0',
-    goto: async (url) => {
-      navigatedTo = url;
-    }
-  });
-
-  assert.equal(didNavigate, true);
-  assert.equal(cleared, true);
-  assert.equal(navigatedTo, '/whats-new?version=3.1.0');
-});
-
 test('downloadPendingUpdate returns installed snapshot and modal copy', async () => {
   const seenStatuses: string[] = [];
 
@@ -79,7 +57,6 @@ test('downloadPendingUpdate returns installed snapshot and modal copy', async ()
       version: '3.1.0'
     } as never,
     t,
-    markPendingWhatsNewLaunch: () => undefined,
     onProgress: (snapshot) => {
       seenStatuses.push(snapshot.status);
     },
