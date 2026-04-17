@@ -1,5 +1,4 @@
-import test from 'node:test';
-import assert from 'node:assert/strict';
+import { test, expect } from 'vitest';
 
 import { createHomeSummary } from './summary.ts';
 
@@ -31,8 +30,8 @@ test('createHomeSummary marks stream mode active when service is running', () =>
     }
   });
 
-  assert.equal(summary.stream.tone, 'active');
-  assert.match(summary.stream.detail, /17654/);
+  expect(summary.stream.tone).toBe('active');
+  expect(summary.stream.detail).toMatch(/17654/);
 });
 
 test('createHomeSummary shows install guidance when BazaarPlusPlus is missing', () => {
@@ -51,6 +50,6 @@ test('createHomeSummary shows install guidance when BazaarPlusPlus is missing', 
     }
   });
 
-  assert.equal(summary.install.tone, 'idle');
-  assert.match(summary.install.detail, /Install & Repair/);
+  expect(summary.install.tone).toBe('idle');
+  expect(summary.install.detail).toMatch(/Install & Repair/);
 });

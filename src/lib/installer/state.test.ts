@@ -1,5 +1,4 @@
-import test from 'node:test';
-import assert from 'node:assert/strict';
+import { test, expect } from 'vitest';
 
 import {
   createPageState,
@@ -8,26 +7,23 @@ import {
 } from './state.ts';
 
 test('selectCustomGamePath trims and returns null for empty strings', () => {
-  assert.equal(selectCustomGamePath('   '), null);
-  assert.equal(
-    selectCustomGamePath('  C:\\Games\\The Bazaar  '),
+  expect(selectCustomGamePath('   ')).toBe(null);
+  expect(selectCustomGamePath('  C:\\Games\\The Bazaar  ')).toBe(
     'C:\\Games\\The Bazaar'
   );
 });
 
 test('selectEffectiveGamePath prefers custom path over detected path', () => {
-  assert.equal(
-    selectEffectiveGamePath('D:\\Custom\\Bazaar', 'C:\\Detected\\Bazaar'),
-    'D:\\Custom\\Bazaar'
-  );
+  expect(
+    selectEffectiveGamePath('D:\\Custom\\Bazaar', 'C:\\Detected\\Bazaar')
+  ).toBe('D:\\Custom\\Bazaar');
 });
 
 test('selectEffectiveGamePath falls back to detected path', () => {
-  assert.equal(
-    selectEffectiveGamePath(null, 'C:\\Detected\\Bazaar'),
+  expect(selectEffectiveGamePath(null, 'C:\\Detected\\Bazaar')).toBe(
     'C:\\Detected\\Bazaar'
   );
-  assert.equal(selectEffectiveGamePath(null, null), '');
+  expect(selectEffectiveGamePath(null, null)).toBe('');
 });
 
 test('createPageState computes install prerequisites and version mismatch', () => {
@@ -42,11 +38,11 @@ test('createPageState computes install prerequisites and version mismatch', () =
     installedBppVersion: '1.1.0'
   });
 
-  assert.equal(state.hasPath, true);
-  assert.equal(state.isBusy, false);
-  assert.equal(state.canInstall, true);
-  assert.equal(state.canLaunchGame, true);
-  assert.equal(state.versionMismatch, true);
+  expect(state.hasPath).toBe(true);
+  expect(state.isBusy).toBe(false);
+  expect(state.canInstall).toBe(true);
+  expect(state.canLaunchGame).toBe(true);
+  expect(state.versionMismatch).toBe(true);
 });
 
 test('createPageState allows install during debug preview without prerequisites', () => {
@@ -61,8 +57,8 @@ test('createPageState allows install during debug preview without prerequisites'
     installedBppVersion: null
   });
 
-  assert.equal(state.canInstall, true);
-  assert.equal(state.canLaunchGame, false);
+  expect(state.canInstall).toBe(true);
+  expect(state.canLaunchGame).toBe(false);
 });
 
 test('createPageState allows install when dotnet runtime is missing but game path is valid', () => {
@@ -77,8 +73,8 @@ test('createPageState allows install when dotnet runtime is missing but game pat
     installedBppVersion: null
   });
 
-  assert.equal(state.canInstall, true);
-  assert.equal(state.canLaunchGame, true);
+  expect(state.canInstall).toBe(true);
+  expect(state.canLaunchGame).toBe(true);
 });
 
 test('createPageState does not block install when game path is valid', () => {
@@ -93,8 +89,8 @@ test('createPageState does not block install when game path is valid', () => {
     installedBppVersion: null
   });
 
-  assert.equal(state.canInstall, true);
-  assert.equal(state.canLaunchGame, true);
+  expect(state.canInstall).toBe(true);
+  expect(state.canLaunchGame).toBe(true);
 });
 
 test('createPageState does not allow launch when Bazaar is flagged found but no path exists', () => {
@@ -109,8 +105,8 @@ test('createPageState does not allow launch when Bazaar is flagged found but no 
     installedBppVersion: '1.2.0'
   });
 
-  assert.equal(state.hasPath, false);
-  assert.equal(state.canLaunchGame, false);
+  expect(state.hasPath).toBe(false);
+  expect(state.canLaunchGame).toBe(false);
 });
 
 test('createPageState blocks install and launch until BazaarPlusPlus data is reset', () => {
@@ -125,6 +121,6 @@ test('createPageState blocks install and launch until BazaarPlusPlus data is res
     installedBppVersion: '1.2.0'
   });
 
-  assert.equal(state.canInstall, false);
-  assert.equal(state.canLaunchGame, false);
+  expect(state.canInstall).toBe(false);
+  expect(state.canLaunchGame).toBe(false);
 });

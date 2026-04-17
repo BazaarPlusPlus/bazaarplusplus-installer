@@ -1,4 +1,4 @@
-import assert from 'node:assert/strict';
+import { test, expect } from 'vitest';
 import { get } from 'svelte/store';
 
 import { createIdentityController } from './identity-controller.ts';
@@ -7,20 +7,6 @@ import type {
   LoadedIdentitySnapshot,
   PlayerObservationPayload
 } from '../../identity/types.ts';
-
-const vitest = (
-  import.meta as ImportMeta & {
-    vitest?: {
-      test: (
-        name: string,
-        fn: () => void | Promise<void>
-      ) => void;
-    };
-  }
-).vitest;
-const { test } = vitest ?? {
-  test: () => undefined
-};
 
 const observation: PlayerObservationPayload = {
   player_account_id: 'player-1',
@@ -32,7 +18,9 @@ function localized(zh: string, en: string): string {
   return en || zh;
 }
 
-function createSnapshot(auth: AuthRecordPayload | null): LoadedIdentitySnapshot {
+function createSnapshot(
+  auth: AuthRecordPayload | null
+): LoadedIdentitySnapshot {
   return {
     observation,
     auth
@@ -80,10 +68,10 @@ test('continueIdentity falls back to login when the observed account already exi
     gameRoot: '/games/The Bazaar'
   });
 
-  assert.equal(loginCalls, 1);
-  assert.equal(get(controller.authRecord)?.token, 'token-1');
-  assert.equal(get(controller.identitySuccess), 'Signed in.');
-  assert.equal(get(controller.identityError), '');
+  expect(loginCalls).toBe(1);
+  expect(get(controller.authRecord)?.token).toBe('token-1');
+  expect(get(controller.identitySuccess)).toBe('Signed in.');
+  expect(get(controller.identityError)).toBe('');
 });
 
 test('continueIdentity surfaces a password error after fallback login fails', async () => {
@@ -117,11 +105,10 @@ test('continueIdentity surfaces a password error after fallback login fails', as
     gameRoot: '/games/The Bazaar'
   });
 
-  assert.equal(
-    get(controller.identityError),
+  expect(get(controller.identityError)).toBe(
     'existing_account_invalid_credentials'
   );
-  assert.equal(get(controller.identitySuccess), '');
+  expect(get(controller.identitySuccess)).toBe('');
 });
 
 test('logoutIdentity keeps the local-only warning when remote logout fails', async () => {
@@ -162,5 +149,5 @@ test('logoutIdentity keeps the local-only warning when remote logout fails', asy
     gameRoot: '/games/The Bazaar'
   });
 
-  assert.equal(get(controller.identitySuccess), 'Signed out (offline).');
+  expect(get(controller.identitySuccess)).toBe('Signed out (offline).');
 });

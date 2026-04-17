@@ -1,5 +1,4 @@
-import test from 'node:test';
-import assert from 'node:assert/strict';
+import { test, expect } from 'vitest';
 import { readFile } from 'node:fs/promises';
 
 const SHARED_MODAL_IMPORT =
@@ -17,12 +16,10 @@ test('home page and about page both use the shared supporter list modal', async 
     readFile(new URL('../routes/about/+page.svelte', import.meta.url), 'utf8')
   ]);
 
-  assert.match(
-    supportBarSource,
+  expect(supportBarSource).toMatch(
     new RegExp(SHARED_MODAL_IMPORT.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
   );
-  assert.match(
-    aboutPageSource,
+  expect(aboutPageSource).toMatch(
     new RegExp(SHARED_MODAL_IMPORT.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
   );
 });
@@ -36,6 +33,6 @@ test('supporter modal reloads data on each open instead of permanently caching t
     'utf8'
   );
 
-  assert.equal(modalSource.includes('let supportersLoaded = false;'), false);
-  assert.equal(modalSource.includes('if (supportersLoaded) return;'), false);
+  expect(modalSource.includes('let supportersLoaded = false;')).toBe(false);
+  expect(modalSource.includes('if (supportersLoaded) return;')).toBe(false);
 });

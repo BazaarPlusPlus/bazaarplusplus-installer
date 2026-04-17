@@ -1,5 +1,4 @@
-import test from 'node:test';
-import assert from 'node:assert/strict';
+import { test, expect } from 'vitest';
 
 import {
   loadPersistedCustomGamePath,
@@ -32,13 +31,13 @@ test('persistCustomGamePath stores and clears the selected game path', () => {
   });
 
   try {
-    assert.equal(loadPersistedCustomGamePath(), '');
+    expect(loadPersistedCustomGamePath()).toBe('');
 
     persistCustomGamePath('  /games/the-bazaar  ');
-    assert.equal(loadPersistedCustomGamePath(), '/games/the-bazaar');
+    expect(loadPersistedCustomGamePath()).toBe('/games/the-bazaar');
 
     persistCustomGamePath('   ');
-    assert.equal(loadPersistedCustomGamePath(), '');
+    expect(loadPersistedCustomGamePath()).toBe('');
   } finally {
     Object.defineProperty(globalThis, 'window', {
       configurable: true,

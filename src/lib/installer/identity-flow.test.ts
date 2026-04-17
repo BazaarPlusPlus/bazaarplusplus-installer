@@ -1,5 +1,4 @@
-import test from 'node:test';
-import assert from 'node:assert/strict';
+import { test, expect } from 'vitest';
 
 import {
   activateObservedIdentity,
@@ -28,8 +27,8 @@ test('loadInstallIdentitySnapshot maps the local identity payload', async () => 
     'C:\\Games\\The Bazaar'
   );
 
-  assert.equal(snapshot.playerObservation?.player_username, 'Tester');
-  assert.equal(snapshot.authRecord?.token, 'token-1');
+  expect(snapshot.playerObservation?.player_username).toBe('Tester');
+  expect(snapshot.authRecord?.token).toBe('token-1');
 });
 
 test('activateObservedIdentity persists then reloads identity state', async () => {
@@ -70,9 +69,9 @@ test('activateObservedIdentity persists then reloads identity state', async () =
     successMessage: 'ok'
   });
 
-  assert.equal(activated, true);
-  assert.equal(result.successMessage, 'ok');
-  assert.equal(result.snapshot.authRecord?.token, 'token-1');
+  expect(activated).toBe(true);
+  expect(result.successMessage).toBe('ok');
+  expect(result.snapshot.authRecord?.token).toBe('token-1');
 });
 
 test('loginInstallIdentity reuses the same snapshot reload path', async () => {
@@ -109,8 +108,8 @@ test('loginInstallIdentity reuses the same snapshot reload path', async () => {
     successMessage: 'logged'
   });
 
-  assert.equal(loggedIn, true);
-  assert.equal(result.successMessage, 'logged');
+  expect(loggedIn).toBe(true);
+  expect(result.successMessage).toBe('logged');
 });
 
 test('logoutInstallIdentity returns the local-only message when remote logout fails', async () => {
@@ -139,6 +138,6 @@ test('logoutInstallIdentity returns the local-only message when remote logout fa
     localOnlySuccessMessage: 'local'
   });
 
-  assert.equal(result.successMessage, 'local');
-  assert.equal(result.snapshot.authRecord, null);
+  expect(result.successMessage).toBe('local');
+  expect(result.snapshot.authRecord).toBe(null);
 });

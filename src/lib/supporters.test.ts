@@ -1,5 +1,4 @@
-import test, { mock } from 'node:test';
-import assert from 'node:assert/strict';
+import { test, expect, vi } from 'vitest';
 
 import * as supportersModule from './supporters.ts';
 import type { SupportersResponse } from './types.ts';
@@ -15,14 +14,11 @@ test('normalizeSupporterPayload drops invalid supporter entries', () => {
     { name: 'Carol', tier: 2, amount: 0.145 }
   ]);
 
-  assert.deepEqual(payload, [
+  expect(payload).toEqual([
     { name: 'Alice', tier: 4 },
     { name: 'Carol', tier: 2 }
   ]);
-  assert.equal(
-    payload.every((entry) => !('amount' in entry)),
-    true
-  );
+  expect(payload.every((entry) => !('amount' in entry))).toBe(true);
 });
 
 test('sortSupporters sorts by tier, then name', () => {
@@ -33,14 +29,16 @@ test('sortSupporters sorts by tier, then name', () => {
     { name: 'Cara', tier: 4, amount: 0.5 }
   ] as unknown as Parameters<typeof sortSupporters>[0]);
 
-  assert.deepEqual(
-    payload.map((entry) => entry.name),
-    ['Amy', 'Bob', 'Cara', 'Zed']
-  );
+  expect(payload.map((entry) => entry.name)).toEqual([
+    'Amy',
+    'Bob',
+    'Cara',
+    'Zed'
+  ]);
 });
 
 test('shuffleSupportersWithinTier keeps tier order and shuffles within each tier', () => {
-  assert.equal(typeof supportersModule.shuffleSupportersWithinTier, 'function');
+  expect(typeof supportersModule.shuffleSupportersWithinTier).toBe('function');
 
   const randomValues = [0, 0.99, 0];
   const payload = supportersModule.shuffleSupportersWithinTier?.(
@@ -55,20 +53,21 @@ test('shuffleSupportersWithinTier keeps tier order and shuffles within each tier
     () => randomValues.shift() ?? 0.5
   );
 
-  assert.deepEqual(
-    payload?.map((entry) => entry.tier),
-    [4, 4, 4, 3, 3, 2]
-  );
-  assert.deepEqual(
-    payload?.map((entry) => entry.name),
-    ['Bob', 'Amy', 'Cara', 'Eve', 'Dan', 'Finn']
-  );
+  expect(payload?.map((entry) => entry.tier)).toEqual([4, 4, 4, 3, 3, 2]);
+  expect(payload?.map((entry) => entry.name)).toEqual([
+    'Bob',
+    'Amy',
+    'Cara',
+    'Eve',
+    'Dan',
+    'Finn'
+  ]);
 });
 
 test('loadSupportersData reuses the same shuffle for repeated bundled snapshots', async () => {
-  assert.equal(typeof supportersModule.resetSupportersDataCache, 'function');
+  expect(typeof supportersModule.resetSupportersDataCache).toBe('function');
 
-  const fetchMock = mock.fn(async () => {
+  const fetchMock = vi.fn(async () => {
     return new Response(
       JSON.stringify([
         { name: 'Amy', tier: 4 },
@@ -99,12 +98,14 @@ test('loadSupportersData reuses the same shuffle for repeated bundled snapshots'
       randomFn: () => 0.25
     });
 
-    assert.deepEqual(
-      firstPayload.entries.map((entry) => entry.name),
-      ['Bob', 'Amy', 'Eve', 'Dan']
-    );
-    assert.deepEqual(secondPayload.entries, firstPayload.entries);
-    assert.equal(fetchMock.mock.callCount(), 2);
+    expect(firstPayload.entries.map((entry) => entry.name)).toEqual([
+      'Bob',
+      'Amy',
+      'Eve',
+      'Dan'
+    ]);
+    expect(secondPayload.entries).toEqual(firstPayload.entries);
+    expect(fetchMock.mock.calls.length).toBe(2);
   } finally {
     supportersModule.resetSupportersDataCache?.();
   }
@@ -122,7 +123,7 @@ test('loadSupportersData revalidates tauri data while preserving shuffle for the
     fetchedAt: 100,
     stale: false
   };
-  const loadFromTauri = mock.fn(
+  const loadFromTauri = vi.fn(
     async (): Promise<SupportersResponse> => tauriPayload
   );
 
@@ -140,8 +141,8 @@ test('loadSupportersData revalidates tauri data while preserving shuffle for the
       randomFn: () => 0.99
     });
 
-    assert.equal(loadFromTauri.mock.callCount(), 2);
-    assert.deepEqual(secondPayload.entries, firstPayload.entries);
+    expect(loadFromTauri.mock.calls.length).toBe(2);
+    expect(secondPayload.entries).toEqual(firstPayload.entries);
   } finally {
     supportersModule.resetSupportersDataCache?.();
   }
@@ -167,7 +168,7 @@ test('loadSupportersData picks up a newer tauri snapshot on a later load', async
     stale: false
   };
   let callIndex = 0;
-  const loadFromTauri = mock.fn(async (): Promise<SupportersResponse> => {
+  const loadFromTauri = vi.fn(async (): Promise<SupportersResponse> => {
     callIndex += 1;
 
     if (callIndex === 1) {
@@ -191,16 +192,16 @@ test('loadSupportersData picks up a newer tauri snapshot on a later load', async
       randomFn: () => 0
     });
 
-    assert.equal(loadFromTauri.mock.callCount(), 2);
-    assert.deepEqual(
-      firstPayload.entries.map((entry) => entry.name),
-      ['Bob', 'Amy']
-    );
-    assert.deepEqual(
-      secondPayload.entries.map((entry) => entry.name),
-      ['Cara', 'Dan']
-    );
-    assert.equal(secondPayload.fetchedAt, 200);
+    expect(loadFromTauri.mock.calls.length).toBe(2);
+    expect(firstPayload.entries.map((entry) => entry.name)).toEqual([
+      'Bob',
+      'Amy'
+    ]);
+    expect(secondPayload.entries.map((entry) => entry.name)).toEqual([
+      'Cara',
+      'Dan'
+    ]);
+    expect(secondPayload.fetchedAt).toBe(200);
   } finally {
     supportersModule.resetSupportersDataCache?.();
   }
@@ -208,7 +209,9 @@ test('loadSupportersData picks up a newer tauri snapshot on a later load', async
 
 test('loadSupportersData falls back to bundled JSON when Tauri runtime is unavailable', async () => {
   const originalFetch = globalThis.fetch;
-  const fetchMock = mock.fn(async () => {
+  let requestedUrl: RequestInfo | URL | undefined;
+  const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+    requestedUrl = input;
     return new Response(JSON.stringify([{ name: 'Remote', tier: 4 }]), {
       status: 200,
       headers: { 'Content-Type': 'application/json' }
@@ -224,13 +227,10 @@ test('loadSupportersData falls back to bundled JSON when Tauri runtime is unavai
       hasTauriRuntime: false
     });
 
-    assert.deepEqual(payload.entries, [{ name: 'Remote', tier: 4 }]);
-    assert.equal(payload.source, 'bundled');
-    assert.equal(fetchMock.mock.callCount(), 1);
-    const firstCall = fetchMock.mock.calls[0] as
-      | { arguments: unknown[] }
-      | undefined;
-    assert.equal(firstCall?.arguments[0], '/support/supporter-list.json');
+    expect(payload.entries).toEqual([{ name: 'Remote', tier: 4 }]);
+    expect(payload.source).toBe('bundled');
+    expect(fetchMock.mock.calls.length).toBe(1);
+    expect(requestedUrl).toBe('/support/supporter-list.json');
   } finally {
     supportersModule.resetSupportersDataCache?.();
     globalThis.fetch = originalFetch;

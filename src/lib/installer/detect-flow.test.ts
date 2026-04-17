@@ -1,5 +1,4 @@
-import test from 'node:test';
-import assert from 'node:assert/strict';
+import { test, expect } from 'vitest';
 
 import { detectInstallerEnvironment } from './detect-flow.ts';
 
@@ -23,7 +22,7 @@ test('detectInstallerEnvironment keeps env null when environment detection fails
   resolveDotnet?.({ dotnet_version: '9.0.1', dotnet_ok: true });
   const result = await resultPromise;
 
-  assert.deepEqual(result, {
+  expect(result).toEqual({
     env: null,
     dotnetState: 'idle',
     bazaarFound: false,
@@ -65,8 +64,8 @@ test('detectInstallerEnvironment merges dotnet state into a successful environme
     }
   });
 
-  assert.deepEqual(calls, ['dotnet', 'detect:D:\\Bazaar', 'verify:D:\\Bazaar']);
-  assert.deepEqual(result, {
+  expect(calls).toEqual(['dotnet', 'detect:D:\\Bazaar', 'verify:D:\\Bazaar']);
+  expect(result).toEqual({
     env: {
       steam_path: 'C:\\Program Files (x86)\\Steam',
       steam_launch_options_supported: true,

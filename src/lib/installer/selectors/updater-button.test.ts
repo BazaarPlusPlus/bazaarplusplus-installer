@@ -1,5 +1,4 @@
-import test from 'node:test';
-import assert from 'node:assert/strict';
+import { test, expect } from 'vitest';
 
 import { selectUpdaterButton } from './updater-button.ts';
 import type { TranslateText } from './types.ts';
@@ -30,11 +29,11 @@ test('selectUpdaterButton handles available updates', () => {
     t
   });
 
-  assert.equal(selection.label, 'Ready 3.1.0');
-  assert.equal(selection.title, 'updaterReadyTitle');
-  assert.equal(selection.disabled, false);
-  assert.equal(selection.highlighted, true);
-  assert.equal(selection.progressLabel, null);
+  expect(selection.label).toBe('Ready 3.1.0');
+  expect(selection.title).toBe('updaterReadyTitle');
+  expect(selection.disabled).toBe(false);
+  expect(selection.highlighted).toBe(true);
+  expect(selection.progressLabel).toBe(null);
 });
 
 test('selectUpdaterButton handles downloading updates', () => {
@@ -50,11 +49,11 @@ test('selectUpdaterButton handles downloading updates', () => {
     t
   });
 
-  assert.equal(selection.label, 'Downloading 75% · 1.5 KB / 2.0 KB');
-  assert.equal(selection.title, 'updaterInstalling');
-  assert.equal(selection.disabled, true);
-  assert.equal(selection.highlighted, false);
-  assert.equal(selection.progressLabel, '75% · 1.5 KB / 2.0 KB');
+  expect(selection.label).toBe('Downloading 75% · 1.5 KB / 2.0 KB');
+  expect(selection.title).toBe('updaterInstalling');
+  expect(selection.disabled).toBe(true);
+  expect(selection.highlighted).toBe(false);
+  expect(selection.progressLabel).toBe('75% · 1.5 KB / 2.0 KB');
 });
 
 test('selectUpdaterButton handles error states with and without pending updates', () => {
@@ -81,8 +80,8 @@ test('selectUpdaterButton handles error states with and without pending updates'
     t
   });
 
-  assert.equal(retry.label, 'updaterRetry');
-  assert.equal(error.label, 'updaterErrorState');
-  assert.equal(retry.title, 'updaterErrorTitle');
-  assert.equal(error.title, 'updaterErrorTitle');
+  expect(retry.label).toBe('updaterRetry');
+  expect(error.label).toBe('updaterErrorState');
+  expect(retry.title).toBe('updaterErrorTitle');
+  expect(error.title).toBe('updaterErrorTitle');
 });

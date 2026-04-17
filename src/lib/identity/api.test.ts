@@ -1,5 +1,4 @@
-import test from 'node:test';
-import assert from 'node:assert/strict';
+import { test, expect } from 'vitest';
 
 import { createIdentityApi } from './api.ts';
 import type { PlayerObservationPayload } from './types.ts';
@@ -39,21 +38,23 @@ test('activateObservedAccount posts activate and persists a local auth row', asy
     password: 'hunter2'
   });
 
-  assert.equal(auth.token, 'token-001');
-  assert.equal(requests.length, 1);
+  expect(auth.token).toBe('token-001');
+  expect(requests.length).toBe(1);
   const requestBody = JSON.parse(requests[0].body);
-  assert.equal(requestBody.player_account_id, observation.player_account_id);
-  assert.equal(writes.length, 1);
-  assert.equal(JSON.parse(writes[0]).player_username, observation.player_username);
+  expect(requestBody.player_account_id).toBe(observation.player_account_id);
+  expect(writes.length).toBe(1);
+  expect(JSON.parse(writes[0]).player_username).toBe(
+    observation.player_username
+  );
 });
 
 test('loginIdentity posts login and persists a local auth row', async () => {
   const writes: string[] = [];
   const api = createIdentityApi({
     postJsonImpl: async ({ url, body, authorization }) => {
-      assert.equal(url.endsWith('/login'), true);
-      assert.equal(authorization, undefined);
-      assert.equal(JSON.parse(body).player_username, 'existing-user');
+      expect(url.endsWith('/login')).toBe(true);
+      expect(authorization).toBe(undefined);
+      expect(JSON.parse(body).player_username).toBe('existing-user');
       return {
         status: 200,
         body: JSON.stringify({
@@ -74,8 +75,8 @@ test('loginIdentity posts login and persists a local auth row', async () => {
     password: 'hunter2'
   });
 
-  assert.equal(auth.player_username, 'existing-user');
-  assert.equal(writes.length, 1);
+  expect(auth.player_username).toBe('existing-user');
+  expect(writes.length).toBe(1);
 });
 
 test('loadLocalIdentity returns null observation when observation JSON is malformed', async () => {
@@ -86,8 +87,8 @@ test('loadLocalIdentity returns null observation when observation JSON is malfor
 
   const snapshot = await api.loadLocalIdentity('/games/The Bazaar');
 
-  assert.equal(snapshot.observation, null);
-  assert.equal(snapshot.auth, null);
+  expect(snapshot.observation).toBe(null);
+  expect(snapshot.auth).toBe(null);
 });
 
 test('logoutIdentity always deletes the local auth row', async () => {
@@ -101,7 +102,7 @@ test('logoutIdentity always deletes the local auth row', async () => {
     }
   });
 
-  await assert.rejects(
+  await expect(
     api.logoutIdentity({
       gameRoot: '/games/The Bazaar',
       auth: {
@@ -110,9 +111,8 @@ test('logoutIdentity always deletes the local auth row', async () => {
         player_username: 'player-three',
         issued_at_utc: '2026-04-11T01:00:00.000Z'
       }
-    }),
-    /fetch failed/
-  );
+    })
+  ).rejects.toThrow(/fetch failed/);
 
-  assert.equal(deleted, 1);
+  expect(deleted).toBe(1);
 });

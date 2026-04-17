@@ -10,7 +10,8 @@
     "prebuild-check": "node scripts/prebuild-check.mjs",
     "build": "npm run generate:bindings && vite build",
     "preview": "vite preview",
-    "test": "npm run generate:bindings && node --test",
+    "test": "npm run generate:bindings && vitest run",
+    "test:watch": "vitest",
     "format": "prettier --write \"*.json\" \"src/**/*.{ts,svelte,html}\" \"static/**/*.json\" \"scripts/**/*.mjs\" \"src-tauri/*.json\" \"src-tauri/capabilities/**/*.json\" \"svelte.config.js\" \"vite.config.js\"",
     "format:check": "prettier --check \"*.json\" \"src/**/*.{ts,svelte,html}\" \"static/**/*.json\" \"scripts/**/*.mjs\" \"src-tauri/*.json\" \"src-tauri/capabilities/**/*.json\" \"svelte.config.js\" \"vite.config.js\"",
     "check": "npm run generate:bindings && svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
@@ -35,6 +36,7 @@
     "svelte": "^5.55.0",
     "svelte-check": "^4.4.5",
     "typescript": "^5.9.3",
-    "vite": "^6.4.1"
+    "vite": "^6.4.1",
+    "vitest": "^4.1.4"
   }
 }

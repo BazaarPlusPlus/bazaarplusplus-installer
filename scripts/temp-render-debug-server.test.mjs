@@ -1,5 +1,4 @@
-import test from 'node:test';
-import assert from 'node:assert/strict';
+import { test, expect } from 'vitest';
 
 import {
   buildCropStyle,
@@ -16,7 +15,7 @@ test('clampCrop keeps crop values inside normalized bounds', () => {
     height: 0.5
   });
 
-  assert.deepEqual(crop, {
+  expect(crop).toEqual({
     left: 0,
     top: 0.5,
     width: 1,
@@ -32,9 +31,9 @@ test('buildCropStyle returns uniform scale and image-relative translation for CS
     height: 0.27
   });
 
-  assert.equal(style.widthPercent, '172.4138%');
-  assert.equal(style.translateXPercent, '-35.6000%');
-  assert.equal(style.translateYPercent, '-30.8000%');
+  expect(style.widthPercent).toBe('172.4138%');
+  expect(style.translateXPercent).toBe('-35.6000%');
+  expect(style.translateYPercent).toBe('-30.8000%');
 });
 
 test('computeCropFrameAspectRatio preserves the source crop proportions', () => {
@@ -43,7 +42,7 @@ test('computeCropFrameAspectRatio preserves the source crop proportions', () => 
     { left: 0.356, top: 0.308, width: 0.58, height: 0.27 }
   );
 
-  assert.equal(ratio, '3.8189');
+  expect(ratio).toBe('3.8189');
 });
 
 test('deriveSeedRows maps source images into ordered debug records', () => {
@@ -52,8 +51,8 @@ test('deriveSeedRows maps source images into ordered debug records', () => {
     '/Users/demo/Desktop/temp_render/a.png'
   ]);
 
-  assert.equal(rows.length, 2);
-  assert.equal(rows[0].title, 'Debug Record 1');
-  assert.equal(rows[0].image_path, '/Users/demo/Desktop/temp_render/a.png');
-  assert.equal(rows[1].title, 'Debug Record 2');
+  expect(rows.length).toBe(2);
+  expect(rows[0].title).toBe('Debug Record 1');
+  expect(rows[0].image_path).toBe('/Users/demo/Desktop/temp_render/a.png');
+  expect(rows[1].title).toBe('Debug Record 2');
 });

@@ -1,5 +1,4 @@
-import test from 'node:test';
-import assert from 'node:assert/strict';
+import { test, expect } from 'vitest';
 import fs from 'node:fs';
 
 const packageJson = JSON.parse(
@@ -7,10 +6,9 @@ const packageJson = JSON.parse(
 );
 
 test('package.json keeps the SvelteKit v2 toolchain versions', () => {
-  assert.equal(
-    packageJson.devDependencies['@sveltejs/adapter-static'],
+  expect(packageJson.devDependencies['@sveltejs/adapter-static']).toBe(
     '^3.0.10'
   );
-  assert.equal(packageJson.devDependencies['@sveltejs/kit'], '^2.55.0');
-  assert.equal('wrangler' in packageJson.devDependencies, false);
+  expect(packageJson.devDependencies['@sveltejs/kit']).toBe('^2.55.0');
+  expect('wrangler' in packageJson.devDependencies).toBe(false);
 });

@@ -1,5 +1,4 @@
-import test from 'node:test';
-import assert from 'node:assert/strict';
+import { test, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
@@ -17,59 +16,53 @@ const statusStepsSource = readFileSync(
 );
 
 test('installer header no longer renders the featured whats new card', () => {
-  assert.equal(headerSource.includes('header-link-featured'), false);
-  assert.equal(headerSource.includes('查看 WhatsNew'), false);
-  assert.equal(headerSource.includes("Open What's New"), false);
+  expect(headerSource.includes('header-link-featured')).toBe(false);
+  expect(headerSource.includes('查看 WhatsNew')).toBe(false);
+  expect(headerSource.includes("Open What's New")).toBe(false);
 });
 
 test('step I no longer renders a whats new action rail', () => {
-  assert.equal(statusStepsSource.includes('step-body step-body-bpp'), false);
-  assert.equal(statusStepsSource.includes('step-bpp-action'), false);
-  assert.equal(statusStepsSource.includes('step-bpp-content'), false);
-  assert.equal(statusStepsSource.includes('mismatch-link-button'), false);
-  assert.equal(statusStepsSource.includes("What's New"), false);
+  expect(statusStepsSource.includes('step-body step-body-bpp')).toBe(false);
+  expect(statusStepsSource.includes('step-bpp-action')).toBe(false);
+  expect(statusStepsSource.includes('step-bpp-content')).toBe(false);
+  expect(statusStepsSource.includes('mismatch-link-button')).toBe(false);
+  expect(statusStepsSource.includes("What's New")).toBe(false);
 });
 
 test('version mismatch section removes the old inline link copy', () => {
-  assert.equal(statusStepsSource.includes('查看更新内容'), false);
-  assert.equal(statusStepsSource.includes("View what's new"), false);
+  expect(statusStepsSource.includes('查看更新内容')).toBe(false);
+  expect(statusStepsSource.includes("View what's new")).toBe(false);
 });
 
 test('version mismatch pills are stacked vertically', () => {
-  assert.match(
-    statusStepsSource,
+  expect(statusStepsSource).toMatch(
     /\.mismatch-versions\s*\{[^}]*display:\s*flex;[^}]*flex-direction:\s*column;/
   );
 });
 
 test('latest-version state removes the green status frame and uses the latest-state copy', () => {
-  assert.equal(
+  expect(
     statusStepsSource.includes(
       `<span class="tag tag-ok">{t('statusInstalled')}{env?.bpp_version ? \` · v\${env?.bpp_version}\` : ''}</span>`
-    ),
-    false
-  );
-  assert.equal(statusStepsSource.includes('modInstalledHint'), false);
-  assert.equal(
-    statusStepsSource.includes('BazaarPlusPlus 当前已处于最新状态。'),
-    false
-  );
-  assert.equal(
-    statusStepsSource.includes('BazaarPlusPlus 当前已处于最新状态'),
+    )
+  ).toBe(false);
+  expect(statusStepsSource.includes('modInstalledHint')).toBe(false);
+  expect(
+    statusStepsSource.includes('BazaarPlusPlus 当前已处于最新状态。')
+  ).toBe(false);
+  expect(statusStepsSource.includes('BazaarPlusPlus 当前已处于最新状态')).toBe(
     true
   );
-  assert.equal(statusStepsSource.includes('{:else if modInstalled}'), true);
+  expect(statusStepsSource.includes('{:else if modInstalled}')).toBe(true);
 });
 
 test('bazaar found UI requires a non-empty effective path', () => {
-  assert.equal(
+  expect(
     statusStepsSource.includes(
       'class:step-found={bazaarFound && Boolean(effectiveGamePath)}'
-    ),
-    true
-  );
-  assert.equal(
-    statusStepsSource.includes('{#if bazaarFound && effectiveGamePath}'),
-    true
-  );
+    )
+  ).toBe(true);
+  expect(
+    statusStepsSource.includes('{#if bazaarFound && effectiveGamePath}')
+  ).toBe(true);
 });

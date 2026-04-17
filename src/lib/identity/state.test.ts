@@ -1,5 +1,4 @@
-import test from 'node:test';
-import assert from 'node:assert/strict';
+import { test, expect } from 'vitest';
 
 import { createIdentityState } from './state.ts';
 
@@ -9,7 +8,7 @@ test('no observation blocks sign-in onboarding', () => {
     auth: null
   });
 
-  assert.equal(state.kind, 'observation_required');
+  expect(state.kind).toBe('observation_required');
 });
 
 test('observation with no auth opens login or register flow', () => {
@@ -22,8 +21,11 @@ test('observation with no auth opens login or register flow', () => {
     auth: null
   });
 
-  assert.equal(state.kind, 'login_or_register');
-  assert.equal(state.observation.player_username, 'player-one');
+  expect(state.kind).toBe('login_or_register');
+  if (state.kind !== 'login_or_register') {
+    throw new Error(`Unexpected identity state: ${state.kind}`);
+  }
+  expect(state.observation.player_username).toBe('player-one');
 });
 
 test('signed-in user with changed observation requires logout and relogin', () => {
@@ -41,7 +43,7 @@ test('signed-in user with changed observation requires logout and relogin', () =
     }
   });
 
-  assert.equal(state.kind, 'account_mismatch');
+  expect(state.kind).toBe('account_mismatch');
 });
 
 test('signed-in user with no observation can still view profile', () => {
@@ -55,6 +57,9 @@ test('signed-in user with no observation can still view profile', () => {
     }
   });
 
-  assert.equal(state.kind, 'ready');
-  assert.equal(state.auth.player_account_id, 'player-account-001');
+  expect(state.kind).toBe('ready');
+  if (state.kind !== 'ready') {
+    throw new Error(`Unexpected identity state: ${state.kind}`);
+  }
+  expect(state.auth.player_account_id).toBe('player-account-001');
 });

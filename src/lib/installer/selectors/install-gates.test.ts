@@ -1,5 +1,4 @@
-import test from 'node:test';
-import assert from 'node:assert/strict';
+import { test, expect } from 'vitest';
 
 import { selectInstallGates } from './install-gates.ts';
 
@@ -24,12 +23,12 @@ test('selectInstallGates trims custom paths and exposes install state', () => {
     isDebugInstallPreview: false
   });
 
-  assert.equal(selection.selectedPath, 'D:\\Bazaar Custom');
-  assert.equal(selection.modInstalled, true);
-  assert.equal(selection.hasPath, true);
-  assert.equal(selection.canInstall, true);
-  assert.equal(selection.canLaunchGame, true);
-  assert.equal(selection.versionMismatch, true);
+  expect(selection.selectedPath).toBe('D:\\Bazaar Custom');
+  expect(selection.modInstalled).toBe(true);
+  expect(selection.hasPath).toBe(true);
+  expect(selection.canInstall).toBe(true);
+  expect(selection.canLaunchGame).toBe(true);
+  expect(selection.versionMismatch).toBe(true);
 });
 
 test('selectInstallGates reports no path when neither detected nor custom paths exist', () => {
@@ -41,11 +40,11 @@ test('selectInstallGates reports no path when neither detected nor custom paths 
     isDebugInstallPreview: false
   });
 
-  assert.equal(selection.selectedPath, null);
-  assert.equal(selection.hasPath, false);
-  assert.equal(selection.pageState.effectiveGamePath, '');
-  assert.equal(selection.canInstall, false);
-  assert.equal(selection.canLaunchGame, false);
+  expect(selection.selectedPath).toBe(null);
+  expect(selection.hasPath).toBe(false);
+  expect(selection.pageState.effectiveGamePath).toBe('');
+  expect(selection.canInstall).toBe(false);
+  expect(selection.canLaunchGame).toBe(false);
 });
 
 test('selectInstallGates reflects busy actions through pageState', () => {
@@ -69,7 +68,7 @@ test('selectInstallGates reflects busy actions through pageState', () => {
     isDebugInstallPreview: false
   });
 
-  assert.equal(selection.isBusy, true);
-  assert.equal(selection.canInstall, false);
-  assert.equal(selection.canLaunchGame, false);
+  expect(selection.isBusy).toBe(true);
+  expect(selection.canInstall).toBe(false);
+  expect(selection.canLaunchGame).toBe(false);
 });

@@ -1,5 +1,4 @@
-import test from 'node:test';
-import assert from 'node:assert/strict';
+import { test, expect } from 'vitest';
 
 import {
   getInstallRuntimeRisks,
@@ -13,7 +12,7 @@ test('getInstallRuntimeRisks only returns the Steam risk when Steam is running',
     steamRunning: true
   });
 
-  assert.deepEqual(risks, ['steam_running']);
+  expect(risks).toEqual(['steam_running']);
 });
 
 test('getInstallRuntimeRisks does not depend on game state', () => {
@@ -23,7 +22,7 @@ test('getInstallRuntimeRisks does not depend on game state', () => {
     steamRunning: true
   });
 
-  assert.deepEqual(risks, ['steam_running']);
+  expect(risks).toEqual(['steam_running']);
 });
 
 test('getInstallRuntimeRisks suppresses all warnings outside Tauri', () => {
@@ -33,7 +32,7 @@ test('getInstallRuntimeRisks suppresses all warnings outside Tauri', () => {
     steamRunning: true
   });
 
-  assert.deepEqual(risks, []);
+  expect(risks).toEqual([]);
 });
 
 test('getInstallRuntimeRisks ignores Steam when launch option updates are unsupported', () => {
@@ -43,17 +42,17 @@ test('getInstallRuntimeRisks ignores Steam when launch option updates are unsupp
     steamRunning: true
   });
 
-  assert.deepEqual(risks, []);
+  expect(risks).toEqual([]);
 });
 
 test('shouldShowInstallRiskModal returns true when any runtime risk is present', () => {
   const shouldShow = shouldShowInstallRiskModal(['steam_running']);
 
-  assert.equal(shouldShow, true);
+  expect(shouldShow).toBe(true);
 });
 
 test('shouldShowInstallRiskModal returns false when there are no runtime risks', () => {
   const shouldShow = shouldShowInstallRiskModal([]);
 
-  assert.equal(shouldShow, false);
+  expect(shouldShow).toBe(false);
 });

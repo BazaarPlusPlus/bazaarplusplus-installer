@@ -1,5 +1,4 @@
-import test from 'node:test';
-import assert from 'node:assert/strict';
+import { test, expect } from 'vitest';
 
 import { selectIdentityGates } from './identity-gates.ts';
 
@@ -29,8 +28,8 @@ test('selectIdentityGates blocks activation and login when fields are missing', 
     identityPassword: ''
   });
 
-  assert.equal(selection.identityBusy, false);
-  assert.equal(selection.canContinueIdentity, false);
+  expect(selection.identityBusy).toBe(false);
+  expect(selection.canContinueIdentity).toBe(false);
 });
 
 test('selectIdentityGates blocks actions while busy', () => {
@@ -50,8 +49,8 @@ test('selectIdentityGates blocks actions while busy', () => {
     identityPassword: 'secret'
   });
 
-  assert.equal(selection.identityBusy, true);
-  assert.equal(selection.canContinueIdentity, false);
+  expect(selection.identityBusy).toBe(true);
+  expect(selection.canContinueIdentity).toBe(false);
 });
 
 test('selectIdentityGates allows continue when password is present', () => {
@@ -71,8 +70,8 @@ test('selectIdentityGates allows continue when password is present', () => {
     identityPassword: 'secret'
   });
 
-  assert.equal(selection.canContinueIdentity, true);
-  assert.equal(selection.canLogoutIdentity, false);
+  expect(selection.canContinueIdentity).toBe(true);
+  expect(selection.canLogoutIdentity).toBe(false);
 });
 
 test('selectIdentityGates exposes logout only for signed-in states', () => {
@@ -97,5 +96,5 @@ test('selectIdentityGates exposes logout only for signed-in states', () => {
     identityPassword: ''
   });
 
-  assert.equal(selection.canLogoutIdentity, true);
+  expect(selection.canLogoutIdentity).toBe(true);
 });

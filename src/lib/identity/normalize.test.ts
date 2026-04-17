@@ -1,5 +1,4 @@
-import test from 'node:test';
-import assert from 'node:assert/strict';
+import { test, expect } from 'vitest';
 
 import {
   isNonEmptyString,
@@ -9,22 +8,22 @@ import {
 } from './normalize.ts';
 
 test('isRecord accepts plain objects and rejects arrays, null, and primitives', () => {
-  assert.equal(isRecord({}), true);
-  assert.equal(isRecord({ a: 1 }), true);
-  assert.equal(isRecord([]), false);
-  assert.equal(isRecord(null), false);
-  assert.equal(isRecord('x'), false);
-  assert.equal(isRecord(5), false);
-  assert.equal(isRecord(undefined), false);
+  expect(isRecord({})).toBe(true);
+  expect(isRecord({ a: 1 })).toBe(true);
+  expect(isRecord([])).toBe(false);
+  expect(isRecord(null)).toBe(false);
+  expect(isRecord('x')).toBe(false);
+  expect(isRecord(5)).toBe(false);
+  expect(isRecord(undefined)).toBe(false);
 });
 
 test('isNonEmptyString accepts non-empty trimmed strings only', () => {
-  assert.equal(isNonEmptyString('a'), true);
-  assert.equal(isNonEmptyString(''), false);
-  assert.equal(isNonEmptyString('   '), false);
-  assert.equal(isNonEmptyString(0), false);
-  assert.equal(isNonEmptyString(null), false);
-  assert.equal(isNonEmptyString(undefined), false);
+  expect(isNonEmptyString('a')).toBe(true);
+  expect(isNonEmptyString('')).toBe(false);
+  expect(isNonEmptyString('   ')).toBe(false);
+  expect(isNonEmptyString(0)).toBe(false);
+  expect(isNonEmptyString(null)).toBe(false);
+  expect(isNonEmptyString(undefined)).toBe(false);
 });
 
 test('normalizePlayerObservation accepts a well-formed observation', () => {
@@ -34,7 +33,7 @@ test('normalizePlayerObservation accepts a well-formed observation', () => {
     observed_at_utc: '2026-04-11T01:00:00.000Z'
   };
 
-  assert.deepEqual(normalizePlayerObservation(observation), observation);
+  expect(normalizePlayerObservation(observation)).toEqual(observation);
 });
 
 test('normalizePlayerObservation preserves optional installation_hint', () => {
@@ -45,27 +44,25 @@ test('normalizePlayerObservation preserves optional installation_hint', () => {
     installation_hint: 'hint-abc'
   };
 
-  assert.deepEqual(normalizePlayerObservation(observation), observation);
+  expect(normalizePlayerObservation(observation)).toEqual(observation);
 });
 
 test('normalizePlayerObservation rejects missing or blank required fields', () => {
-  assert.equal(normalizePlayerObservation(null), null);
-  assert.equal(normalizePlayerObservation({}), null);
-  assert.equal(
+  expect(normalizePlayerObservation(null)).toBe(null);
+  expect(normalizePlayerObservation({})).toBe(null);
+  expect(
     normalizePlayerObservation({
       player_account_id: '',
       player_username: 'u',
       observed_at_utc: 't'
-    }),
-    null
-  );
-  assert.equal(
+    })
+  ).toBe(null);
+  expect(
     normalizePlayerObservation({
       player_account_id: 'p',
       player_username: 'u'
-    }),
-    null
-  );
+    })
+  ).toBe(null);
 });
 
 test('normalizeAuthRecord accepts a well-formed record', () => {
@@ -76,7 +73,7 @@ test('normalizeAuthRecord accepts a well-formed record', () => {
     issued_at_utc: '2026-04-11T01:00:00.000Z'
   };
 
-  assert.deepEqual(normalizeAuthRecord(record), record);
+  expect(normalizeAuthRecord(record)).toEqual(record);
 });
 
 test('normalizeAuthRecord rejects blank required fields', () => {
@@ -87,5 +84,5 @@ test('normalizeAuthRecord rejects blank required fields', () => {
     issued_at_utc: '2026-04-11T01:00:00.000Z'
   };
 
-  assert.equal(normalizeAuthRecord(record), null);
+  expect(normalizeAuthRecord(record)).toBe(null);
 });

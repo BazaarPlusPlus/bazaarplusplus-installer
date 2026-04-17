@@ -1,24 +1,9 @@
+import { describe, expect, it } from 'vitest';
+
 import { selectIdentityPanel } from './identity-panel.ts';
 import type { LocalizedText } from './types.ts';
 
 const localized: LocalizedText = (zh, en) => en || zh;
-const vitest = (
-  import.meta as ImportMeta & {
-    vitest?: {
-      describe: (name: string, fn: () => void) => void;
-      expect: <T>(actual: T) => {
-        toBe: (expected: T) => void;
-        toBeUndefined: () => void;
-      };
-      it: (name: string, fn: () => void) => void;
-    };
-  }
-).vitest;
-const { describe, expect, it } = vitest ?? {
-  describe: () => undefined,
-  expect: () => ({ toBe: () => undefined, toBeUndefined: () => undefined }),
-  it: () => undefined
-};
 
 describe('selectIdentityPanel', () => {
   it('describes the observation-required state', () => {
@@ -74,7 +59,9 @@ describe('selectIdentityPanel', () => {
     expect(login.summary).toBe('Detected game account');
     expect(login.accountHighlight).toBe('Tester');
     expect(mismatch.title).toBe('Account');
-    expect(mismatch.summary).toBe('Account mismatch — sign out and sign in again');
+    expect(mismatch.summary).toBe(
+      'Account mismatch — sign out and sign in again'
+    );
     expect(mismatch.accountHighlight).toBeUndefined();
   });
 

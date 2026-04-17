@@ -1,21 +1,10 @@
-import assert from 'node:assert/strict';
+import { test, expect } from 'vitest';
 
 import {
   createInstallDebugEnvironment,
   createInstallPageModel,
   formatIdentityErrorMessage
 } from './page-model.ts';
-
-const vitest = (
-  import.meta as ImportMeta & {
-    vitest?: {
-      it: (name: string, fn: () => void) => void;
-    };
-  }
-).vitest;
-const { it: test } = vitest ?? {
-  it: () => undefined
-};
 
 function localized(zh: string, en: string): string {
   return en || zh;
@@ -32,26 +21,25 @@ function t(key: string, params?: Record<string, string | number>): string {
 test('createInstallDebugEnvironment returns a stable preview environment', () => {
   const env = createInstallDebugEnvironment();
 
-  assert.equal(env.game_path, 'C:\\Games\\The Bazaar');
-  assert.equal(env.dotnet_ok, true);
-  assert.equal(env.bundled_bpp_version, 'debug-preview');
-  assert.equal(env.bpp_data_reset_required, false);
+  expect(env.game_path).toBe('C:\\Games\\The Bazaar');
+  expect(env.dotnet_ok).toBe(true);
+  expect(env.bundled_bpp_version).toBe('debug-preview');
+  expect(env.bpp_data_reset_required).toBe(false);
 });
 
 test('formatIdentityErrorMessage maps installer-specific error codes', () => {
-  assert.equal(
-    formatIdentityErrorMessage(new Error('invalid_credentials'), localized),
-    'Username or password is incorrect.'
-  );
-  assert.equal(
-    formatIdentityErrorMessage('fetch failed', localized),
+  expect(
+    formatIdentityErrorMessage(new Error('invalid_credentials'), localized)
+  ).toBe('Username or password is incorrect.');
+  expect(formatIdentityErrorMessage('fetch failed', localized)).toBe(
     'Could not reach the identity service. This looks like a network or CORS configuration issue, not a credential error.'
   );
-  assert.equal(
+  expect(
     formatIdentityErrorMessage(
       'identity_request_failed:404:<html><body>not found</body></html>',
       localized
-    ),
+    )
+  ).toBe(
     'The identity service endpoint was not found. The client and server may be on different versions.'
   );
 });
@@ -102,14 +90,14 @@ test('createInstallPageModel centralizes install page derivations', () => {
     t
   });
 
-  assert.equal(model.selectedPath, 'D:\\Bazaar Custom');
-  assert.equal(model.canInstall, true);
-  assert.equal(model.versionMismatch, true);
-  assert.equal(model.identityState.kind, 'login_or_register');
-  assert.equal(model.identityPanelTitle, 'Account');
-  assert.equal(model.identityPanelSummary, 'Detected game account');
-  assert.equal(model.identityPanelAccountHighlight, 'Tester');
-  assert.equal(model.canContinueIdentity, true);
-  assert.equal(model.updaterButtonLabel, 'Ready 3.1.0');
-  assert.equal(model.steamModalTitle, 'installRiskTitle');
+  expect(model.selectedPath).toBe('D:\\Bazaar Custom');
+  expect(model.canInstall).toBe(true);
+  expect(model.versionMismatch).toBe(true);
+  expect(model.identityState.kind).toBe('login_or_register');
+  expect(model.identityPanelTitle).toBe('Account');
+  expect(model.identityPanelSummary).toBe('Detected game account');
+  expect(model.identityPanelAccountHighlight).toBe('Tester');
+  expect(model.canContinueIdentity).toBe(true);
+  expect(model.updaterButtonLabel).toBe('Ready 3.1.0');
+  expect(model.steamModalTitle).toBe('installRiskTitle');
 });

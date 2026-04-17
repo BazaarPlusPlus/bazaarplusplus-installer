@@ -1,5 +1,4 @@
-import test from 'node:test';
-import assert from 'node:assert/strict';
+import { test, expect } from 'vitest';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -56,7 +55,7 @@ test('collectVersionSnapshot reads package, tauri, cargo, and cargo lock version
     cargoLockVersion: '2.0.0'
   });
 
-  assert.deepEqual(collectVersionSnapshot(rootDir), {
+  expect(collectVersionSnapshot(rootDir)).toEqual({
     packageVersion: '2.0.0',
     tauriVersion: '2.0.0',
     cargoVersion: '2.0.0',
@@ -65,16 +64,14 @@ test('collectVersionSnapshot reads package, tauri, cargo, and cargo lock version
 });
 
 test('assertVersionsAreAligned throws when versions diverge', () => {
-  assert.throws(
-    () =>
-      assertVersionsAreAligned({
-        packageVersion: '1.1.0',
-        tauriVersion: '1.1.0',
-        cargoVersion: '1.0.4',
-        cargoLockVersion: '1.0.4'
-      }),
-    /Version mismatch/
-  );
+  expect(() =>
+    assertVersionsAreAligned({
+      packageVersion: '1.1.0',
+      tauriVersion: '1.1.0',
+      cargoVersion: '1.0.4',
+      cargoLockVersion: '1.0.4'
+    })
+  ).toThrow(/Version mismatch/);
 });
 
 test('synchronizeVersions updates tauri, cargo, and cargo lock to match package.json', () => {
@@ -87,11 +84,11 @@ test('synchronizeVersions updates tauri, cargo, and cargo lock to match package.
 
   const snapshot = synchronizeVersions(rootDir);
 
-  assert.deepEqual(snapshot, {
+  expect(snapshot).toEqual({
     packageVersion: '3.4.5',
     tauriVersion: '3.4.5',
     cargoVersion: '3.4.5',
     cargoLockVersion: '3.4.5'
   });
-  assert.deepEqual(collectVersionSnapshot(rootDir), snapshot);
+  expect(collectVersionSnapshot(rootDir)).toEqual(snapshot);
 });

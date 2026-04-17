@@ -1,5 +1,4 @@
-import test from 'node:test';
-import assert from 'node:assert/strict';
+import { test, expect } from 'vitest';
 
 import { selectSteamModal } from './steam-modal.ts';
 import type { TranslateText } from './types.ts';
@@ -12,12 +11,9 @@ test('selectSteamModal uses install-specific copy for install actions', () => {
     t
   });
 
-  assert.equal(selection.title, 'installRiskTitle');
-  assert.equal(
-    selection.body,
-    'installRiskSteamDetected\n\ninstallRiskBody'
-  );
-  assert.equal(selection.cancelText, 'actionContinueInstall');
+  expect(selection.title).toBe('installRiskTitle');
+  expect(selection.body).toBe('installRiskSteamDetected\n\ninstallRiskBody');
+  expect(selection.cancelText).toBe('actionContinueInstall');
 });
 
 test('selectSteamModal falls back to steam quit copy for uninstall and null', () => {
@@ -30,8 +26,8 @@ test('selectSteamModal falls back to steam quit copy for uninstall and null', ()
     t
   });
 
-  assert.equal(uninstall.title, 'steamQuitTitle');
-  assert.equal(uninstall.body, 'steamQuitBody');
-  assert.equal(uninstall.cancelText, 'actionClose');
-  assert.deepEqual(none, uninstall);
+  expect(uninstall.title).toBe('steamQuitTitle');
+  expect(uninstall.body).toBe('steamQuitBody');
+  expect(uninstall.cancelText).toBe('actionClose');
+  expect(none).toEqual(uninstall);
 });

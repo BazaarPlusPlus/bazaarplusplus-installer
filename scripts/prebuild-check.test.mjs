@@ -1,5 +1,4 @@
-import test from 'node:test';
-import assert from 'node:assert/strict';
+import { test, expect } from 'vitest';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -11,7 +10,7 @@ import {
 } from './prebuild-check.mjs';
 
 test('macOS bundles BazaarPlusPlus SQLite dependencies', () => {
-  assert.deepEqual(requiredEntriesForPlatform('macos'), [
+  expect(requiredEntriesForPlatform('macos')).toEqual([
     'run_bepinex.sh',
     'libdoorstop.dylib',
     'BepInEx/plugins/BazaarPlusPlus.dll',
@@ -25,7 +24,7 @@ test('macOS bundles BazaarPlusPlus SQLite dependencies', () => {
 });
 
 test('Windows bundles BazaarPlusPlus SQLite dependencies', () => {
-  assert.deepEqual(requiredEntriesForPlatform('windows'), [
+  expect(requiredEntriesForPlatform('windows')).toEqual([
     'winhttp.dll',
     'doorstop_config.ini',
     'BepInEx/plugins/BazaarPlusPlus.dll',
@@ -39,15 +38,17 @@ test('Windows bundles BazaarPlusPlus SQLite dependencies', () => {
 });
 
 test('compareVersions compares dotted numeric versions', () => {
-  assert.equal(compareVersions('2.9.9', '2.9.8'), 1);
-  assert.equal(compareVersions('2.9', '2.9.0'), 0);
-  assert.equal(compareVersions('2.8.9', '2.9.0'), -1);
-  assert.equal(compareVersions('bad', '2.9.0'), null);
+  expect(compareVersions('2.9.9', '2.9.8')).toBe(1);
+  expect(compareVersions('2.9', '2.9.0')).toBe(0);
+  expect(compareVersions('2.8.9', '2.9.0')).toBe(-1);
+  expect(compareVersions('bad', '2.9.0')).toBe(null);
 });
 
 test('readBppDataVersionPolicy reads minimum supported version', () => {
   const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), 'bpp-policy-'));
-  fs.mkdirSync(path.join(rootDir, 'src-tauri', 'resources'), { recursive: true });
+  fs.mkdirSync(path.join(rootDir, 'src-tauri', 'resources'), {
+    recursive: true
+  });
   fs.writeFileSync(
     path.join(rootDir, 'src-tauri', 'resources', 'BppDataVersionPolicy.json'),
     JSON.stringify({ minimum_supported_bpp_data_version: '2.9.0' }, null, 2)
@@ -55,5 +56,5 @@ test('readBppDataVersionPolicy reads minimum supported version', () => {
 
   const policy = readBppDataVersionPolicy(rootDir);
 
-  assert.deepEqual(policy, { minimumSupported: '2.9.0' });
+  expect(policy).toEqual({ minimumSupported: '2.9.0' });
 });

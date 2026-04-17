@@ -1,5 +1,4 @@
-import test from 'node:test';
-import assert from 'node:assert/strict';
+import { test, expect } from 'vitest';
 
 import { createStreamPageState } from './state.ts';
 
@@ -16,8 +15,8 @@ test('createStreamPageState enables preview actions only when service is running
     active_window_offset: 0
   });
 
-  assert.equal(state.canCopyUrl, true);
-  assert.equal(state.canOpenPreview, true);
+  expect(state.canCopyUrl).toBe(true);
+  expect(state.canOpenPreview).toBe(true);
 });
 
 test('createStreamPageState disables preview actions when service is stopped', () => {
@@ -33,6 +32,6 @@ test('createStreamPageState disables preview actions when service is stopped', (
     active_window_offset: 0
   });
 
-  assert.equal(state.canCopyUrl, false);
-  assert.equal(state.canOpenPreview, false);
+  expect(state.canCopyUrl).toBe(false);
+  expect(state.canOpenPreview).toBe(false);
 });

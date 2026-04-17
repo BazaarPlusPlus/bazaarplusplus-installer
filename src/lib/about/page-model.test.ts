@@ -1,20 +1,19 @@
-import test from 'node:test';
-import assert from 'node:assert/strict';
+import { test, expect } from 'vitest';
 
 import { createAboutPageModel } from './page-model.ts';
 
 test('createAboutPageModel returns English copy', () => {
   const model = createAboutPageModel('en');
 
-  assert.equal(model.localeBadge, 'EN');
-  assert.equal(model.paymentModalTitle, 'Support the Project');
-  assert.equal(model.paymentActionLabel, 'WePay');
+  expect(model.localeBadge).toBe('EN');
+  expect(model.paymentModalTitle).toBe('Support the Project');
+  expect(model.paymentActionLabel).toBe('WePay');
 });
 
 test('createAboutPageModel returns Chinese copy', () => {
   const model = createAboutPageModel('zh');
 
-  assert.equal(model.localeBadge, '中');
-  assert.equal(model.paymentModalCloseLabel, '关闭');
-  assert.equal(model.supporterEntrySubtitle, '查看名单');
+  expect(model.localeBadge).toBe('中');
+  expect(model.paymentModalCloseLabel).toBe('关闭');
+  expect(model.supporterEntrySubtitle).toBe('查看名单');
 });

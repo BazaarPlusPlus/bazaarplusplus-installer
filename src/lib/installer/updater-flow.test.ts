@@ -1,5 +1,4 @@
-import test from 'node:test';
-import assert from 'node:assert/strict';
+import { test, expect } from 'vitest';
 
 import {
   createCheckingUpdaterSnapshot,
@@ -34,8 +33,8 @@ test('createCheckingUpdaterSnapshot clears updater errors', () => {
     true
   );
 
-  assert.equal(snapshot.status, 'checking');
-  assert.equal(snapshot.errorMessage, null);
+  expect(snapshot.status).toBe('checking');
+  expect(snapshot.errorMessage).toBe(null);
 });
 
 test('downloadPendingUpdate returns installed snapshot and modal copy', async () => {
@@ -68,9 +67,9 @@ test('downloadPendingUpdate returns installed snapshot and modal copy', async ()
     }
   });
 
-  assert.deepEqual(seenStatuses, ['downloading', 'downloading']);
-  assert.equal(result.snapshot.status, 'installed');
-  assert.equal(result.modal.title, 'updaterInstalledTitle');
+  expect(seenStatuses).toEqual(['downloading', 'downloading']);
+  expect(result.snapshot.status).toBe('installed');
+  expect(result.modal.title).toBe('updaterInstalledTitle');
 });
 
 test('resolveUpdaterActionDecision opens review for available updates', () => {
@@ -90,5 +89,5 @@ test('resolveUpdaterActionDecision opens review for available updates', () => {
     t
   });
 
-  assert.deepEqual(decision, { type: 'open_review' });
+  expect(decision).toEqual({ type: 'open_review' });
 });
