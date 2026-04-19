@@ -1,0 +1,4 @@
+interface:
+  display_name: "WeChat Supporter Review"
+  short_description: "Turn WeChat exports into supporter reviews"
+  default_prompt: "Use this skill to process a WeChat business-account Excel export into an incremental supporter pending-review file, then optionally merge approved entries into the official supporter list."

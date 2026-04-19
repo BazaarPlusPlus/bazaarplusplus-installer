@@ -58,3 +58,5 @@ BazaarPlusPlus.dll
 BazaarPlusPlus.version
 
 signing-secrets
+scripts/supporters-import-state.json
+static/support/supporter-pending-review.json
