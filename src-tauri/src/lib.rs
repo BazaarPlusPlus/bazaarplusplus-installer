@@ -10,12 +10,13 @@ use tauri::{
 
 use commands::{
     bepinex::{get_legacy_record_directory_info, install_bepinex, repair_bpp, uninstall_bpp},
-    detect::{detect_dotnet_runtime, detect_environment, verify_game_path},
+    detect::{detect_environment, verify_game_path},
     game_process::detect_bazaar_running,
     identity::{
         delete_auth_record, post_identity_json, read_auth_record, read_player_observation,
         write_auth_record,
     },
+    startup::{initialize_installer_context, InstallerContextState},
     steam::{close_steam, detect_steam_running},
     stream::{
         delete_stream_record,
@@ -36,6 +37,7 @@ pub fn run() {
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_dialog::init())
         .manage(crate::stream::state::StreamRuntimeState::default())
+        .manage(InstallerContextState::default())
         .plugin(tauri_plugin_opener::init())
         .setup(|app| {
             let handle = app.app_handle();
@@ -56,8 +58,8 @@ pub fn run() {
             }
         })
         .invoke_handler(tauri::generate_handler![
+            initialize_installer_context,
             detect_environment,
-            detect_dotnet_runtime,
             detect_bazaar_running,
             detect_steam_running,
             close_steam,

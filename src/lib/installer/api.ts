@@ -1,9 +1,9 @@
 import { call } from '../bridge/commands.ts';
 import type {
-  DotnetInfo,
   EnvironmentInfo,
   GameRunningInfo,
   IdentityHttpResponse,
+  InstallerContextPayload,
   LegacyRecordDirectoryInfo,
   LaunchOptionsPatchResult,
   SteamRunningInfo,
@@ -14,8 +14,8 @@ export async function verifyGamePath(path: string) {
   return call('verify_game_path', { path });
 }
 
-export async function detectDotnetRuntime() {
-  return call('detect_dotnet_runtime');
+export async function initializeInstallerContext() {
+  return call('initialize_installer_context');
 }
 
 export async function detectEnvironment(gamePath?: string) {

@@ -17,10 +17,10 @@
   import { createUpdaterController } from '$lib/installer/controllers/updater-controller';
   import {
     closeSteam as closeSteamApi,
-    detectDotnetRuntime as detectDotnetRuntimeApi,
     detectEnvironment as detectEnvironmentApi,
     detectSteamRunning as detectSteamRunningApi,
     getLegacyRecordDirectoryInfo as getLegacyRecordDirectoryInfoApi,
+    initializeInstallerContext as initializeInstallerContextApi,
     installBepinex,
     patchLaunchOptions,
     postIdentityJson,
@@ -86,7 +86,7 @@
     isDebugInstallPreview,
     createInstallDebugEnvironment,
     detectEnvironmentApi,
-    detectDotnetRuntimeApi,
+    initializeInstallerContextApi,
     verifyGamePathApi,
     detectSteamRunningApi,
     closeSteamApi,
@@ -210,6 +210,7 @@
   onMount(() => {
     locale.init();
     void (async () => {
+      await installController.initializeStartupContext();
       await installController.detectEnvironment(pageModel.selectedPath);
       await updaterController.checkForUpdatesOnStartup();
     })();

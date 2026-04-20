@@ -5,7 +5,7 @@ mod zip_archive;
 pub(crate) use zip_archive::read_bundled_bpp_version;
 pub(crate) use versioning::{
     bpp_data_version_path, default_bpp_data_version_policy, is_compatible_bpp_data_version,
-    read_bundled_bpp_data_version_policy, LEGACY_RECORD_DIRECTORY,
+    read_bundled_bpp_data_version_policy, BppDataVersionPolicy, LEGACY_RECORD_DIRECTORY,
 };
 #[cfg(test)]
 pub(crate) use versioning::{

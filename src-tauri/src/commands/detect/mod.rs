@@ -3,15 +3,17 @@ mod game;
 mod steam;
 
 pub use game::BppDataIssue;
+pub(crate) use dotnet::detect_dotnet as dotnet_detect_for_startup;
 pub(crate) use game::is_valid_game_path;
 
+use crate::commands::startup::InstallerContextState;
 use game::{
     BppDataDirectoryState, inspect_bpp_data_directory, is_bepinex_installed, normalize_game_path,
     read_installed_bpp_version, resolve_game_path,
 };
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
-use tauri::AppHandle;
+use tauri::{AppHandle, State};
 
 #[derive(Debug, Serialize, Deserialize, ts_rs::TS)]
 #[ts(export)]
@@ -29,7 +31,7 @@ pub struct EnvironmentInfo {
     pub bpp_data_issue: Option<BppDataIssue>,
 }
 
-#[derive(Debug, Serialize, Deserialize, ts_rs::TS)]
+#[derive(Debug, Clone, Serialize, Deserialize, ts_rs::TS)]
 #[ts(export)]
 pub struct DotnetInfo {
     pub dotnet_version: Option<String>,
@@ -39,12 +41,19 @@ pub struct DotnetInfo {
 #[tauri::command]
 pub fn detect_environment(
     app: AppHandle,
+    state: State<'_, InstallerContextState>,
     game_path: Option<String>,
 ) -> Result<EnvironmentInfo, String> {
     crate::commands::debug_log!(
         "[detect_environment] start requested_game_path={:?}",
         game_path
     );
+    // Read cached startup context. On first call this lazily initializes
+    // (reads BepInEx.zip + scans .NET runtime) as a safety net; normal flow
+    // calls `initialize_installer_context` from the frontend first so this
+    // lookup is just a cached read.
+    let startup = state.get_or_initialize(&app);
+
     let steam_path = steam::get_steam_path();
     let requested_game_path = normalize_game_path(game_path);
     let game_path = resolve_game_path(steam_path.as_deref(), requested_game_path.as_deref());
@@ -55,18 +64,14 @@ pub fn detect_environment(
     let bpp_version = game_path
         .as_ref()
         .and_then(|path| read_installed_bpp_version(path));
-    let bundled_bpp_version = crate::commands::bepinex::read_bundled_bpp_version(&app)
-        .ok()
-        .flatten();
-    let bpp_data_version_policy =
-        crate::commands::bepinex::read_bundled_bpp_data_version_policy(&app)
-            .unwrap_or_else(|_| crate::commands::bepinex::default_bpp_data_version_policy());
     let bpp_data_state = game_path
         .as_ref()
         .map(|path| {
             inspect_bpp_data_directory(
                 path,
-                &bpp_data_version_policy.minimum_supported_bpp_data_version,
+                &startup
+                    .bpp_data_version_policy
+                    .minimum_supported_bpp_data_version,
             )
         })
         .unwrap_or_else(|| BppDataDirectoryState {
@@ -84,35 +89,22 @@ pub fn detect_environment(
         steam_path.as_ref().map(|path| path.display().to_string()),
         game_path.as_ref().map(|path| path.display().to_string()),
         bepinex_installed,
-        bundled_bpp_version
+        startup.bundled_bpp_version
     );
 
     Ok(EnvironmentInfo {
         steam_path: steam_path.map(|path| path.to_string_lossy().into_owned()),
         steam_launch_options_supported,
         game_path: game_path.map(|path| path.to_string_lossy().into_owned()),
-        dotnet_version: None,
-        dotnet_ok: false,
+        dotnet_version: startup.dotnet.dotnet_version.clone(),
+        dotnet_ok: startup.dotnet.dotnet_ok,
         bepinex_installed,
         bpp_version,
-        bundled_bpp_version,
+        bundled_bpp_version: startup.bundled_bpp_version.clone(),
         bpp_data_version: bpp_data_state.version,
         bpp_data_reset_required: bpp_data_state.reset_required,
         bpp_data_issue: bpp_data_state.issue,
     })
-}
-
-#[tauri::command]
-pub async fn detect_dotnet_runtime() -> Result<DotnetInfo, String> {
-    tauri::async_runtime::spawn_blocking(|| {
-        let (dotnet_version, dotnet_ok) = dotnet::detect_dotnet();
-        DotnetInfo {
-            dotnet_version,
-            dotnet_ok,
-        }
-    })
-    .await
-    .map_err(|err| format!("failed to detect .NET runtime: {err}"))
 }
 
 /// Returns true if the game installation is found at the given path.

@@ -1,4 +1,4 @@
-import type { DotnetInfo, EnvironmentInfo } from '$lib/types';
+import type { EnvironmentInfo } from '$lib/types';
 import type { StepState } from '$lib/installer/state';
 
 function debugDetectLog(message: string, payload: Record<string, unknown>) {
@@ -9,7 +9,6 @@ function debugDetectLog(message: string, payload: Record<string, unknown>) {
 export interface DetectInstallerEnvironmentOptions {
   requestedGamePath: string | null;
   detectEnvironment: (gamePath?: string) => Promise<EnvironmentInfo>;
-  detectDotnetRuntime: () => Promise<DotnetInfo>;
   verifyGamePath: (path: string) => Promise<boolean>;
 }
 
@@ -20,26 +19,11 @@ export interface DetectInstallerEnvironmentResult {
   bazaarInvalid: boolean;
 }
 
-function resolveDotnetState(result: DotnetInfo | null): StepState {
-  if (!result) {
+function resolveDotnetState(env: EnvironmentInfo | null): StepState {
+  if (!env) {
     return 'idle';
   }
-
-  return result.dotnet_ok ? 'found' : 'not_found';
-}
-
-function mergeEnvironmentWithDotnet(
-  env: EnvironmentInfo,
-  dotnetInfo: DotnetInfo | null
-): EnvironmentInfo {
-  if (!dotnetInfo) {
-    return env;
-  }
-
-  return {
-    ...env,
-    ...dotnetInfo
-  };
+  return env.dotnet_ok ? 'found' : 'not_found';
 }
 
 async function resolveBazaarState(
@@ -77,8 +61,6 @@ async function resolveBazaarState(
 export async function detectInstallerEnvironment(
   options: DetectInstallerEnvironmentOptions
 ): Promise<DetectInstallerEnvironmentResult> {
-  const dotnetPromise = options.detectDotnetRuntime().catch(() => null);
-
   try {
     const env = await options.detectEnvironment(
       options.requestedGamePath ?? undefined
@@ -87,25 +69,21 @@ export async function detectInstallerEnvironment(
       requestedGamePath: options.requestedGamePath,
       env
     });
-    const [dotnetInfo, bazaarState] = await Promise.all([
-      dotnetPromise,
-      resolveBazaarState(
-        options.requestedGamePath,
-        env.game_path,
-        options.verifyGamePath
-      )
-    ]);
+    const bazaarState = await resolveBazaarState(
+      options.requestedGamePath,
+      env.game_path,
+      options.verifyGamePath
+    );
 
     debugDetectLog('combined detection result', {
       requestedGamePath: options.requestedGamePath,
       env,
-      dotnetInfo,
       bazaarState
     });
 
     return {
-      env: mergeEnvironmentWithDotnet(env, dotnetInfo),
-      dotnetState: resolveDotnetState(dotnetInfo),
+      env,
+      dotnetState: resolveDotnetState(env),
       bazaarFound: bazaarState.bazaarFound,
       bazaarInvalid: bazaarState.bazaarInvalid
     };
@@ -114,8 +92,6 @@ export async function detectInstallerEnvironment(
       requestedGamePath: options.requestedGamePath,
       error: error instanceof Error ? error.message : String(error)
     });
-    await dotnetPromise;
-
     return {
       env: null,
       dotnetState: 'idle',

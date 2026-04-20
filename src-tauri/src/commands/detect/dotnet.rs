@@ -1,20 +1,5 @@
-use std::process::Command;
-
-#[cfg(target_os = "windows")]
-use std::os::windows::process::CommandExt;
-
-#[cfg(target_os = "windows")]
-const CREATE_NO_WINDOW: u32 = 0x08000000;
-
-fn parse_dotnet_runtimes(output: &str) -> Option<String> {
-    output
-        .lines()
-        .filter(|line| line.starts_with("Microsoft.NETCore.App "))
-        .filter_map(|line| line.split_whitespace().nth(1))
-        .filter(|version| is_supported_dotnet_version(version))
-        .map(str::to_string)
-        .max_by(|a, b| parse_version_tuple(a).cmp(&parse_version_tuple(b)))
-}
+use std::collections::HashSet;
+use std::path::{Path, PathBuf};
 
 fn parse_version_tuple(v: &str) -> (u32, u32, u32) {
     let mut parts = v.split('.').filter_map(|p| p.parse::<u32>().ok());
@@ -34,73 +19,141 @@ fn is_supported_dotnet_version(version: &str) -> bool {
         .unwrap_or(false)
 }
 
-pub(super) fn detect_dotnet() -> (Option<String>, bool) {
-    #[cfg(target_os = "windows")]
-    let candidates = {
-        let mut candidates = vec!["dotnet".to_string()];
-        if let Ok(program_files) = std::env::var("PROGRAMFILES") {
-            candidates.push(format!(r"{}\dotnet\dotnet.exe", program_files));
+fn is_version_like(name: &str) -> bool {
+    let mut any = false;
+    for part in name.split('.') {
+        if part.is_empty() || part.chars().any(|c| !c.is_ascii_digit()) {
+            return false;
         }
-        candidates
-    };
+        any = true;
+    }
+    any
+}
 
-    #[cfg(not(target_os = "windows"))]
-    let candidates = {
-        let mut candidates = vec![
-            "dotnet".to_string(),
-            "/usr/local/bin/dotnet".to_string(),
-            "/usr/local/share/dotnet/dotnet".to_string(),
-            "/opt/homebrew/bin/dotnet".to_string(),
-        ];
-        if let Some(home) = dirs::home_dir() {
-            candidates.push(home.join(".dotnet/dotnet").to_string_lossy().into_owned());
-        }
-        candidates
-    };
+/// Scans `<root>/shared/Microsoft.NETCore.App/<version>` directories across the
+/// given install roots and returns the highest supported version name. Pure
+/// filesystem reads — no subprocess — so it avoids the expensive
+/// `CreateProcess` path (and Windows Defender hook) that `dotnet --list-runtimes`
+/// triggers on Windows.
+fn detect_dotnet_from_install_roots<I, P>(roots: I) -> Option<String>
+where
+    I: IntoIterator<Item = P>,
+    P: AsRef<Path>,
+{
+    let mut best: Option<String> = None;
 
-    for candidate in candidates {
-        let mut command = Command::new(&candidate);
-        command.arg("--list-runtimes");
+    for root in roots {
+        let runtime_dir = root
+            .as_ref()
+            .join("shared")
+            .join("Microsoft.NETCore.App");
 
-        #[cfg(target_os = "windows")]
-        command.creation_flags(CREATE_NO_WINDOW);
-
-        let Ok(output) = command.output() else {
+        let Ok(entries) = std::fs::read_dir(&runtime_dir) else {
             continue;
         };
-        let stdout = String::from_utf8_lossy(&output.stdout);
-        if let Some(version) =
-            parse_dotnet_runtimes(&stdout).filter(|version| is_supported_dotnet_version(version))
-        {
-            return (Some(version), true);
+
+        for entry in entries.flatten() {
+            let Ok(file_type) = entry.file_type() else {
+                continue;
+            };
+            if !file_type.is_dir() {
+                continue;
+            }
+            let Some(name) = entry.file_name().to_str().map(str::to_string) else {
+                continue;
+            };
+            if !is_version_like(&name) || !is_supported_dotnet_version(&name) {
+                continue;
+            }
+
+            let is_better = match &best {
+                Some(current) => parse_version_tuple(&name) > parse_version_tuple(current),
+                None => true,
+            };
+            if is_better {
+                best = Some(name);
+            }
         }
     }
 
-    (None, false)
+    best
+}
+
+fn candidate_install_roots() -> Vec<PathBuf> {
+    let mut roots: Vec<PathBuf> = Vec::new();
+    let mut seen: HashSet<PathBuf> = HashSet::new();
+
+    let push = |path: PathBuf, roots: &mut Vec<PathBuf>, seen: &mut HashSet<PathBuf>| {
+        if seen.insert(path.clone()) {
+            roots.push(path);
+        }
+    };
+
+    if let Some(value) = std::env::var_os("DOTNET_ROOT") {
+        push(PathBuf::from(value), &mut roots, &mut seen);
+    }
+
+    #[cfg(target_os = "windows")]
+    {
+        let env_candidates = [
+            std::env::var_os("ProgramW6432")
+                .map(PathBuf::from)
+                .map(|p| p.join("dotnet")),
+            std::env::var_os("ProgramFiles")
+                .map(PathBuf::from)
+                .map(|p| p.join("dotnet")),
+            std::env::var_os("ProgramFiles(x86)")
+                .map(PathBuf::from)
+                .map(|p| p.join("dotnet")),
+            std::env::var_os("LOCALAPPDATA")
+                .map(PathBuf::from)
+                .map(|p| p.join("Microsoft").join("dotnet")),
+            Some(PathBuf::from(r"C:\Program Files\dotnet")),
+            Some(PathBuf::from(r"C:\Program Files (x86)\dotnet")),
+        ];
+        for candidate in env_candidates.into_iter().flatten() {
+            push(candidate, &mut roots, &mut seen);
+        }
+    }
+
+    #[cfg(not(target_os = "windows"))]
+    {
+        let mut unix_candidates = vec![
+            PathBuf::from("/usr/local/share/dotnet"),
+            PathBuf::from("/usr/share/dotnet"),
+            PathBuf::from("/opt/homebrew/share/dotnet"),
+        ];
+        if let Some(home) = dirs::home_dir() {
+            unix_candidates.push(home.join(".dotnet"));
+        }
+        for candidate in unix_candidates {
+            push(candidate, &mut roots, &mut seen);
+        }
+    }
+
+    roots
+}
+
+pub(crate) fn detect_dotnet() -> (Option<String>, bool) {
+    match detect_dotnet_from_install_roots(candidate_install_roots()) {
+        Some(version) => (Some(version), true),
+        None => (None, false),
+    }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{is_supported_dotnet_version, parse_dotnet_runtimes};
+    use super::{
+        detect_dotnet_from_install_roots, is_supported_dotnet_version, is_version_like,
+    };
+    use std::path::Path;
 
-    #[test]
-    fn test_parse_dotnet_runtimes_found() {
-        let output = "Microsoft.NETCore.App 6.0.25 [/usr/share/dotnet/shared/Microsoft.NETCore.App]\nMicrosoft.NETCore.App 8.0.1 [/usr/share/dotnet/shared/Microsoft.NETCore.App]";
-        let result = parse_dotnet_runtimes(output);
-        assert_eq!(result.as_deref(), Some("8.0.1"));
-    }
-
-    #[test]
-    fn test_parse_dotnet_runtimes_too_old() {
-        let output = "Microsoft.NETCore.App 5.0.0 [/usr/share/dotnet]";
-        let result = parse_dotnet_runtimes(output);
-        assert_eq!(result, None);
-    }
-
-    #[test]
-    fn test_parse_dotnet_runtimes_empty_output() {
-        let result = parse_dotnet_runtimes("");
-        assert_eq!(result, None);
+    fn make_runtime_dir(root: &Path, version: &str) {
+        let version_dir = root
+            .join("shared")
+            .join("Microsoft.NETCore.App")
+            .join(version);
+        std::fs::create_dir_all(&version_dir).unwrap();
     }
 
     #[test]
@@ -108,5 +161,87 @@ mod tests {
         assert!(!is_supported_dotnet_version("5.0.17"));
         assert!(is_supported_dotnet_version("6.0.0"));
         assert!(is_supported_dotnet_version("8.0.1"));
+    }
+
+    #[test]
+    fn test_is_version_like_accepts_dotted_digits_only() {
+        assert!(is_version_like("8.0.1"));
+        assert!(is_version_like("10"));
+        assert!(!is_version_like("host"));
+        assert!(!is_version_like("8.0.1-preview"));
+        assert!(!is_version_like(""));
+    }
+
+    #[test]
+    fn test_detect_dotnet_from_install_roots_returns_highest_supported_version() {
+        let tmp = tempfile::tempdir().unwrap();
+        make_runtime_dir(tmp.path(), "5.0.17");
+        make_runtime_dir(tmp.path(), "6.0.25");
+        make_runtime_dir(tmp.path(), "8.0.1");
+        make_runtime_dir(tmp.path(), "10.0.0");
+
+        let version = detect_dotnet_from_install_roots([tmp.path()]);
+
+        assert_eq!(version.as_deref(), Some("10.0.0"));
+    }
+
+    #[test]
+    fn test_detect_dotnet_from_install_roots_ignores_non_version_entries() {
+        let tmp = tempfile::tempdir().unwrap();
+        make_runtime_dir(tmp.path(), "8.0.1");
+        std::fs::create_dir_all(
+            tmp.path()
+                .join("shared")
+                .join("Microsoft.NETCore.App")
+                .join("host"),
+        )
+        .unwrap();
+        std::fs::write(
+            tmp.path()
+                .join("shared")
+                .join("Microsoft.NETCore.App")
+                .join("README.md"),
+            b"",
+        )
+        .unwrap();
+
+        let version = detect_dotnet_from_install_roots([tmp.path()]);
+
+        assert_eq!(version.as_deref(), Some("8.0.1"));
+    }
+
+    #[test]
+    fn test_detect_dotnet_from_install_roots_returns_none_when_only_old_versions_present() {
+        let tmp = tempfile::tempdir().unwrap();
+        make_runtime_dir(tmp.path(), "3.1.32");
+        make_runtime_dir(tmp.path(), "5.0.17");
+
+        let version = detect_dotnet_from_install_roots([tmp.path()]);
+
+        assert_eq!(version, None);
+    }
+
+    #[test]
+    fn test_detect_dotnet_from_install_roots_skips_missing_roots() {
+        let tmp = tempfile::tempdir().unwrap();
+        let missing = tmp.path().join("does-not-exist");
+        make_runtime_dir(tmp.path(), "8.0.1");
+
+        let version = detect_dotnet_from_install_roots([missing.as_path(), tmp.path()]);
+
+        assert_eq!(version.as_deref(), Some("8.0.1"));
+    }
+
+    #[test]
+    fn test_detect_dotnet_from_install_roots_picks_highest_across_multiple_roots() {
+        let tmp = tempfile::tempdir().unwrap();
+        let root_a = tmp.path().join("a");
+        let root_b = tmp.path().join("b");
+        make_runtime_dir(&root_a, "6.0.25");
+        make_runtime_dir(&root_b, "8.0.1");
+
+        let version = detect_dotnet_from_install_roots([root_a.as_path(), root_b.as_path()]);
+
+        assert_eq!(version.as_deref(), Some("8.0.1"));
     }
 }

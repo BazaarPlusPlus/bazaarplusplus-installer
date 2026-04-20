@@ -1,3 +1,4 @@
+use crate::commands::startup::InstallerContextState;
 use crate::stream::{
     http::remove_overlay_strip_cache,
     overlay_settings::{
@@ -13,6 +14,7 @@ use base64::{engine::general_purpose::STANDARD, Engine as _};
 use image::{DynamicImage, ImageFormat};
 use std::collections::HashMap;
 use std::{path::PathBuf, process::Command};
+use tauri::Manager;
 
 fn normalize_requested_game_path(game_path: Option<String>) -> Option<PathBuf> {
     game_path
@@ -28,8 +30,10 @@ fn resolve_game_path_with_fallback(
     requested_game_path: Option<String>,
 ) -> Option<PathBuf> {
     // 1. Try full Steam detection (registry + VDF)
+    let context_state = app.state::<InstallerContextState>();
     if let Ok(env) = crate::commands::detect::detect_environment(
         app.clone(),
+        context_state,
         requested_game_path.clone(),
     ) {
         if let Some(path) = env.game_path.map(PathBuf::from) {

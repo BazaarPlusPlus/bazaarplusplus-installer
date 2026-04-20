@@ -2,8 +2,8 @@ import { writable, get } from 'svelte/store';
 import { BILIBILI_URL, STEAM_BAZAAR_URL } from '../../config/endpoints.ts';
 
 import type {
-  DotnetInfo,
   EnvironmentInfo,
+  InstallerContextPayload,
   LaunchOptionsPatchResult,
   LegacyRecordDirectoryInfo,
   SteamRunningInfo
@@ -22,8 +22,8 @@ export function createInstallController(input: {
   hasTauriRuntime: () => boolean;
   isDebugInstallPreview: boolean;
   createInstallDebugEnvironment: () => EnvironmentInfo;
+  initializeInstallerContextApi: () => Promise<InstallerContextPayload>;
   detectEnvironmentApi: (requestedGamePath?: string) => Promise<EnvironmentInfo>;
-  detectDotnetRuntimeApi: () => Promise<DotnetInfo>;
   verifyGamePathApi: (gamePath: string) => Promise<boolean>;
   detectSteamRunningApi: () => Promise<SteamRunningInfo>;
   closeSteamApi: () => Promise<unknown>;
@@ -133,6 +133,20 @@ export function createInstallController(input: {
     pendingSteamAction.set(null);
   }
 
+  async function initializeStartupContext() {
+    if (input.isDebugInstallPreview) return;
+    if (!input.hasTauriRuntime()) return;
+
+    try {
+      const context = await input.initializeInstallerContextApi();
+      debugInstallLog('initializeInstallerContext resolved', { context });
+    } catch (error) {
+      // Initialization is best-effort. detect_environment falls back to
+      // lazy init inside Rust if this ever fails, so the UI still works.
+      console.error(error);
+    }
+  }
+
   async function detectEnvironment(selectedPath: string | null) {
     if (get(actionBusy) !== 'idle') return;
 
@@ -148,7 +162,6 @@ export function createInstallController(input: {
       const result = await detectInstallerEnvironment({
         requestedGamePath: selectedPath,
         detectEnvironment: input.detectEnvironmentApi,
-        detectDotnetRuntime: input.detectDotnetRuntimeApi,
         verifyGamePath: input.verifyGamePathApi
       });
       debugInstallLog('startup detectEnvironment result', {
@@ -176,7 +189,6 @@ export function createInstallController(input: {
       const result = await detectInstallerEnvironment({
         requestedGamePath: effectiveGamePath,
         detectEnvironment: input.detectEnvironmentApi,
-        detectDotnetRuntime: input.detectDotnetRuntimeApi,
         verifyGamePath: input.verifyGamePathApi
       });
       debugInstallLog('manual checkPath result', {
@@ -540,6 +552,7 @@ export function createInstallController(input: {
     showStreamMode,
     initializeCustomGamePath,
     initializeDetectedGamePath,
+    initializeStartupContext,
     persistCurrentGamePath,
     requestInstall,
     closeLaunchOptionsWarningModal,

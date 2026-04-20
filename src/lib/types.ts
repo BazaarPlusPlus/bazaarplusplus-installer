@@ -4,6 +4,7 @@ export type {
   EnvironmentInfo,
   GameRunningInfo,
   IdentityHttpResponse,
+  InstallerContextPayload,
   LaunchOptionsPatchResult,
   LegacyRecordDirectoryInfo,
   SteamRunningInfo,

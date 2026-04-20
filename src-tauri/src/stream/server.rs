@@ -4,9 +4,10 @@ use super::{
     records::OverlayRecordRepository,
     state::{StreamRuntimeState, StreamServiceStatus, StreamTaskHandle},
 };
-use crate::commands::detect;
+use crate::commands::{detect, startup::InstallerContextState};
 use chrono::{Local, SecondsFormat};
 use std::path::PathBuf;
+use tauri::Manager;
 use tokio::{net::TcpListener, sync::oneshot};
 
 const HOST: &str = "127.0.0.1";
@@ -99,8 +100,10 @@ fn resolve_game_path(
     app: &tauri::AppHandle,
     requested_game_path: Option<PathBuf>,
 ) -> Result<Option<PathBuf>, String> {
+    let context_state = app.state::<InstallerContextState>();
     let env = detect::detect_environment(
         app.clone(),
+        context_state,
         requested_game_path
             .as_ref()
             .map(|path| path.to_string_lossy().into_owned()),

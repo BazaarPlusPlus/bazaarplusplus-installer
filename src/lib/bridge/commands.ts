@@ -1,9 +1,9 @@
 import { invoke } from '@tauri-apps/api/core';
 import type {
-  DotnetInfo,
   EnvironmentInfo,
   GameRunningInfo,
   IdentityHttpResponse,
+  InstallerContextPayload,
   LegacyRecordDirectoryInfo,
   LaunchOptionsPatchResult,
   SteamRunningInfo,
@@ -18,7 +18,10 @@ import type {
 
 export interface TauriCommandMap {
   verify_game_path: { input: { path: string }; output: boolean };
-  detect_dotnet_runtime: { input: undefined; output: DotnetInfo };
+  initialize_installer_context: {
+    input: undefined;
+    output: InstallerContextPayload;
+  };
   detect_environment: {
     input: { gamePath: string } | undefined;
     output: EnvironmentInfo;
