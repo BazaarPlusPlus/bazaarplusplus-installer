@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 
+#[cfg(test)]
 use super::steam;
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, ts_rs::TS)]
@@ -26,6 +27,7 @@ pub(super) fn normalize_game_path(game_path: Option<String>) -> Option<PathBuf> 
         .map(PathBuf::from)
 }
 
+#[cfg(test)]
 pub(super) fn resolve_game_path(
     steam_path: Option<&Path>,
     requested_game_path: Option<&Path>,

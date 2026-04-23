@@ -43,10 +43,7 @@ where
     let mut best: Option<String> = None;
 
     for root in roots {
-        let runtime_dir = root
-            .as_ref()
-            .join("shared")
-            .join("Microsoft.NETCore.App");
+        let runtime_dir = root.as_ref().join("shared").join("Microsoft.NETCore.App");
 
         let Ok(entries) = std::fs::read_dir(&runtime_dir) else {
             continue;
@@ -143,9 +140,7 @@ pub(crate) fn detect_dotnet() -> (Option<String>, bool) {
 
 #[cfg(test)]
 mod tests {
-    use super::{
-        detect_dotnet_from_install_roots, is_supported_dotnet_version, is_version_like,
-    };
+    use super::{detect_dotnet_from_install_roots, is_supported_dotnet_version, is_version_like};
     use std::path::Path;
 
     fn make_runtime_dir(root: &Path, version: &str) {

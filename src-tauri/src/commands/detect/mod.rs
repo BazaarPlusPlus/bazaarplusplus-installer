@@ -2,14 +2,15 @@ mod dotnet;
 mod game;
 mod steam;
 
-pub use game::BppDataIssue;
 pub(crate) use dotnet::detect_dotnet as dotnet_detect_for_startup;
 pub(crate) use game::is_valid_game_path;
+pub use game::BppDataIssue;
+pub(crate) use steam::detect_installation_paths;
 
 use crate::commands::startup::InstallerContextState;
 use game::{
-    BppDataDirectoryState, inspect_bpp_data_directory, is_bepinex_installed, normalize_game_path,
-    read_installed_bpp_version, resolve_game_path,
+    inspect_bpp_data_directory, is_bepinex_installed, normalize_game_path,
+    read_installed_bpp_version, BppDataDirectoryState,
 };
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
@@ -21,6 +22,7 @@ pub struct EnvironmentInfo {
     pub steam_path: Option<String>,
     pub steam_launch_options_supported: bool,
     pub game_path: Option<String>,
+    pub game_path_valid: bool,
     pub dotnet_version: Option<String>,
     pub dotnet_ok: bool,
     pub bepinex_installed: bool,
@@ -49,18 +51,21 @@ pub fn detect_environment(
         game_path
     );
     // Read cached startup context. On first call this lazily initializes
-    // (reads BepInEx.zip + scans .NET runtime) as a safety net; normal flow
-    // calls `initialize_installer_context` from the frontend first so this
-    // lookup is just a cached read.
+    // (reads the bundled payload, probes .NET, and resolves Steam/game paths)
+    // as a safety net; normal flow calls `initialize_installer_context` from
+    // the frontend first so this lookup is just a cached read.
     let startup = state.get_or_initialize(&app);
 
-    let steam_path = steam::get_steam_path();
     let requested_game_path = normalize_game_path(game_path);
-    let game_path = resolve_game_path(steam_path.as_deref(), requested_game_path.as_deref());
-    let steam_launch_options_supported = steam_path
-        .as_deref()
-        .map(crate::commands::steam::supports_launch_option_updates)
+    let steam_path = startup.steam_path.clone();
+    let game_path = requested_game_path
+        .clone()
+        .or_else(|| startup.game_path.clone());
+    let game_path_valid = game_path
+        .as_ref()
+        .map(|path| is_valid_game_path(path))
         .unwrap_or(false);
+    let steam_launch_options_supported = startup.steam_launch_options_supported;
     let bpp_version = game_path
         .as_ref()
         .and_then(|path| read_installed_bpp_version(path));
@@ -96,6 +101,7 @@ pub fn detect_environment(
         steam_path: steam_path.map(|path| path.to_string_lossy().into_owned()),
         steam_launch_options_supported,
         game_path: game_path.map(|path| path.to_string_lossy().into_owned()),
+        game_path_valid,
         dotnet_version: startup.dotnet.dotnet_version.clone(),
         dotnet_ok: startup.dotnet.dotnet_ok,
         bepinex_installed,

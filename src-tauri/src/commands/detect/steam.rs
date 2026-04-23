@@ -1,8 +1,16 @@
 use keyvalues_parser::{Obj, Parser, Value};
 use std::path::{Path, PathBuf};
 
+#[derive(Debug, Clone)]
+pub(crate) struct SteamInstallPaths {
+    pub(crate) steam_path: Option<PathBuf>,
+    pub(crate) game_path: Option<PathBuf>,
+    pub(crate) steam_launch_options_supported: bool,
+}
+
 fn debug_paths_label(paths: &[PathBuf]) -> Vec<String> {
-    paths.iter()
+    paths
+        .iter()
         .map(|path| path.display().to_string())
         .collect()
 }
@@ -66,7 +74,9 @@ fn candidate_steam_paths() -> Vec<PathBuf> {
 
     #[cfg(target_os = "macos")]
     {
-        if let Some(path) = dirs::home_dir().map(|home| home.join("Library/Application Support/Steam")) {
+        if let Some(path) =
+            dirs::home_dir().map(|home| home.join("Library/Application Support/Steam"))
+        {
             if path.exists() {
                 candidates.push(path);
             }
@@ -135,15 +145,6 @@ fn candidate_steam_paths() -> Vec<PathBuf> {
     candidates
 }
 
-pub(super) fn get_steam_path() -> Option<PathBuf> {
-    let selected = candidate_steam_paths().into_iter().next();
-    crate::commands::debug_log!(
-        "[detect::steam] selected steam root={:?}",
-        selected.as_ref().map(|path| path.display().to_string())
-    );
-    selected
-}
-
 fn get_game_path_from_single_steam_root(steam_path: &Path) -> Option<PathBuf> {
     crate::commands::debug_log!(
         "[detect::steam] probing steam root={}",
@@ -208,13 +209,22 @@ where
     None
 }
 
-pub(super) fn get_game_path(steam_path: &Path) -> Option<PathBuf> {
-    let mut steam_roots = vec![steam_path.to_path_buf()];
-    for candidate in candidate_steam_paths() {
-        if !steam_roots.iter().any(|existing| existing == &candidate) {
-            steam_roots.push(candidate);
+fn ordered_steam_roots(primary_steam_root: &Path, candidate_roots: &[PathBuf]) -> Vec<PathBuf> {
+    let mut steam_roots = vec![primary_steam_root.to_path_buf()];
+    for candidate in candidate_roots {
+        if !steam_roots.iter().any(|existing| existing == candidate) {
+            steam_roots.push(candidate.clone());
         }
     }
+
+    steam_roots
+}
+
+fn get_game_path_from_detected_steam_roots(
+    primary_steam_root: &Path,
+    candidate_roots: &[PathBuf],
+) -> Option<PathBuf> {
+    let steam_roots = ordered_steam_roots(primary_steam_root, candidate_roots);
 
     crate::commands::debug_log!(
         "[detect::steam] ordered steam roots for game lookup={:?}",
@@ -244,6 +254,38 @@ pub(super) fn get_game_path(steam_path: &Path) -> Option<PathBuf> {
 
     crate::commands::debug_log!("[detect::steam] failed to resolve game path");
     None
+}
+
+pub(crate) fn detect_installation_paths() -> SteamInstallPaths {
+    let steam_roots = candidate_steam_paths();
+    let steam_path = steam_roots.first().cloned();
+    let game_path = steam_path
+        .as_deref()
+        .and_then(|path| get_game_path_from_detected_steam_roots(path, &steam_roots));
+    let steam_launch_options_supported = steam_path
+        .as_deref()
+        .map(crate::commands::steam::supports_launch_option_updates)
+        .unwrap_or(false);
+
+    crate::commands::debug_log!(
+        "[detect::steam] detected startup paths steam_path={:?} game_path={:?} launch_options_supported={}",
+        steam_path.as_ref().map(|path| path.display().to_string()),
+        game_path.as_ref().map(|path| path.display().to_string()),
+        steam_launch_options_supported
+    );
+
+    SteamInstallPaths {
+        steam_path,
+        game_path,
+        steam_launch_options_supported,
+    }
+}
+
+#[cfg(test)]
+pub(super) fn get_game_path(steam_path: &Path) -> Option<PathBuf> {
+    let mut steam_roots = vec![steam_path.to_path_buf()];
+    steam_roots.extend(candidate_steam_paths());
+    get_game_path_from_detected_steam_roots(steam_path, &steam_roots)
 }
 
 fn get_game_path_from_vdf(steam_path: &Path) -> Option<PathBuf> {

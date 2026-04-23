@@ -1,10 +1,10 @@
 use std::path::{Path, PathBuf};
 
+#[cfg(target_os = "windows")]
+use crate::config::STEAM_LIBRARY_FALLBACK_CANDIDATES;
 pub(crate) use crate::config::{
     BAZAAR_DATA_DIRECTORY as DATA_DIRECTORY, DATABASE_FILE_NAME, SCREENSHOTS_DIRECTORY,
 };
-#[cfg(target_os = "windows")]
-use crate::config::STEAM_LIBRARY_FALLBACK_CANDIDATES;
 
 pub fn resolve_database_path(game_path: &Path) -> Result<PathBuf, String> {
     let data_dir = game_path.join(DATA_DIRECTORY);

@@ -2,7 +2,6 @@ mod payload;
 mod versioning;
 mod zip_archive;
 
-pub(crate) use zip_archive::read_bundled_bpp_version;
 pub(crate) use versioning::{
     bpp_data_version_path, default_bpp_data_version_policy, is_compatible_bpp_data_version,
     read_bundled_bpp_data_version_policy, BppDataVersionPolicy, LEGACY_RECORD_DIRECTORY,
@@ -11,6 +10,7 @@ pub(crate) use versioning::{
 pub(crate) use versioning::{
     ensure_bpp_data_version_file, BPP_DATA_VERSION_FILE_NAME, CURRENT_BPP_DATA_VERSION,
 };
+pub(crate) use zip_archive::read_bundled_bpp_version;
 
 use serde::Serialize;
 use std::path::Path;

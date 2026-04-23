@@ -8,6 +8,7 @@ test('createHomeSummary marks stream mode active when service is running', () =>
       steam_path: 'C:/Steam',
       steam_launch_options_supported: true,
       game_path: 'C:/Games/The Bazaar',
+      game_path_valid: true,
       dotnet_version: '9.0.0',
       dotnet_ok: true,
       bepinex_installed: true,

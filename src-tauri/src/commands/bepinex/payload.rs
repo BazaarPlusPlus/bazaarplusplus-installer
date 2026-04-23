@@ -121,12 +121,12 @@ pub(super) fn legacy_record_directory_size_bytes(game_path: &Path) -> Result<u64
 
 #[cfg(test)]
 mod tests {
-    use super::{
-        cleanup_legacy_record_directory, ensure_valid_game_path, legacy_record_directory_size_bytes,
-        prepare_install_target, preserve_file_if_exists, restore_preserved_file, uninstall_payload,
-        PreservedFile, BPP_CONFIG_RELATIVE_PATH,
-    };
     use super::versioning::LEGACY_RECORD_DIRECTORY;
+    use super::{
+        cleanup_legacy_record_directory, ensure_valid_game_path,
+        legacy_record_directory_size_bytes, prepare_install_target, preserve_file_if_exists,
+        restore_preserved_file, uninstall_payload, PreservedFile, BPP_CONFIG_RELATIVE_PATH,
+    };
 
     #[test]
     fn test_ensure_valid_game_path_rejects_non_game_directory() {

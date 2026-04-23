@@ -9,7 +9,6 @@ function debugDetectLog(message: string, payload: Record<string, unknown>) {
 export interface DetectInstallerEnvironmentOptions {
   requestedGamePath: string | null;
   detectEnvironment: (gamePath?: string) => Promise<EnvironmentInfo>;
-  verifyGamePath: (path: string) => Promise<boolean>;
 }
 
 export interface DetectInstallerEnvironmentResult {
@@ -26,18 +25,15 @@ function resolveDotnetState(env: EnvironmentInfo | null): StepState {
   return env.dotnet_ok ? 'found' : 'not_found';
 }
 
-async function resolveBazaarState(
+function resolveBazaarState(
   requestedGamePath: string | null,
-  detectedGamePath: string | null,
-  verifyGamePath: (path: string) => Promise<boolean>
-): Promise<
-  Pick<DetectInstallerEnvironmentResult, 'bazaarFound' | 'bazaarInvalid'>
-> {
-  const pathToVerify = requestedGamePath ?? detectedGamePath;
+  env: EnvironmentInfo | null
+): Pick<DetectInstallerEnvironmentResult, 'bazaarFound' | 'bazaarInvalid'> {
+  const pathToVerify = requestedGamePath ?? env?.game_path ?? null;
   if (!pathToVerify) {
     debugDetectLog('skip verify: no path available', {
       requestedGamePath,
-      detectedGamePath
+      detectedGamePath: env?.game_path ?? null
     });
     return {
       bazaarFound: false,
@@ -45,10 +41,10 @@ async function resolveBazaarState(
     };
   }
 
-  const bazaarFound = await verifyGamePath(pathToVerify);
-  debugDetectLog('verify_game_path resolved', {
+  const bazaarFound = env?.game_path_valid ?? false;
+  debugDetectLog('resolved bazaar path validity from detect_environment', {
     requestedGamePath,
-    detectedGamePath,
+    detectedGamePath: env?.game_path ?? null,
     pathToVerify,
     bazaarFound
   });
@@ -69,11 +65,7 @@ export async function detectInstallerEnvironment(
       requestedGamePath: options.requestedGamePath,
       env
     });
-    const bazaarState = await resolveBazaarState(
-      options.requestedGamePath,
-      env.game_path,
-      options.verifyGamePath
-    );
+    const bazaarState = resolveBazaarState(options.requestedGamePath, env);
 
     debugDetectLog('combined detection result', {
       requestedGamePath: options.requestedGamePath,

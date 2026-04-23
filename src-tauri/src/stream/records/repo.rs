@@ -270,8 +270,8 @@ pub(super) fn delete_overlay_record_row(
         return Ok((false, None));
     }
 
-    let image_relative_path = load_overlay_record_by_id(database_path, record_id)?
-        .and_then(|row| row.image_path);
+    let image_relative_path =
+        load_overlay_record_by_id(database_path, record_id)?.and_then(|row| row.image_path);
 
     let deleted = conn
         .execute(

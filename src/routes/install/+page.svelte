@@ -25,8 +25,7 @@
     patchLaunchOptions,
     postIdentityJson,
     repairBpp as repairBppApi,
-    uninstallBpp as uninstallBppApi,
-    verifyGamePath as verifyGamePathApi
+    uninstallBpp as uninstallBppApi
   } from '$lib/installer/api';
   import {
     loadPersistedDetectedGamePath,
@@ -87,7 +86,6 @@
     createInstallDebugEnvironment,
     detectEnvironmentApi,
     initializeInstallerContextApi,
-    verifyGamePathApi,
     detectSteamRunningApi,
     closeSteamApi,
     installBepinex,
@@ -210,9 +208,11 @@
   onMount(() => {
     locale.init();
     void (async () => {
-      await installController.initializeStartupContext();
-      await installController.detectEnvironment(pageModel.selectedPath);
-      await updaterController.checkForUpdatesOnStartup();
+      await Promise.allSettled([
+        installController.initializeStartupContext(),
+        installController.detectEnvironment(pageModel.selectedPath),
+        updaterController.checkForUpdatesOnStartup()
+      ]);
     })();
   });
 </script>

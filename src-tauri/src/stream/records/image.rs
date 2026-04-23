@@ -86,11 +86,8 @@ mod tests {
         std::fs::create_dir_all(&dated_dir).unwrap();
         std::fs::write(dated_dir.join("match-1.png"), b"png").unwrap();
 
-        let resolved = resolve_overlay_image_path(
-            Some(game_path),
-            Some(r"2026-04-16\match-1.png"),
-        )
-        .unwrap();
+        let resolved =
+            resolve_overlay_image_path(Some(game_path), Some(r"2026-04-16\match-1.png")).unwrap();
 
         assert_eq!(resolved, dated_dir.join("match-1.png"));
     }

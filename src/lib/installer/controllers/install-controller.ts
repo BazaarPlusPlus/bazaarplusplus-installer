@@ -24,7 +24,6 @@ export function createInstallController(input: {
   createInstallDebugEnvironment: () => EnvironmentInfo;
   initializeInstallerContextApi: () => Promise<InstallerContextPayload>;
   detectEnvironmentApi: (requestedGamePath?: string) => Promise<EnvironmentInfo>;
-  verifyGamePathApi: (gamePath: string) => Promise<boolean>;
   detectSteamRunningApi: () => Promise<SteamRunningInfo>;
   closeSteamApi: () => Promise<unknown>;
   installBepinex: (
@@ -161,8 +160,7 @@ export function createInstallController(input: {
     try {
       const result = await detectInstallerEnvironment({
         requestedGamePath: selectedPath,
-        detectEnvironment: input.detectEnvironmentApi,
-        verifyGamePath: input.verifyGamePathApi
+        detectEnvironment: input.detectEnvironmentApi
       });
       debugInstallLog('startup detectEnvironment result', {
         selectedPath,
@@ -188,8 +186,7 @@ export function createInstallController(input: {
     try {
       const result = await detectInstallerEnvironment({
         requestedGamePath: effectiveGamePath,
-        detectEnvironment: input.detectEnvironmentApi,
-        verifyGamePath: input.verifyGamePathApi
+        detectEnvironment: input.detectEnvironmentApi
       });
       debugInstallLog('manual checkPath result', {
         effectiveGamePath,

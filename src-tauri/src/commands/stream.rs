@@ -1,4 +1,7 @@
 use crate::commands::startup::InstallerContextState;
+#[cfg(target_os = "windows")]
+use crate::config::STEAM_LIBRARY_FALLBACK_CANDIDATES;
+use crate::config::{BAZAAR_DATA_DIRECTORY, DATABASE_FILE_NAME};
 use crate::stream::{
     http::remove_overlay_strip_cache,
     overlay_settings::{
@@ -7,9 +10,6 @@ use crate::stream::{
     records::{OverlayRecord, OverlayRecordRepository},
     state::{StreamRuntimeState, StreamServiceStatus},
 };
-use crate::config::{BAZAAR_DATA_DIRECTORY, DATABASE_FILE_NAME};
-#[cfg(target_os = "windows")]
-use crate::config::STEAM_LIBRARY_FALLBACK_CANDIDATES;
 use base64::{engine::general_purpose::STANDARD, Engine as _};
 use image::{DynamicImage, ImageFormat};
 use std::collections::HashMap;
@@ -125,9 +125,7 @@ pub fn set_stream_overlay_window_offset(
     let record = repository
         .load_record_at_offset(None, record_offset)?
         .ok_or_else(|| {
-            format!(
-                "No end-of-run record is available for stream window offset {offset}."
-            )
+            format!("No end-of-run record is available for stream window offset {offset}.")
         })?;
 
     Ok(state.set_active_window(Some(record.captured_at_utc), offset))
@@ -173,7 +171,9 @@ pub fn detect_stream_db_path(
             path: None,
         },
         Some(game_path) => {
-            let db = game_path.join(BAZAAR_DATA_DIRECTORY).join(DATABASE_FILE_NAME);
+            let db = game_path
+                .join(BAZAAR_DATA_DIRECTORY)
+                .join(DATABASE_FILE_NAME);
             let found = db.exists();
             StreamDbPathInfo {
                 found,

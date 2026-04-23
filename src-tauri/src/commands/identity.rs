@@ -52,8 +52,8 @@ fn harden_identity_db_permissions(path: &Path) -> Result<(), String> {
 fn harden_identity_db_permissions(path: &Path) -> Result<(), String> {
     use std::process::Command;
 
-    let username = std::env::var("USERNAME")
-        .map_err(|err| format!("Cannot read USERNAME env: {err}"))?;
+    let username =
+        std::env::var("USERNAME").map_err(|err| format!("Cannot read USERNAME env: {err}"))?;
     // Break inheritance and grant full access only to the current user.
     let output = Command::new("icacls")
         .arg(path)

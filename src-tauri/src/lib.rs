@@ -1,5 +1,5 @@
-mod config;
 mod commands;
+mod config;
 mod stream;
 
 use tauri::{
@@ -19,13 +19,12 @@ use commands::{
     startup::{initialize_installer_context, InstallerContextState},
     steam::{close_steam, detect_steam_running},
     stream::{
-        delete_stream_record,
-        detect_stream_db_path, get_stream_overlay_crop_settings, get_stream_service_status,
-        import_stream_overlay_crop_code, list_stream_overlay_records,
+        delete_stream_record, detect_stream_db_path, get_stream_overlay_crop_settings,
+        get_stream_service_status, import_stream_overlay_crop_code, list_stream_overlay_records,
         load_stream_record_strip_preview, load_stream_record_strip_previews,
-        reveal_stream_record_image,
-        save_stream_overlay_crop_settings, save_stream_overlay_display_mode,
-        set_stream_overlay_window_offset, start_stream_service, stop_stream_service,
+        reveal_stream_record_image, save_stream_overlay_crop_settings,
+        save_stream_overlay_display_mode, set_stream_overlay_window_offset, start_stream_service,
+        stop_stream_service,
     },
     supporters::load_supporters,
     vdf::patch_launch_options,

@@ -50,6 +50,7 @@ test('createInstallPageModel centralizes install page derivations', () => {
       steam_path: 'C:\\Program Files (x86)\\Steam',
       steam_launch_options_supported: true,
       game_path: 'C:\\Games\\The Bazaar',
+      game_path_valid: true,
       dotnet_version: '9.0.1',
       dotnet_ok: true,
       bepinex_installed: true,
