@@ -80,15 +80,27 @@ test('loginIdentity posts login and persists a local auth row', async () => {
 });
 
 test('loadLocalIdentity returns null observation when observation JSON is malformed', async () => {
+  let snapshotReads = 0;
   const api = createIdentityApi({
-    readPlayerObservationImpl: async () => '{"unexpected":"shape"}',
-    readAuthRecordImpl: async () => null
+    readIdentitySnapshotImpl: async () => {
+      snapshotReads += 1;
+      return {
+        playerObservationJson: '{"unexpected":"shape"}',
+        authRecordJson: JSON.stringify({
+          token: 'token-004',
+          player_account_id: 'player-account-004',
+          player_username: 'player-four',
+          issued_at_utc: '2026-04-11T01:00:00.000Z'
+        })
+      };
+    }
   });
 
   const snapshot = await api.loadLocalIdentity('/games/The Bazaar');
 
+  expect(snapshotReads).toBe(1);
   expect(snapshot.observation).toBe(null);
-  expect(snapshot.auth).toBe(null);
+  expect(snapshot.auth?.token).toBe('token-004');
 });
 
 test('logoutIdentity always deletes the local auth row', async () => {

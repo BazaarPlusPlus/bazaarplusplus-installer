@@ -15,6 +15,7 @@ import type {
   StreamServiceStatus,
   SupportersResponse
 } from '../types.ts';
+import type { IdentitySnapshotResponse } from '../identity/types.ts';
 
 export interface TauriCommandMap {
   verify_game_path: { input: { path: string }; output: boolean };
@@ -47,13 +48,9 @@ export interface TauriCommandMap {
     output: LaunchOptionsPatchResult;
   };
   load_supporters: { input: undefined; output: SupportersResponse };
-  read_player_observation: {
+  read_identity_snapshot: {
     input: { gameRoot: string };
-    output: string | null;
-  };
-  read_auth_record: {
-    input: { gameRoot: string };
-    output: string | null;
+    output: IdentitySnapshotResponse;
   };
   write_auth_record: {
     input: { gameRoot: string; payloadJson: string };
@@ -125,9 +122,10 @@ export interface TauriCommandMap {
 type CommandName = keyof TauriCommandMap;
 type CommandInput<K extends CommandName> = TauriCommandMap[K]['input'];
 type CommandOutput<K extends CommandName> = TauriCommandMap[K]['output'];
-type CommandArgs<K extends CommandName> = undefined extends CommandInput<K>
-  ? [payload?: Exclude<CommandInput<K>, undefined>]
-  : [payload: CommandInput<K>];
+type CommandArgs<K extends CommandName> =
+  undefined extends CommandInput<K>
+    ? [payload?: Exclude<CommandInput<K>, undefined>]
+    : [payload: CommandInput<K>];
 
 export async function call<K extends CommandName>(
   name: K,

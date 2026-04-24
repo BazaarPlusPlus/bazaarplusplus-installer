@@ -18,6 +18,11 @@ export interface IdentityAuthResponse {
   player_username: string;
 }
 
+export interface IdentitySnapshotResponse {
+  playerObservationJson: string | null;
+  authRecordJson: string | null;
+}
+
 export interface LoadedIdentitySnapshot {
   observation: PlayerObservationPayload | null;
   auth: AuthRecordPayload | null;

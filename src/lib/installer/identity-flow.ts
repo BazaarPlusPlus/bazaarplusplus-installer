@@ -49,7 +49,7 @@ export async function activateObservedIdentity(input: {
   successMessage: string;
   snapshot: InstallIdentitySnapshot;
 }> {
-  await input.identityApi.activateObservedAccount({
+  const auth = await input.identityApi.activateObservedAccount({
     gameRoot: input.gameRoot,
     observation: input.observation,
     password: input.password
@@ -57,7 +57,10 @@ export async function activateObservedIdentity(input: {
 
   return {
     successMessage: input.successMessage,
-    snapshot: await loadInstallIdentitySnapshot(input.identityApi, input.gameRoot)
+    snapshot: {
+      playerObservation: input.observation,
+      authRecord: auth
+    }
   };
 }
 
@@ -65,13 +68,14 @@ export async function loginInstallIdentity(input: {
   identityApi: IdentityApiLike;
   gameRoot: string;
   playerUsername: string;
+  observation: PlayerObservationPayload | null;
   password: string;
   successMessage: string;
 }): Promise<{
   successMessage: string;
   snapshot: InstallIdentitySnapshot;
 }> {
-  await input.identityApi.loginIdentity({
+  const auth = await input.identityApi.loginIdentity({
     gameRoot: input.gameRoot,
     playerUsername: input.playerUsername,
     password: input.password
@@ -79,13 +83,17 @@ export async function loginInstallIdentity(input: {
 
   return {
     successMessage: input.successMessage,
-    snapshot: await loadInstallIdentitySnapshot(input.identityApi, input.gameRoot)
+    snapshot: {
+      playerObservation: input.observation,
+      authRecord: auth
+    }
   };
 }
 
 export async function logoutInstallIdentity(input: {
   identityApi: IdentityApiLike;
   gameRoot: string;
+  playerObservation: PlayerObservationPayload | null;
   auth: AuthRecordPayload;
   localOnlySuccessMessage: string;
   successMessage: string;
@@ -102,6 +110,9 @@ export async function logoutInstallIdentity(input: {
     successMessage: result.remoteLoggedOut
       ? input.successMessage
       : input.localOnlySuccessMessage,
-    snapshot: await loadInstallIdentitySnapshot(input.identityApi, input.gameRoot)
+    snapshot: {
+      playerObservation: input.playerObservation,
+      authRecord: null
+    }
   };
 }

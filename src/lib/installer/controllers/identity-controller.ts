@@ -1,6 +1,9 @@
 import { writable, get } from 'svelte/store';
 
-import type { IdentityApiLike, InstallIdentitySnapshot } from '../identity-flow.ts';
+import type {
+  IdentityApiLike,
+  InstallIdentitySnapshot
+} from '../identity-flow.ts';
 import {
   activateObservedIdentity,
   loadInstallIdentitySnapshot,
@@ -46,6 +49,7 @@ export function createIdentityController(input: {
   const identitySuccess = writable<IdentitySuccessState>(null);
   const identityLoadedGamePath = writable('');
   let identityLoadRequestId = 0;
+  let identityLoadingGamePath = '';
 
   function clearFormState() {
     identityPassword.set('');
@@ -75,22 +79,33 @@ export function createIdentityController(input: {
     identitySuccess.set(null);
   }
 
+  function cancelPendingIdentityLoad() {
+    identityLoadRequestId += 1;
+    identityLoadingGamePath = '';
+    identityLoadState.set('idle');
+  }
+
   async function refreshIdentity(gameRoot: string) {
     if (!input.hasTauriRuntime() || !gameRoot) {
       debugIdentityControllerLog('refreshIdentity skipped', {
         gameRoot,
         hasTauriRuntime: input.hasTauriRuntime()
       });
+      cancelPendingIdentityLoad();
       identityLoadedGamePath.set('');
       resetIdentitySnapshot();
       return;
     }
 
     const requestId = ++identityLoadRequestId;
+    identityLoadingGamePath = gameRoot;
     identityLoadState.set('loading');
 
     try {
-      const snapshot = await loadInstallIdentitySnapshot(input.identityApi, gameRoot);
+      const snapshot = await loadInstallIdentitySnapshot(
+        input.identityApi,
+        gameRoot
+      );
       if (requestId !== identityLoadRequestId) {
         return;
       }
@@ -107,9 +122,12 @@ export function createIdentityController(input: {
         error
       });
       resetIdentitySnapshot();
-      identityError.set(input.formatIdentityErrorMessage(error, input.localized));
+      identityError.set(
+        input.formatIdentityErrorMessage(error, input.localized)
+      );
     } finally {
       if (requestId === identityLoadRequestId) {
+        identityLoadingGamePath = '';
         identityLoadState.set('idle');
       }
     }
@@ -117,12 +135,16 @@ export function createIdentityController(input: {
 
   function syncGameRoot(gameRoot: string) {
     if (!input.hasTauriRuntime() || !gameRoot) {
+      cancelPendingIdentityLoad();
       identityLoadedGamePath.set('');
       resetIdentitySnapshot();
       return;
     }
 
-    if (gameRoot !== get(identityLoadedGamePath)) {
+    if (
+      gameRoot !== get(identityLoadedGamePath) &&
+      gameRoot !== identityLoadingGamePath
+    ) {
       void refreshIdentity(gameRoot);
     }
   }
@@ -139,7 +161,12 @@ export function createIdentityController(input: {
     const password = get(identityPassword).trim();
     const actionBusy = get(identityActionBusy);
 
-    if (!inputArgs.gameRoot || !observation || !password || actionBusy !== 'idle') {
+    if (
+      !inputArgs.gameRoot ||
+      !observation ||
+      !password ||
+      actionBusy !== 'idle'
+    ) {
       return;
     }
 
@@ -152,10 +179,7 @@ export function createIdentityController(input: {
         gameRoot: inputArgs.gameRoot,
         observation,
         password,
-        successMessage: input.localized(
-          '已登录。',
-          'Signed in.'
-        )
+        successMessage: input.localized('已登录。', 'Signed in.')
       });
       applySnapshot(result.snapshot, inputArgs.gameRoot);
       clearFormState();
@@ -170,7 +194,9 @@ export function createIdentityController(input: {
         errorCode !== 'player_account_id_taken' &&
         errorCode !== 'player_username_taken'
       ) {
-        identityError.set(input.formatIdentityErrorMessage(error, input.localized));
+        identityError.set(
+          input.formatIdentityErrorMessage(error, input.localized)
+        );
         identityActionBusy.set('idle');
         return;
       }
@@ -183,11 +209,9 @@ export function createIdentityController(input: {
         identityApi: input.identityApi,
         gameRoot: inputArgs.gameRoot,
         playerUsername: observation.player_username,
+        observation,
         password,
-        successMessage: input.localized(
-          '已登录。',
-          'Signed in.'
-        )
+        successMessage: input.localized('已登录。', 'Signed in.')
       });
       applySnapshot(result.snapshot, inputArgs.gameRoot);
       clearFormState();
@@ -197,7 +221,8 @@ export function createIdentityController(input: {
       if (
         refreshedObservation &&
         refreshedAuth &&
-        refreshedObservation.player_account_id !== refreshedAuth.player_account_id
+        refreshedObservation.player_account_id !==
+          refreshedAuth.player_account_id
       ) {
         identitySuccess.set({ kind: 'logged_in_mismatch' });
       } else {
@@ -212,7 +237,9 @@ export function createIdentityController(input: {
           )
         );
       } else {
-        identityError.set(input.formatIdentityErrorMessage(error, input.localized));
+        identityError.set(
+          input.formatIdentityErrorMessage(error, input.localized)
+        );
       }
     } finally {
       identityActionBusy.set('idle');
@@ -243,11 +270,9 @@ export function createIdentityController(input: {
       const result = await logoutInstallIdentity({
         identityApi: input.identityApi,
         gameRoot: inputArgs.gameRoot,
+        playerObservation: inputArgs.identityState.observation,
         auth,
-        successMessage: input.localized(
-          '已登出。',
-          'Signed out.'
-        ),
+        successMessage: input.localized('已登出。', 'Signed out.'),
         localOnlySuccessMessage: input.localized(
           '已登出（离线）。',
           'Signed out (offline).'
@@ -257,7 +282,9 @@ export function createIdentityController(input: {
       clearFormState();
       identitySuccess.set(null);
     } catch (error) {
-      identityError.set(input.formatIdentityErrorMessage(error, input.localized));
+      identityError.set(
+        input.formatIdentityErrorMessage(error, input.localized)
+      );
     } finally {
       identityActionBusy.set('idle');
     }

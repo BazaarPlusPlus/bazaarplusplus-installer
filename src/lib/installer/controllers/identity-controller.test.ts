@@ -27,6 +27,37 @@ function createSnapshot(
   };
 }
 
+test('syncGameRoot does not start a duplicate load for the path already loading', async () => {
+  let loadCalls = 0;
+  let resolveLoad: ((snapshot: LoadedIdentitySnapshot) => void) | undefined;
+  const loadPromise = new Promise<LoadedIdentitySnapshot>((resolve) => {
+    resolveLoad = resolve;
+  });
+
+  const controller = createIdentityController({
+    hasTauriRuntime: () => true,
+    identityApi: {
+      async loadLocalIdentity() {
+        loadCalls += 1;
+        return loadPromise;
+      }
+    } as never,
+    localized,
+    formatIdentityErrorMessage: (error) =>
+      error instanceof Error ? error.message : String(error)
+  });
+
+  controller.syncGameRoot('/games/The Bazaar');
+  controller.syncGameRoot('/games/The Bazaar');
+
+  expect(loadCalls).toBe(1);
+
+  resolveLoad?.(createSnapshot(null));
+  await loadPromise;
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  expect(get(controller.identityLoadState)).toBe('idle');
+});
+
 test('continueIdentity falls back to login when the observed account already exists', async () => {
   let loginCalls = 0;
   let snapshot = createSnapshot(null);

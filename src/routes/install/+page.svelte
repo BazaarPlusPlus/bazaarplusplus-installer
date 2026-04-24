@@ -37,9 +37,7 @@
     hasTauriRuntime,
     resolveInstallDebugPreview
   } from '$lib/installer/runtime';
-  import {
-    type PageState
-  } from '$lib/installer/state';
+  import { type PageState } from '$lib/installer/state';
   import {
     getInstallRuntimeRisks,
     shouldShowInstallRiskModal
@@ -198,12 +196,16 @@
   let pageModel: InstallPageModel = createInstallPageModel(pageModelInput);
   let pageState: PageState = pageModel.pageState;
   let identityState: IdentityState = pageModel.identityState;
+  let lastIdentitySyncGamePath: string | undefined;
 
   $: pageModel = createInstallPageModel(pageModelInput);
   $: pageState = pageModel.pageState;
   $: identityState = pageModel.identityState;
   $: installController.persistCurrentGamePath();
-  $: identityController.syncGameRoot(pageState.effectiveGamePath);
+  $: if (pageState.effectiveGamePath !== lastIdentitySyncGamePath) {
+    lastIdentitySyncGamePath = pageState.effectiveGamePath;
+    identityController.syncGameRoot(pageState.effectiveGamePath);
+  }
 
   onMount(() => {
     locale.init();
@@ -240,13 +242,15 @@
     showUpdaterReviewModal={$showUpdaterReviewModal}
     updaterReviewBody={t('updaterReviewBody', {
       version:
-        $updaterSnapshot.availableVersion ?? $pendingUpdate?.version ?? 'unknown'
+        $updaterSnapshot.availableVersion ??
+        $pendingUpdate?.version ??
+        'unknown'
     })}
     updaterReviewBusy={$updaterReviewBusy}
     showUpdaterModal={$showUpdaterModal}
     updaterModalTitle={$updaterModalTitle}
     updaterModalBody={$updaterModalBody}
-    t={t}
+    {t}
     onOpenBilibili={installController.openBilibili}
     onConfirmInstall={() =>
       installController.confirmInstall({
@@ -315,7 +319,8 @@
         identityState,
         gameRoot: pageState.effectiveGamePath
       })}
-    onRefresh={() => identityController.refreshIdentity(pageState.effectiveGamePath)}
+    onRefresh={() =>
+      identityController.refreshIdentity(pageState.effectiveGamePath)}
   />
 
   <InstallerPageContent
@@ -341,10 +346,11 @@
     canInstall={pageModel.canInstall}
     canLaunchGame={pageModel.canLaunchGame}
     dotnetDownloadUrl={pageModel.dotnetDownloadUrl}
-    t={t}
+    {t}
     onPickGamePath={installController.pickGamePath}
     onCheckPath={() => installController.checkPath(pageState.effectiveGamePath)}
-    onRequestInstall={() => installController.requestInstall(pageModel.canInstall)}
+    onRequestInstall={() =>
+      installController.requestInstall(pageModel.canInstall)}
     onRepair={() =>
       installController.requestRepair({
         effectiveGamePath: pageState.effectiveGamePath,

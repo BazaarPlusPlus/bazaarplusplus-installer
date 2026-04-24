@@ -384,6 +384,7 @@ dependencies = [
  "tower-http",
  "ts-rs",
  "uuid",
+ "windows-sys 0.59.0",
  "winreg 0.52.0",
  "zip 6.0.0",
 ]

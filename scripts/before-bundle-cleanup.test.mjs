@@ -1,8 +1,7 @@
-import test from 'node:test';
-import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { test, expect } from 'vitest';
 
 import {
   cleanupBundleArtifacts,
@@ -11,8 +10,7 @@ import {
 
 test('resolveBundleCleanupPath returns the macOS bundle root', () => {
   const rootDir = '/tmp/bpp';
-  assert.equal(
-    resolveBundleCleanupPath(rootDir, 'darwin'),
+  expect(resolveBundleCleanupPath(rootDir, 'darwin')).toBe(
     path.join(
       rootDir,
       'src-tauri',
@@ -41,9 +39,8 @@ test('cleanupBundleArtifacts removes stale macOS bundle outputs', () => {
 
   try {
     const result = cleanupBundleArtifacts(rootDir, 'macos');
-    assert.equal(result.removed, true);
-    assert.equal(
-      result.cleanupPath,
+    expect(result.removed).toBe(true);
+    expect(result.cleanupPath).toBe(
       path.join(
         rootDir,
         'src-tauri',
@@ -53,7 +50,7 @@ test('cleanupBundleArtifacts removes stale macOS bundle outputs', () => {
         'bundle'
       )
     );
-    assert.equal(
+    expect(
       fs.existsSync(
         path.join(
           rootDir,
@@ -63,9 +60,8 @@ test('cleanupBundleArtifacts removes stale macOS bundle outputs', () => {
           'release',
           'bundle'
         )
-      ),
-      false
-    );
+      )
+    ).toBe(false);
   } finally {
     fs.rmSync(rootDir, { force: true, recursive: true });
   }
@@ -80,9 +76,9 @@ test('cleanupBundleArtifacts removes stale Windows installer outputs', () => {
 
   try {
     const result = cleanupBundleArtifacts(rootDir, 'windows');
-    assert.equal(result.removed, true);
-    assert.equal(result.cleanupPath, nsisDir);
-    assert.equal(fs.existsSync(nsisDir), false);
+    expect(result.removed).toBe(true);
+    expect(result.cleanupPath).toBe(nsisDir);
+    expect(fs.existsSync(nsisDir)).toBe(false);
   } finally {
     fs.rmSync(rootDir, { force: true, recursive: true });
   }

@@ -1,11 +1,7 @@
 import { call } from '../bridge/commands.ts';
 
-export async function readPlayerObservation(gameRoot: string) {
-  return call('read_player_observation', { gameRoot });
-}
-
-export async function readAuthRecord(gameRoot: string) {
-  return call('read_auth_record', { gameRoot });
+export async function readIdentitySnapshot(gameRoot: string) {
+  return call('read_identity_snapshot', { gameRoot });
 }
 
 export async function writeAuthRecord(gameRoot: string, payloadJson: string) {

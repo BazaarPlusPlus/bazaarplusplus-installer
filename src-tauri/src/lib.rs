@@ -12,10 +12,7 @@ use commands::{
     bepinex::{get_legacy_record_directory_info, install_bepinex, repair_bpp, uninstall_bpp},
     detect::{detect_environment, verify_game_path},
     game_process::detect_bazaar_running,
-    identity::{
-        delete_auth_record, post_identity_json, read_auth_record, read_player_observation,
-        write_auth_record,
-    },
+    identity::{delete_auth_record, post_identity_json, read_identity_snapshot, write_auth_record},
     startup::{initialize_installer_context, InstallerContextState},
     steam::{close_steam, detect_steam_running},
     stream::{
@@ -63,8 +60,7 @@ pub fn run() {
             detect_steam_running,
             close_steam,
             verify_game_path,
-            read_player_observation,
-            read_auth_record,
+            read_identity_snapshot,
             write_auth_record,
             delete_auth_record,
             post_identity_json,

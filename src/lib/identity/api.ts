@@ -1,7 +1,6 @@
 import {
   deleteAuthRecord,
-  readAuthRecord,
-  readPlayerObservation,
+  readIdentitySnapshot,
   writeAuthRecord
 } from './repository.ts';
 import {
@@ -19,6 +18,7 @@ import { V3_API_BASE_URL } from '../config/endpoints.ts';
 import type {
   AuthRecordPayload,
   IdentityAuthResponse,
+  IdentitySnapshotResponse,
   LoadedIdentitySnapshot,
   PlayerObservationPayload
 } from './types.ts';
@@ -39,7 +39,9 @@ function summarizeJson(name: string, payloadJson: string | null | undefined) {
   };
 }
 
-function summarizeObservationCandidate(value: unknown): Record<string, unknown> {
+function summarizeObservationCandidate(
+  value: unknown
+): Record<string, unknown> {
   if (!isRecord(value)) {
     return {
       isRecord: false,
@@ -87,17 +89,15 @@ export interface IdentityApiDeps {
     body: string;
     authorization?: string;
   }) => Promise<IdentityTransportResponse>;
-  readPlayerObservationImpl?: typeof readPlayerObservation;
-  readAuthRecordImpl?: typeof readAuthRecord;
+  readIdentitySnapshotImpl?: typeof readIdentitySnapshot;
   writeAuthRecordImpl?: typeof writeAuthRecord;
   deleteAuthRecordImpl?: typeof deleteAuthRecord;
 }
 
 export function createIdentityApi(deps: IdentityApiDeps = {}) {
   const postJsonImpl = deps.postJsonImpl ?? postJsonWithFetch;
-  const readPlayerObservationImpl =
-    deps.readPlayerObservationImpl ?? readPlayerObservation;
-  const readAuthRecordImpl = deps.readAuthRecordImpl ?? readAuthRecord;
+  const readIdentitySnapshotImpl =
+    deps.readIdentitySnapshotImpl ?? readIdentitySnapshot;
   const writeAuthRecordImpl = deps.writeAuthRecordImpl ?? writeAuthRecord;
   const deleteAuthRecordImpl = deps.deleteAuthRecordImpl ?? deleteAuthRecord;
 
@@ -107,12 +107,12 @@ export function createIdentityApi(deps: IdentityApiDeps = {}) {
 
   return {
     async loadLocalIdentity(gameRoot: string): Promise<LoadedIdentitySnapshot> {
-      const [observationJson, authJson] = await Promise.all([
-        readPlayerObservationImpl(gameRoot),
-        readAuthRecordImpl(gameRoot)
-      ]);
+      const localSnapshot: IdentitySnapshotResponse =
+        await readIdentitySnapshotImpl(gameRoot);
+      const observationJson = localSnapshot.playerObservationJson;
+      const authJson = localSnapshot.authRecordJson;
 
-      debugIdentityLog('loaded local identity rows', {
+      debugIdentityLog('loaded local identity snapshot files', {
         gameRoot,
         ...summarizeJson('observationJson', observationJson),
         ...summarizeJson('authJson', authJson)
@@ -127,7 +127,8 @@ export function createIdentityApi(deps: IdentityApiDeps = {}) {
         gameRoot,
         observationPresent: Boolean(observation),
         authPresent: Boolean(auth),
-        observationCandidate: summarizeObservationCandidate(observationCandidate)
+        observationCandidate:
+          summarizeObservationCandidate(observationCandidate)
       });
 
       return {
