@@ -9,6 +9,7 @@
     loadStreamRecordList,
     revealStreamRecordImage
   } from '$lib/stream/api';
+  import { resolveHeroKey } from '$lib/stream/heroes';
   import type { StreamOverlayCropSettings, StreamOverlayDisplayMode, StreamRecordSummary } from '$lib/types';
 
   const badgeAssets = import.meta.glob(
@@ -24,16 +25,6 @@
     top: 0.313,
     width: 0.58,
     height: 0.22
-  };
-
-  const HERO_KEY_BY_NAME: Record<string, string> = {
-    Vanessa: 'van',
-    Pygmalien: 'pyg',
-    Dooley: 'doo',
-    Mak: 'mak',
-    Jules: 'jul',
-    Karnok: 'kar',
-    Stelle: 'ste'
   };
 
   export let gamePath: string | null = null;
@@ -196,11 +187,6 @@
     );
   }
 
-  function getHeroKey(heroName: string): string {
-    const normalized = heroName?.trim() || '';
-    return HERO_KEY_BY_NAME[normalized] || 'unk';
-  }
-
   function getWinsBadgeAsset(wins: number | null, battles: number | null): string {
     if (wins === null || wins < 0) {
       return resolveBadgeAsset('wins/wins-0-mis.svg');
@@ -238,7 +224,7 @@
   }
 
   function resolveSecondaryBadgeSrc(record: StreamRecordSummary): string {
-    const heroKey = getHeroKey(record.title || '');
+    const heroKey = resolveHeroKey(record.title || '');
     const battles =
       typeof record.battle_count === 'number' && Number.isFinite(record.battle_count)
         ? record.battle_count
@@ -430,11 +416,11 @@
     border-radius: 3px;
     border: 1px solid rgba(185, 134, 58, 0.14);
     background:
-      radial-gradient(circle at top left, rgba(255, 214, 140, 0.05), transparent 42%),
+      radial-gradient(circle at top left, rgba(var(--color-warm-rgb), 0.05), transparent 42%),
       linear-gradient(180deg, rgba(20, 12, 6, 0.96), rgba(12, 7, 4, 0.94));
     box-shadow:
       0 8px 28px rgba(0, 0, 0, 0.3),
-      inset 0 0 0 1px rgba(255, 214, 140, 0.04);
+      inset 0 0 0 1px rgba(var(--color-warm-rgb), 0.04);
   }
 
   .record-library-head {
@@ -455,7 +441,7 @@
     font-size: 0.5rem;
     letter-spacing: 0.24em;
     text-transform: uppercase;
-    color: rgba(200, 148, 55, 0.52);
+    color: rgba(var(--color-accent-rgb), 0.52);
   }
 
   .record-library-copy h2,

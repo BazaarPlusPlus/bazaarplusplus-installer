@@ -176,7 +176,7 @@
     gap: 0.5rem;
     padding: 1rem 1.05rem;
     text-align: left;
-    border: 1px solid rgba(200, 148, 55, 0.18);
+    border: 1px solid rgba(var(--color-accent-rgb), 0.18);
     border-radius: 4px;
     background:
       radial-gradient(
@@ -186,11 +186,11 @@
       ),
       linear-gradient(
         180deg,
-        rgba(200, 148, 55, 0.08),
-        rgba(200, 148, 55, 0.02)
+        rgba(var(--color-accent-rgb), 0.08),
+        rgba(var(--color-accent-rgb), 0.02)
       ),
       rgba(12, 8, 4, 0.84);
-    box-shadow: inset 0 0 0 1px rgba(255, 198, 98, 0.04);
+    box-shadow: inset 0 0 0 1px rgba(var(--color-warm-bright-rgb), 0.04);
   }
 
   .update-kicker {
@@ -280,16 +280,16 @@
     align-items: start;
     padding: 0.9rem;
     border-radius: 3px;
-    box-shadow: inset 0 0 0 1px rgba(255, 198, 98, 0.04);
+    box-shadow: inset 0 0 0 1px rgba(var(--color-warm-bright-rgb), 0.04);
   }
 
   .tone-default {
-    border: 1px solid rgba(200, 148, 55, 0.18);
+    border: 1px solid rgba(var(--color-accent-rgb), 0.18);
     background:
       linear-gradient(
         180deg,
-        rgba(200, 148, 55, 0.08),
-        rgba(200, 148, 55, 0.02)
+        rgba(var(--color-accent-rgb), 0.08),
+        rgba(var(--color-accent-rgb), 0.02)
       ),
       rgba(12, 8, 4, 0.82);
   }
@@ -306,7 +306,7 @@
       linear-gradient(
         180deg,
         rgba(230, 178, 74, 0.14),
-        rgba(200, 148, 55, 0.04)
+        rgba(var(--color-accent-rgb), 0.04)
       ),
       rgba(16, 10, 4, 0.88);
     box-shadow:
@@ -499,11 +499,11 @@
         transparent 54%
       ),
       linear-gradient(180deg, rgba(34, 20, 8, 0.96), rgba(16, 9, 4, 0.98));
-    border: 1px solid rgba(200, 148, 55, 0.16);
+    border: 1px solid rgba(var(--color-accent-rgb), 0.16);
     border-radius: 4px;
     display: grid;
     gap: 0.65rem;
-    box-shadow: inset 0 0 0 1px rgba(255, 198, 98, 0.05);
+    box-shadow: inset 0 0 0 1px rgba(var(--color-warm-bright-rgb), 0.05);
   }
 
   .payment-card::after {
@@ -517,7 +517,7 @@
 
   .payment-card-wechat {
     box-shadow:
-      inset 0 0 0 1px rgba(255, 198, 98, 0.05),
+      inset 0 0 0 1px rgba(var(--color-warm-bright-rgb), 0.05),
       0 10px 32px rgba(42, 110, 78, 0.14);
   }
 
@@ -553,7 +553,7 @@
     margin: 0;
     font-size: 0.66rem;
     line-height: 1.45;
-    color: rgba(200, 170, 120, 0.8);
+    color: rgba(var(--color-muted-gold-rgb), 0.8);
   }
 
   .payment-image {

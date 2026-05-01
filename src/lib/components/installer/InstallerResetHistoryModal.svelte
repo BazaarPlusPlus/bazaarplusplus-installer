@@ -64,7 +64,7 @@
         rgba(191, 104, 81, 0.025)
       ),
       rgba(12, 8, 4, 0.78);
-    box-shadow: inset 0 0 0 1px rgba(255, 198, 98, 0.03);
+    box-shadow: inset 0 0 0 1px rgba(var(--color-warm-bright-rgb), 0.03);
   }
 
   .reset-history-kicker {
@@ -80,7 +80,7 @@
     margin: 0;
     font-size: 0.84rem;
     line-height: 1.65;
-    color: rgba(228, 216, 191, 0.82);
+    color: rgba(var(--color-cream-rgb), 0.82);
     white-space: pre-line;
   }
 
@@ -99,9 +99,9 @@
         rgba(191, 104, 81, 0.025)
       ),
       rgba(12, 8, 4, 0.78);
-    box-shadow: inset 0 0 0 1px rgba(255, 198, 98, 0.04);
+    box-shadow: inset 0 0 0 1px rgba(var(--color-warm-bright-rgb), 0.04);
     text-align: left;
-    color: rgba(228, 216, 191, 0.8);
+    color: rgba(var(--color-cream-rgb), 0.8);
     font-size: 0.8rem;
     line-height: 1.45;
     cursor: pointer;
@@ -125,7 +125,7 @@
       rgba(255, 255, 255, 0.03)
     );
     box-shadow:
-      0 0 0 1px rgba(255, 198, 98, 0.05) inset,
+      0 0 0 1px rgba(var(--color-warm-bright-rgb), 0.05) inset,
       0 2px 10px rgba(0, 0, 0, 0.16);
     position: relative;
     transition:
@@ -156,7 +156,7 @@
       rgba(158, 92, 30, 0.22)
     );
     box-shadow:
-      0 0 0 1px rgba(255, 198, 98, 0.12) inset,
+      0 0 0 1px rgba(var(--color-warm-bright-rgb), 0.12) inset,
       0 4px 14px rgba(170, 100, 25, 0.24);
   }
 
@@ -166,13 +166,13 @@
   }
 
   .reset-history-acknowledge:hover .reset-history-acknowledge-box {
-    border-color: rgba(255, 214, 140, 0.8);
+    border-color: rgba(var(--color-warm-rgb), 0.8);
     transform: translateY(-1px);
   }
 
   .reset-history-acknowledge-input:focus-visible
     + .reset-history-acknowledge-box {
-    outline: 2px solid rgba(255, 214, 140, 0.9);
+    outline: 2px solid rgba(var(--color-warm-rgb), 0.9);
     outline-offset: 2px;
   }
 

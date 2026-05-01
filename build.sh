@@ -312,21 +312,8 @@ upload_release_assets() {
         "$version/$platform_key/updater/$(basename "$updater_sig")"
 
     fragment_file="$SCRIPT_DIR/src-tauri/target/platform-manifest.$platform_key.json"
-    node - <<'EOF' "$fragment_file" "$platform_key" "$base_url" "$version" "$updater_file" "$updater_sig"
-const fs = require('fs');
-
-const [outputPath, platformKey, baseUrl, version, updaterFile, updaterSig] =
-  process.argv.slice(2);
-
-const fragment = {
-  version,
-  platform: platformKey,
-  url: `${baseUrl}/${version}/${platformKey}/updater/${require('path').basename(updaterFile)}`,
-  signature: fs.readFileSync(updaterSig, 'utf8').trim()
-};
-
-fs.writeFileSync(outputPath, `${JSON.stringify(fragment, null, 2)}\n`);
-EOF
+    node "$SCRIPT_DIR/scripts/generate-platform-manifest.mjs" \
+        "$fragment_file" "$platform_key" "$base_url" "$version" "$updater_file" "$updater_sig"
 
     upload_r2_object \
         "$fragment_file" \
@@ -359,89 +346,8 @@ generate_latest_manifest() {
         --file "$temp_dir/existing-latest.json" \
         --remote >/dev/null 2>&1 || true
 
-    node - <<'EOF' "$latest_file" "$version" "$base_url" "$temp_dir"
-const fs = require('fs');
-
-const [outputPath, version, baseUrl, tempDir] = process.argv.slice(2);
-const platforms = ['windows-x86_64', 'darwin-aarch64'];
-
-function readJsonIfExists(path) {
-  if (!fs.existsSync(path)) {
-    return null;
-  }
-  const raw = fs.readFileSync(path, 'utf8').trim();
-  if (!raw) {
-    return null;
-  }
-  try {
-    return JSON.parse(raw);
-  } catch {
-    return null;
-  }
-}
-
-function main() {
-  const fragments = [];
-  const missingPlatforms = [];
-
-  for (const platform of platforms) {
-    const fragment = readJsonIfExists(`${tempDir}/${platform}.json`);
-    if (!fragment) {
-      missingPlatforms.push(platform);
-      continue;
-    }
-    if (
-      fragment.version !== version ||
-      fragment.platform !== platform ||
-      typeof fragment.url !== 'string' ||
-      typeof fragment.signature !== 'string'
-    ) {
-      missingPlatforms.push(platform);
-      continue;
-    }
-    fragments.push(fragment);
-  }
-
-  if (fragments.length === 0) {
-    throw new Error(`No uploaded platform manifest fragments found for ${version}`);
-  }
-
-  const existingLatest = readJsonIfExists(`${tempDir}/existing-latest.json`);
-
-  const latest = {
-    version,
-    notes:
-      existingLatest && existingLatest.version === version && typeof existingLatest.notes === 'string'
-        ? existingLatest.notes
-        : `Release ${version}`,
-    pub_date:
-      existingLatest && existingLatest.version === version && typeof existingLatest.pub_date === 'string'
-        ? existingLatest.pub_date
-        : new Date().toISOString(),
-    platforms: {}
-  };
-
-  for (const fragment of fragments) {
-    latest.platforms[fragment.platform] = {
-      url: fragment.url,
-      signature: fragment.signature
-    };
-  }
-
-  fs.writeFileSync(outputPath, `${JSON.stringify(latest, null, 2)}\n`);
-  console.log(`latest.json platforms: ${fragments.map((fragment) => fragment.platform).join(', ')}`);
-  if (missingPlatforms.length > 0) {
-    console.log(`latest.json skipped platforms: ${missingPlatforms.join(', ')}`);
-  }
-}
-
-try {
-  main();
-} catch (error) {
-  console.error(error instanceof Error ? error.message : String(error));
-  process.exit(1);
-}
-EOF
+    node "$SCRIPT_DIR/scripts/generate-latest-manifest.mjs" \
+        "$latest_file" "$version" "$base_url" "$temp_dir"
 
     echo "==> Generated latest.json preview"
     cat "$latest_file"

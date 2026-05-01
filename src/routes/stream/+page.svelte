@@ -48,24 +48,24 @@
     border-radius: 2px;
     background: linear-gradient(
       180deg,
-      rgba(200, 148, 55, 0.12),
-      rgba(200, 148, 55, 0.06)
+      rgba(var(--color-accent-rgb), 0.12),
+      rgba(var(--color-accent-rgb), 0.06)
     );
-    color: rgba(228, 216, 191, 0.82);
+    color: rgba(var(--color-cream-rgb), 0.82);
     text-decoration: none;
     font-family: 'Cinzel', serif;
     font-size: 0.56rem;
     letter-spacing: 0.12em;
     text-transform: uppercase;
-    box-shadow: 0 0 0 1px rgba(255, 198, 98, 0.08) inset;
+    box-shadow: 0 0 0 1px rgba(var(--color-warm-bright-rgb), 0.08) inset;
   }
 
   .back-link:hover {
     border-color: rgba(216, 163, 81, 0.3);
     background: linear-gradient(
       180deg,
-      rgba(200, 148, 55, 0.18),
-      rgba(200, 148, 55, 0.1)
+      rgba(var(--color-accent-rgb), 0.18),
+      rgba(var(--color-accent-rgb), 0.1)
     );
   }
 

@@ -161,13 +161,13 @@
     background:
       radial-gradient(
         circle at top left,
-        rgba(255, 214, 140, 0.04),
+        rgba(var(--color-warm-rgb), 0.04),
         transparent 42%
       ),
       linear-gradient(180deg, rgba(18, 11, 6, 0.88), rgba(11, 7, 4, 0.86));
-    border: 1px solid rgba(200, 148, 55, 0.11);
+    border: 1px solid rgba(var(--color-accent-rgb), 0.11);
     border-radius: 3px;
-    box-shadow: inset 0 0 0 1px rgba(255, 214, 140, 0.03);
+    box-shadow: inset 0 0 0 1px rgba(var(--color-warm-rgb), 0.03);
     display: grid;
     grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
     gap: 0.85rem 1rem;
@@ -185,7 +185,7 @@
     font-size: 0.46rem;
     letter-spacing: 0.24em;
     text-transform: uppercase;
-    color: rgba(200, 148, 55, 0.44);
+    color: rgba(var(--color-accent-rgb), 0.44);
   }
 
   .support-copy h2 {
@@ -212,12 +212,12 @@
 
   .support-action {
     padding: 0.58rem 0.68rem;
-    border: 1px solid rgba(200, 148, 55, 0.11);
+    border: 1px solid rgba(var(--color-accent-rgb), 0.11);
     border-radius: 3px;
     background: linear-gradient(
       180deg,
-      rgba(200, 148, 55, 0.04),
-      rgba(200, 148, 55, 0.01)
+      rgba(var(--color-accent-rgb), 0.04),
+      rgba(var(--color-accent-rgb), 0.01)
     );
     display: grid;
     gap: 0.14rem;
@@ -232,14 +232,14 @@
     border-color: rgba(220, 168, 76, 0.22);
     background: linear-gradient(
       180deg,
-      rgba(200, 148, 55, 0.09),
-      rgba(200, 148, 55, 0.03)
+      rgba(var(--color-accent-rgb), 0.09),
+      rgba(var(--color-accent-rgb), 0.03)
     );
     transform: translateY(-1px);
   }
 
   .support-action:focus-visible {
-    outline: 2px solid rgba(255, 214, 140, 0.9);
+    outline: 2px solid rgba(var(--color-warm-rgb), 0.9);
     outline-offset: 2px;
   }
 
@@ -254,7 +254,7 @@
   .support-action-subtitle {
     font-family: 'Fira Code', monospace;
     font-size: 0.58rem;
-    color: rgba(200, 170, 120, 0.5);
+    color: rgba(var(--color-muted-gold-rgb), 0.5);
   }
 
   :global(.support-modal-body) {
@@ -301,11 +301,11 @@
         transparent 54%
       ),
       linear-gradient(180deg, rgba(34, 20, 8, 0.96), rgba(16, 9, 4, 0.98));
-    border: 1px solid rgba(200, 148, 55, 0.16);
+    border: 1px solid rgba(var(--color-accent-rgb), 0.16);
     border-radius: 4px;
     display: grid;
     gap: 0.65rem;
-    box-shadow: inset 0 0 0 1px rgba(255, 198, 98, 0.05);
+    box-shadow: inset 0 0 0 1px rgba(var(--color-warm-bright-rgb), 0.05);
   }
 
   .payment-card::after {
@@ -319,7 +319,7 @@
 
   .payment-card-wechat {
     box-shadow:
-      inset 0 0 0 1px rgba(255, 198, 98, 0.05),
+      inset 0 0 0 1px rgba(var(--color-warm-bright-rgb), 0.05),
       0 10px 32px rgba(42, 110, 78, 0.14);
   }
 
@@ -355,7 +355,7 @@
     margin: 0;
     font-size: 0.66rem;
     line-height: 1.45;
-    color: rgba(200, 170, 120, 0.8);
+    color: rgba(var(--color-muted-gold-rgb), 0.8);
   }
 
   @media (max-width: 760px) {

@@ -88,14 +88,14 @@
     background:
       radial-gradient(
         circle at top left,
-        rgba(255, 214, 140, 0.08),
+        rgba(var(--color-warm-rgb), 0.08),
         transparent 42%
       ),
       linear-gradient(180deg, rgba(20, 12, 6, 0.96), rgba(12, 7, 4, 0.94));
-    border: 1px solid rgba(200, 148, 55, 0.15);
+    border: 1px solid rgba(var(--color-accent-rgb), 0.15);
     border-radius: 3px;
     box-shadow:
       0 8px 28px rgba(0, 0, 0, 0.3),
-      inset 0 0 0 1px rgba(255, 214, 140, 0.04);
+      inset 0 0 0 1px rgba(var(--color-warm-rgb), 0.04);
   }
 </style>

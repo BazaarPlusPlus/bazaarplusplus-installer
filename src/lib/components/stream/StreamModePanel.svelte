@@ -423,7 +423,7 @@
     font-size: 0.5rem;
     letter-spacing: 0.24em;
     text-transform: uppercase;
-    color: rgba(200, 148, 55, 0.52);
+    color: rgba(var(--color-accent-rgb), 0.52);
   }
 
   .stream-copy h2 {

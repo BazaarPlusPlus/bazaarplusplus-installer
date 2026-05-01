@@ -71,16 +71,16 @@
     border-radius: 2px;
     background: linear-gradient(
       180deg,
-      rgba(200, 148, 55, 0.12),
-      rgba(200, 148, 55, 0.06)
+      rgba(var(--color-accent-rgb), 0.12),
+      rgba(var(--color-accent-rgb), 0.06)
     );
-    color: rgba(228, 216, 191, 0.82);
+    color: rgba(var(--color-cream-rgb), 0.82);
     text-decoration: none;
     font-family: 'Cinzel', serif;
     font-size: 0.56rem;
     letter-spacing: 0.12em;
     text-transform: uppercase;
-    box-shadow: 0 0 0 1px rgba(255, 198, 98, 0.08) inset;
+    box-shadow: 0 0 0 1px rgba(var(--color-warm-bright-rgb), 0.08) inset;
   }
 
   .back-link:hover {
@@ -110,7 +110,7 @@
   h1 {
     font-family: 'Cinzel Decorative', serif;
     font-size: clamp(1.6rem, 4vw, 2.4rem);
-    color: #e8c87a;
+    color: var(--color-gold-text);
   }
 
   .content-card {

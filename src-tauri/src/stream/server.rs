@@ -1,13 +1,12 @@
 use super::{
     http,
     overlay_settings::OverlaySettingsStore,
+    path_resolution::resolve_game_path_with_fallback,
     records::OverlayRecordRepository,
     state::{StreamRuntimeState, StreamServiceStatus, StreamTaskHandle},
 };
-use crate::commands::{detect, startup::InstallerContextState};
 use chrono::{Local, SecondsFormat};
 use std::path::PathBuf;
-use tauri::Manager;
 use tokio::{net::TcpListener, sync::oneshot};
 
 const HOST: &str = "127.0.0.1";
@@ -34,13 +33,11 @@ pub async fn start(
     };
     let overlay_url = format!("http://{HOST}:{PREFERRED_PORT}/overlay");
     let status_with_start = state.mark_started(current_timestamp());
-    let game_path = match resolve_game_path(&app, requested_game_path) {
-        Ok(game_path) => game_path,
-        Err(err) => {
-            state.set_error(err.clone());
-            return Err(err);
-        }
-    };
+    let game_path = resolve_game_path_with_fallback(
+        &app,
+        None,
+        requested_game_path.map(|path| path.to_string_lossy().into_owned()),
+    );
     let overlay_record_repository = OverlayRecordRepository::new(game_path.clone());
     let overlay_settings = OverlaySettingsStore::default();
     let router = http::router(overlay_record_repository, state.clone(), overlay_settings);
@@ -94,52 +91,6 @@ async fn bind_listener(host: &str, port: u16) -> Result<TcpListener, String> {
             "OBS overlay port {port} is unavailable on {host}. Free that port and try again. ({err})"
         )
     })
-}
-
-fn resolve_game_path(
-    app: &tauri::AppHandle,
-    requested_game_path: Option<PathBuf>,
-) -> Result<Option<PathBuf>, String> {
-    let context_state = app.state::<InstallerContextState>();
-    let env = detect::detect_environment(
-        app.clone(),
-        context_state,
-        requested_game_path
-            .as_ref()
-            .map(|path| path.to_string_lossy().into_owned()),
-    )?;
-    if let Some(path) = env.game_path.map(PathBuf::from) {
-        return Ok(Some(path));
-    }
-
-    if let Some(path) = requested_game_path {
-        return Ok(Some(path));
-    }
-
-    // Fallback: check well-known Windows Steam paths for the BazaarPlusPlus DB
-    #[cfg(target_os = "windows")]
-    {
-        let candidates = [
-            r"C:\Program Files (x86)\Steam\steamapps\common\The Bazaar",
-            r"C:\Program Files\Steam\steamapps\common\The Bazaar",
-            r"D:\Steam\steamapps\common\The Bazaar",
-            r"D:\SteamLibrary\steamapps\common\The Bazaar",
-            r"E:\Steam\steamapps\common\The Bazaar",
-            r"E:\SteamLibrary\steamapps\common\The Bazaar",
-        ];
-        for candidate in &candidates {
-            let path = PathBuf::from(candidate);
-            if path
-                .join("BazaarPlusPlus")
-                .join("bazaarplusplus.db")
-                .exists()
-            {
-                return Ok(Some(path));
-            }
-        }
-    }
-
-    Ok(None)
 }
 
 fn current_timestamp() -> String {

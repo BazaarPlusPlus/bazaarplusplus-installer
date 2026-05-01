@@ -30,7 +30,7 @@
         transparent 42%
       );
     box-shadow:
-      0 0 0 1px rgba(200, 148, 55, 0.05) inset,
+      0 0 0 1px rgba(var(--color-accent-rgb), 0.05) inset,
       0 16px 40px rgba(0, 0, 0, 0.24);
     transition:
       transform 0.16s ease,

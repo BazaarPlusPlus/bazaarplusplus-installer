@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { locale, handleLocaleToggle } from '$lib/locale';
+  import { locale } from '$lib/locale';
+  import LocaleToggle from '$lib/components/LocaleToggle.svelte';
 
   export let kicker: string;
   export let subtitle: string;
@@ -96,21 +97,7 @@
     </button>
   </div>
 
-  <button
-    class="locale-toggle"
-    onclick={handleLocaleToggle}
-    type="button"
-    aria-label={localeButtonLabel}
-    title={localeButtonLabel}
-  >
-    <svg class="locale-icon" viewBox="0 0 24 24" aria-hidden="true">
-      <path
-        d="M12 3a9 9 0 1 0 9 9a9 9 0 0 0-9-9Zm5.9 8h-2.2a14.3 14.3 0 0 0-1.2-4A7.1 7.1 0 0 1 17.9 11Zm-5.9-5.8c.7.9 1.7 2.9 2.1 5.8H9.9c.4-2.9 1.4-4.9 2.1-5.8ZM6.5 7a14.3 14.3 0 0 0-1.2 4H3.1A7.1 7.1 0 0 1 6.5 7ZM3.1 13h2.2a14.3 14.3 0 0 0 1.2 4A7.1 7.1 0 0 1 3.1 13Zm8.9 5.8c-.7-.9-1.7-2.9-2.1-5.8h4.2c-.4 2.9-1.4 4.9-2.1 5.8Zm2.5-1.8a14.3 14.3 0 0 0 1.2-4h2.2a7.1 7.1 0 0 1-3.4 4Zm-8.1-4c.1 1.4.4 2.7.9 4A12.4 12.4 0 0 1 5.9 13Zm.8-2a12.4 12.4 0 0 1 1.4-4c-.5 1.3-.8 2.6-.9 4Zm8.8 0c-.1-1.4-.4-2.7-.9-4a12.4 12.4 0 0 1 1.4 4Zm-1.4 2c.5-1.3.8-2.6.9-4a12.4 12.4 0 0 1-1.4 4Z"
-        fill="currentColor"
-      />
-    </svg>
-    <span class="locale-badge">{localeBadge}</span>
-  </button>
+  <LocaleToggle label={localeButtonLabel} badge={localeBadge} />
 
   <div class="sigil" aria-hidden="true">
     <svg width="32" height="32" viewBox="0 0 44 44" fill="none">
@@ -159,10 +146,10 @@
       rgba(36, 22, 9, 0.9),
       rgba(15, 9, 5, 0.86)
     );
-    border: 1px solid rgba(200, 148, 55, 0.18);
+    border: 1px solid rgba(var(--color-accent-rgb), 0.18);
     border-radius: 3px;
     box-shadow:
-      0 0 0 1px rgba(200, 148, 55, 0.06) inset,
+      0 0 0 1px rgba(var(--color-accent-rgb), 0.06) inset,
       0 16px 42px rgba(0, 0, 0, 0.42);
     display: grid;
     gap: 0.28rem;
@@ -171,7 +158,7 @@
 
   .corner {
     position: absolute;
-    color: rgba(200, 148, 55, 0.42);
+    color: rgba(var(--color-accent-rgb), 0.42);
   }
   .tl {
     top: 8px;
@@ -197,15 +184,15 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    border: 1px solid rgba(200, 148, 55, 0.24);
+    border: 1px solid rgba(var(--color-accent-rgb), 0.24);
     border-radius: 2px;
     background: linear-gradient(
       180deg,
-      rgba(200, 148, 55, 0.12),
-      rgba(200, 148, 55, 0.06)
+      rgba(var(--color-accent-rgb), 0.12),
+      rgba(var(--color-accent-rgb), 0.06)
     );
-    color: rgba(228, 216, 191, 0.82);
-    box-shadow: 0 0 0 1px rgba(255, 198, 98, 0.08) inset;
+    color: rgba(var(--color-cream-rgb), 0.82);
+    box-shadow: 0 0 0 1px rgba(var(--color-warm-bright-rgb), 0.08) inset;
     text-decoration: none;
     transition:
       background 0.15s ease,
@@ -215,14 +202,14 @@
   .about-toggle:hover {
     background: linear-gradient(
       180deg,
-      rgba(200, 148, 55, 0.2),
-      rgba(200, 148, 55, 0.1)
+      rgba(var(--color-accent-rgb), 0.2),
+      rgba(var(--color-accent-rgb), 0.1)
     );
-    border-color: rgba(200, 148, 55, 0.4);
+    border-color: rgba(var(--color-accent-rgb), 0.4);
   }
 
   .about-toggle:focus-visible {
-    outline: 2px solid rgba(255, 214, 140, 0.9);
+    outline: 2px solid rgba(var(--color-warm-rgb), 0.9);
     outline-offset: 2px;
   }
 
@@ -246,28 +233,28 @@
   }
 
   .updater-toggle.is-highlighted {
-    color: #f3d38d;
+    color: var(--color-soft-gold);
     border-color: rgba(232, 200, 122, 0.68);
     background: linear-gradient(
       180deg,
       rgba(232, 200, 122, 0.24),
-      rgba(200, 148, 55, 0.12)
+      rgba(var(--color-accent-rgb), 0.12)
     );
     box-shadow:
-      0 0 0 1px rgba(255, 214, 140, 0.14) inset,
+      0 0 0 1px rgba(var(--color-warm-rgb), 0.14) inset,
       0 0 18px rgba(232, 200, 122, 0.12);
   }
 
   .stream-toggle.is-active {
-    color: #f3d38d;
+    color: var(--color-soft-gold);
     border-color: rgba(232, 200, 122, 0.52);
     background: linear-gradient(
       180deg,
       rgba(232, 200, 122, 0.18),
-      rgba(200, 148, 55, 0.1)
+      rgba(var(--color-accent-rgb), 0.1)
     );
     box-shadow:
-      0 0 0 1px rgba(255, 214, 140, 0.1) inset,
+      0 0 0 1px rgba(var(--color-warm-rgb), 0.1) inset,
       0 0 12px rgba(232, 200, 122, 0.08);
   }
 
@@ -281,62 +268,6 @@
     align-items: center;
     height: 100%;
     white-space: nowrap;
-  }
-
-  .locale-toggle {
-    position: absolute;
-    top: 0.72rem;
-    right: 0.72rem;
-    min-width: 3rem;
-    height: 1.9rem;
-    padding: 0.28rem 0.5rem;
-    border: 1px solid rgba(200, 148, 55, 0.24);
-    border-radius: 2px;
-    background: linear-gradient(
-      180deg,
-      rgba(200, 148, 55, 0.12),
-      rgba(200, 148, 55, 0.06)
-    );
-    color: rgba(228, 216, 191, 0.82);
-    font-family: 'Cinzel', serif;
-    font-size: 0.5rem;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.35rem;
-    box-shadow: 0 0 0 1px rgba(255, 198, 98, 0.08) inset;
-    z-index: 2;
-  }
-
-  .locale-toggle:hover {
-    background: linear-gradient(
-      180deg,
-      rgba(200, 148, 55, 0.2),
-      rgba(200, 148, 55, 0.1)
-    );
-    border-color: rgba(200, 148, 55, 0.4);
-  }
-
-  .locale-toggle:focus-visible {
-    outline: 2px solid rgba(255, 214, 140, 0.9);
-    outline-offset: 2px;
-  }
-
-  .locale-icon {
-    width: 0.9rem;
-    height: 0.9rem;
-    flex-shrink: 0;
-    opacity: 0.9;
-  }
-
-  .locale-badge {
-    min-width: 1.1rem;
-    text-align: center;
-    font-family: 'Fira Code', monospace;
-    font-size: 0.62rem;
-    letter-spacing: 0.05em;
   }
 
   .sigil {
@@ -371,7 +302,7 @@
     font-size: clamp(1.2rem, 3.6vw, 1.86rem);
     font-weight: 700;
     line-height: 1;
-    background: linear-gradient(155deg, #e8c87a 0%, #bf852e 55%, #e8c87a 100%);
+    background: linear-gradient(155deg, var(--color-gold-text) 0%, var(--color-gold-deep) 55%, var(--color-gold-text) 100%);
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -383,7 +314,7 @@
     font-family: 'IM Fell English', serif;
     font-style: italic;
     font-size: 0.7rem;
-    color: rgba(200, 170, 120, 0.58);
+    color: rgba(var(--color-muted-gold-rgb), 0.58);
   }
 
   .rule {
@@ -391,7 +322,7 @@
     display: flex;
     align-items: center;
     gap: 0.65rem;
-    color: rgba(200, 148, 55, 0.35);
+    color: rgba(var(--color-accent-rgb), 0.35);
   }
 
   .rule span:first-child,
@@ -401,8 +332,8 @@
     background: linear-gradient(
       90deg,
       transparent,
-      rgba(200, 148, 55, 0.3) 40%,
-      rgba(200, 148, 55, 0.3) 60%,
+      rgba(var(--color-accent-rgb), 0.3) 40%,
+      rgba(var(--color-accent-rgb), 0.3) 60%,
       transparent
     );
   }
@@ -424,11 +355,6 @@
       margin-bottom: 0.55rem;
       padding-right: 3.3rem;
       flex-wrap: wrap;
-    }
-
-    .locale-toggle {
-      top: 0.58rem;
-      right: 0.58rem;
     }
   }
 </style>

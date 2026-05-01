@@ -294,11 +294,11 @@
     border-radius: 4px;
     border: 1px solid rgba(214, 170, 86, 0.18);
     background:
-      radial-gradient(circle at top left, rgba(255, 214, 140, 0.1), transparent 34%),
+      radial-gradient(circle at top left, rgba(var(--color-warm-rgb), 0.1), transparent 34%),
       linear-gradient(180deg, rgba(27, 16, 8, 0.96), rgba(14, 8, 5, 0.94));
     box-shadow:
       0 10px 22px rgba(0, 0, 0, 0.24),
-      inset 0 0 0 1px rgba(255, 214, 140, 0.04);
+      inset 0 0 0 1px rgba(var(--color-warm-rgb), 0.04);
     display: grid;
     gap: 1rem;
     padding: 1rem 1.1rem 1.05rem;
@@ -321,7 +321,7 @@
   .identity-header h2 {
     margin: 0;
     font-size: 1.05rem;
-    color: #f6ebd1;
+    color: var(--color-pale-gold);
     min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -362,7 +362,7 @@
     margin: 0;
     font-size: 0.92rem;
     font-weight: 700;
-    color: #f6ebd1;
+    color: var(--color-pale-gold);
   }
 
   .identity-panel-intro {
@@ -381,7 +381,7 @@
   .identity-field input {
     border: 1px solid rgba(247, 224, 176, 0.18);
     background: rgba(15, 10, 7, 0.9);
-    color: #f6ebd1;
+    color: var(--color-pale-gold);
     padding: 0.72rem 0.8rem;
     outline: none;
   }
@@ -393,7 +393,7 @@
   .identity-button {
     border: 1px solid rgba(247, 224, 176, 0.18);
     background: rgba(23, 16, 10, 0.92);
-    color: #f6ebd1;
+    color: var(--color-pale-gold);
     padding: 0.72rem 0.95rem;
     cursor: pointer;
   }

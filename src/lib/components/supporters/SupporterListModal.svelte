@@ -121,13 +121,13 @@
         transparent 60%
       ),
       linear-gradient(180deg, rgba(36, 21, 8, 0.92), rgba(21, 12, 6, 0.94));
-    border: 1px solid rgba(200, 148, 55, 0.16);
-    box-shadow: inset 0 0 0 1px rgba(255, 214, 140, 0.04);
+    border: 1px solid rgba(var(--color-accent-rgb), 0.16);
+    box-shadow: inset 0 0 0 1px rgba(var(--color-warm-rgb), 0.04);
   }
 
   .supporter-intro {
     margin: 0;
-    color: rgba(228, 216, 191, 0.84);
+    color: rgba(var(--color-cream-rgb), 0.84);
     font-size: 0.8rem;
     line-height: 1.65;
     white-space: pre-line;
@@ -144,7 +144,7 @@
   .supporter-unnamed-note {
     margin: 0;
     padding-top: 0.15rem;
-    color: rgba(200, 170, 120, 0.72);
+    color: rgba(var(--color-muted-gold-rgb), 0.72);
     font-size: 0.74rem;
     line-height: 1.6;
     text-align: center;
@@ -155,8 +155,8 @@
     margin: 0;
     padding: 0.55rem 0.7rem;
     border-radius: 999px;
-    border: 1px dashed rgba(200, 170, 120, 0.24);
-    background: rgba(200, 148, 55, 0.04);
+    border: 1px dashed rgba(var(--color-muted-gold-rgb), 0.24);
+    background: rgba(var(--color-accent-rgb), 0.04);
     color: rgba(214, 190, 146, 0.68);
     font-size: 0.68rem;
     line-height: 1.45;
@@ -180,8 +180,8 @@
   .supporter-item {
     --pill-border: rgba(255, 232, 174, 0.18);
     --pill-top: rgba(255, 248, 231, 0.12);
-    --pill-bottom: rgba(200, 148, 55, 0.08);
-    --pill-shadow: rgba(255, 214, 140, 0.04);
+    --pill-bottom: rgba(var(--color-accent-rgb), 0.08);
+    --pill-shadow: rgba(var(--color-warm-rgb), 0.04);
     --pill-glow: transparent;
     padding: 0.38rem 0.72rem;
     border-radius: 999px;

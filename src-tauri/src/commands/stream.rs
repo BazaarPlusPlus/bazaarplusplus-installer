@@ -1,70 +1,17 @@
-use crate::commands::startup::InstallerContextState;
-#[cfg(target_os = "windows")]
-use crate::config::STEAM_LIBRARY_FALLBACK_CANDIDATES;
 use crate::config::{BAZAAR_DATA_DIRECTORY, DATABASE_FILE_NAME};
 use crate::stream::{
     http::remove_overlay_strip_cache,
     overlay_settings::{
         OverlayCropSettings, OverlayCropSettingsPayload, OverlayDisplayMode, OverlaySettingsStore,
     },
+    path_resolution::{normalize_requested_game_path, resolve_game_path_with_fallback},
     records::{OverlayRecord, OverlayRecordRepository},
     state::{StreamRuntimeState, StreamServiceStatus},
 };
 use base64::{engine::general_purpose::STANDARD, Engine as _};
 use image::{DynamicImage, ImageFormat};
 use std::collections::HashMap;
-use std::{path::PathBuf, process::Command};
-use tauri::Manager;
-
-fn normalize_requested_game_path(game_path: Option<String>) -> Option<PathBuf> {
-    game_path
-        .as_deref()
-        .map(str::trim)
-        .filter(|path| !path.is_empty())
-        .map(PathBuf::from)
-}
-
-fn resolve_game_path_with_fallback(
-    app: &tauri::AppHandle,
-    state: &StreamRuntimeState,
-    requested_game_path: Option<String>,
-) -> Option<PathBuf> {
-    // 1. Try full Steam detection (registry + VDF)
-    let context_state = app.state::<InstallerContextState>();
-    if let Ok(env) = crate::commands::detect::detect_environment(
-        app.clone(),
-        context_state,
-        requested_game_path.clone(),
-    ) {
-        if let Some(path) = env.game_path.map(PathBuf::from) {
-            return Some(path);
-        }
-    }
-
-    if let Some(path) = normalize_requested_game_path(requested_game_path) {
-        return Some(path);
-    }
-
-    // 2. Use path cached when service last started
-    if let Some(path) = state.get_game_path() {
-        return Some(path);
-    }
-
-    // 3. Last resort: scan well-known Windows Steam library paths directly.
-    //    We only need BazaarPlusPlus/bazaarplusplus.db to exist — no need for TheBazaar.exe.
-    #[cfg(target_os = "windows")]
-    {
-        for candidate in STEAM_LIBRARY_FALLBACK_CANDIDATES {
-            let path = PathBuf::from(candidate);
-            let db = path.join(BAZAAR_DATA_DIRECTORY).join(DATABASE_FILE_NAME);
-            if db.exists() {
-                return Some(path);
-            }
-        }
-    }
-
-    None
-}
+use std::process::Command;
 
 #[tauri::command]
 pub async fn start_stream_service(
@@ -105,7 +52,7 @@ pub fn set_stream_overlay_window_offset(
         .started_at
         .clone()
         .ok_or_else(|| "Stream start time is unavailable.".to_string())?;
-    let resolved_game_path = resolve_game_path_with_fallback(&app, &state, game_path);
+    let resolved_game_path = resolve_game_path_with_fallback(&app, Some(&state), game_path);
     let repository = OverlayRecordRepository::new(resolved_game_path);
 
     if offset == 0 {
@@ -164,7 +111,7 @@ pub fn detect_stream_db_path(
     state: tauri::State<'_, StreamRuntimeState>,
     game_path: Option<String>,
 ) -> StreamDbPathInfo {
-    let game_path = resolve_game_path_with_fallback(&app, &state, game_path);
+    let game_path = resolve_game_path_with_fallback(&app, Some(&state), game_path);
     match game_path {
         None => StreamDbPathInfo {
             found: false,
@@ -197,7 +144,7 @@ pub fn list_stream_overlay_records(
     game_path: Option<String>,
     limit: Option<usize>,
 ) -> Result<Vec<OverlayRecord>, String> {
-    let game_path = resolve_game_path_with_fallback(&app, &state, game_path);
+    let game_path = resolve_game_path_with_fallback(&app, Some(&state), game_path);
     let repository = OverlayRecordRepository::new(game_path);
     repository.load_record_list(None, limit)
 }
@@ -210,7 +157,7 @@ pub fn reveal_stream_record_image(
     record_id: String,
 ) -> Result<(), String> {
     let requested_game_path = game_path.clone();
-    let game_path = resolve_game_path_with_fallback(&app, &state, game_path);
+    let game_path = resolve_game_path_with_fallback(&app, Some(&state), game_path);
     let repository = OverlayRecordRepository::new(game_path.clone());
     let path = repository
         .load_image_path(&record_id)?
@@ -232,7 +179,7 @@ pub fn delete_stream_record(
     game_path: Option<String>,
     record_id: String,
 ) -> Result<(), String> {
-    let game_path = resolve_game_path_with_fallback(&app, &state, game_path);
+    let game_path = resolve_game_path_with_fallback(&app, Some(&state), game_path);
     let repository = OverlayRecordRepository::new(game_path);
     let deleted = repository.delete_record(&record_id)?;
     if !deleted {
@@ -250,7 +197,7 @@ pub fn load_stream_record_strip_preview(
     game_path: Option<String>,
     record_id: String,
 ) -> Result<Option<String>, String> {
-    let game_path = resolve_game_path_with_fallback(&app, &state, game_path);
+    let game_path = resolve_game_path_with_fallback(&app, Some(&state), game_path);
     let repository = OverlayRecordRepository::new(game_path);
     let Some((_path, bytes)) = repository.load_image(&record_id)? else {
         return Ok(None);
@@ -279,7 +226,7 @@ pub fn load_stream_record_strip_previews(
     game_path: Option<String>,
     record_ids: Vec<String>,
 ) -> Result<HashMap<String, String>, String> {
-    let game_path = resolve_game_path_with_fallback(&app, &state, game_path);
+    let game_path = resolve_game_path_with_fallback(&app, Some(&state), game_path);
     let repository = OverlayRecordRepository::new(game_path);
     let crop = OverlaySettingsStore::default().load_payload()?.crop;
     let mut previews = HashMap::new();
@@ -378,21 +325,5 @@ fn reveal_in_file_browser(path: &std::path::Path) -> Result<(), String> {
             .spawn()
             .map_err(|err| format!("failed to open image directory: {err}"))?;
         Ok(())
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::normalize_requested_game_path;
-    use std::path::PathBuf;
-
-    #[test]
-    fn normalize_requested_game_path_trims_blank_input() {
-        assert_eq!(
-            normalize_requested_game_path(Some("  D:\\Games\\The Bazaar  ".to_string())),
-            Some(PathBuf::from("D:\\Games\\The Bazaar"))
-        );
-        assert_eq!(normalize_requested_game_path(Some("   ".to_string())), None);
-        assert_eq!(normalize_requested_game_path(None), None);
     }
 }

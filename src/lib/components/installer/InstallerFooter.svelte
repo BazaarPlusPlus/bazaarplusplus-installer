@@ -15,7 +15,7 @@
     display: flex;
     align-items: center;
     gap: 0.65rem;
-    color: rgba(200, 148, 55, 0.35);
+    color: rgba(var(--color-accent-rgb), 0.35);
   }
 
   .rule span:first-child,
@@ -25,8 +25,8 @@
     background: linear-gradient(
       90deg,
       transparent,
-      rgba(200, 148, 55, 0.3) 40%,
-      rgba(200, 148, 55, 0.3) 60%,
+      rgba(var(--color-accent-rgb), 0.3) 40%,
+      rgba(var(--color-accent-rgb), 0.3) 60%,
       transparent
     );
   }

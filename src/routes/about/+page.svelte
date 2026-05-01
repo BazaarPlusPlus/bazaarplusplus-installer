@@ -2,8 +2,9 @@
   import { getVersion } from '@tauri-apps/api/app';
   import { onMount } from 'svelte';
   import AppModal from '$lib/components/AppModal.svelte';
+  import LocaleToggle from '$lib/components/LocaleToggle.svelte';
   import { formatMessage, messages } from '$lib/i18n';
-  import { locale, handleLocaleToggle } from '$lib/locale';
+  import { locale } from '$lib/locale';
   import SupporterListModal from '$lib/components/supporters/SupporterListModal.svelte';
   import {
     authors,
@@ -135,21 +136,10 @@
       {t('aboutBack')}
     </a>
 
-    <button
-      class="locale-toggle"
-      onclick={handleLocaleToggle}
-      type="button"
-      aria-label={pageModel.localeButtonLabel}
-      title={pageModel.localeButtonLabel}
-    >
-      <svg class="locale-icon" viewBox="0 0 24 24" aria-hidden="true">
-        <path
-          d="M12 3a9 9 0 1 0 9 9a9 9 0 0 0-9-9Zm5.9 8h-2.2a14.3 14.3 0 0 0-1.2-4A7.1 7.1 0 0 1 17.9 11Zm-5.9-5.8c.7.9 1.7 2.9 2.1 5.8H9.9c.4-2.9 1.4-4.9 2.1-5.8ZM6.5 7a14.3 14.3 0 0 0-1.2 4H3.1A7.1 7.1 0 0 1 6.5 7ZM3.1 13h2.2a14.3 14.3 0 0 0 1.2 4A7.1 7.1 0 0 1 3.1 13Zm8.9 5.8c-.7-.9-1.7-2.9-2.1-5.8h4.2c-.4 2.9-1.4 4.9-2.1 5.8Zm2.5-1.8a14.3 14.3 0 0 0 1.2-4h2.2a7.1 7.1 0 0 1-3.4 4Z"
-          fill="currentColor"
-        />
-      </svg>
-      <span class="locale-badge">{pageModel.localeBadge}</span>
-    </button>
+    <LocaleToggle
+      label={pageModel.localeButtonLabel}
+      badge={pageModel.localeBadge}
+    />
 
     <div class="sigil" aria-hidden="true">
       <svg width="32" height="32" viewBox="0 0 44 44" fill="none">
@@ -376,10 +366,10 @@
       rgba(38, 23, 9, 0.92),
       rgba(16, 10, 5, 0.88)
     );
-    border: 1px solid rgba(200, 148, 55, 0.18);
+    border: 1px solid rgba(var(--color-accent-rgb), 0.18);
     border-radius: 3px;
     box-shadow:
-      0 0 0 1px rgba(200, 148, 55, 0.06) inset,
+      0 0 0 1px rgba(var(--color-accent-rgb), 0.06) inset,
       0 24px 64px rgba(0, 0, 0, 0.5);
     display: grid;
     gap: 0.15rem;
@@ -392,14 +382,14 @@
     left: 0.9rem;
     height: 2rem;
     padding: 0.3rem 0.55rem;
-    border: 1px solid rgba(200, 148, 55, 0.24);
+    border: 1px solid rgba(var(--color-accent-rgb), 0.24);
     border-radius: 2px;
     background: linear-gradient(
       180deg,
-      rgba(200, 148, 55, 0.12),
-      rgba(200, 148, 55, 0.06)
+      rgba(var(--color-accent-rgb), 0.12),
+      rgba(var(--color-accent-rgb), 0.06)
     );
-    color: rgba(228, 216, 191, 0.82);
+    color: rgba(var(--color-cream-rgb), 0.82);
     font-family: 'Cinzel', serif;
     font-size: 0.54rem;
     letter-spacing: 0.14em;
@@ -408,7 +398,7 @@
     align-items: center;
     justify-content: center;
     gap: 0.3rem;
-    box-shadow: 0 0 0 1px rgba(255, 198, 98, 0.08) inset;
+    box-shadow: 0 0 0 1px rgba(var(--color-warm-bright-rgb), 0.08) inset;
     z-index: 2;
     text-decoration: none;
     transition:
@@ -419,14 +409,14 @@
   .back-btn:hover {
     background: linear-gradient(
       180deg,
-      rgba(200, 148, 55, 0.2),
-      rgba(200, 148, 55, 0.1)
+      rgba(var(--color-accent-rgb), 0.2),
+      rgba(var(--color-accent-rgb), 0.1)
     );
-    border-color: rgba(200, 148, 55, 0.4);
+    border-color: rgba(var(--color-accent-rgb), 0.4);
   }
 
   .back-btn:focus-visible {
-    outline: 2px solid rgba(255, 214, 140, 0.9);
+    outline: 2px solid rgba(var(--color-warm-rgb), 0.9);
     outline-offset: 2px;
   }
 
@@ -435,65 +425,6 @@
     height: 0.9rem;
     flex-shrink: 0;
     opacity: 0.9;
-  }
-
-  .locale-toggle {
-    position: absolute;
-    top: 0.9rem;
-    right: 0.9rem;
-    min-width: 3.2rem;
-    height: 2rem;
-    padding: 0.3rem 0.55rem;
-    border: 1px solid rgba(200, 148, 55, 0.24);
-    border-radius: 2px;
-    background: linear-gradient(
-      180deg,
-      rgba(200, 148, 55, 0.12),
-      rgba(200, 148, 55, 0.06)
-    );
-    color: rgba(228, 216, 191, 0.82);
-    font-family: 'Cinzel', serif;
-    font-size: 0.54rem;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.35rem;
-    box-shadow: 0 0 0 1px rgba(255, 198, 98, 0.08) inset;
-    z-index: 2;
-    cursor: pointer;
-    border-style: solid;
-    font: inherit;
-  }
-
-  .locale-toggle:hover {
-    background: linear-gradient(
-      180deg,
-      rgba(200, 148, 55, 0.2),
-      rgba(200, 148, 55, 0.1)
-    );
-    border-color: rgba(200, 148, 55, 0.4);
-  }
-
-  .locale-toggle:focus-visible {
-    outline: 2px solid rgba(255, 214, 140, 0.9);
-    outline-offset: 2px;
-  }
-
-  .locale-icon {
-    width: 0.9rem;
-    height: 0.9rem;
-    flex-shrink: 0;
-    opacity: 0.9;
-  }
-
-  .locale-badge {
-    min-width: 1.1rem;
-    text-align: center;
-    font-family: 'Fira Code', monospace;
-    font-size: 0.62rem;
-    letter-spacing: 0.05em;
   }
 
   .sigil {
@@ -518,7 +449,7 @@
     font-size: clamp(1.35rem, 4.2vw, 2.1rem);
     font-weight: 700;
     line-height: 1;
-    background: linear-gradient(155deg, #e8c87a 0%, #bf852e 55%, #e8c87a 100%);
+    background: linear-gradient(155deg, var(--color-gold-text) 0%, var(--color-gold-deep) 55%, var(--color-gold-text) 100%);
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -530,7 +461,7 @@
     display: flex;
     align-items: center;
     gap: 0.65rem;
-    color: rgba(200, 148, 55, 0.35);
+    color: rgba(var(--color-accent-rgb), 0.35);
   }
 
   .rule span:first-child,
@@ -540,8 +471,8 @@
     background: linear-gradient(
       90deg,
       transparent,
-      rgba(200, 148, 55, 0.3) 40%,
-      rgba(200, 148, 55, 0.3) 60%,
+      rgba(var(--color-accent-rgb), 0.3) 40%,
+      rgba(var(--color-accent-rgb), 0.3) 60%,
       transparent
     );
   }
@@ -579,14 +510,14 @@
     font-size: 0.6rem;
     letter-spacing: 0.1em;
     text-transform: uppercase;
-    color: rgba(200, 148, 55, 0.55);
+    color: rgba(var(--color-accent-rgb), 0.55);
   }
 
   .info-line {
     margin: 0;
     font-family: 'Fira Code', monospace;
     font-size: 0.78rem;
-    color: rgba(228, 216, 191, 0.82);
+    color: rgba(var(--color-cream-rgb), 0.82);
     display: flex;
     align-items: center;
     gap: 0.6rem;
@@ -608,7 +539,7 @@
   }
 
   .info-link:focus-visible {
-    outline: 2px solid rgba(255, 214, 140, 0.9);
+    outline: 2px solid rgba(var(--color-warm-rgb), 0.9);
     outline-offset: 2px;
   }
 
@@ -638,7 +569,7 @@
     width: 0.22rem;
     height: 0.22rem;
     border-radius: 999px;
-    background: rgba(200, 170, 120, 0.38);
+    background: rgba(var(--color-muted-gold-rgb), 0.38);
     flex-shrink: 0;
   }
 
@@ -648,8 +579,8 @@
     background: linear-gradient(
       180deg,
       transparent,
-      rgba(200, 170, 120, 0.45) 20%,
-      rgba(200, 170, 120, 0.45) 80%,
+      rgba(var(--color-muted-gold-rgb), 0.45) 20%,
+      rgba(var(--color-muted-gold-rgb), 0.45) 80%,
       transparent
     );
     flex-shrink: 0;
@@ -660,7 +591,7 @@
     font-size: 0.6rem;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: rgba(200, 170, 120, 0.5);
+    color: rgba(var(--color-muted-gold-rgb), 0.5);
   }
 
   .tag-version {
@@ -675,7 +606,7 @@
   .info-muted {
     margin: 0;
     font-size: 0.78rem;
-    color: rgba(200, 170, 120, 0.5);
+    color: rgba(var(--color-muted-gold-rgb), 0.5);
   }
 
   .dep-list {
@@ -692,25 +623,25 @@
     justify-content: space-between;
     padding: 0.45rem 0.6rem;
     border-radius: 2px;
-    background: rgba(200, 148, 55, 0.04);
+    background: rgba(var(--color-accent-rgb), 0.04);
     border: 1px solid rgba(180, 130, 48, 0.08);
     transition: background 0.15s ease;
   }
 
   .dep-item:hover {
-    background: rgba(200, 148, 55, 0.08);
+    background: rgba(var(--color-accent-rgb), 0.08);
   }
 
   .dep-name {
     font-family: 'Fira Code', monospace;
     font-size: 0.75rem;
-    color: rgba(228, 216, 191, 0.85);
+    color: rgba(var(--color-cream-rgb), 0.85);
   }
 
   .dep-license {
     font-family: 'Fira Code', monospace;
     font-size: 0.62rem;
-    color: rgba(200, 170, 120, 0.45);
+    color: rgba(var(--color-muted-gold-rgb), 0.45);
     flex-shrink: 0;
   }
 
@@ -724,7 +655,7 @@
     min-width: 9.4rem;
     padding: 0.6rem 0.75rem;
     border-radius: 3px;
-    border: 1px solid rgba(200, 148, 55, 0.2);
+    border: 1px solid rgba(var(--color-accent-rgb), 0.2);
     background:
       radial-gradient(
         circle at top,
@@ -736,7 +667,7 @@
     display: grid;
     gap: 0.15rem;
     justify-items: center;
-    box-shadow: inset 0 0 0 1px rgba(255, 214, 140, 0.04);
+    box-shadow: inset 0 0 0 1px rgba(var(--color-warm-rgb), 0.04);
     cursor: pointer;
     transition:
       background 0.15s ease,
@@ -784,7 +715,7 @@
   .dep-link-label {
     font-family: 'Fira Code', monospace;
     font-size: 0.62rem;
-    color: rgba(200, 170, 120, 0.55);
+    color: rgba(var(--color-muted-gold-rgb), 0.55);
     flex-shrink: 0;
   }
 
@@ -793,14 +724,14 @@
     font-size: 0.56rem;
     letter-spacing: 0.1em;
     text-transform: uppercase;
-    color: rgba(200, 170, 120, 0.45);
+    color: rgba(var(--color-muted-gold-rgb), 0.45);
     flex-shrink: 0;
   }
 
   .dep-link {
     font-family: 'Fira Code', monospace;
     font-size: 0.62rem;
-    color: rgba(200, 170, 120, 0.55);
+    color: rgba(var(--color-muted-gold-rgb), 0.55);
     text-decoration: none;
     flex-shrink: 0;
     transition: color 0.15s ease;
@@ -854,11 +785,11 @@
         transparent 54%
       ),
       linear-gradient(180deg, rgba(34, 20, 8, 0.96), rgba(16, 9, 4, 0.98));
-    border: 1px solid rgba(200, 148, 55, 0.16);
+    border: 1px solid rgba(var(--color-accent-rgb), 0.16);
     border-radius: 4px;
     display: grid;
     gap: 0.65rem;
-    box-shadow: inset 0 0 0 1px rgba(255, 198, 98, 0.05);
+    box-shadow: inset 0 0 0 1px rgba(var(--color-warm-bright-rgb), 0.05);
   }
 
   .payment-card::after {
@@ -872,7 +803,7 @@
 
   .payment-card-wechat {
     box-shadow:
-      inset 0 0 0 1px rgba(255, 198, 98, 0.05),
+      inset 0 0 0 1px rgba(var(--color-warm-bright-rgb), 0.05),
       0 10px 32px rgba(42, 110, 78, 0.14);
   }
 
@@ -937,7 +868,7 @@
     margin: 0;
     font-size: 0.66rem;
     line-height: 1.45;
-    color: rgba(200, 170, 120, 0.8);
+    color: rgba(var(--color-muted-gold-rgb), 0.8);
   }
 
   .footer {
@@ -964,7 +895,7 @@
   button:focus-visible,
   .dep-item-link:focus-visible,
   .dep-link:focus-visible {
-    outline: 2px solid rgba(255, 214, 140, 0.9);
+    outline: 2px solid rgba(var(--color-warm-rgb), 0.9);
     outline-offset: 2px;
   }
 
@@ -989,11 +920,6 @@
     .back-btn {
       top: 0.7rem;
       left: 0.7rem;
-    }
-
-    .locale-toggle {
-      top: 0.7rem;
-      right: 0.7rem;
     }
 
     .payment-grid {

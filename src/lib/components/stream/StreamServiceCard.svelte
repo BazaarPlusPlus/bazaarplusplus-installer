@@ -262,7 +262,7 @@
       rgba(12, 8, 4, 0.84)
     );
     box-shadow:
-      0 0 0 1px rgba(200, 148, 55, 0.05) inset,
+      0 0 0 1px rgba(var(--color-accent-rgb), 0.05) inset,
       0 18px 44px rgba(0, 0, 0, 0.24);
   }
 
@@ -528,7 +528,7 @@
       rgba(199, 145, 58, 0.2),
       rgba(116, 68, 24, 0.22)
     );
-    color: #f3d38d;
+    color: var(--color-soft-gold);
   }
 
   button {
@@ -558,7 +558,7 @@
       rgba(199, 145, 58, 0.2),
       rgba(116, 68, 24, 0.22)
     );
-    color: #f3d38d;
+    color: var(--color-soft-gold);
   }
 
   button.secondary.is-error {
