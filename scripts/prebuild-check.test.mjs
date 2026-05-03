@@ -44,17 +44,49 @@ test('compareVersions compares dotted numeric versions', () => {
   expect(compareVersions('bad', '2.9.0')).toBe(null);
 });
 
-test('readBppDataVersionPolicy reads minimum supported version', () => {
+test('readBppDataVersionPolicy reads current and minimum supported versions', () => {
   const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), 'bpp-policy-'));
   fs.mkdirSync(path.join(rootDir, 'src-tauri', 'resources'), {
     recursive: true
   });
   fs.writeFileSync(
     path.join(rootDir, 'src-tauri', 'resources', 'BppDataVersionPolicy.json'),
-    JSON.stringify({ minimum_supported_bpp_data_version: '2.9.0' }, null, 2)
+    JSON.stringify(
+      {
+        current_bpp_data_version: '3.0.0',
+        minimum_supported_bpp_data_version: '2.9.0'
+      },
+      null,
+      2
+    )
   );
 
   const policy = readBppDataVersionPolicy(rootDir);
 
-  expect(policy).toEqual({ minimumSupported: '2.9.0' });
+  expect(policy).toEqual({
+    currentVersion: '3.0.0',
+    minimumSupported: '2.9.0'
+  });
+});
+
+test('readBppDataVersionPolicy rejects minimum versions newer than current data version', () => {
+  const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), 'bpp-policy-'));
+  fs.mkdirSync(path.join(rootDir, 'src-tauri', 'resources'), {
+    recursive: true
+  });
+  fs.writeFileSync(
+    path.join(rootDir, 'src-tauri', 'resources', 'BppDataVersionPolicy.json'),
+    JSON.stringify(
+      {
+        current_bpp_data_version: '2.9.0',
+        minimum_supported_bpp_data_version: '3.0.0'
+      },
+      null,
+      2
+    )
+  );
+
+  expect(() => readBppDataVersionPolicy(rootDir)).toThrow(
+    /minimum_supported_bpp_data_version=3\.0\.0 cannot exceed current_bpp_data_version=2\.9\.0/
+  );
 });

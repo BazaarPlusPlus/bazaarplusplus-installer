@@ -198,7 +198,11 @@ mod tests {
     #[test]
     fn test_inspect_bpp_data_directory_accepts_compatible_version() {
         let tmp = tempfile::tempdir().unwrap();
-        crate::commands::bepinex::ensure_bpp_data_version_file(tmp.path()).unwrap();
+        crate::commands::bepinex::ensure_bpp_data_version_file(
+            tmp.path(),
+            crate::commands::bepinex::CURRENT_BPP_DATA_VERSION,
+        )
+        .unwrap();
 
         let state = inspect_bpp_data_directory(tmp.path(), "2.0.0");
 

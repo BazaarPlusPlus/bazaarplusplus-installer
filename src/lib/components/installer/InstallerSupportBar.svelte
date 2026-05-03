@@ -1,23 +1,9 @@
 <script lang="ts">
   import { openUrl } from '@tauri-apps/plugin-opener';
-  import AppModal from '$lib/components/AppModal.svelte';
+  import PaymentCodeModal from '$lib/components/supporters/PaymentCodeModal.svelte';
   import SupporterListModal from '$lib/components/supporters/SupporterListModal.svelte';
   import { locale } from '$lib/locale';
   import { hasTauriRuntime } from '$lib/installer/runtime';
-
-  type CopyKey =
-    | 'title'
-    | 'body'
-    | 'wechat'
-    | 'wechatAction'
-    | 'kofi'
-    | 'kofiAction'
-    | 'supporters'
-    | 'supportersAction'
-    | 'supportQrTitle'
-    | 'supportQrBody'
-    | 'supportQrHint'
-    | 'close';
 
   const copy = {
     en: {
@@ -64,6 +50,14 @@
   let showSupporterList = false;
 
   $: currentCopy = $locale === 'zh' ? copy.zh : copy.en;
+  $: supportPaymentMethods = [
+    {
+      id: 'wechat',
+      src: '/support/wechat-pay.svg',
+      alt: currentCopy.wechat,
+      accent: 'payment-card-wechat'
+    }
+  ];
 
   function openPaymentCodes() {
     showPaymentCodes = true;
@@ -89,38 +83,20 @@
   }
 </script>
 
-<AppModal
+<PaymentCodeModal
   open={showPaymentCodes}
-  eyebrow="BazaarPlusPlus"
   title={currentCopy.supportQrTitle}
   bodyClass="support-modal-body"
-  confirmText={currentCopy.close}
-  onConfirm={() => {
+  closeLabel={currentCopy.close}
+  cardTitle={currentCopy.supportQrCardTitle}
+  cardBody={currentCopy.supportQrCardBody}
+  supportNote={currentCopy.supportQrBody}
+  supportTip={currentCopy.supportQrHint}
+  methods={supportPaymentMethods}
+  onClose={() => {
     showPaymentCodes = false;
   }}
->
-  <section class="support-modal-shell">
-    <div class="payment-grid">
-      <article class="payment-card payment-card-wechat">
-        <div class="payment-frame">
-          <img
-            class="payment-image"
-            src="/support/wechat-pay.svg"
-            alt={currentCopy.wechat}
-          />
-        </div>
-
-        <div class="payment-copy">
-          <h3>{currentCopy.supportQrCardTitle}</h3>
-          <p>{currentCopy.supportQrCardBody}</p>
-        </div>
-      </article>
-    </div>
-
-    <p class="payment-support-note">{currentCopy.supportQrBody}</p>
-    <p class="payment-support-tip">{currentCopy.supportQrHint}</p>
-  </section>
-</AppModal>
+/>
 
 <SupporterListModal
   open={showSupporterList}
@@ -257,127 +233,11 @@
     color: rgba(var(--color-muted-gold-rgb), 0.5);
   }
 
-  :global(.support-modal-body) {
-    padding-top: 0.1rem;
-  }
-
-  .support-modal-shell {
-    display: grid;
-    gap: 0.9rem;
-    text-align: left;
-  }
-
-  .payment-grid {
-    display: grid;
-    grid-template-columns: minmax(0, 260px);
-    justify-content: center;
-    gap: 0.8rem;
-  }
-
-  .payment-support-note {
-    margin: -0.1rem 0 0;
-    text-align: center;
-    font-size: 0.76rem;
-    line-height: 1.6;
-    color: rgba(214, 190, 146, 0.76);
-  }
-
-  .payment-support-tip {
-    margin: -0.2rem auto 0;
-    max-width: 28rem;
-    text-align: center;
-    font-size: 0.72rem;
-    line-height: 1.65;
-    color: rgba(240, 220, 184, 0.82);
-  }
-
-  .payment-card {
-    position: relative;
-    padding: 0.75rem;
-    background:
-      radial-gradient(
-        circle at top,
-        rgba(255, 232, 174, 0.08),
-        transparent 54%
-      ),
-      linear-gradient(180deg, rgba(34, 20, 8, 0.96), rgba(16, 9, 4, 0.98));
-    border: 1px solid rgba(var(--color-accent-rgb), 0.16);
-    border-radius: 4px;
-    display: grid;
-    gap: 0.65rem;
-    box-shadow: inset 0 0 0 1px rgba(var(--color-warm-bright-rgb), 0.05);
-  }
-
-  .payment-card::after {
-    content: '';
-    position: absolute;
-    inset: 0.45rem;
-    border: 1px solid rgba(255, 220, 155, 0.05);
-    border-radius: 2px;
-    pointer-events: none;
-  }
-
-  .payment-card-wechat {
-    box-shadow:
-      inset 0 0 0 1px rgba(var(--color-warm-bright-rgb), 0.05),
-      0 10px 32px rgba(42, 110, 78, 0.14);
-  }
-
-  .payment-frame {
-    aspect-ratio: 1 / 1;
-    padding: 0.8rem;
-    background: linear-gradient(
-      135deg,
-      rgba(255, 248, 231, 0.98),
-      rgba(245, 238, 220, 0.98)
-    );
-    border-radius: 3px;
-    box-shadow:
-      inset 0 0 0 1px rgba(95, 65, 19, 0.08),
-      0 10px 24px rgba(0, 0, 0, 0.22);
-  }
-
-  .payment-copy {
-    display: grid;
-    gap: 0.18rem;
-    text-align: center;
-  }
-
-  .payment-copy h3 {
-    margin: 0;
-    font-family: 'Cinzel', serif;
-    font-size: 0.82rem;
-    letter-spacing: 0.04em;
-    color: rgba(238, 220, 182, 0.94);
-  }
-
-  .payment-copy p {
-    margin: 0;
-    font-size: 0.66rem;
-    line-height: 1.45;
-    color: rgba(var(--color-muted-gold-rgb), 0.8);
-  }
-
   @media (max-width: 760px) {
     .support-strip {
       grid-template-columns: 1fr;
       align-items: stretch;
     }
-  }
-
-  @media (max-width: 520px) {
-    .support-actions {
-      grid-template-columns: 1fr;
-    }
-  }
-
-  .payment-image {
-    width: 100%;
-    height: 100%;
-    display: block;
-    object-fit: contain;
-    background: #fff;
-    border-radius: 2px;
   }
 
   button {
@@ -388,10 +248,6 @@
 
   @media (max-width: 520px) {
     .support-actions {
-      grid-template-columns: 1fr;
-    }
-
-    .payment-grid {
       grid-template-columns: 1fr;
     }
   }

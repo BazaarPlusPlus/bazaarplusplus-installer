@@ -99,10 +99,17 @@ pub(super) fn legacy_record_directory_size_bytes(game_path: &Path) -> Result<u64
             return Ok(0);
         }
 
-        let metadata = std::fs::metadata(path)
+        let metadata = std::fs::symlink_metadata(path)
             .map_err(|err| format!("Cannot read metadata for {}: {err}", path.display()))?;
+        let file_type = metadata.file_type();
+        if file_type.is_symlink() {
+            return Ok(0);
+        }
         if metadata.is_file() {
             return Ok(metadata.len());
+        }
+        if !metadata.is_dir() {
+            return Ok(0);
         }
 
         let mut total = 0;
@@ -273,6 +280,25 @@ mod tests {
         let total = legacy_record_directory_size_bytes(tmp.path()).unwrap();
 
         assert_eq!(total, 0);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn test_legacy_record_directory_size_bytes_ignores_symlink_targets() {
+        let tmp = tempfile::tempdir().unwrap();
+        let legacy_dir = tmp.path().join(LEGACY_RECORD_DIRECTORY);
+        std::fs::create_dir_all(&legacy_dir).unwrap();
+        std::fs::write(legacy_dir.join("a.bin"), [0_u8; 3]).unwrap();
+        std::fs::write(tmp.path().join("outside.bin"), [0_u8; 100]).unwrap();
+        std::os::unix::fs::symlink(
+            tmp.path().join("outside.bin"),
+            legacy_dir.join("outside-link.bin"),
+        )
+        .unwrap();
+
+        let total = legacy_record_directory_size_bytes(tmp.path()).unwrap();
+
+        assert_eq!(total, 3);
     }
 
     #[test]

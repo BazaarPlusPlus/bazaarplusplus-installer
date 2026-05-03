@@ -37,27 +37,40 @@ pub struct LegacyRecordDirectoryInfo {
 }
 
 #[tauri::command]
-pub fn repair_bpp(game_path: String) -> Result<(), String> {
-    let game_path = Path::new(&game_path);
+pub async fn repair_bpp(app: tauri::AppHandle, game_path: String) -> Result<(), String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let policy = versioning::read_bundled_bpp_data_version_policy(&app)
+            .unwrap_or_else(|_| versioning::default_bpp_data_version_policy());
+        repair_bpp_blocking(Path::new(&game_path), &policy.current_bpp_data_version)
+    })
+    .await
+    .map_err(|err| format!("failed to repair BazaarPlusPlus data: {err}"))?
+}
+
+fn repair_bpp_blocking(game_path: &Path, current_bpp_data_version: &str) -> Result<(), String> {
     payload::ensure_valid_game_path(game_path)?;
 
     payload::cleanup_legacy_record_directory(game_path)?;
-    versioning::ensure_bpp_data_version_file(game_path)?;
+    versioning::ensure_bpp_data_version_file(game_path, current_bpp_data_version)?;
 
     debug_log!("Repaired BazaarPlusPlus payload at {}", game_path.display());
     Ok(())
 }
 
 #[tauri::command]
-pub fn get_legacy_record_directory_info(
+pub async fn get_legacy_record_directory_info(
     game_path: String,
 ) -> Result<LegacyRecordDirectoryInfo, String> {
-    let game_path = Path::new(&game_path);
-    payload::ensure_valid_game_path(game_path)?;
+    tauri::async_runtime::spawn_blocking(move || {
+        let game_path = Path::new(&game_path);
+        payload::ensure_valid_game_path(game_path)?;
 
-    Ok(LegacyRecordDirectoryInfo {
-        total_bytes: payload::legacy_record_directory_size_bytes(game_path)?,
+        Ok(LegacyRecordDirectoryInfo {
+            total_bytes: payload::legacy_record_directory_size_bytes(game_path)?,
+        })
     })
+    .await
+    .map_err(|err| format!("failed to inspect BazaarPlusPlus data directory: {err}"))?
 }
 
 #[tauri::command]
@@ -162,7 +175,7 @@ mod tests {
         std::fs::create_dir_all(&legacy_dir).unwrap();
         std::fs::write(legacy_dir.join("legacy.dll"), b"dll").unwrap();
 
-        repair_bpp(tmp.path().to_string_lossy().into_owned()).unwrap();
+        repair_bpp_blocking(tmp.path(), CURRENT_BPP_DATA_VERSION).unwrap();
 
         assert!(legacy_dir.exists());
         assert_eq!(

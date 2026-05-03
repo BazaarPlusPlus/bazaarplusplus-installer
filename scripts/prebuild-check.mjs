@@ -114,16 +114,33 @@ export function readBppDataVersionPolicy(rootDir) {
 
   if (
     !policy ||
+    typeof policy.current_bpp_data_version !== 'string' ||
+    !policy.current_bpp_data_version.trim() ||
     typeof policy.minimum_supported_bpp_data_version !== 'string' ||
     !policy.minimum_supported_bpp_data_version.trim()
   ) {
     throw new Error(
-      `Invalid BppDataVersionPolicy.json: minimum_supported_bpp_data_version is required`
+      `Invalid BppDataVersionPolicy.json: current_bpp_data_version and minimum_supported_bpp_data_version are required`
+    );
+  }
+
+  const currentVersion = policy.current_bpp_data_version.trim();
+  const minimumSupported = policy.minimum_supported_bpp_data_version.trim();
+  const versionComparison = compareVersions(minimumSupported, currentVersion);
+  if (versionComparison === null) {
+    throw new Error(
+      `Invalid BPP data version policy: current_bpp_data_version=${currentVersion}, minimum_supported_bpp_data_version=${minimumSupported}`
+    );
+  }
+  if (versionComparison > 0) {
+    throw new Error(
+      `minimum_supported_bpp_data_version=${minimumSupported} cannot exceed current_bpp_data_version=${currentVersion}`
     );
   }
 
   return {
-    minimumSupported: policy.minimum_supported_bpp_data_version.trim()
+    currentVersion,
+    minimumSupported
   };
 }
 
@@ -244,24 +261,10 @@ export function runPrebuildCheck(rootDir, platformEnv) {
   const snapshot = collectVersionSnapshot(rootDir);
   assertVersionsAreAligned(snapshot);
   const policy = readBppDataVersionPolicy(rootDir);
-  const versionComparison = compareVersions(
-    policy.minimumSupported,
-    snapshot.packageVersion
-  );
-  if (versionComparison === null) {
-    throw new Error(
-      `Invalid BPP data version policy: ${policy.minimumSupported}`
-    );
-  }
-  if (versionComparison > 0) {
-    throw new Error(
-      `minimum_supported_bpp_data_version=${policy.minimumSupported} cannot exceed packageVersion=${snapshot.packageVersion}`
-    );
-  }
   const platforms = resolveTargetPlatforms(platformEnv);
 
   console.log(
-    `BPP data policy: minimum_supported_bpp_data_version=${policy.minimumSupported}`
+    `BPP data policy: current_bpp_data_version=${policy.currentVersion}, minimum_supported_bpp_data_version=${policy.minimumSupported}`
   );
 
   for (const platform of platforms) {

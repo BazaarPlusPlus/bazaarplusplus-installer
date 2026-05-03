@@ -210,10 +210,11 @@
   onMount(() => {
     locale.init();
     void (async () => {
+      const updaterCheck = updaterController.checkForUpdatesOnStartup();
+      await installController.initializeStartupContext();
       await Promise.allSettled([
-        installController.initializeStartupContext(),
         installController.detectEnvironment(pageModel.selectedPath),
-        updaterController.checkForUpdatesOnStartup()
+        updaterCheck
       ]);
     })();
   });

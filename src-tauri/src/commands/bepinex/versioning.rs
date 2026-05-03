@@ -5,18 +5,52 @@ use tauri::Manager;
 
 pub(crate) const LEGACY_RECORD_DIRECTORY: &str = "BazaarPlusPlus";
 pub(crate) const BPP_DATA_VERSION_FILE_NAME: &str = "BPPData.version";
-pub(crate) const CURRENT_BPP_DATA_VERSION: &str = env!("CARGO_PKG_VERSION");
+// This is the BPP data schema marker, not the installer package version.
+pub(crate) const CURRENT_BPP_DATA_VERSION: &str = "3.2.0";
 const BPP_DATA_VERSION_POLICY_RESOURCE_PATH: &str = "BppDataVersionPolicy.json";
 
 #[derive(Debug, Clone, Deserialize, PartialEq, Eq)]
 pub(crate) struct BppDataVersionPolicy {
+    pub(crate) current_bpp_data_version: String,
     pub(crate) minimum_supported_bpp_data_version: String,
 }
 
 pub(crate) fn default_bpp_data_version_policy() -> BppDataVersionPolicy {
     BppDataVersionPolicy {
+        current_bpp_data_version: CURRENT_BPP_DATA_VERSION.to_string(),
         minimum_supported_bpp_data_version: CURRENT_BPP_DATA_VERSION.to_string(),
     }
+}
+
+fn validate_bpp_data_version_policy(
+    policy: BppDataVersionPolicy,
+) -> Result<BppDataVersionPolicy, String> {
+    if policy.current_bpp_data_version.trim().is_empty()
+        || policy.minimum_supported_bpp_data_version.trim().is_empty()
+    {
+        return Err(
+            "BppDataVersionPolicy.json requires current_bpp_data_version and minimum_supported_bpp_data_version"
+                .to_string(),
+        );
+    }
+
+    let current = policy.current_bpp_data_version.trim();
+    let minimum = policy.minimum_supported_bpp_data_version.trim();
+    let Some(ordering) = compare_version_strings(minimum, current) else {
+        return Err(format!(
+            "Invalid BppDataVersionPolicy.json versions: current_bpp_data_version={current}, minimum_supported_bpp_data_version={minimum}"
+        ));
+    };
+    if ordering == std::cmp::Ordering::Greater {
+        return Err(format!(
+            "minimum_supported_bpp_data_version={minimum} cannot exceed current_bpp_data_version={current}"
+        ));
+    }
+
+    Ok(BppDataVersionPolicy {
+        current_bpp_data_version: current.to_string(),
+        minimum_supported_bpp_data_version: minimum.to_string(),
+    })
 }
 
 pub(crate) fn read_bundled_bpp_data_version_policy(
@@ -32,7 +66,8 @@ pub(crate) fn read_bundled_bpp_data_version_policy(
     let policy = serde_json::from_str::<BppDataVersionPolicy>(&raw)
         .map_err(|err| format!("Cannot parse {}: {err}", resource_path.display()))?;
 
-    Ok(policy)
+    validate_bpp_data_version_policy(policy)
+        .map_err(|err| format!("Cannot parse {}: {err}", resource_path.display()))
 }
 
 fn parse_version_components(version: &str) -> Option<Vec<u64>> {
@@ -82,28 +117,32 @@ pub(crate) fn bpp_data_version_path(game_path: &Path) -> std::path::PathBuf {
         .join(BPP_DATA_VERSION_FILE_NAME)
 }
 
-pub(crate) fn ensure_bpp_data_version_file(game_path: &Path) -> Result<(), String> {
+pub(crate) fn ensure_bpp_data_version_file(
+    game_path: &Path,
+    current_bpp_data_version: &str,
+) -> Result<(), String> {
     let data_dir = game_path.join(LEGACY_RECORD_DIRECTORY);
     std::fs::create_dir_all(&data_dir)
         .map_err(|err| format!("Cannot create {}: {err}", data_dir.display()))?;
 
     let version_path = data_dir.join(BPP_DATA_VERSION_FILE_NAME);
-    std::fs::write(&version_path, format!("{CURRENT_BPP_DATA_VERSION}\n"))
+    std::fs::write(&version_path, format!("{current_bpp_data_version}\n"))
         .map_err(|err| format!("Cannot write {}: {err}", version_path.display()))
 }
 
 #[cfg(test)]
 mod tests {
     use super::{
-        bpp_data_version_path, compare_version_strings, ensure_bpp_data_version_file,
-        is_compatible_bpp_data_version, CURRENT_BPP_DATA_VERSION,
+        bpp_data_version_path, compare_version_strings, default_bpp_data_version_policy,
+        ensure_bpp_data_version_file, is_compatible_bpp_data_version,
+        validate_bpp_data_version_policy, BppDataVersionPolicy, CURRENT_BPP_DATA_VERSION,
     };
 
     #[test]
     fn test_ensure_bpp_data_version_file_creates_version_marker() {
         let tmp = tempfile::tempdir().unwrap();
 
-        ensure_bpp_data_version_file(tmp.path()).unwrap();
+        ensure_bpp_data_version_file(tmp.path(), CURRENT_BPP_DATA_VERSION).unwrap();
 
         assert_eq!(
             std::fs::read_to_string(bpp_data_version_path(tmp.path()))
@@ -111,6 +150,41 @@ mod tests {
                 .trim(),
             CURRENT_BPP_DATA_VERSION
         );
+    }
+
+    #[test]
+    fn test_ensure_bpp_data_version_file_writes_requested_schema_version() {
+        let tmp = tempfile::tempdir().unwrap();
+
+        ensure_bpp_data_version_file(tmp.path(), "4.0.0").unwrap();
+
+        assert_eq!(
+            std::fs::read_to_string(bpp_data_version_path(tmp.path()))
+                .unwrap()
+                .trim(),
+            "4.0.0"
+        );
+    }
+
+    #[test]
+    fn test_default_bpp_data_version_policy_uses_current_schema_version() {
+        assert_eq!(
+            default_bpp_data_version_policy(),
+            BppDataVersionPolicy {
+                current_bpp_data_version: CURRENT_BPP_DATA_VERSION.to_string(),
+                minimum_supported_bpp_data_version: CURRENT_BPP_DATA_VERSION.to_string(),
+            }
+        );
+    }
+
+    #[test]
+    fn test_validate_bpp_data_version_policy_rejects_minimum_newer_than_current() {
+        let result = validate_bpp_data_version_policy(BppDataVersionPolicy {
+            current_bpp_data_version: "2.9.0".to_string(),
+            minimum_supported_bpp_data_version: "3.0.0".to_string(),
+        });
+
+        assert!(result.is_err());
     }
 
     #[test]
