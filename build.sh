@@ -36,8 +36,13 @@ WINDOWS_CONFIG="$SCRIPT_DIR/src-tauri/tauri.windows.conf.json"
 MACOS_CONFIG="$SCRIPT_DIR/src-tauri/tauri.macos.conf.json"
 WINDOWS_ZIP="$SCRIPT_DIR/src-tauri/resources/BepInExSource/windows/BepInEx.zip"
 MACOS_ZIP="$SCRIPT_DIR/src-tauri/resources/BepInExSource/macos/BepInEx.zip"
-SIGNING_KEY_PATH="$SCRIPT_DIR/signing-secrets/tauri-updater.key"
-SIGNING_KEY_PASSWORD_PATH="$SCRIPT_DIR/signing-secrets/tauri-updater.password"
+SIGNING_SECRETS_DIR="$SCRIPT_DIR/signing-secrets"
+SIGNING_KEY_PATH="$SIGNING_SECRETS_DIR/tauri-updater.key"
+SIGNING_KEY_PASSWORD_PATH="$SIGNING_SECRETS_DIR/tauri-updater.password"
+APPLE_API_ISSUER_PATH="$SIGNING_SECRETS_DIR/apple-api-issuer"
+APPLE_API_KEY_ID_PATH="$SIGNING_SECRETS_DIR/apple-api-key"
+APPLE_API_KEY_PATH_PATH="$SIGNING_SECRETS_DIR/apple-api-key-path"
+APPLE_SIGNING_IDENTITY_PATH="$SIGNING_SECRETS_DIR/apple-signing-identity"
 
 assert_command() {
     local name="$1"
@@ -77,6 +82,40 @@ trim_trailing_newlines() {
     done
 
     printf '%s' "$value"
+}
+
+set_exported_env() {
+    local name="$1"
+    local value="$2"
+
+    printf -v "$name" '%s' "$value"
+    export "$name"
+}
+
+load_required_secret_env() {
+    local name="$1"
+    local path="$2"
+    local value="${!name:-}"
+
+    if [ -n "$value" ]; then
+        echo "==> Reusing existing $name from environment"
+    elif [ -f "$path" ]; then
+        echo "==> Loading $name from signing-secrets"
+        value="$(<"$path")"
+    else
+        echo "Error: Missing $name." >&2
+        echo "Set $name or create $path" >&2
+        exit 1
+    fi
+
+    value="$(trim_trailing_newlines "$value")"
+    if [ -z "$value" ]; then
+        echo "Error: Empty $name." >&2
+        echo "Set $name or write a value to $path" >&2
+        exit 1
+    fi
+
+    set_exported_env "$name" "$value"
 }
 
 current_platform() {
@@ -255,6 +294,178 @@ load_updater_signing_env() {
     export TAURI_SIGNING_PRIVATE_KEY_PASSWORD
 }
 
+detect_developer_id_application_identity() {
+    security find-identity -v -p codesigning 2>/dev/null \
+        | sed -n 's/.*"\(Developer ID Application: [^"]*\)".*/\1/p' \
+        | sort -u
+}
+
+load_apple_signing_identity_env() {
+    local value="${APPLE_SIGNING_IDENTITY:-}"
+    local identities=""
+    local identity_count=""
+
+    if [ -n "$value" ]; then
+        echo "==> Reusing existing APPLE_SIGNING_IDENTITY from environment"
+    elif [ -f "$APPLE_SIGNING_IDENTITY_PATH" ]; then
+        echo "==> Loading APPLE_SIGNING_IDENTITY from signing-secrets"
+        value="$(<"$APPLE_SIGNING_IDENTITY_PATH")"
+    else
+        identities="$(detect_developer_id_application_identity)"
+        identity_count="$(printf '%s\n' "$identities" | sed '/^$/d' | wc -l | tr -d ' ')"
+
+        case "$identity_count" in
+            1)
+                echo "==> Auto-detected APPLE_SIGNING_IDENTITY from keychain"
+                value="$identities"
+                ;;
+            0)
+                echo "Error: Missing APPLE_SIGNING_IDENTITY." >&2
+                echo "Set APPLE_SIGNING_IDENTITY, create $APPLE_SIGNING_IDENTITY_PATH, or install a Developer ID Application certificate." >&2
+                exit 1
+                ;;
+            *)
+                echo "Error: Multiple Developer ID Application identities found." >&2
+                echo "Set APPLE_SIGNING_IDENTITY or create $APPLE_SIGNING_IDENTITY_PATH with the exact identity to use." >&2
+                printf '%s\n' "$identities" >&2
+                exit 1
+                ;;
+        esac
+    fi
+
+    value="$(trim_trailing_newlines "$value")"
+    if [ -z "$value" ]; then
+        echo "Error: Empty APPLE_SIGNING_IDENTITY." >&2
+        echo "Set APPLE_SIGNING_IDENTITY or write a value to $APPLE_SIGNING_IDENTITY_PATH" >&2
+        exit 1
+    fi
+
+    set_exported_env APPLE_SIGNING_IDENTITY "$value"
+}
+
+load_apple_api_key_path_env() {
+    local value="${APPLE_API_KEY_PATH:-}"
+    local inferred_path=""
+
+    if [ -n "$value" ]; then
+        echo "==> Reusing existing APPLE_API_KEY_PATH from environment"
+    elif [ -f "$APPLE_API_KEY_PATH_PATH" ]; then
+        echo "==> Loading APPLE_API_KEY_PATH from signing-secrets"
+        value="$(<"$APPLE_API_KEY_PATH_PATH")"
+    else
+        inferred_path="$SIGNING_SECRETS_DIR/AuthKey_${APPLE_API_KEY}.p8"
+        if [ -f "$inferred_path" ]; then
+            echo "==> Inferring APPLE_API_KEY_PATH from signing-secrets"
+            value="$inferred_path"
+        else
+            echo "Error: Missing APPLE_API_KEY_PATH." >&2
+            echo "Set APPLE_API_KEY_PATH, create $APPLE_API_KEY_PATH_PATH, or place AuthKey_${APPLE_API_KEY}.p8 in $SIGNING_SECRETS_DIR" >&2
+            exit 1
+        fi
+    fi
+
+    value="$(trim_trailing_newlines "$value")"
+    if [ -z "$value" ]; then
+        echo "Error: Empty APPLE_API_KEY_PATH." >&2
+        echo "Set APPLE_API_KEY_PATH or write a value to $APPLE_API_KEY_PATH_PATH" >&2
+        exit 1
+    fi
+
+    set_exported_env APPLE_API_KEY_PATH "$value"
+    assert_file "$APPLE_API_KEY_PATH" "Apple API key file"
+}
+
+load_macos_developer_id_env() {
+    load_apple_signing_identity_env
+    load_required_secret_env APPLE_API_ISSUER "$APPLE_API_ISSUER_PATH"
+    load_required_secret_env APPLE_API_KEY "$APPLE_API_KEY_ID_PATH"
+    load_apple_api_key_path_env
+}
+
+is_macho_file() {
+    local file_path="$1"
+
+    file "$file_path" | grep -q 'Mach-O'
+}
+
+sign_macos_resource_binaries() {
+    local payload_dir="$1"
+    local binary_path=""
+    local relative_path=""
+
+    while IFS= read -r -d '' binary_path; do
+        if ! is_macho_file "$binary_path"; then
+            continue
+        fi
+
+        relative_path="${binary_path#$payload_dir/}"
+        invoke_step "Signing macOS resource binary $relative_path" \
+            codesign --force --options runtime --timestamp \
+            --sign "$APPLE_SIGNING_IDENTITY" "$binary_path"
+    done < <(find "$payload_dir" -type f -print0)
+}
+
+create_zip_from_directory() {
+    local source_dir="$1"
+    local output_zip="$2"
+
+    (
+        cd "$source_dir"
+        zip -qry -X "$output_zip" .
+    )
+}
+
+prepare_signed_macos_resource_zip() {
+    local resource_zip="$1"
+    local temp_dir=""
+    local payload_dir=""
+    local signed_zip=""
+
+    assert_command ditto "Install macOS command line tools first."
+    assert_command zip "Install zip first."
+    assert_command file "Install file first."
+    assert_command codesign "Install Xcode command line tools first."
+    assert_file "$resource_zip" "macOS resource zip"
+
+    temp_dir="$(mktemp -d)"
+    payload_dir="$temp_dir/payload"
+    signed_zip="$temp_dir/BepInEx.zip"
+    mkdir -p "$payload_dir"
+    trap 'rm -rf "$temp_dir"' RETURN
+
+    invoke_step "Extracting macOS resource zip for signing" \
+        ditto -x -k "$resource_zip" "$payload_dir"
+    sign_macos_resource_binaries "$payload_dir"
+    invoke_step "Repacking signed macOS resource zip" \
+        create_zip_from_directory "$payload_dir" "$signed_zip"
+    invoke_step "Replacing macOS resource zip with signed copy" \
+        mv "$signed_zip" "$resource_zip"
+
+    rm -rf "$temp_dir"
+    trap - RETURN
+}
+
+notarize_macos_installer_artifact() {
+    local dmg_file="$1"
+
+    if [ -z "$dmg_file" ]; then
+        echo "Error: No macOS DMG artifact found to notarize." >&2
+        exit 1
+    fi
+
+    assert_command xcrun "Install Xcode command line tools first."
+    assert_file "$dmg_file" "macOS DMG artifact"
+
+    invoke_step "Notarizing macOS DMG" \
+        xcrun notarytool submit "$dmg_file" \
+        --key "$APPLE_API_KEY_PATH" \
+        --key-id "$APPLE_API_KEY" \
+        --issuer "$APPLE_API_ISSUER" \
+        --wait
+    invoke_step "Stapling macOS DMG notarization ticket" \
+        xcrun stapler staple "$dmg_file"
+}
+
 run_release_prechecks() {
     invoke_step "Synchronizing package versions" node scripts/version-sync.mjs
     invoke_step "Running prebuild checks" npm run prebuild-check
@@ -413,7 +624,15 @@ build_prod() {
 
     invoke_step "Building $platform app binary" "${build_command[@]}"
 
+    if [ "$platform" = "macos" ]; then
+        prepare_signed_macos_resource_zip "$resource_zip"
+    fi
+
     invoke_step "Bundling $platform installer" "${bundle_command[@]}"
+
+    if [ "$platform" = "macos" ]; then
+        notarize_macos_installer_artifact "$(find_installer_artifact "$platform")"
+    fi
 
     echo
     echo "Build complete."
@@ -486,6 +705,9 @@ main() {
         fi
 
         load_updater_signing_env
+        if [ "$platform" = "macos" ]; then
+            load_macos_developer_id_env
+        fi
         run_release_prechecks
         ensure_required_rust_targets "$platform"
         version="$(package_version)"
