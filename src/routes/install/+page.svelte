@@ -127,6 +127,7 @@
   const showRepairModal = installController.showRepairModal;
   const repairAcknowledged = installController.repairAcknowledged;
   const repairModalBody = installController.repairModalBody;
+  const repairError = installController.repairError;
   const showLaunchOptionsWarningModal =
     installController.showLaunchOptionsWarningModal;
   const showSteamQuitModal = installController.showSteamQuitModal;
@@ -234,6 +235,7 @@
     showRepairModal={$showRepairModal}
     repairModalBody={$repairModalBody}
     repairConfirming={$actionBusy === 'repair'}
+    repairError={$repairError}
     showLaunchOptionsWarningModal={$showLaunchOptionsWarningModal}
     showSteamQuitModal={$showSteamQuitModal}
     steamModalTitle={pageModel.steamModalTitle}

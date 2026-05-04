@@ -47,6 +47,23 @@ fn is_bazaar_running() -> Result<bool, String> {
     }
 }
 
+/// Cross-platform best-effort check used by destructive flows that need to
+/// avoid touching files the in-game mod still has open. On platforms where we
+/// don't have a reliable probe (macOS today), this always returns false so the
+/// caller proceeds with whatever fallback behavior it already had.
+#[allow(dead_code)]
+pub(crate) fn is_bazaar_running_best_effort() -> bool {
+    #[cfg(target_os = "windows")]
+    {
+        is_bazaar_running().unwrap_or(false)
+    }
+
+    #[cfg(not(target_os = "windows"))]
+    {
+        false
+    }
+}
+
 #[tauri::command]
 pub fn detect_bazaar_running() -> Result<GameRunningInfo, String> {
     #[cfg(target_os = "windows")]

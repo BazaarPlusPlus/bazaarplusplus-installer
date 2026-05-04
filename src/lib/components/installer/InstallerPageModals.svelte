@@ -2,6 +2,7 @@
   import AppModal from '$lib/components/AppModal.svelte';
   import InstallerInstallPreviewModal from '$lib/components/installer/InstallerInstallPreviewModal.svelte';
   import InstallerResetHistoryModal from '$lib/components/installer/InstallerResetHistoryModal.svelte';
+  import type { RepairError } from '$lib/installer/repair-errors';
   import type { TranslateText } from '$lib/installer/selectors/types.ts';
 
   export let showInstallModal: boolean;
@@ -12,6 +13,7 @@
   export let repairModalBody: string;
   export let repairAcknowledged: boolean;
   export let repairConfirming: boolean;
+  export let repairError: RepairError | null = null;
   export let showLaunchOptionsWarningModal: boolean;
   export let showSteamQuitModal: boolean;
   export let steamModalTitle: string;
@@ -51,6 +53,7 @@
   body={repairModalBody}
   bind:acknowledged={repairAcknowledged}
   confirming={repairConfirming}
+  error={repairError}
   onConfirm={onConfirmRepair}
   onCancel={onCancelRepair}
 />

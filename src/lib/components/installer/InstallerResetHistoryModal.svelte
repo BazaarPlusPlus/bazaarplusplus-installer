@@ -1,20 +1,31 @@
 <script lang="ts">
   import AppModal from '$lib/components/AppModal.svelte';
   import { locale } from '$lib/locale';
+  import { describeRepairError, type RepairError } from '$lib/installer/repair-errors';
 
   export let open: boolean;
   export let acknowledged: boolean;
   export let confirming = false;
   export let body: string;
+  export let error: RepairError | null = null;
   export let onConfirm: () => void | Promise<void>;
   export let onCancel: () => void | Promise<void>;
+
+  function localized(zh: string, en: string): string {
+    return $locale === 'zh' ? zh : en;
+  }
+
+  $: errorCopy = error ? describeRepairError(error, localized) : null;
+  $: confirmText = errorCopy
+    ? errorCopy.retryLabel
+    : localized('确认重置', 'Confirm Reset');
 </script>
 
 <AppModal
   {open}
   eyebrow="BazaarPlusPlus"
   title={$locale === 'zh' ? '重置战绩记录' : 'Reset Match History'}
-  confirmText={$locale === 'zh' ? '确认重置' : 'Confirm Reset'}
+  {confirmText}
   cancelText={$locale === 'zh' ? '关闭' : 'Close'}
   confirmBusy={confirming}
   confirmBusyText={$locale === 'zh'
@@ -33,6 +44,21 @@
     </p>
     <p class="reset-history-body">{body}</p>
   </section>
+
+  {#if errorCopy}
+    <section class="reset-history-error" role="alert" aria-live="polite">
+      <p class="reset-history-error-title">{errorCopy.title}</p>
+      <p class="reset-history-error-body">{errorCopy.body}</p>
+      {#if errorCopy.paths && errorCopy.paths.length > 0}
+        <p class="reset-history-error-list-label">{errorCopy.pathListLabel}</p>
+        <ul class="reset-history-error-list">
+          {#each errorCopy.paths as path (path)}
+            <li class="reset-history-error-list-item" title={path}>{path}</li>
+          {/each}
+        </ul>
+      {/if}
+    </section>
+  {/if}
 
   <label class="reset-history-acknowledge">
     <input
@@ -82,6 +108,62 @@
     line-height: 1.65;
     color: rgba(var(--color-cream-rgb), 0.82);
     white-space: pre-line;
+  }
+
+  .reset-history-error {
+    display: grid;
+    gap: 0.5rem;
+    padding: 0.92rem 1rem;
+    border: 1px solid rgba(220, 90, 70, 0.42);
+    border-radius: 4px;
+    background: linear-gradient(
+        180deg,
+        rgba(220, 90, 70, 0.16),
+        rgba(220, 90, 70, 0.05)
+      ),
+      rgba(20, 8, 4, 0.85);
+    box-shadow: 0 0 0 1px rgba(255, 181, 166, 0.08) inset;
+  }
+
+  .reset-history-error-title {
+    margin: 0;
+    font-family: 'Cinzel', serif;
+    font-size: 0.7rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: rgba(255, 200, 188, 0.95);
+  }
+
+  .reset-history-error-body {
+    margin: 0;
+    font-size: 0.82rem;
+    line-height: 1.6;
+    color: rgba(var(--color-cream-rgb), 0.86);
+  }
+
+  .reset-history-error-list-label {
+    margin: 0.2rem 0 0;
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(240, 178, 162, 0.78);
+  }
+
+  .reset-history-error-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: 0.2rem;
+    max-height: 8rem;
+    overflow-y: auto;
+  }
+
+  .reset-history-error-list-item {
+    font-family: 'Fira Code', monospace;
+    font-size: 0.7rem;
+    color: rgba(225, 210, 185, 0.88);
+    word-break: break-all;
   }
 
   .reset-history-acknowledge {

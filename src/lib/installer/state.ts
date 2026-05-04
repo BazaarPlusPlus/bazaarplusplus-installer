@@ -49,8 +49,12 @@ export function createPageState(input: PageStateInput): PageState {
     !isBusy &&
     !input.bppDataResetRequired &&
     ((input.bazaarFound && hasPath) || input.isDebugInstallPreview);
-  const canLaunchGame =
-    !isBusy && !input.bppDataResetRequired && input.bazaarFound && hasPath;
+  // Launching the game is intentionally NOT blocked by `bppDataResetRequired`.
+  // The mod owns the data directory at runtime; if a stale BPPData.version
+  // would actually break things the user can decide that with the warning
+  // already shown on the Bazaar step. Hard-blocking launch only forces them
+  // through the destructive reset path.
+  const canLaunchGame = !isBusy && input.bazaarFound && hasPath;
 
   return {
     hasPath,

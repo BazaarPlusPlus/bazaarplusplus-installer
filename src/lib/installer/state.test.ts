@@ -109,7 +109,12 @@ test('createPageState does not allow launch when Bazaar is flagged found but no 
   expect(state.canLaunchGame).toBe(false);
 });
 
-test('createPageState blocks install and launch until BazaarPlusPlus data is reset', () => {
+test('createPageState blocks install but still allows launch when BazaarPlusPlus data needs reset', () => {
+  // The mod owns the data directory at runtime. Forcing the user to reset
+  // before they can launch the game leaves them stuck if cleanup keeps
+  // failing — they need an escape hatch. Install is still blocked because
+  // re-running the installer over an incompatible directory is what created
+  // the problem in the first place.
   const state = createPageState({
     actionBusy: 'idle',
     bazaarFound: true,
@@ -122,5 +127,5 @@ test('createPageState blocks install and launch until BazaarPlusPlus data is res
   });
 
   expect(state.canInstall).toBe(false);
-  expect(state.canLaunchGame).toBe(false);
+  expect(state.canLaunchGame).toBe(true);
 });

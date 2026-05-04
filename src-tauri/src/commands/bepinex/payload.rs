@@ -1,13 +1,35 @@
 // src-tauri/src/commands/bepinex/payload.rs
-use std::path::Path;
+use std::path::{Path, PathBuf};
+use std::thread;
+use std::time::Duration;
 
 use super::versioning;
 
 pub(super) const BPP_CONFIG_RELATIVE_PATH: &str = "BepInEx/config/BazaarPlusPlus.cfg";
 
+/// Backoff used between retries when a file/directory removal fails. The first
+/// retry runs immediately, the second after a short pause, and the last after
+/// a longer pause. Windows often releases ERROR_SHARING_VIOLATION holds inside
+/// 200ms once the holding process closes the handle.
+const REMOVE_RETRY_DELAYS_MS: &[u64] = &[0, 50, 200];
+
 pub(super) struct PreservedFile {
     relative_path: &'static str,
     contents: Vec<u8>,
+}
+
+/// Failure report for a per-file removal pass. `failed` lists the paths the
+/// walker could not delete after retrying. The list is empty on success and on
+/// "nothing to do" (path didn't exist).
+#[derive(Debug, Default)]
+pub(super) struct RemovalReport {
+    pub(super) failed: Vec<PathBuf>,
+}
+
+impl RemovalReport {
+    pub(super) fn is_empty(&self) -> bool {
+        self.failed.is_empty()
+    }
 }
 
 fn remove_path_if_exists(path: &Path) -> Result<(), String> {
@@ -21,6 +43,102 @@ fn remove_path_if_exists(path: &Path) -> Result<(), String> {
     } else {
         std::fs::remove_file(path).map_err(|err| format!("Cannot remove {}: {err}", path.display()))
     }
+}
+
+/// Try to delete a single file or empty directory, retrying briefly to absorb
+/// transient sharing violations from antivirus / explorer / a slow OS handle
+/// release. Returns `true` on success or when the path didn't exist; returns
+/// `false` if every retry failed.
+fn try_remove_with_retry(path: &Path, is_dir: bool) -> bool {
+    for (attempt, delay_ms) in REMOVE_RETRY_DELAYS_MS.iter().enumerate() {
+        if *delay_ms > 0 {
+            thread::sleep(Duration::from_millis(*delay_ms));
+        }
+
+        let result = if is_dir {
+            std::fs::remove_dir(path)
+        } else {
+            std::fs::remove_file(path)
+        };
+
+        match result {
+            Ok(()) => return true,
+            Err(err) if err.kind() == std::io::ErrorKind::NotFound => return true,
+            Err(_) if attempt + 1 < REMOVE_RETRY_DELAYS_MS.len() => continue,
+            Err(_) => return false,
+        }
+    }
+
+    false
+}
+
+/// Bottom-up recursive delete that retries each entry independently and
+/// collects every path it could not remove. Unlike `remove_dir_all`, this does
+/// not abort on the first sharing violation, so a single locked sqlite handle
+/// won't leave the rest of `BazaarPlusPlus/` half-deleted.
+pub(super) fn remove_dir_with_retry(root: &Path) -> RemovalReport {
+    let mut report = RemovalReport::default();
+
+    if !root.exists() {
+        return report;
+    }
+
+    let metadata = match std::fs::symlink_metadata(root) {
+        Ok(metadata) => metadata,
+        Err(err) if err.kind() == std::io::ErrorKind::NotFound => return report,
+        Err(_) => {
+            report.failed.push(root.to_path_buf());
+            return report;
+        }
+    };
+
+    if !metadata.file_type().is_dir() || metadata.file_type().is_symlink() {
+        if !try_remove_with_retry(root, false) {
+            report.failed.push(root.to_path_buf());
+        }
+        return report;
+    }
+
+    let entries = match std::fs::read_dir(root) {
+        Ok(entries) => entries,
+        Err(_) => {
+            report.failed.push(root.to_path_buf());
+            return report;
+        }
+    };
+
+    for entry in entries {
+        let Ok(entry) = entry else {
+            // We don't know which path this was; mark the parent as failed so
+            // callers know the directory isn't empty.
+            report.failed.push(root.to_path_buf());
+            continue;
+        };
+
+        let entry_path = entry.path();
+        let entry_metadata = match std::fs::symlink_metadata(&entry_path) {
+            Ok(metadata) => metadata,
+            Err(err) if err.kind() == std::io::ErrorKind::NotFound => continue,
+            Err(_) => {
+                report.failed.push(entry_path);
+                continue;
+            }
+        };
+
+        if entry_metadata.file_type().is_dir() && !entry_metadata.file_type().is_symlink() {
+            let mut nested = remove_dir_with_retry(&entry_path);
+            report.failed.append(&mut nested.failed);
+        } else if !try_remove_with_retry(&entry_path, false) {
+            report.failed.push(entry_path);
+        }
+    }
+
+    // Only attempt to drop the directory itself if every child is gone.
+    if report.failed.is_empty() && !try_remove_with_retry(root, true) {
+        report.failed.push(root.to_path_buf());
+    }
+
+    report
 }
 
 pub(super) fn uninstall_payload(game_path: &Path) -> Result<(), String> {
@@ -89,8 +207,8 @@ pub(super) fn restore_preserved_file(
         .map_err(|err| format!("Cannot restore {}: {err}", path.display()))
 }
 
-pub(super) fn cleanup_legacy_record_directory(game_path: &Path) -> Result<(), String> {
-    remove_path_if_exists(&game_path.join(versioning::LEGACY_RECORD_DIRECTORY))
+pub(super) fn cleanup_legacy_record_directory(game_path: &Path) -> RemovalReport {
+    remove_dir_with_retry(&game_path.join(versioning::LEGACY_RECORD_DIRECTORY))
 }
 
 pub(super) fn legacy_record_directory_size_bytes(game_path: &Path) -> Result<u64, String> {
@@ -255,9 +373,65 @@ mod tests {
         std::fs::create_dir_all(&legacy_dir).unwrap();
         std::fs::write(legacy_dir.join("legacy.dll"), b"dll").unwrap();
 
-        cleanup_legacy_record_directory(tmp.path()).unwrap();
+        let report = cleanup_legacy_record_directory(tmp.path());
 
+        assert!(report.is_empty(), "unexpected failures: {:?}", report.failed);
         assert!(!legacy_dir.exists());
+    }
+
+    #[test]
+    fn test_cleanup_legacy_record_directory_is_no_op_when_directory_missing() {
+        let tmp = tempfile::tempdir().unwrap();
+
+        let report = cleanup_legacy_record_directory(tmp.path());
+
+        assert!(report.is_empty());
+    }
+
+    #[test]
+    fn test_cleanup_legacy_record_directory_walks_nested_subdirectories() {
+        let tmp = tempfile::tempdir().unwrap();
+        let legacy_dir = tmp.path().join(LEGACY_RECORD_DIRECTORY);
+        let nested = legacy_dir.join("Identity").join("inner");
+        std::fs::create_dir_all(&nested).unwrap();
+        std::fs::write(legacy_dir.join("bazaarplusplus.db"), b"db").unwrap();
+        std::fs::write(nested.join("auth.json"), b"auth").unwrap();
+
+        let report = cleanup_legacy_record_directory(tmp.path());
+
+        assert!(report.is_empty(), "unexpected failures: {:?}", report.failed);
+        assert!(!legacy_dir.exists());
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn test_cleanup_legacy_record_directory_reports_locked_files_without_aborting_siblings() {
+        use std::os::unix::fs::PermissionsExt;
+
+        let tmp = tempfile::tempdir().unwrap();
+        let legacy_dir = tmp.path().join(LEGACY_RECORD_DIRECTORY);
+        let unwritable_subdir = legacy_dir.join("locked");
+        std::fs::create_dir_all(&unwritable_subdir).unwrap();
+        std::fs::write(legacy_dir.join("removable.bin"), b"x").unwrap();
+        std::fs::write(unwritable_subdir.join("trapped.bin"), b"x").unwrap();
+
+        // Drop write permission on the parent dir so its child can't be unlinked.
+        std::fs::set_permissions(
+            &unwritable_subdir,
+            std::fs::Permissions::from_mode(0o500),
+        )
+        .unwrap();
+
+        let report = cleanup_legacy_record_directory(tmp.path());
+
+        // Restore permissions so the tempdir cleanup succeeds even if the test fails.
+        let _ = std::fs::set_permissions(
+            &unwritable_subdir,
+            std::fs::Permissions::from_mode(0o700),
+        );
+
+        assert!(!report.is_empty(), "expected at least one failed path");
+        assert!(!legacy_dir.join("removable.bin").exists());
     }
 
     #[test]

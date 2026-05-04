@@ -50,18 +50,18 @@
         <div class="locate-warning-panel">
           <p class="locate-warning-title">
             {$locale === 'zh'
-              ? 'BazaarPlusPlus 数据目录需要重建'
-              : 'BazaarPlusPlus data directory needs to be rebuilt'}
+              ? '战绩数据需要重建'
+              : 'Match-history data needs to be rebuilt'}
           </p>
           <p class="locate-warning">
             {#if bppDataIssue === 'incompatible_version'}
               {$locale === 'zh'
-                ? `检测到 BPPData.version 版本不兼容（当前：${bppDataVersion ?? '未知'}）。请先删除游戏根目录下整个 BazaarPlusPlus 文件夹；你可以点击“重置战绩记录”按钮自动重置，或者手动删除该文件夹。这会删除所有现有战绩，并在后续重建数据目录。`
-                : `An incompatible BPPData.version was detected (current: ${bppDataVersion ?? 'unknown'}). Delete the entire BazaarPlusPlus folder in the game root first. You can use the "Reset Match History" button to reset it automatically, or delete that folder manually. This removes all saved match history and lets the installer rebuild the data directory.`}
+                ? `检测到当前战绩数据格式与安装器不兼容（数据版本：${bppDataVersion ?? '未知'}）。点击下面"重置战绩记录"会自动清空并重建；也可以在关闭游戏后手动删除游戏根目录下的 BazaarPlusPlus 文件夹。这会删除所有现有战绩与本地登录信息。`
+                : `The current match-history data format is not compatible with this installer (data version: ${bppDataVersion ?? 'unknown'}). Use "Reset Match History" below to clear and rebuild it automatically, or quit the game and delete the BazaarPlusPlus folder in the game root yourself. This removes all match history and your local sign-in.`}
             {:else}
               {$locale === 'zh'
-                ? '检测到游戏根目录的 BazaarPlusPlus 文件夹里没有 BPPData.version。请先删除整个 BazaarPlusPlus 文件夹；你可以点击“重置战绩记录”按钮自动重置，或者手动删除该文件夹。这会删除所有现有战绩，并在后续重建数据目录。'
-                : 'The BazaarPlusPlus folder exists in the game root, but BPPData.version is missing. Delete the entire BazaarPlusPlus folder first. You can use the "Reset Match History" button to reset it automatically, or delete that folder manually. This removes all saved match history and lets the installer rebuild the data directory.'}
+                ? 'BazaarPlusPlus 文件夹缺少版本标记，安装器无法判断它是否还能正常使用。点击下面"重置战绩记录"会自动清空并重建；也可以在关闭游戏后手动删除该文件夹。这会删除所有现有战绩与本地登录信息。'
+                : "The BazaarPlusPlus folder is missing its version marker, so the installer can't tell whether it is still usable. Use \"Reset Match History\" below to clear and rebuild it automatically, or quit the game and delete the folder yourself. This removes all match history and your local sign-in."}
             {/if}
           </p>
         </div>
