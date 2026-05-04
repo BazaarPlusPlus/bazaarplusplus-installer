@@ -29,68 +29,84 @@
 >
   <div class="step-index" aria-hidden="true">I</div>
   <div class="step-body">
-    <div class="step-heading">
-      <span class="step-title">
-        {t('stepBpp')}
+    <span class="step-title">
+      {t('stepBpp')}
+      {#if versionMismatch}
+        <span class="tag tag-danger"
+          >{$locale === 'zh' ? '版本不一致' : 'Version mismatch'}</span
+        >
+      {:else if actionBusy === 'detect'}
+        <span class="tag">{t('statusChecking')}</span>
+      {:else if !modInstalled}
+        <span class="tag tag-warn">{t('statusNotInstalled')}</span>
+      {/if}
+    </span>
+    <div class="bpp-detail-row">
+      <div class="bpp-detail-content">
         {#if versionMismatch}
-          <span class="tag tag-danger"
-            >{$locale === 'zh' ? '版本不一致' : 'Version mismatch'}</span
-          >
-        {:else if actionBusy === 'detect'}
-          <span class="tag">{t('statusChecking')}</span>
-        {:else if !modInstalled}
-          <span class="tag tag-warn">{t('statusNotInstalled')}</span>
+          <div class="mismatch-summary">
+            <p class="detail-line detail-muted">
+              {$locale === 'zh'
+                ? '已安装版本和安装器版本不同，请点击下方“需要重新安装”按钮完成重新安装'
+                : 'The installed version differs from the bundled one. Select the Reinstall Required button below to reinstall.'}
+            </p>
+          </div>
+          <div class="mismatch-versions">
+            <span class="mismatch-version">
+              <span class="mismatch-version-label"
+                >{$locale === 'zh' ? '本地已安装' : 'Installed'}</span
+              >
+              <span class="mismatch-version-value">v{installedBppVersion}</span>
+            </span>
+            <span class="mismatch-version">
+              <span class="mismatch-version-label"
+                >{$locale === 'zh' ? '安装器版本' : 'Installer bundle'}</span
+              >
+              <span class="mismatch-version-value">v{bundledBppVersion}</span>
+            </span>
+          </div>
+        {:else if modInstalled}
+          <div class="mismatch-versions">
+            <span class="mismatch-version mismatch-version-ok">
+              <span class="mismatch-version-label"
+                >{$locale === 'zh' ? '本地已安装' : 'Installed'}</span
+              >
+              <span class="mismatch-version-value">v{env?.bpp_version}</span>
+            </span>
+          </div>
+          <p class="detail-line detail-muted">
+            {$locale === 'zh'
+              ? 'BazaarPlusPlus 当前已处于最新状态'
+              : 'BazaarPlusPlus is already up to date'}
+          </p>
+        {:else}
+          <p class="detail-line detail-muted">{t('detectInstalledHint')}</p>
         {/if}
-      </span>
+      </div>
       <button class="tutorial-btn" type="button" onclick={openTutorial}>
         {$locale === 'zh' ? '查看教程' : 'View Tutorial'}
       </button>
     </div>
-    {#if versionMismatch}
-      <div class="mismatch-summary">
-        <p class="detail-line detail-muted">
-          {$locale === 'zh'
-            ? '已安装版本和安装器版本不同，建议重新安装'
-            : 'The installed version differs from the bundled one. Check what changed before reinstalling.'}
-        </p>
-      </div>
-      <div class="mismatch-versions">
-        <span class="mismatch-version">
-          <span class="mismatch-version-label"
-            >{$locale === 'zh' ? '本地已安装' : 'Installed'}</span
-          >
-          <span class="mismatch-version-value">v{installedBppVersion}</span>
-        </span>
-        <span class="mismatch-version">
-          <span class="mismatch-version-label"
-            >{$locale === 'zh' ? '安装器版本' : 'Installer bundle'}</span
-          >
-          <span class="mismatch-version-value">v{bundledBppVersion}</span>
-        </span>
-      </div>
-    {:else if modInstalled}
-      <div class="mismatch-versions">
-        <span class="mismatch-version mismatch-version-ok">
-          <span class="mismatch-version-label"
-            >{$locale === 'zh' ? '本地已安装' : 'Installed'}</span
-          >
-          <span class="mismatch-version-value">v{env?.bpp_version}</span>
-        </span>
-      </div>
-      <p class="detail-line detail-muted">
-        {$locale === 'zh'
-          ? 'BazaarPlusPlus 当前已处于最新状态'
-          : 'BazaarPlusPlus is already up to date'}
-      </p>
-    {:else}
-      <p class="detail-line detail-muted">{t('detectInstalledHint')}</p>
-    {/if}
   </div>
 </div>
 
 <style>
+  .bpp-detail-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 0.85rem;
+    min-width: 0;
+  }
+
+  .bpp-detail-content {
+    display: grid;
+    gap: 0.58rem;
+    min-width: 0;
+  }
+
   .tutorial-btn {
-    flex: 0 0 auto;
+    justify-self: end;
     min-height: 2.3rem;
     padding: 0.54rem 0.9rem;
     font-family: 'Cinzel', serif;
@@ -171,5 +187,11 @@
 
   .mismatch-version-ok .mismatch-version-value {
     color: rgba(216, 244, 228, 0.92);
+  }
+
+  @media (max-width: 520px) {
+    .bpp-detail-row {
+      grid-template-columns: minmax(0, 1fr);
+    }
   }
 </style>
