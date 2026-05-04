@@ -1,5 +1,7 @@
 # Installer Phase 1.2 — `commands/detect.rs` Split Implementation Plan
 
+> Status: historical implementation record. `commands/detect/` and `commands/game_process.rs` already exist in the current codebase.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Split `src-tauri/src/commands/detect.rs` (624 lines, 10 tests) into a `commands/detect/` directory split by concern — Windows registry/Steam discovery, .NET runtime probing, game-path/BPP-data inspection — while simultaneously renaming the unrelated `commands/game.rs` (process detection) to `commands/game_process.rs` so the new `commands/detect/game.rs` name is unambiguous.

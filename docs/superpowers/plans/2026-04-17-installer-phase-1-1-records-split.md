@@ -1,5 +1,7 @@
 # Installer Phase 1.1 — Records Module Split Implementation Plan
 
+> Status: historical implementation record. The records module is already split in the current codebase.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Split the 970-line `src-tauri/src/stream/records.rs` into a `stream/records/` module directory with one file per concern, keeping behavior and public API identical.

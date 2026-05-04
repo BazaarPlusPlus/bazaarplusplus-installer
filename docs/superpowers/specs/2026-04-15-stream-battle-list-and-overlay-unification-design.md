@@ -1,5 +1,7 @@
 # Stream Battle List And Overlay Unification Design
 
+> Status: historical design record. The shared Svelte battle-list stack described here is not the current source of truth; use `docs/architecture.md` and the current stream code for present behavior.
+
 ## Context
 
 The project currently renders stream records in two separate ways:
@@ -202,7 +204,7 @@ Overlay:
 
 - If the service can still show cached content, keep the stale-state treatment.
 - If no content is available, show the empty state with the existing startup-oriented messaging.
-- Failure to fetch display mode should not crash rendering; the host may fall back to the most recently known mode or `current`.
+- Failure to fetch display mode should not crash rendering; the host may fall back to the last known mode or `current`.
 
 ## Verification Strategy
 

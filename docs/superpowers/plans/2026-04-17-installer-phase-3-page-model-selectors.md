@@ -1,5 +1,7 @@
 # Installer Phase 3 — Page-Model Selector Decomposition Implementation Plan
 
+> Status: historical implementation record. Installer selectors already exist in the current codebase.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Replace the single `createInstallPageModel` god-function in `src/lib/installer/page-model.ts` with a set of focused selector modules under `src/lib/installer/selectors/`, while keeping `createInstallPageModel` as a thin compatibility composition layer for one release cycle.

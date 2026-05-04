@@ -1,5 +1,7 @@
 # Installer Cohesion And Coupling Refactor Design
 
+> Status: historical refactor design. Several phases are now reflected in the codebase; use `docs/architecture.md` for the current structure before executing any remaining plan.
+
 ## Context
 
 The `bazaarplusplus-installer` app has grown organically across installer, identity, stream, and updater domains. Exploration across both the SvelteKit frontend (`src/`) and the Tauri/Rust backend (`src-tauri/src/`) shows the following structural pressure points:

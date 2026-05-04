@@ -1,5 +1,7 @@
 # Installer Phase 1.3 — `commands/bepinex.rs` Split Implementation Plan
 
+> Status: historical implementation record. `commands/bepinex/` already exists in the current codebase.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Split `src-tauri/src/commands/bepinex.rs` (675 lines, 16 tests) into a `commands/bepinex/` directory organised by concern — zip-archive handling, BPP data versioning, filesystem payload operations, and Tauri command entry points — without changing behavior or the crate-external public API.

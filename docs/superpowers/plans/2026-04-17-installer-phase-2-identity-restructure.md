@@ -1,5 +1,7 @@
 # Installer Phase 2 — Identity Layer Restructure Implementation Plan
 
+> Status: historical implementation record. The identity layer has already been split in the current codebase.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Split `src/lib/identity/api.ts` into focused transport / crypto / normalize / repository / use-case layers, move installation-record Tauri invokers out of `installer/api.ts`, and remove the reverse dependency from `identity/` → `installer/api.ts`.
@@ -226,7 +228,7 @@ EOF
 **Files:**
 - Create: `src/lib/identity/transport.ts`
 - Modify: `src/lib/identity/api.ts` (remove moved definitions, import from transport, re-export type)
-- Test: none new — the moved code has no direct unit tests today; integration tests in `api.test.ts` cover it via `postJsonImpl` DI
+- Test: none new — the moved code has no direct unit tests in the pre-refactor baseline; integration tests in `api.test.ts` cover it via `postJsonImpl` DI
 
 ### Step-by-step
 
@@ -434,7 +436,7 @@ identity/api.ts into identity/crypto.ts. The createIdentityApi returned
 object no longer exposes exportPrivateKeyToJwk as a method; the symbol
 had no external consumer in the tree and the Phase 2 spec lists only
 loadLocalIdentity, activateFirstAccount, and loginAndCreateInstallation
-as the use-case surface. Direct callers (none today) can import
+as the use-case surface. Direct callers (none in the audited tree) can import
 exportPrivateKeyToJwk from identity/crypto.ts.
 
 Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>
@@ -446,7 +448,7 @@ EOF
 
 ## Task 4 — Create `identity/normalize.ts` with tests
 
-**Why wire this in:** spec lists these names explicitly as Phase 2 deliverables and a module with no consumers is dead code. Wiring is limited to `loadLocalIdentity`: decoded envelopes pass through the normalizers and malformed payloads turn into `null` instead of a structurally-broken cast. No test exercises malformed payloads today, so no behavioral test breaks; new tests cover the normalizers and a regression case for `loadLocalIdentity`.
+**Why wire this in:** spec lists these names explicitly as Phase 2 deliverables and a module with no consumers is dead code. Wiring is limited to `loadLocalIdentity`: decoded envelopes pass through the normalizers and malformed payloads turn into `null` instead of a structurally-broken cast. No baseline test exercises malformed payloads, so no behavioral test breaks; new tests cover the normalizers and a regression case for `loadLocalIdentity`.
 
 **Files:**
 - Create: `src/lib/identity/normalize.ts`
@@ -894,6 +896,6 @@ Before dispatching the first implementer subagent, confirm:
    - `generateInstallationKeyPair` — moved to crypto.ts (Task 3), consumed via DI default in api.ts (Task 3)
    - `readPlayerObservation` et al. — moved to repository.ts (Task 1), consumed via DI default in api.ts (Task 1, already done before later tasks touch them)
 4. **Invariants** — all 9 invariants listed above are respected by every task's commit.
-5. **No behavior drift** — the only observable behavior change is: `loadLocalIdentity` now returns `null` for a malformed persisted payload instead of a cast-shaped broken object. No production code path produces malformed payloads today, and no existing test exercises that path.
+5. **No behavior drift** — the only observable behavior change is: `loadLocalIdentity` now returns `null` for a malformed persisted payload instead of a cast-shaped broken object. No production code path in the audited baseline produces malformed payloads, and no existing test exercises that path.
 
 ---

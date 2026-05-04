@@ -2,7 +2,7 @@
 
 This directory is split into two groups:
 
-- Current documents: use these to understand how the repository works today.
+- Current documents: use these to understand how the repository works in the current codebase.
 - Design records: historical specs and implementation plans that may describe intended or partial work.
 
 ## Current
@@ -18,7 +18,14 @@ These files are still useful for context, but they should not be treated as the 
 
 - [superpowers/specs/2026-04-08-changelog-design.md](superpowers/specs/2026-04-08-changelog-design.md)
 - [superpowers/specs/2026-04-10-home-shell-and-stream-mode-design.md](superpowers/specs/2026-04-10-home-shell-and-stream-mode-design.md)
+- [superpowers/specs/2026-04-15-stream-battle-list-and-overlay-unification-design.md](superpowers/specs/2026-04-15-stream-battle-list-and-overlay-unification-design.md)
+- [superpowers/specs/2026-04-17-installer-cohesion-refactor-design.md](superpowers/specs/2026-04-17-installer-cohesion-refactor-design.md)
 - [superpowers/plans/2026-04-10-home-shell-and-stream-mode-implementation.md](superpowers/plans/2026-04-10-home-shell-and-stream-mode-implementation.md)
+- [superpowers/plans/2026-04-17-installer-phase-1-1-records-split.md](superpowers/plans/2026-04-17-installer-phase-1-1-records-split.md)
+- [superpowers/plans/2026-04-17-installer-phase-1-2-detect-split.md](superpowers/plans/2026-04-17-installer-phase-1-2-detect-split.md)
+- [superpowers/plans/2026-04-17-installer-phase-1-3-bepinex-split.md](superpowers/plans/2026-04-17-installer-phase-1-3-bepinex-split.md)
+- [superpowers/plans/2026-04-17-installer-phase-2-identity-restructure.md](superpowers/plans/2026-04-17-installer-phase-2-identity-restructure.md)
+- [superpowers/plans/2026-04-17-installer-phase-3-page-model-selectors.md](superpowers/plans/2026-04-17-installer-phase-3-page-model-selectors.md)
 
 ## Documentation Rules
 
