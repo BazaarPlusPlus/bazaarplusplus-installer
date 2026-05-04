@@ -8,7 +8,6 @@ This document describes the repository as it exists in the current codebase.
 - The install route is still the operational center of the product, but the route file is now mostly a composition layer around controllers, selectors, and Svelte components.
 - Stream functionality exists as both a dedicated route and an embedded mode inside the install page. The OBS-facing overlay is still served by the local Tauri HTTP service from `src-tauri/resources/stream/`.
 - The Tauri updater plugin, updater artifact generation, and R2 manifest upload flow are implemented. See `docs/updater-release-plan.md` for the release workflow.
-- Some design documents under `docs/superpowers/` are historical records. They may describe planned work that has since landed, changed shape, or not been implemented.
 
 ## Top-Level Layout
 
@@ -162,12 +161,7 @@ This is the current reference for how new feature areas should be structured.
 
 ## Documentation Model
 
-Use documentation in two layers:
-
-- Current-state docs in `docs/*.md`
-- Historical design records in `docs/superpowers/`
-
-When implementation diverges from an older design spec, do not silently assume the spec is current. Update `docs/architecture.md` or add a small status note in `docs/README.md`.
+Keep `docs/*.md` as the current source of truth. Delete stale design records and implementation plans instead of leaving them beside current docs.
 
 ## Current Maintenance Priorities
 

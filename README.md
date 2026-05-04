@@ -56,7 +56,6 @@ Artifacts are written under `src-tauri/target/release/` on Windows and
 
 - Current architecture and maintenance notes live in `docs/architecture.md`
 - The documentation index lives in `docs/README.md`
-- Files under `docs/superpowers/` are design records and may describe planned or partial structure rather than the exact current app
 
 ## Known Limitation
 
