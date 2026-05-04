@@ -175,6 +175,22 @@ mod tests {
     }
 
     #[test]
+    fn test_inspect_bpp_data_directory_is_clean_when_directory_does_not_exist() {
+        let tmp = tempfile::tempdir().unwrap();
+
+        let state = inspect_bpp_data_directory(tmp.path(), "2.9.0");
+
+        assert_eq!(
+            state,
+            BppDataDirectoryState {
+                version: None,
+                reset_required: false,
+                issue: None,
+            }
+        );
+    }
+
+    #[test]
     fn test_inspect_bpp_data_directory_requires_reset_when_version_file_missing() {
         let tmp = tempfile::tempdir().unwrap();
         std::fs::create_dir_all(

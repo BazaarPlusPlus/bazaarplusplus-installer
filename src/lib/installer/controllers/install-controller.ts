@@ -11,6 +11,7 @@ import type {
 import type { ActionBusy, StepState } from '../state.ts';
 import type { InstallRuntimeRisk } from '../install-guards.ts';
 import { detectInstallerEnvironment } from '../detect-flow.ts';
+import { parseRepairError, type RepairError } from '../repair-errors.ts';
 import type { TranslateText } from '../selectors/types.ts';
 
 function debugInstallLog(message: string, payload: Record<string, unknown>) {
@@ -70,6 +71,7 @@ export function createInstallController(input: {
   const showRepairModal = writable(false);
   const repairAcknowledged = writable(false);
   const repairModalBody = writable('');
+  const repairError = writable<RepairError | null>(null);
   const showLaunchOptionsWarningModal = writable(false);
   const showSteamQuitModal = writable(false);
   const installAcknowledged = writable(false);
@@ -123,6 +125,7 @@ export function createInstallController(input: {
   function closeRepairModal() {
     if (get(actionBusy) === 'repair') return;
     repairAcknowledged.set(false);
+    repairError.set(null);
     showRepairModal.set(false);
   }
 
@@ -464,18 +467,19 @@ export function createInstallController(input: {
       repairModalBody.set(
         inputArgs.bppDataIssue === 'incompatible_version'
           ? input.localized(
-              `检测到 BazaarPlusPlus 数据目录中的 BPPData.version 版本不兼容（当前：${versionLabel}）。\n需要删除游戏根目录下整个 BazaarPlusPlus 文件夹，并重建数据目录。\n你可以点击“重置战绩记录”按钮自动重置，或者手动删除该文件夹。\n当前目录占用空间：${sizeLabel}\n这会删除你当前的所有战绩记录。`,
-              `An incompatible BPPData.version was detected in the BazaarPlusPlus data directory (current: ${versionLabel}).\nDelete the entire BazaarPlusPlus folder in the game root so the installer can rebuild the data directory.\nYou can use the "Reset Match History" button to reset it automatically, or delete that folder manually.\nCurrent directory size: ${sizeLabel}\nThis will delete all current match history.`
+              `检测到当前战绩数据格式与安装器不兼容（数据版本：${versionLabel}）。\n需要清空游戏根目录下的 BazaarPlusPlus 文件夹，并重建数据目录。\n点击下面的"重置战绩记录"会自动完成；也可以在关闭游戏后手动删除该文件夹。\n当前目录占用空间：${sizeLabel}\n这会删除你当前的所有战绩记录与本地登录信息。`,
+              `The current match-history data format is not compatible with this installer (data version: ${versionLabel}).\nThe BazaarPlusPlus folder in the game root needs to be cleared and rebuilt.\nClick "Reset Match History" below to do this automatically, or quit the game and delete the folder yourself.\nCurrent folder size: ${sizeLabel}\nThis deletes all match history and your local sign-in.`
             )
           : input.localized(
-              `检测到游戏根目录的 BazaarPlusPlus 文件夹里没有 BPPData.version。\n需要删除整个 BazaarPlusPlus 文件夹，并重建数据目录。\n你可以点击“重置战绩记录”按钮自动重置，或者手动删除该文件夹。\n当前目录占用空间：${sizeLabel}\n这会删除你当前的所有战绩记录。`,
-              `The BazaarPlusPlus folder exists in the game root, but BPPData.version is missing.\nDelete the entire BazaarPlusPlus folder so the installer can rebuild the data directory.\nYou can use the "Reset Match History" button to reset it automatically, or delete that folder manually.\nCurrent directory size: ${sizeLabel}\nThis will delete all current match history.`
+              `检测到 BazaarPlusPlus 文件夹缺少版本标记，安装器无法判断它是否还能正常使用。\n需要清空该文件夹并重建。\n点击下面的"重置战绩记录"会自动完成；也可以在关闭游戏后手动删除该文件夹。\n当前目录占用空间：${sizeLabel}\n这会删除你当前的所有战绩记录与本地登录信息。`,
+              `The BazaarPlusPlus folder is missing its version marker, so the installer can't tell whether it is still usable.\nThe folder needs to be cleared and rebuilt.\nClick "Reset Match History" below to do this automatically, or quit the game and delete the folder yourself.\nCurrent folder size: ${sizeLabel}\nThis deletes all match history and your local sign-in.`
             )
       );
     } else {
       repairModalBody.set(input.t('resetHistoryBody', { size: sizeLabel }));
     }
     repairAcknowledged.set(false);
+    repairError.set(null);
     showRepairModal.set(true);
   }
 
@@ -485,13 +489,19 @@ export function createInstallController(input: {
   }) {
     if (!inputArgs.effectiveGamePath || get(actionBusy) !== 'idle') return;
 
-    showRepairModal.set(false);
+    // Keep the modal open until we know the outcome — closing it before the
+    // backend call hides the spinner and (more importantly) leaves nowhere to
+    // surface failure information.
+    repairError.set(null);
     actionBusy.set('repair');
     try {
       await input.repairBppApi(inputArgs.effectiveGamePath);
+      showRepairModal.set(false);
+      repairAcknowledged.set(false);
       await refreshAfterAction(inputArgs.selectedPath);
     } catch (error) {
       console.error(error);
+      repairError.set(parseRepairError(error));
       actionBusy.set('idle');
     }
   }
@@ -540,6 +550,7 @@ export function createInstallController(input: {
     showRepairModal,
     repairAcknowledged,
     repairModalBody,
+    repairError,
     showLaunchOptionsWarningModal,
     showSteamQuitModal,
     installAcknowledged,

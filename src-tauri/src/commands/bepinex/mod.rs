@@ -13,8 +13,10 @@ pub(crate) use versioning::{
 pub(crate) use zip_archive::read_bundled_bpp_version;
 
 use serde::Serialize;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use tauri::Manager;
+
+use crate::stream::state::StreamRuntimeState;
 
 macro_rules! debug_log {
     ($($arg:tt)*) => {
@@ -30,6 +32,12 @@ macro_rules! debug_error {
     };
 }
 
+/// Stable error-code prefixes that the frontend pattern-matches to render
+/// targeted UI. Adding a new variant requires a matching branch in
+/// `formatRepairError` on the TS side.
+pub(crate) const REPAIR_ERR_GAME_RUNNING: &str = "bpp_data_reset_blocked_by_game";
+pub(crate) const REPAIR_ERR_PARTIAL_FAILURE: &str = "bpp_data_reset_partial_failure";
+
 #[derive(Debug, Serialize, ts_rs::TS)]
 #[ts(export)]
 pub struct LegacyRecordDirectoryInfo {
@@ -37,7 +45,16 @@ pub struct LegacyRecordDirectoryInfo {
 }
 
 #[tauri::command]
-pub async fn repair_bpp(app: tauri::AppHandle, game_path: String) -> Result<(), String> {
+pub async fn repair_bpp(
+    app: tauri::AppHandle,
+    stream_state: tauri::State<'_, StreamRuntimeState>,
+    game_path: String,
+) -> Result<(), String> {
+    // Drop our own SQLite connections before touching the data directory.
+    // Without this, OBS overlay polling keeps `bazaarplusplus.db` open and
+    // Windows refuses to delete it (the headline customer complaint).
+    let _ = crate::stream::server::stop(stream_state.inner()).await;
+
     tauri::async_runtime::spawn_blocking(move || {
         let policy = versioning::read_bundled_bpp_data_version_policy(&app)
             .unwrap_or_else(|_| versioning::default_bpp_data_version_policy());
@@ -50,11 +67,30 @@ pub async fn repair_bpp(app: tauri::AppHandle, game_path: String) -> Result<(), 
 fn repair_bpp_blocking(game_path: &Path, current_bpp_data_version: &str) -> Result<(), String> {
     payload::ensure_valid_game_path(game_path)?;
 
-    payload::cleanup_legacy_record_directory(game_path)?;
+    if crate::commands::game_process::is_bazaar_running_best_effort() {
+        return Err(REPAIR_ERR_GAME_RUNNING.to_string());
+    }
+
+    let report = payload::cleanup_legacy_record_directory(game_path);
+    if !report.is_empty() {
+        return Err(format_partial_failure(&report.failed));
+    }
+
     versioning::ensure_bpp_data_version_file(game_path, current_bpp_data_version)?;
 
     debug_log!("Repaired BazaarPlusPlus payload at {}", game_path.display());
     Ok(())
+}
+
+fn format_partial_failure(paths: &[PathBuf]) -> String {
+    // Use a delimiter that won't collide with Windows drive letters or POSIX
+    // separators. The frontend splits on `\u{1f}` to recover the list.
+    let joined = paths
+        .iter()
+        .map(|path| path.display().to_string())
+        .collect::<Vec<_>>()
+        .join("\u{1f}");
+    format!("{REPAIR_ERR_PARTIAL_FAILURE}:{joined}")
 }
 
 #[tauri::command]
@@ -157,10 +193,8 @@ pub fn uninstall_bpp(
 mod tests {
     use super::*;
 
-    #[test]
-    fn test_repair_bpp_removes_legacy_directory_for_installed_v1() {
+    fn make_valid_game_dir() -> tempfile::TempDir {
         let tmp = tempfile::tempdir().unwrap();
-        let legacy_dir = tmp.path().join(LEGACY_RECORD_DIRECTORY);
 
         #[cfg(target_os = "macos")]
         {
@@ -171,6 +205,19 @@ mod tests {
         {
             std::fs::write(tmp.path().join("TheBazaar.exe"), b"exe").unwrap();
         }
+
+        #[cfg(not(any(target_os = "macos", target_os = "windows")))]
+        {
+            std::fs::write(tmp.path().join("TheBazaar"), b"exe").unwrap();
+        }
+
+        tmp
+    }
+
+    #[test]
+    fn test_repair_bpp_removes_legacy_directory_for_installed_v1() {
+        let tmp = make_valid_game_dir();
+        let legacy_dir = tmp.path().join(LEGACY_RECORD_DIRECTORY);
 
         std::fs::create_dir_all(&legacy_dir).unwrap();
         std::fs::write(legacy_dir.join("legacy.dll"), b"dll").unwrap();
@@ -184,5 +231,50 @@ mod tests {
                 .trim(),
             CURRENT_BPP_DATA_VERSION
         );
+    }
+
+    #[test]
+    fn test_repair_bpp_seeds_directory_when_user_already_deleted_it() {
+        let tmp = make_valid_game_dir();
+        let legacy_dir = tmp.path().join(LEGACY_RECORD_DIRECTORY);
+        assert!(!legacy_dir.exists());
+
+        repair_bpp_blocking(tmp.path(), CURRENT_BPP_DATA_VERSION).unwrap();
+
+        assert!(legacy_dir.exists());
+        assert_eq!(
+            std::fs::read_to_string(legacy_dir.join(BPP_DATA_VERSION_FILE_NAME))
+                .unwrap()
+                .trim(),
+            CURRENT_BPP_DATA_VERSION
+        );
+    }
+
+    #[test]
+    fn test_repair_bpp_is_idempotent_when_run_twice() {
+        let tmp = make_valid_game_dir();
+
+        repair_bpp_blocking(tmp.path(), CURRENT_BPP_DATA_VERSION).unwrap();
+        repair_bpp_blocking(tmp.path(), CURRENT_BPP_DATA_VERSION).unwrap();
+
+        let legacy_dir = tmp.path().join(LEGACY_RECORD_DIRECTORY);
+        assert_eq!(
+            std::fs::read_to_string(legacy_dir.join(BPP_DATA_VERSION_FILE_NAME))
+                .unwrap()
+                .trim(),
+            CURRENT_BPP_DATA_VERSION
+        );
+    }
+
+    #[test]
+    fn test_format_partial_failure_uses_unit_separator() {
+        let formatted = format_partial_failure(&[
+            PathBuf::from("C:/Games/The Bazaar/BazaarPlusPlus/bazaarplusplus.db"),
+            PathBuf::from("C:/Games/The Bazaar/BazaarPlusPlus/Identity/auth.v1.json"),
+        ]);
+
+        assert!(formatted.starts_with(REPAIR_ERR_PARTIAL_FAILURE));
+        assert!(formatted.contains('\u{1f}'));
+        assert!(formatted.ends_with("auth.v1.json"));
     }
 }
