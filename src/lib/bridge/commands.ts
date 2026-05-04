@@ -1,4 +1,5 @@
 import { invoke } from '@tauri-apps/api/core';
+import type { Locale } from '../i18n.ts';
 import type {
   EnvironmentInfo,
   GameRunningInfo,
@@ -73,6 +74,7 @@ export interface TauriCommandMap {
     output: StreamServiceStatus;
   };
   stop_stream_service: { input: undefined; output: StreamServiceStatus };
+  set_tray_locale: { input: { locale: Locale }; output: void };
   set_stream_overlay_window_offset: {
     input: { gamePath?: string; offset: number };
     output: StreamServiceStatus;
