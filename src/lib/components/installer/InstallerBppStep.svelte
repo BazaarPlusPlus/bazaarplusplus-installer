@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { openUrl } from '@tauri-apps/plugin-opener';
+  import { getTutorialUrl } from '$lib/config/endpoints';
   import { messages } from '$lib/i18n';
   import { locale } from '$lib/locale';
   import type { EnvironmentInfo } from '$lib/types';
@@ -14,6 +16,10 @@
     key: keyof typeof messages.en,
     params?: Record<string, string | number>
   ) => string;
+
+  async function openTutorial() {
+    await openUrl(getTutorialUrl($locale));
+  }
 </script>
 
 <div
@@ -23,18 +29,23 @@
 >
   <div class="step-index" aria-hidden="true">I</div>
   <div class="step-body">
-    <span class="step-title">
-      {t('stepBpp')}
-      {#if versionMismatch}
-        <span class="tag tag-danger"
-          >{$locale === 'zh' ? '版本不一致' : 'Version mismatch'}</span
-        >
-      {:else if actionBusy === 'detect'}
-        <span class="tag">{t('statusChecking')}</span>
-      {:else if !modInstalled}
-        <span class="tag tag-warn">{t('statusNotInstalled')}</span>
-      {/if}
-    </span>
+    <div class="step-heading">
+      <span class="step-title">
+        {t('stepBpp')}
+        {#if versionMismatch}
+          <span class="tag tag-danger"
+            >{$locale === 'zh' ? '版本不一致' : 'Version mismatch'}</span
+          >
+        {:else if actionBusy === 'detect'}
+          <span class="tag">{t('statusChecking')}</span>
+        {:else if !modInstalled}
+          <span class="tag tag-warn">{t('statusNotInstalled')}</span>
+        {/if}
+      </span>
+      <button class="tutorial-btn" type="button" onclick={openTutorial}>
+        {$locale === 'zh' ? '查看教程' : 'View Tutorial'}
+      </button>
+    </div>
     {#if versionMismatch}
       <div class="mismatch-summary">
         <p class="detail-line detail-muted">
@@ -78,6 +89,39 @@
 </div>
 
 <style>
+  .tutorial-btn {
+    flex: 0 0 auto;
+    min-height: 2.3rem;
+    padding: 0.54rem 0.9rem;
+    font-family: 'Cinzel', serif;
+    font-size: 0.54rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: rgba(200, 155, 72, 0.82);
+    background: rgba(var(--color-accent-rgb), 0.06);
+    border: 1px solid rgba(180, 130, 48, 0.2);
+    border-radius: 2px;
+    cursor: pointer;
+    transition:
+      background 0.15s ease,
+      color 0.15s ease,
+      border-color 0.15s ease,
+      box-shadow 0.15s ease;
+    white-space: nowrap;
+  }
+
+  .tutorial-btn:hover {
+    color: rgba(220, 180, 100, 0.95);
+    background: rgba(var(--color-accent-rgb), 0.12);
+    border-color: rgba(var(--color-accent-rgb), 0.34);
+    box-shadow: 0 0 16px rgba(var(--color-accent-rgb), 0.08);
+  }
+
+  .tutorial-btn:focus-visible {
+    outline: 2px solid rgba(var(--color-warm-rgb), 0.9);
+    outline-offset: 2px;
+  }
+
   .mismatch-summary {
     display: flex;
     gap: 0.55rem;
