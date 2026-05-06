@@ -13,10 +13,7 @@ test('createHomeSummary marks stream mode active when service is running', () =>
       dotnet_ok: true,
       bepinex_installed: true,
       bpp_version: '2.3.7',
-      bundled_bpp_version: '2.3.7',
-      bpp_data_version: '1',
-      bpp_data_reset_required: false,
-      bpp_data_issue: null
+      bundled_bpp_version: '2.3.7'
     },
     streamStatus: {
       running: true,

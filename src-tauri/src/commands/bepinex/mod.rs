@@ -1,15 +1,6 @@
 mod payload;
-mod versioning;
 mod zip_archive;
 
-pub(crate) use versioning::{
-    bpp_data_version_path, default_bpp_data_version_policy, is_compatible_bpp_data_version,
-    read_bundled_bpp_data_version_policy, BppDataVersionPolicy, LEGACY_RECORD_DIRECTORY,
-};
-#[cfg(test)]
-pub(crate) use versioning::{
-    ensure_bpp_data_version_file, BPP_DATA_VERSION_FILE_NAME, CURRENT_BPP_DATA_VERSION,
-};
 pub(crate) use zip_archive::read_bundled_bpp_version;
 
 use serde::Serialize;
@@ -17,6 +8,8 @@ use std::path::{Path, PathBuf};
 use tauri::Manager;
 
 use crate::stream::state::StreamRuntimeState;
+
+pub(crate) const LEGACY_RECORD_DIRECTORY: &str = "BazaarPlusPlus";
 
 macro_rules! debug_log {
     ($($arg:tt)*) => {
@@ -46,7 +39,6 @@ pub struct LegacyRecordDirectoryInfo {
 
 #[tauri::command]
 pub async fn repair_bpp(
-    app: tauri::AppHandle,
     stream_state: tauri::State<'_, StreamRuntimeState>,
     game_path: String,
 ) -> Result<(), String> {
@@ -55,16 +47,12 @@ pub async fn repair_bpp(
     // Windows refuses to delete it (the headline customer complaint).
     let _ = crate::stream::server::stop(stream_state.inner()).await;
 
-    tauri::async_runtime::spawn_blocking(move || {
-        let policy = versioning::read_bundled_bpp_data_version_policy(&app)
-            .unwrap_or_else(|_| versioning::default_bpp_data_version_policy());
-        repair_bpp_blocking(Path::new(&game_path), &policy.current_bpp_data_version)
-    })
-    .await
-    .map_err(|err| format!("failed to repair BazaarPlusPlus data: {err}"))?
+    tauri::async_runtime::spawn_blocking(move || repair_bpp_blocking(Path::new(&game_path)))
+        .await
+        .map_err(|err| format!("failed to repair BazaarPlusPlus data: {err}"))?
 }
 
-fn repair_bpp_blocking(game_path: &Path, current_bpp_data_version: &str) -> Result<(), String> {
+fn repair_bpp_blocking(game_path: &Path) -> Result<(), String> {
     payload::ensure_valid_game_path(game_path)?;
 
     if crate::commands::game_process::is_bazaar_running_best_effort() {
@@ -75,8 +63,6 @@ fn repair_bpp_blocking(game_path: &Path, current_bpp_data_version: &str) -> Resu
     if !report.is_empty() {
         return Err(format_partial_failure(&report.failed));
     }
-
-    versioning::ensure_bpp_data_version_file(game_path, current_bpp_data_version)?;
 
     debug_log!("Repaired BazaarPlusPlus payload at {}", game_path.display());
     Ok(())
@@ -215,55 +201,39 @@ mod tests {
     }
 
     #[test]
-    fn test_repair_bpp_removes_legacy_directory_for_installed_v1() {
+    fn test_repair_bpp_removes_legacy_directory() {
         let tmp = make_valid_game_dir();
         let legacy_dir = tmp.path().join(LEGACY_RECORD_DIRECTORY);
 
         std::fs::create_dir_all(&legacy_dir).unwrap();
         std::fs::write(legacy_dir.join("legacy.dll"), b"dll").unwrap();
 
-        repair_bpp_blocking(tmp.path(), CURRENT_BPP_DATA_VERSION).unwrap();
+        repair_bpp_blocking(tmp.path()).unwrap();
 
-        assert!(legacy_dir.exists());
-        assert_eq!(
-            std::fs::read_to_string(legacy_dir.join(BPP_DATA_VERSION_FILE_NAME))
-                .unwrap()
-                .trim(),
-            CURRENT_BPP_DATA_VERSION
-        );
+        assert!(!legacy_dir.exists());
     }
 
     #[test]
-    fn test_repair_bpp_seeds_directory_when_user_already_deleted_it() {
+    fn test_repair_bpp_is_noop_when_directory_missing() {
         let tmp = make_valid_game_dir();
         let legacy_dir = tmp.path().join(LEGACY_RECORD_DIRECTORY);
         assert!(!legacy_dir.exists());
 
-        repair_bpp_blocking(tmp.path(), CURRENT_BPP_DATA_VERSION).unwrap();
+        repair_bpp_blocking(tmp.path()).unwrap();
 
-        assert!(legacy_dir.exists());
-        assert_eq!(
-            std::fs::read_to_string(legacy_dir.join(BPP_DATA_VERSION_FILE_NAME))
-                .unwrap()
-                .trim(),
-            CURRENT_BPP_DATA_VERSION
-        );
+        assert!(!legacy_dir.exists());
     }
 
     #[test]
     fn test_repair_bpp_is_idempotent_when_run_twice() {
         let tmp = make_valid_game_dir();
-
-        repair_bpp_blocking(tmp.path(), CURRENT_BPP_DATA_VERSION).unwrap();
-        repair_bpp_blocking(tmp.path(), CURRENT_BPP_DATA_VERSION).unwrap();
-
         let legacy_dir = tmp.path().join(LEGACY_RECORD_DIRECTORY);
-        assert_eq!(
-            std::fs::read_to_string(legacy_dir.join(BPP_DATA_VERSION_FILE_NAME))
-                .unwrap()
-                .trim(),
-            CURRENT_BPP_DATA_VERSION
-        );
+        std::fs::create_dir_all(&legacy_dir).unwrap();
+
+        repair_bpp_blocking(tmp.path()).unwrap();
+        repair_bpp_blocking(tmp.path()).unwrap();
+
+        assert!(!legacy_dir.exists());
     }
 
     #[test]

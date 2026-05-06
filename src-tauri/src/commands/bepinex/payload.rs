@@ -3,7 +3,7 @@ use std::path::{Path, PathBuf};
 use std::thread;
 use std::time::Duration;
 
-use super::versioning;
+use super::LEGACY_RECORD_DIRECTORY;
 
 pub(super) const BPP_CONFIG_RELATIVE_PATH: &str = "BepInEx/config/BazaarPlusPlus.cfg";
 
@@ -208,7 +208,7 @@ pub(super) fn restore_preserved_file(
 }
 
 pub(super) fn cleanup_legacy_record_directory(game_path: &Path) -> RemovalReport {
-    remove_dir_with_retry(&game_path.join(versioning::LEGACY_RECORD_DIRECTORY))
+    remove_dir_with_retry(&game_path.join(LEGACY_RECORD_DIRECTORY))
 }
 
 pub(super) fn legacy_record_directory_size_bytes(game_path: &Path) -> Result<u64, String> {
@@ -241,12 +241,12 @@ pub(super) fn legacy_record_directory_size_bytes(game_path: &Path) -> Result<u64
         Ok(total)
     }
 
-    collect_size(&game_path.join(versioning::LEGACY_RECORD_DIRECTORY))
+    collect_size(&game_path.join(LEGACY_RECORD_DIRECTORY))
 }
 
 #[cfg(test)]
 mod tests {
-    use super::versioning::LEGACY_RECORD_DIRECTORY;
+    use super::LEGACY_RECORD_DIRECTORY;
     use super::{
         cleanup_legacy_record_directory, ensure_valid_game_path,
         legacy_record_directory_size_bytes, prepare_install_target, preserve_file_if_exists,

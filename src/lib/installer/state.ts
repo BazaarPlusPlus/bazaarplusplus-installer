@@ -4,7 +4,6 @@ export type ActionBusy = 'idle' | 'detect' | 'install' | 'repair' | 'uninstall';
 export interface PageStateInput {
   actionBusy: ActionBusy;
   bazaarFound: boolean;
-  bppDataResetRequired: boolean;
   selectedGamePath: string | null;
   detectedGamePath: string | null;
   isDebugInstallPreview: boolean;
@@ -46,14 +45,7 @@ export function createPageState(input: PageStateInput): PageState {
     input.bundledBppVersion !== input.installedBppVersion
   );
   const canInstall =
-    !isBusy &&
-    !input.bppDataResetRequired &&
-    ((input.bazaarFound && hasPath) || input.isDebugInstallPreview);
-  // Launching the game is intentionally NOT blocked by `bppDataResetRequired`.
-  // The mod owns the data directory at runtime; if a stale BPPData.version
-  // would actually break things the user can decide that with the warning
-  // already shown on the Bazaar step. Hard-blocking launch only forces them
-  // through the destructive reset path.
+    !isBusy && ((input.bazaarFound && hasPath) || input.isDebugInstallPreview);
   const canLaunchGame = !isBusy && input.bazaarFound && hasPath;
 
   return {

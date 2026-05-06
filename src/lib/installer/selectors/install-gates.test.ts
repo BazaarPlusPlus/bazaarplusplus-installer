@@ -13,10 +13,7 @@ test('selectInstallGates trims custom paths and exposes install state', () => {
       dotnet_ok: true,
       bepinex_installed: true,
       bpp_version: '3.0.0',
-      bundled_bpp_version: '3.1.0',
-      bpp_data_version: '1',
-      bpp_data_reset_required: false,
-      bpp_data_issue: null
+      bundled_bpp_version: '3.1.0'
     },
     bazaarFound: true,
     customGamePath: '  D:\\Bazaar Custom  ',
@@ -61,10 +58,7 @@ test('selectInstallGates reflects busy actions through pageState', () => {
       dotnet_ok: true,
       bepinex_installed: false,
       bpp_version: null,
-      bundled_bpp_version: '3.1.0',
-      bpp_data_version: '1',
-      bpp_data_reset_required: false,
-      bpp_data_issue: null
+      bundled_bpp_version: '3.1.0'
     },
     bazaarFound: true,
     customGamePath: '',
@@ -119,10 +113,7 @@ test('selectInstallGates prefers the freshly-detected env path over any cached v
       dotnet_ok: true,
       bepinex_installed: true,
       bpp_version: null,
-      bundled_bpp_version: '3.1.0',
-      bpp_data_version: null,
-      bpp_data_reset_required: false,
-      bpp_data_issue: null
+      bundled_bpp_version: '3.1.0'
     },
     bazaarFound: true,
     customGamePath: '',

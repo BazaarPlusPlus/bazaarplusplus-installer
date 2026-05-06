@@ -267,9 +267,6 @@
     bazaarFound={$bazaarFound}
     bazaarChecking={$bazaarChecking}
     bazaarInvalid={$bazaarInvalid}
-    bppDataResetRequired={pageModel.bppDataResetRequired}
-    bppDataIssue={pageModel.bppDataIssue}
-    bppDataVersion={pageModel.bppDataVersion}
     bind:customGamePath={$customGamePath}
     hasPath={pageModel.hasPath}
     isBusy={pageModel.isBusy}
@@ -284,10 +281,7 @@
       installController.requestInstall(pageModel.canInstall)}
     onRepair={() =>
       installController.requestRepair({
-        effectiveGamePath: pageState.effectiveGamePath,
-        bppDataResetRequired: pageModel.bppDataResetRequired,
-        bppDataIssue: pageModel.bppDataIssue,
-        bppDataVersion: pageModel.bppDataVersion
+        effectiveGamePath: pageState.effectiveGamePath
       })}
     onUninstall={() =>
       installController.uninstallBpp({

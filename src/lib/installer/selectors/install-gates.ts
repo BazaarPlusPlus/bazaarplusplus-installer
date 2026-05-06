@@ -1,4 +1,4 @@
-import type { BppDataIssue, EnvironmentInfo } from '../../types.ts';
+import type { EnvironmentInfo } from '../../types.ts';
 import {
   createPageState,
   selectCustomGamePath,
@@ -11,9 +11,6 @@ export interface InstallGatesSelection {
   modInstalled: boolean;
   bundledBppVersion: string | null;
   installedBppVersion: string | null;
-  bppDataVersion: string | null;
-  bppDataIssue: BppDataIssue | null;
-  bppDataResetRequired: boolean;
   pageState: PageState;
   hasPath: boolean;
   isBusy: boolean;
@@ -35,13 +32,9 @@ export function selectInstallGates(input: {
   const modInstalled = Boolean(input.env?.bpp_version);
   const bundledBppVersion = input.env?.bundled_bpp_version ?? null;
   const installedBppVersion = input.env?.bpp_version ?? null;
-  const bppDataVersion = input.env?.bpp_data_version ?? null;
-  const bppDataIssue = input.env?.bpp_data_issue ?? null;
-  const bppDataResetRequired = Boolean(input.env?.bpp_data_reset_required);
   const pageState = createPageState({
     actionBusy: input.actionBusy,
     bazaarFound: input.bazaarFound,
-    bppDataResetRequired,
     selectedGamePath: selectedPath,
     detectedGamePath: input.env?.game_path ?? cachedDetectedPath,
     isDebugInstallPreview: input.isDebugInstallPreview,
@@ -54,9 +47,6 @@ export function selectInstallGates(input: {
     modInstalled,
     bundledBppVersion,
     installedBppVersion,
-    bppDataVersion,
-    bppDataIssue,
-    bppDataResetRequired,
     pageState,
     hasPath: pageState.hasPath,
     isBusy: pageState.isBusy,

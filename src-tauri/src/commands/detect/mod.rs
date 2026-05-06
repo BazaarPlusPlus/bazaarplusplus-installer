@@ -4,14 +4,10 @@ mod steam;
 
 pub(crate) use dotnet::detect_dotnet as dotnet_detect_for_startup;
 pub(crate) use game::is_valid_game_path;
-pub use game::BppDataIssue;
 pub(crate) use steam::detect_installation_paths;
 
 use crate::commands::startup::InstallerContextState;
-use game::{
-    inspect_bpp_data_directory, is_bepinex_installed, normalize_game_path,
-    read_installed_bpp_version, BppDataDirectoryState,
-};
+use game::{is_bepinex_installed, normalize_game_path, read_installed_bpp_version};
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use tauri::{AppHandle, State};
@@ -28,9 +24,6 @@ pub struct EnvironmentInfo {
     pub bepinex_installed: bool,
     pub bpp_version: Option<String>,
     pub bundled_bpp_version: Option<String>,
-    pub bpp_data_version: Option<String>,
-    pub bpp_data_reset_required: bool,
-    pub bpp_data_issue: Option<BppDataIssue>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, ts_rs::TS)]
@@ -69,21 +62,6 @@ pub fn detect_environment(
     let bpp_version = game_path
         .as_ref()
         .and_then(|path| read_installed_bpp_version(path));
-    let bpp_data_state = game_path
-        .as_ref()
-        .map(|path| {
-            inspect_bpp_data_directory(
-                path,
-                &startup
-                    .bpp_data_version_policy
-                    .minimum_supported_bpp_data_version,
-            )
-        })
-        .unwrap_or_else(|| BppDataDirectoryState {
-            version: None,
-            reset_required: false,
-            issue: None,
-        });
     let bepinex_installed = game_path
         .as_ref()
         .map(|path| is_bepinex_installed(path))
@@ -107,9 +85,6 @@ pub fn detect_environment(
         bepinex_installed,
         bpp_version,
         bundled_bpp_version: startup.bundled_bpp_version.clone(),
-        bpp_data_version: bpp_data_state.version,
-        bpp_data_reset_required: bpp_data_state.reset_required,
-        bpp_data_issue: bpp_data_state.issue,
     })
 }
 

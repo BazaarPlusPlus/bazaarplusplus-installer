@@ -4,8 +4,7 @@
     "targets": ["dmg"],
     "icon": ["icons/icon.icns"],
     "resources": {
-      "resources/BepInExSource/macos/BepInEx.zip": "BepInExSource/BepInEx.zip",
-      "resources/BppDataVersionPolicy.json": "BppDataVersionPolicy.json"
+      "resources/BepInExSource/macos/BepInEx.zip": "BepInExSource/BepInEx.zip"
     }
   }
 }

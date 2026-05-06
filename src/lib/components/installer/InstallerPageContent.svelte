@@ -2,7 +2,7 @@
   import InstallerStatusSteps from '$lib/components/installer/InstallerStatusSteps.svelte';
   import StreamModePanel from '$lib/components/stream/StreamModePanel.svelte';
   import StreamRecordLibrary from '$lib/components/stream/StreamRecordLibrary.svelte';
-  import type { EnvironmentInfo, BppDataIssue } from '$lib/types';
+  import type { EnvironmentInfo } from '$lib/types';
   import type { ActionBusy, StepState } from '$lib/installer/state';
   import type { TranslateText } from '$lib/installer/selectors/types.ts';
 
@@ -18,9 +18,6 @@
   export let bazaarFound: boolean;
   export let bazaarChecking: boolean;
   export let bazaarInvalid: boolean;
-  export let bppDataResetRequired: boolean;
-  export let bppDataIssue: BppDataIssue | null;
-  export let bppDataVersion: string | null;
   export let customGamePath: string;
   export let hasPath: boolean;
   export let isBusy: boolean;
@@ -59,9 +56,6 @@
     {bazaarFound}
     {bazaarChecking}
     {bazaarInvalid}
-    {bppDataResetRequired}
-    {bppDataIssue}
-    {bppDataVersion}
     bind:customGamePath
     {hasPath}
     {isBusy}

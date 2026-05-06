@@ -1,6 +1,6 @@
 <script lang="ts">
   import { messages } from '$lib/i18n';
-  import type { BppDataIssue, EnvironmentInfo } from '$lib/types';
+  import type { EnvironmentInfo } from '$lib/types';
   import type { ActionBusy, StepState } from '$lib/installer/state';
   import InstallerBppStep from './InstallerBppStep.svelte';
   import InstallerBazaarStep from './InstallerBazaarStep.svelte';
@@ -15,9 +15,6 @@
   export let bazaarFound: boolean;
   export let bazaarChecking: boolean;
   export let bazaarInvalid: boolean;
-  export let bppDataResetRequired: boolean;
-  export let bppDataIssue: BppDataIssue | null;
-  export let bppDataVersion: string | null;
   export let customGamePath: string;
   export let hasPath: boolean;
   export let isBusy: boolean;
@@ -55,9 +52,6 @@
     {bazaarFound}
     {bazaarChecking}
     {bazaarInvalid}
-    {bppDataResetRequired}
-    {bppDataIssue}
-    {bppDataVersion}
     bind:customGamePath
     {hasPath}
     {effectiveGamePath}

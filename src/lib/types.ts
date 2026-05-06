@@ -1,5 +1,4 @@
 export type {
-  BppDataIssue,
   DotnetInfo,
   EnvironmentInfo,
   GameRunningInfo,

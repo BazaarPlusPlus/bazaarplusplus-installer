@@ -1,4 +1,4 @@
-import type { BppDataIssue, EnvironmentInfo } from '../types.ts';
+import type { EnvironmentInfo } from '../types.ts';
 import type { ActionBusy, PageState } from './state.ts';
 import type { UpdaterSnapshot } from '../updater.ts';
 import {
@@ -38,9 +38,6 @@ export interface InstallPageModel {
   modInstalled: boolean;
   bundledBppVersion: string | null;
   installedBppVersion: string | null;
-  bppDataVersion: string | null;
-  bppDataIssue: BppDataIssue | null;
-  bppDataResetRequired: boolean;
   pageState: PageState;
   hasPath: boolean;
   isBusy: boolean;
@@ -72,10 +69,7 @@ export function createInstallDebugEnvironment(): EnvironmentInfo {
     dotnet_ok: true,
     bepinex_installed: false,
     bpp_version: null,
-    bundled_bpp_version: 'debug-preview',
-    bpp_data_version: '1',
-    bpp_data_reset_required: false,
-    bpp_data_issue: null
+    bundled_bpp_version: 'debug-preview'
   };
 }
 
@@ -128,9 +122,6 @@ export function createInstallPageModel(
     modInstalled: installGates.modInstalled,
     bundledBppVersion: installGates.bundledBppVersion,
     installedBppVersion: installGates.installedBppVersion,
-    bppDataVersion: installGates.bppDataVersion,
-    bppDataIssue: installGates.bppDataIssue,
-    bppDataResetRequired: installGates.bppDataResetRequired,
     pageState: installGates.pageState,
     hasPath: installGates.hasPath,
     isBusy: installGates.isBusy,

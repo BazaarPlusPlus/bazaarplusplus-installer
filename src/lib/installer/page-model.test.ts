@@ -23,7 +23,6 @@ test('createInstallDebugEnvironment returns a stable preview environment', () =>
   expect(env.game_path).toBe('C:\\Games\\The Bazaar');
   expect(env.dotnet_ok).toBe(true);
   expect(env.bundled_bpp_version).toBe('debug-preview');
-  expect(env.bpp_data_reset_required).toBe(false);
 });
 
 test('createInstallPageModel centralizes install page derivations', () => {
@@ -37,10 +36,7 @@ test('createInstallPageModel centralizes install page derivations', () => {
       dotnet_ok: true,
       bepinex_installed: true,
       bpp_version: '3.0.0',
-      bundled_bpp_version: '3.1.0',
-      bpp_data_version: '1',
-      bpp_data_reset_required: false,
-      bpp_data_issue: null
+      bundled_bpp_version: '3.1.0'
     },
     bazaarFound: true,
     customGamePath: '  D:\\Bazaar Custom  ',

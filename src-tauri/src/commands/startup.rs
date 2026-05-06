@@ -18,7 +18,6 @@ use super::detect::{detect_installation_paths, dotnet_detect_for_startup, Dotnet
 pub(crate) struct InstallerStartup {
     pub(crate) bundled_bpp_version: Option<String>,
     pub(crate) dotnet: DotnetInfo,
-    pub(crate) bpp_data_version_policy: bepinex::BppDataVersionPolicy,
     pub(crate) steam_path: Option<PathBuf>,
     pub(crate) game_path: Option<PathBuf>,
     pub(crate) steam_launch_options_supported: bool,
@@ -39,13 +38,11 @@ impl InstallerContextState {
 
 fn compute_startup(app: &AppHandle) -> InstallerStartup {
     let bundled_bpp_version = bepinex::read_bundled_bpp_version(app).ok().flatten();
-    let bpp_data_version_policy = bepinex::read_bundled_bpp_data_version_policy(app)
-        .unwrap_or_else(|_| bepinex::default_bpp_data_version_policy());
     let (dotnet_version, dotnet_ok) = dotnet_detect_for_startup();
     let detected_paths = detect_installation_paths();
 
     crate::commands::debug_log!(
-        "[startup] initialized bundled_bpp_version={:?} dotnet_version={:?} dotnet_ok={} steam_path={:?} game_path={:?} launch_options_supported={} policy.min={}",
+        "[startup] initialized bundled_bpp_version={:?} dotnet_version={:?} dotnet_ok={} steam_path={:?} game_path={:?} launch_options_supported={}",
         bundled_bpp_version,
         dotnet_version,
         dotnet_ok,
@@ -58,7 +55,6 @@ fn compute_startup(app: &AppHandle) -> InstallerStartup {
             .as_ref()
             .map(|path| path.display().to_string()),
         detected_paths.steam_launch_options_supported,
-        bpp_data_version_policy.minimum_supported_bpp_data_version
     );
 
     InstallerStartup {
@@ -67,7 +63,6 @@ fn compute_startup(app: &AppHandle) -> InstallerStartup {
             dotnet_version,
             dotnet_ok,
         },
-        bpp_data_version_policy,
         steam_path: detected_paths.steam_path,
         game_path: detected_paths.game_path,
         steam_launch_options_supported: detected_paths.steam_launch_options_supported,

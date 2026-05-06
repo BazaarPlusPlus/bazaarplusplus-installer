@@ -1,23 +1,7 @@
-use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 
 #[cfg(test)]
 use super::steam;
-
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, ts_rs::TS)]
-#[ts(export)]
-#[serde(rename_all = "snake_case")]
-pub enum BppDataIssue {
-    MissingVersionFile,
-    IncompatibleVersion,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
-pub(super) struct BppDataDirectoryState {
-    pub(super) version: Option<String>,
-    pub(super) reset_required: bool,
-    pub(super) issue: Option<BppDataIssue>,
-}
 
 pub(super) fn normalize_game_path(game_path: Option<String>) -> Option<PathBuf> {
     game_path
@@ -62,51 +46,6 @@ pub(super) fn read_installed_bpp_version(game_path: &Path) -> Option<String> {
     let version = std::fs::read_to_string(version_path).ok()?;
     let version = version.trim();
     (!version.is_empty()).then(|| version.to_string())
-}
-
-pub(super) fn inspect_bpp_data_directory(
-    game_path: &Path,
-    minimum_supported_version: &str,
-) -> BppDataDirectoryState {
-    let data_dir = game_path.join(crate::commands::bepinex::LEGACY_RECORD_DIRECTORY);
-    if !data_dir.exists() {
-        return BppDataDirectoryState {
-            version: None,
-            reset_required: false,
-            issue: None,
-        };
-    }
-
-    let version_path = crate::commands::bepinex::bpp_data_version_path(game_path);
-    let version = std::fs::read_to_string(&version_path)
-        .ok()
-        .map(|value| value.trim().to_string())
-        .filter(|value| !value.is_empty());
-
-    match version {
-        Some(version)
-            if crate::commands::bepinex::is_compatible_bpp_data_version(
-                &version,
-                minimum_supported_version,
-            ) =>
-        {
-            BppDataDirectoryState {
-                version: Some(version),
-                reset_required: false,
-                issue: None,
-            }
-        }
-        Some(version) => BppDataDirectoryState {
-            version: Some(version),
-            reset_required: true,
-            issue: Some(BppDataIssue::IncompatibleVersion),
-        },
-        None => BppDataDirectoryState {
-            version: None,
-            reset_required: true,
-            issue: Some(BppDataIssue::MissingVersionFile),
-        },
-    }
 }
 
 pub(crate) fn is_valid_game_path(base: &Path) -> bool {
@@ -172,114 +111,6 @@ mod tests {
         }
 
         assert!(is_bepinex_installed(tmp.path()));
-    }
-
-    #[test]
-    fn test_inspect_bpp_data_directory_is_clean_when_directory_does_not_exist() {
-        let tmp = tempfile::tempdir().unwrap();
-
-        let state = inspect_bpp_data_directory(tmp.path(), "2.9.0");
-
-        assert_eq!(
-            state,
-            BppDataDirectoryState {
-                version: None,
-                reset_required: false,
-                issue: None,
-            }
-        );
-    }
-
-    #[test]
-    fn test_inspect_bpp_data_directory_requires_reset_when_version_file_missing() {
-        let tmp = tempfile::tempdir().unwrap();
-        std::fs::create_dir_all(
-            tmp.path()
-                .join(crate::commands::bepinex::LEGACY_RECORD_DIRECTORY),
-        )
-        .unwrap();
-
-        let state = inspect_bpp_data_directory(tmp.path(), "2.9.0");
-
-        assert_eq!(
-            state,
-            BppDataDirectoryState {
-                version: None,
-                reset_required: true,
-                issue: Some(BppDataIssue::MissingVersionFile),
-            }
-        );
-    }
-
-    #[test]
-    fn test_inspect_bpp_data_directory_accepts_compatible_version() {
-        let tmp = tempfile::tempdir().unwrap();
-        crate::commands::bepinex::ensure_bpp_data_version_file(
-            tmp.path(),
-            crate::commands::bepinex::CURRENT_BPP_DATA_VERSION,
-        )
-        .unwrap();
-
-        let state = inspect_bpp_data_directory(tmp.path(), "2.0.0");
-
-        assert_eq!(
-            state,
-            BppDataDirectoryState {
-                version: Some(crate::commands::bepinex::CURRENT_BPP_DATA_VERSION.to_string()),
-                reset_required: false,
-                issue: None,
-            }
-        );
-    }
-
-    #[test]
-    fn test_inspect_bpp_data_directory_requires_reset_when_version_is_incompatible() {
-        let tmp = tempfile::tempdir().unwrap();
-        let data_dir = tmp
-            .path()
-            .join(crate::commands::bepinex::LEGACY_RECORD_DIRECTORY);
-        std::fs::create_dir_all(&data_dir).unwrap();
-        std::fs::write(
-            data_dir.join(crate::commands::bepinex::BPP_DATA_VERSION_FILE_NAME),
-            b"0\n",
-        )
-        .unwrap();
-
-        let state = inspect_bpp_data_directory(tmp.path(), "2.9.0");
-
-        assert_eq!(
-            state,
-            BppDataDirectoryState {
-                version: Some("0".to_string()),
-                reset_required: true,
-                issue: Some(BppDataIssue::IncompatibleVersion),
-            }
-        );
-    }
-
-    #[test]
-    fn test_inspect_bpp_data_directory_accepts_older_supported_version() {
-        let tmp = tempfile::tempdir().unwrap();
-        let data_dir = tmp
-            .path()
-            .join(crate::commands::bepinex::LEGACY_RECORD_DIRECTORY);
-        std::fs::create_dir_all(&data_dir).unwrap();
-        std::fs::write(
-            data_dir.join(crate::commands::bepinex::BPP_DATA_VERSION_FILE_NAME),
-            b"2.9.8\n",
-        )
-        .unwrap();
-
-        let state = inspect_bpp_data_directory(tmp.path(), "2.9.0");
-
-        assert_eq!(
-            state,
-            BppDataDirectoryState {
-                version: Some("2.9.8".to_string()),
-                reset_required: false,
-                issue: None,
-            }
-        );
     }
 
     #[test]

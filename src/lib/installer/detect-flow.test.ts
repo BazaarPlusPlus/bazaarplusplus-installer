@@ -34,10 +34,7 @@ test('detectInstallerEnvironment derives dotnet state from environment response'
         dotnet_ok: true,
         bepinex_installed: false,
         bpp_version: null,
-        bundled_bpp_version: '2.0.0',
-        bpp_data_version: '1',
-        bpp_data_reset_required: false,
-        bpp_data_issue: null
+        bundled_bpp_version: '2.0.0'
       };
     }
   });
@@ -53,10 +50,7 @@ test('detectInstallerEnvironment derives dotnet state from environment response'
       dotnet_ok: true,
       bepinex_installed: false,
       bpp_version: null,
-      bundled_bpp_version: '2.0.0',
-      bpp_data_version: '1',
-      bpp_data_reset_required: false,
-      bpp_data_issue: null
+      bundled_bpp_version: '2.0.0'
     },
     dotnetState: 'found',
     bazaarFound: true,
@@ -76,10 +70,7 @@ test('detectInstallerEnvironment reports not_found dotnet state when runtime mis
       dotnet_ok: false,
       bepinex_installed: false,
       bpp_version: null,
-      bundled_bpp_version: null,
-      bpp_data_version: null,
-      bpp_data_reset_required: false,
-      bpp_data_issue: null
+      bundled_bpp_version: null
     })
   });
 
