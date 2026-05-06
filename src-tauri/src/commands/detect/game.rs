@@ -1,24 +1,11 @@
 use std::path::{Path, PathBuf};
 
-#[cfg(test)]
-use super::steam;
-
 pub(super) fn normalize_game_path(game_path: Option<String>) -> Option<PathBuf> {
     game_path
         .as_deref()
         .map(str::trim)
         .filter(|path| !path.is_empty())
         .map(PathBuf::from)
-}
-
-#[cfg(test)]
-pub(super) fn resolve_game_path(
-    steam_path: Option<&Path>,
-    requested_game_path: Option<&Path>,
-) -> Option<PathBuf> {
-    requested_game_path
-        .map(Path::to_path_buf)
-        .or_else(|| steam_path.and_then(steam::get_game_path))
 }
 
 pub(super) fn is_bepinex_installed(game_path: &Path) -> bool {
@@ -117,15 +104,5 @@ mod tests {
     fn test_normalize_game_path_trims_whitespace() {
         let game_path = normalize_game_path(Some("  C:\\Games\\The Bazaar  ".to_string()));
         assert_eq!(game_path, Some(PathBuf::from("C:\\Games\\The Bazaar")));
-    }
-
-    #[test]
-    fn test_resolve_game_path_prefers_requested_path() {
-        let requested = PathBuf::from("D:\\Games\\The Bazaar");
-        let steam_path = Path::new("C:\\Program Files (x86)\\Steam");
-
-        let game_path = resolve_game_path(Some(steam_path), Some(requested.as_path()));
-
-        assert_eq!(game_path, Some(requested));
     }
 }

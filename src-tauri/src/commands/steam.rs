@@ -6,13 +6,9 @@ use std::time::Duration;
 
 #[cfg_attr(not(any(target_os = "windows", test)), allow(dead_code))]
 const STEAM_PROCESS_NAME: &str = "steam.exe";
-#[cfg(target_os = "macos")]
+#[cfg(any(target_os = "macos", target_os = "windows"))]
 const STEAM_EXIT_WAIT_ATTEMPTS: usize = 60;
-#[cfg(target_os = "macos")]
-const STEAM_EXIT_WAIT_INTERVAL: Duration = Duration::from_millis(500);
-#[cfg(target_os = "windows")]
-const STEAM_EXIT_WAIT_ATTEMPTS: usize = 60;
-#[cfg(target_os = "windows")]
+#[cfg(any(target_os = "macos", target_os = "windows"))]
 const STEAM_EXIT_WAIT_INTERVAL: Duration = Duration::from_millis(500);
 
 pub fn supports_launch_option_updates(steam_path: &Path) -> bool {

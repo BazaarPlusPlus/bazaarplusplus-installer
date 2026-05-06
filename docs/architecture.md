@@ -113,10 +113,9 @@ Commands expose the desktop feature surface to the frontend. The current module 
 - `commands/startup.rs`: startup context assembly
 - `commands/steam.rs`: Steam process and launch-option operations
 - `commands/stream.rs`: stream service commands
-- `commands/supporters.rs`: supporter list loading and cache refresh
 - `commands/vdf.rs`: VDF parsing and mutation
 
-The largest command-side files are now `commands/vdf.rs`, `commands/supporters.rs`, and the stream HTTP/record repository modules. Prefer extracting lower-level parsing, cache, filesystem, or HTTP helpers into submodules before adding more command-layer logic there.
+The largest command-side files are now `commands/vdf.rs` and the stream HTTP/record repository modules. Prefer extracting lower-level parsing, cache, filesystem, or HTTP helpers into submodules before adding more command-layer logic there.
 
 ### `src-tauri/src/stream/*`
 
@@ -152,5 +151,5 @@ The next high-value cleanup targets are:
 
 1. Keep `src/routes/install/+page.svelte` near its current composition role. New side effects should land in controllers or flow modules.
 2. Split `src/lib/components/installer/InstallerStatusSteps.svelte` by subpanel or action group if it keeps growing.
-3. Extract focused helpers from `src-tauri/src/commands/vdf.rs`, `src-tauri/src/commands/supporters.rs`, or `src-tauri/src/stream/records/repo.rs` before adding unrelated behavior there.
+3. Extract focused helpers from `src-tauri/src/commands/vdf.rs` or `src-tauri/src/stream/records/repo.rs` before adding unrelated behavior there.
 4. Keep `src/lib/bridge/commands.ts` synchronized with Rust command registrations and generated TypeScript bindings whenever the command surface changes.

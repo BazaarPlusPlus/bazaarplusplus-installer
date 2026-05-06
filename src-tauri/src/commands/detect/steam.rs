@@ -281,13 +281,6 @@ pub(crate) fn detect_installation_paths() -> SteamInstallPaths {
     }
 }
 
-#[cfg(test)]
-pub(super) fn get_game_path(steam_path: &Path) -> Option<PathBuf> {
-    let mut steam_roots = vec![steam_path.to_path_buf()];
-    steam_roots.extend(candidate_steam_paths());
-    get_game_path_from_detected_steam_roots(steam_path, &steam_roots)
-}
-
 fn get_game_path_from_vdf(steam_path: &Path) -> Option<PathBuf> {
     let library_vdf_path = steam_path.join("steamapps/libraryfolders.vdf");
     let library_vdf = match std::fs::read_to_string(&library_vdf_path) {
