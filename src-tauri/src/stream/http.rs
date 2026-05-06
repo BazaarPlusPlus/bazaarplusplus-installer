@@ -116,6 +116,7 @@ async fn health() -> Json<HealthResponse> {
     Json(HealthResponse { ok: true })
 }
 
+#[cfg(any(debug_assertions, test))]
 fn overlay_asset_path(file_name: &str) -> PathBuf {
     FsPath::new(env!("CARGO_MANIFEST_DIR"))
         .join("resources")
@@ -123,6 +124,7 @@ fn overlay_asset_path(file_name: &str) -> PathBuf {
         .join(file_name)
 }
 
+#[cfg(debug_assertions)]
 fn badge_asset_path(category: &str, file_name: &str) -> PathBuf {
     FsPath::new(env!("CARGO_MANIFEST_DIR"))
         .join("resources")
@@ -132,10 +134,10 @@ fn badge_asset_path(category: &str, file_name: &str) -> PathBuf {
         .join(file_name)
 }
 
-fn load_overlay_asset(file_name: &str, embedded: &'static str) -> String {
+fn load_overlay_asset(_file_name: &str, embedded: &'static str) -> String {
     #[cfg(debug_assertions)]
     {
-        if let Ok(contents) = std::fs::read_to_string(overlay_asset_path(file_name)) {
+        if let Ok(contents) = std::fs::read_to_string(overlay_asset_path(_file_name)) {
             return contents;
         }
     }

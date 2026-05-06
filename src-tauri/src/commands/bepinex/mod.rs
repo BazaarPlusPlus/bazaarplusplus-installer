@@ -128,8 +128,8 @@ pub fn install_bepinex(
         })?;
 
         debug_log!("Extracting BepInEx...");
-        let extracted = zip_archive::extract_zip(&zip_bytes, game_path)?;
-        debug_log!("Extracted {} files.", extracted.len());
+        let _extracted = zip_archive::extract_zip(&zip_bytes, game_path)?;
+        debug_log!("Extracted {} files.", _extracted.len());
 
         Ok(())
     })();

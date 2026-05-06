@@ -8,6 +8,7 @@ pub(crate) struct SteamInstallPaths {
     pub(crate) steam_launch_options_supported: bool,
 }
 
+#[cfg(debug_assertions)]
 fn debug_paths_label(paths: &[PathBuf]) -> Vec<String> {
     paths
         .iter()
@@ -285,11 +286,11 @@ fn get_game_path_from_vdf(steam_path: &Path) -> Option<PathBuf> {
     let library_vdf_path = steam_path.join("steamapps/libraryfolders.vdf");
     let library_vdf = match std::fs::read_to_string(&library_vdf_path) {
         Ok(content) => content,
-        Err(error) => {
+        Err(_error) => {
             crate::commands::debug_log!(
                 "[detect::steam] cannot read libraryfolders.vdf path={} error={}",
                 library_vdf_path.display(),
-                error
+                _error
             );
             return None;
         }
