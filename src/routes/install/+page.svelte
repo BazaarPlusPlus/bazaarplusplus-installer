@@ -8,11 +8,9 @@
   import { formatMessage, messages } from '$lib/i18n';
   import InstallerHeader from '$lib/components/installer/InstallerHeader.svelte';
   import InstallerFooter from '$lib/components/installer/InstallerFooter.svelte';
-  import InstallerIdentityCard from '$lib/components/installer/InstallerIdentityCard.svelte';
   import InstallerPageContent from '$lib/components/installer/InstallerPageContent.svelte';
   import InstallerPageModals from '$lib/components/installer/InstallerPageModals.svelte';
   import InstallerSupportBar from '$lib/components/installer/InstallerSupportBar.svelte';
-  import { createIdentityController } from '$lib/installer/controllers/identity-controller';
   import { createInstallController } from '$lib/installer/controllers/install-controller';
   import { createUpdaterController } from '$lib/installer/controllers/updater-controller';
   import {
@@ -23,7 +21,6 @@
     initializeInstallerContext as initializeInstallerContextApi,
     installBepinex,
     patchLaunchOptions,
-    postIdentityJson,
     repairBpp as repairBppApi,
     uninstallBpp as uninstallBppApi
   } from '$lib/installer/api';
@@ -42,24 +39,13 @@
     getInstallRuntimeRisks,
     shouldShowInstallRiskModal
   } from '$lib/installer/install-guards';
-  import { createIdentityApi } from '$lib/identity/api';
-  import type { IdentityState } from '$lib/identity/state';
   import {
     createInstallDebugEnvironment,
     formatByteLabel,
-    formatIdentityErrorMessage,
     createInstallPageModel,
     type InstallPageModel,
     type InstallPageModelInput
   } from '$lib/installer/page-model';
-  const identityApi = createIdentityApi(
-    hasTauriRuntime()
-      ? {
-          postJsonImpl: ({ url, body, authorization }) =>
-            postIdentityJson(url, body, authorization)
-        }
-      : {}
-  );
 
   const isDebugInstallPreview = resolveInstallDebugPreview({
     isDev: import.meta.env.DEV,
@@ -108,13 +94,6 @@
     hasTauriRuntime
   });
 
-  const identityController = createIdentityController({
-    hasTauriRuntime,
-    identityApi,
-    localized,
-    formatIdentityErrorMessage
-  });
-
   const env = installController.env;
   const dotnetState = installController.dotnetState;
   const bazaarFound = installController.bazaarFound;
@@ -145,14 +124,6 @@
   const showUpdaterReviewModal = updaterController.showUpdaterReviewModal;
   const updaterReviewBusy = updaterController.updaterReviewBusy;
 
-  const playerObservation = identityController.playerObservation;
-  const authRecord = identityController.authRecord;
-  const identityLoadState = identityController.identityLoadState;
-  const identityActionBusy = identityController.identityActionBusy;
-  const identityPassword = identityController.identityPassword;
-  const identityError = identityController.identityError;
-  const identitySuccess = identityController.identitySuccess;
-
   let pageModelInput: InstallPageModelInput = {
     env: null,
     bazaarFound: false,
@@ -165,11 +136,6 @@
     updaterSnapshot: $updaterSnapshot,
     hasPendingUpdate: false,
     pendingSteamAction: null,
-    playerObservation: null,
-    authRecord: null,
-    identityLoadState: 'idle',
-    identityActionBusy: 'idle',
-    identityPassword: '',
     localized,
     t
   };
@@ -185,28 +151,16 @@
     updaterSnapshot: $updaterSnapshot,
     hasPendingUpdate: Boolean($pendingUpdate),
     pendingSteamAction: $pendingSteamAction,
-    playerObservation: $playerObservation,
-    authRecord: $authRecord,
-    identityLoadState: $identityLoadState,
-    identityActionBusy: $identityActionBusy,
-    identityPassword: $identityPassword,
     localized,
     t
   };
 
   let pageModel: InstallPageModel = createInstallPageModel(pageModelInput);
   let pageState: PageState = pageModel.pageState;
-  let identityState: IdentityState = pageModel.identityState;
-  let lastIdentitySyncGamePath: string | undefined;
 
   $: pageModel = createInstallPageModel(pageModelInput);
   $: pageState = pageModel.pageState;
-  $: identityState = pageModel.identityState;
   $: installController.persistCurrentGamePath();
-  $: if (pageState.effectiveGamePath !== lastIdentitySyncGamePath) {
-    lastIdentitySyncGamePath = pageState.effectiveGamePath;
-    identityController.syncGameRoot(pageState.effectiveGamePath);
-  }
 
   onMount(() => {
     locale.init();
@@ -298,32 +252,6 @@
     streamModeActive={$showStreamMode}
     streamModeLabel={pageModel.modeToggleLabel}
     onToggleStreamMode={installController.toggleStreamMode}
-  />
-
-  <InstallerIdentityCard
-    visible={!$showStreamMode && hasTauriRuntime()}
-    {identityState}
-    {pageModel}
-    identityLoadState={$identityLoadState}
-    bind:identityPassword={$identityPassword}
-    identityActionBusy={$identityActionBusy}
-    identityError={$identityError}
-    identitySuccess={$identitySuccess}
-    {localized}
-    onDismissError={() => identityController.identityError.set('')}
-    onDismissSuccess={() => identityController.identitySuccess.set(null)}
-    onContinue={() =>
-      identityController.continueIdentity({
-        identityState,
-        gameRoot: pageState.effectiveGamePath
-      })}
-    onLogout={() =>
-      identityController.logoutIdentity({
-        identityState,
-        gameRoot: pageState.effectiveGamePath
-      })}
-    onRefresh={() =>
-      identityController.refreshIdentity(pageState.effectiveGamePath)}
   />
 
   <InstallerPageContent

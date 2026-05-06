@@ -2,7 +2,6 @@ import { call } from '../bridge/commands.ts';
 import type {
   EnvironmentInfo,
   GameRunningInfo,
-  IdentityHttpResponse,
   InstallerContextPayload,
   LegacyRecordDirectoryInfo,
   LaunchOptionsPatchResult,
@@ -72,16 +71,4 @@ export async function patchLaunchOptions(
 
 export async function loadSupporters() {
   return call('load_supporters');
-}
-
-export async function postIdentityJson(
-  url: string,
-  bodyJson: string,
-  authorization?: string
-) {
-  return call('post_identity_json', {
-    url,
-    bodyJson,
-    authorization
-  });
 }

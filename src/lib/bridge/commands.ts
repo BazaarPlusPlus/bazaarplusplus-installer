@@ -3,7 +3,6 @@ import type { Locale } from '../i18n.ts';
 import type {
   EnvironmentInfo,
   GameRunningInfo,
-  IdentityHttpResponse,
   InstallerContextPayload,
   LegacyRecordDirectoryInfo,
   LaunchOptionsPatchResult,
@@ -16,7 +15,6 @@ import type {
   StreamServiceStatus,
   SupportersResponse
 } from '../types.ts';
-import type { IdentitySnapshotResponse } from '../identity/types.ts';
 
 export interface TauriCommandMap {
   verify_game_path: { input: { path: string }; output: boolean };
@@ -49,22 +47,6 @@ export interface TauriCommandMap {
     output: LaunchOptionsPatchResult;
   };
   load_supporters: { input: undefined; output: SupportersResponse };
-  read_identity_snapshot: {
-    input: { gameRoot: string };
-    output: IdentitySnapshotResponse;
-  };
-  write_auth_record: {
-    input: { gameRoot: string; payloadJson: string };
-    output: void;
-  };
-  delete_auth_record: {
-    input: { gameRoot: string };
-    output: void;
-  };
-  post_identity_json: {
-    input: { url: string; bodyJson: string; authorization?: string };
-    output: IdentityHttpResponse;
-  };
   get_stream_service_status: {
     input: undefined;
     output: StreamServiceStatus;

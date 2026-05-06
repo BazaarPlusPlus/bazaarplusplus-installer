@@ -56,12 +56,12 @@
           <p class="locate-warning">
             {#if bppDataIssue === 'incompatible_version'}
               {$locale === 'zh'
-                ? `检测到当前战绩数据格式与安装器不兼容（数据版本：${bppDataVersion ?? '未知'}）。点击下面"重置战绩记录"会自动清空并重建；也可以在关闭游戏后手动删除游戏根目录下的 BazaarPlusPlus 文件夹。这会删除所有现有战绩与本地登录信息。`
-                : `The current match-history data format is not compatible with this installer (data version: ${bppDataVersion ?? 'unknown'}). Use "Reset Match History" below to clear and rebuild it automatically, or quit the game and delete the BazaarPlusPlus folder in the game root yourself. This removes all match history and your local sign-in.`}
+                ? `检测到当前战绩数据格式与安装器不兼容（数据版本：${bppDataVersion ?? '未知'}）。点击下面"重置战绩记录"会自动清空并重建；也可以在关闭游戏后手动删除游戏根目录下的 BazaarPlusPlus 文件夹。这会删除所有现有战绩。`
+                : `The current match-history data format is not compatible with this installer (data version: ${bppDataVersion ?? 'unknown'}). Use "Reset Match History" below to clear and rebuild it automatically, or quit the game and delete the BazaarPlusPlus folder in the game root yourself. This removes all match history.`}
             {:else}
               {$locale === 'zh'
-                ? 'BazaarPlusPlus 文件夹缺少版本标记，安装器无法判断它是否还能正常使用。点击下面"重置战绩记录"会自动清空并重建；也可以在关闭游戏后手动删除该文件夹。这会删除所有现有战绩与本地登录信息。'
-                : "The BazaarPlusPlus folder is missing its version marker, so the installer can't tell whether it is still usable. Use \"Reset Match History\" below to clear and rebuild it automatically, or quit the game and delete the folder yourself. This removes all match history and your local sign-in."}
+                ? 'BazaarPlusPlus 文件夹缺少版本标记，安装器无法判断它是否还能正常使用。点击下面"重置战绩记录"会自动清空并重建；也可以在关闭游戏后手动删除该文件夹。这会删除所有现有战绩。'
+                : "The BazaarPlusPlus folder is missing its version marker, so the installer can't tell whether it is still usable. Use \"Reset Match History\" below to clear and rebuild it automatically, or quit the game and delete the folder yourself. This removes all match history."}
             {/if}
           </p>
         </div>

@@ -1,7 +1,6 @@
 pub mod bepinex;
 pub mod detect;
 pub mod game_process;
-pub mod identity;
 pub mod startup;
 pub mod steam;
 pub mod stream;

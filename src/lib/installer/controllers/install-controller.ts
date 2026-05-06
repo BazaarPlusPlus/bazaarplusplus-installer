@@ -467,12 +467,12 @@ export function createInstallController(input: {
       repairModalBody.set(
         inputArgs.bppDataIssue === 'incompatible_version'
           ? input.localized(
-              `检测到当前战绩数据格式与安装器不兼容（数据版本：${versionLabel}）。\n需要清空游戏根目录下的 BazaarPlusPlus 文件夹，并重建数据目录。\n点击下面的"重置战绩记录"会自动完成；也可以在关闭游戏后手动删除该文件夹。\n当前目录占用空间：${sizeLabel}\n这会删除你当前的所有战绩记录与本地登录信息。`,
-              `The current match-history data format is not compatible with this installer (data version: ${versionLabel}).\nThe BazaarPlusPlus folder in the game root needs to be cleared and rebuilt.\nClick "Reset Match History" below to do this automatically, or quit the game and delete the folder yourself.\nCurrent folder size: ${sizeLabel}\nThis deletes all match history and your local sign-in.`
+              `检测到当前战绩数据格式与安装器不兼容（数据版本：${versionLabel}）。\n需要清空游戏根目录下的 BazaarPlusPlus 文件夹，并重建数据目录。\n点击下面的"重置战绩记录"会自动完成；也可以在关闭游戏后手动删除该文件夹。\n当前目录占用空间：${sizeLabel}\n这会删除你当前的所有战绩记录。`,
+              `The current match-history data format is not compatible with this installer (data version: ${versionLabel}).\nThe BazaarPlusPlus folder in the game root needs to be cleared and rebuilt.\nClick "Reset Match History" below to do this automatically, or quit the game and delete the folder yourself.\nCurrent folder size: ${sizeLabel}\nThis deletes all match history.`
             )
           : input.localized(
-              `检测到 BazaarPlusPlus 文件夹缺少版本标记，安装器无法判断它是否还能正常使用。\n需要清空该文件夹并重建。\n点击下面的"重置战绩记录"会自动完成；也可以在关闭游戏后手动删除该文件夹。\n当前目录占用空间：${sizeLabel}\n这会删除你当前的所有战绩记录与本地登录信息。`,
-              `The BazaarPlusPlus folder is missing its version marker, so the installer can't tell whether it is still usable.\nThe folder needs to be cleared and rebuilt.\nClick "Reset Match History" below to do this automatically, or quit the game and delete the folder yourself.\nCurrent folder size: ${sizeLabel}\nThis deletes all match history and your local sign-in.`
+              `检测到 BazaarPlusPlus 文件夹缺少版本标记，安装器无法判断它是否还能正常使用。\n需要清空该文件夹并重建。\n点击下面的"重置战绩记录"会自动完成；也可以在关闭游戏后手动删除该文件夹。\n当前目录占用空间：${sizeLabel}\n这会删除你当前的所有战绩记录。`,
+              `The BazaarPlusPlus folder is missing its version marker, so the installer can't tell whether it is still usable.\nThe folder needs to be cleared and rebuilt.\nClick "Reset Match History" below to do this automatically, or quit the game and delete the folder yourself.\nCurrent folder size: ${sizeLabel}\nThis deletes all match history.`
             )
       );
     } else {

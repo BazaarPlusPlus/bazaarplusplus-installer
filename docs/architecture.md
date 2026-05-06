@@ -19,7 +19,6 @@ src/
     config/       frontend constants such as external URLs
     generated/    TypeScript bindings generated from Rust ts-rs exports
     home/         home-page summary helpers
-    identity/     account observation, local auth storage, remote identity API
     installer/    install controllers, selectors, runtime helpers, storage, API calls
     stream/       frontend stream-mode API and state
   routes/
@@ -44,9 +43,8 @@ scripts/
 
 This page remains the heaviest frontend entry point, but it should stay focused on wiring:
 
-- instantiating `createInstallController`, `createIdentityController`, and `createUpdaterController`
+- instantiating `createInstallController` and `createUpdaterController`
 - composing `createInstallPageModel`
-- syncing the effective game path into the identity controller
 - connecting modal/component props to controller methods
 - starting the initial install detection and updater check on mount
 
@@ -57,13 +55,12 @@ New install-page behavior should not add large async branches directly to the ro
 Current responsibilities:
 
 - `api.ts`: frontend-to-Tauri bridge for install operations
-- `controllers/`: route-facing orchestration for install, identity, and updater behavior
+- `controllers/`: route-facing orchestration for install and updater behavior
 - `detect-flow.ts`: environment detection orchestration
-- `identity-flow.ts`: local identity load/activation/relogin orchestration
 - `install-guards.ts`: install-time risk evaluation
 - `page-model.ts`: compatibility composition layer over focused selectors
 - `runtime.ts`: runtime capability detection
-- `selectors/`: pure derived state for install gates, updater button, Steam modal, mode labels, and identity panels
+- `selectors/`: pure derived state for install gates, updater button, Steam modal, and mode labels
 - `state.ts`: core install-page state derivation
 - `storage.ts`: persisted install route preferences
 - `updater-flow.ts`: updater check, decision, and download orchestration
@@ -71,22 +68,9 @@ Current responsibilities:
 Rule of thumb:
 
 - Pure derivation belongs in `state.ts` or `selectors/`.
-- Feature-specific async orchestration belongs in `controllers/`, `identity-flow.ts`, or `updater-flow.ts` before it is allowed back into a route file.
+- Feature-specific async orchestration belongs in `controllers/` or `updater-flow.ts` before it is allowed back into a route file.
 - Tauri calls stay in `api.ts`.
 - Route files should mostly compose state, effects, and components.
-
-### `src/lib/identity/*`
-
-Identity is its own frontend domain:
-
-- `api.ts`: use-case layer for local load, account activation, and login
-- `repository.ts`: local auth snapshot read/write calls
-- `transport.ts`: HTTP transport primitives for the remote identity API
-- `normalize.ts`: payload shape validation
-- `state.ts`: derived identity state
-- `types.ts`: identity-specific payload types
-
-Do not move identity persistence helpers back into `src/lib/installer/api.ts`; that would recreate the older reverse dependency from identity into installer.
 
 ### `src/lib/bridge/*` and `src/lib/generated/*`
 
@@ -126,7 +110,6 @@ Commands expose the desktop feature surface to the frontend. The current module 
 - `commands/bepinex/`: install, repair, uninstall, payload, versioning, and ZIP handling
 - `commands/detect/`: Steam discovery, .NET probing, and game path validation
 - `commands/game_process.rs`: Bazaar process detection
-- `commands/identity.rs`: local auth files and remote identity HTTP proxy
 - `commands/startup.rs`: startup context assembly
 - `commands/steam.rs`: Steam process and launch-option operations
 - `commands/stream.rs`: stream service commands
