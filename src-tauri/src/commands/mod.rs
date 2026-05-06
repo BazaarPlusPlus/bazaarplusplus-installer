@@ -4,7 +4,6 @@ pub mod game_process;
 pub mod startup;
 pub mod steam;
 pub mod stream;
-pub mod supporters;
 pub mod vdf;
 
 macro_rules! debug_log {

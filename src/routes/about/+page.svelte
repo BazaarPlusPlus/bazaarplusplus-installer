@@ -1,11 +1,12 @@
 ﻿<script lang="ts">
   import { getVersion } from '@tauri-apps/api/app';
+  import { openUrl } from '@tauri-apps/plugin-opener';
   import { onMount } from 'svelte';
   import LocaleToggle from '$lib/components/LocaleToggle.svelte';
   import PaymentCodeModal from '$lib/components/supporters/PaymentCodeModal.svelte';
   import { formatMessage, messages } from '$lib/i18n';
   import { locale } from '$lib/locale';
-  import SupporterListModal from '$lib/components/supporters/SupporterListModal.svelte';
+  import { hasTauriRuntime } from '$lib/installer/runtime';
   import {
     authors,
     dataSources,
@@ -21,9 +22,11 @@
     type AboutPageModel
   } from '$lib/about/page-model';
 
+  const SUPPORTERS_URL_EN = 'https://bazaarplusplus.com/support?lang=en';
+  const SUPPORTERS_URL_ZH = 'https://bazaarplusplus.com/support';
+
   let appVersion = '0.0.0';
   let showPaymentCodes = false;
-  let showSupporterList = false;
   let pageModel: AboutPageModel = createAboutPageModel('en');
 
   function t(
@@ -56,12 +59,20 @@
     showPaymentCodes = false;
   }
 
-  function openSupporterList() {
-    showSupporterList = true;
-  }
+  async function openSupporterList() {
+    const url = $locale === 'zh' ? SUPPORTERS_URL_ZH : SUPPORTERS_URL_EN;
+    if (!hasTauriRuntime()) {
+      if (typeof window !== 'undefined') {
+        window.open(url, '_blank', 'noopener,noreferrer');
+      }
+      return;
+    }
 
-  function closeSupporterList() {
-    showSupporterList = false;
+    try {
+      await openUrl(url);
+    } catch (error) {
+      console.error(error);
+    }
   }
 
   $: pageModel = createAboutPageModel($locale);
@@ -88,8 +99,6 @@
   methods={paymentModalMethods}
   onClose={closePaymentCodes}
 />
-
-<SupporterListModal open={showSupporterList} onClose={closeSupporterList} />
 
 <main class="shell">
   <header class="header">

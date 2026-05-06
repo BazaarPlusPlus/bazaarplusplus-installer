@@ -24,7 +24,6 @@ use commands::{
         save_stream_overlay_display_mode, set_stream_overlay_window_offset, start_stream_service,
         stop_stream_service,
     },
-    supporters::load_supporters,
     vdf::patch_launch_options,
 };
 
@@ -67,7 +66,6 @@ pub fn run() {
             get_legacy_record_directory_info,
             uninstall_bpp,
             patch_launch_options,
-            load_supporters,
             start_stream_service,
             stop_stream_service,
             set_tray_locale,

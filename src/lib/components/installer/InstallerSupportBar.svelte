@@ -1,7 +1,6 @@
 <script lang="ts">
   import { openUrl } from '@tauri-apps/plugin-opener';
   import PaymentCodeModal from '$lib/components/supporters/PaymentCodeModal.svelte';
-  import SupporterListModal from '$lib/components/supporters/SupporterListModal.svelte';
   import { locale } from '$lib/locale';
   import { hasTauriRuntime } from '$lib/installer/runtime';
 
@@ -45,9 +44,10 @@
   } as const;
 
   const KOFI_URL = 'https://ko-fi.com/cauyxy';
+  const SUPPORTERS_URL_EN = 'https://bazaarplusplus.com/support?lang=en';
+  const SUPPORTERS_URL_ZH = 'https://bazaarplusplus.com/support';
 
   let showPaymentCodes = false;
-  let showSupporterList = false;
 
   $: currentCopy = $locale === 'zh' ? copy.zh : copy.en;
   $: supportPaymentMethods = [
@@ -63,23 +63,29 @@
     showPaymentCodes = true;
   }
 
-  async function openKoFi() {
+  async function openExternal(url: string) {
     if (!hasTauriRuntime()) {
       if (typeof window !== 'undefined') {
-        window.open(KOFI_URL, '_blank', 'noopener,noreferrer');
+        window.open(url, '_blank', 'noopener,noreferrer');
       }
       return;
     }
 
     try {
-      await openUrl(KOFI_URL);
+      await openUrl(url);
     } catch (error) {
       console.error(error);
     }
   }
 
-  function openSupporterList() {
-    showSupporterList = true;
+  async function openKoFi() {
+    await openExternal(KOFI_URL);
+  }
+
+  async function openSupporterList() {
+    await openExternal(
+      $locale === 'zh' ? SUPPORTERS_URL_ZH : SUPPORTERS_URL_EN
+    );
   }
 </script>
 
@@ -95,13 +101,6 @@
   methods={supportPaymentMethods}
   onClose={() => {
     showPaymentCodes = false;
-  }}
-/>
-
-<SupporterListModal
-  open={showSupporterList}
-  onClose={() => {
-    showSupporterList = false;
   }}
 />
 

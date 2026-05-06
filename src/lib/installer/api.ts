@@ -5,8 +5,7 @@ import type {
   InstallerContextPayload,
   LegacyRecordDirectoryInfo,
   LaunchOptionsPatchResult,
-  SteamRunningInfo,
-  SupportersResponse
+  SteamRunningInfo
 } from '$lib/types';
 
 export async function verifyGamePath(path: string) {
@@ -67,8 +66,4 @@ export async function patchLaunchOptions(
     gamePath,
     skipSteamShutdown
   });
-}
-
-export async function loadSupporters() {
-  return call('load_supporters');
 }

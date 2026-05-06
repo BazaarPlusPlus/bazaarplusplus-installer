@@ -12,8 +12,7 @@ import type {
   StreamOverlayCropSettingsPayload,
   StreamOverlayDisplayMode,
   StreamRecordSummary,
-  StreamServiceStatus,
-  SupportersResponse
+  StreamServiceStatus
 } from '../types.ts';
 
 export interface TauriCommandMap {
@@ -46,7 +45,6 @@ export interface TauriCommandMap {
     input: { steamPath: string; gamePath: string; skipSteamShutdown: boolean };
     output: LaunchOptionsPatchResult;
   };
-  load_supporters: { input: undefined; output: SupportersResponse };
   get_stream_service_status: {
     input: undefined;
     output: StreamServiceStatus;
