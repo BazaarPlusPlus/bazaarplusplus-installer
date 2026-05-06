@@ -52,12 +52,6 @@ test('macOS production build targets arm64 artifacts', () => {
     prepare_signed_macos_resource_zip() {
       printf 'Preparing signed macos resource zip|%s\\n' "$*"
     }
-    find_installer_artifact() {
-      printf '%s\\n' '/Users/yxinyu/codes/bpp_codes/bazaarplusplus-installer/src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/BazaarPlusPlus_3.3.0_aarch64.dmg'
-    }
-    notarize_macos_installer_artifact() {
-      printf 'Notarizing macos installer artifact|%s\\n' "$*"
-    }
     invoke_step() {
       local label="$1"
       shift
@@ -75,9 +69,7 @@ test('macOS production build targets arm64 artifacts', () => {
   expect(output).toMatch(
     /Bundling macos installer\|npm run tauri bundle -- --bundles app,dmg --config .*src-tauri\/tauri\.macos\.conf\.json --target aarch64-apple-darwin/
   );
-  expect(output).toMatch(
-    /Notarizing macos installer artifact\|.*src-tauri\/target\/aarch64-apple-darwin\/release\/bundle\/dmg\/.*\.dmg/
-  );
+  expect(output).not.toMatch(/Notarizing macos|notarytool|stapler/);
   expect(output).toMatch(
     /Binary:\s+.*src-tauri\/target\/aarch64-apple-darwin\/release\/bppinstaller/
   );
@@ -101,8 +93,6 @@ test('macOS production build removes the entire bundle directory before rebundli
       source ./build.sh
       assert_file() { :; }
       prepare_signed_macos_resource_zip() { :; }
-      find_installer_artifact() { printf '%s\\n' '/tmp/BazaarPlusPlus_3.3.0_aarch64.dmg'; }
-      notarize_macos_installer_artifact() { :; }
       invoke_step() {
         local label="$1"
         shift

@@ -388,6 +388,10 @@ is_macho_file() {
     file "$file_path" | grep -q 'Mach-O'
 }
 
+# Pre-signs Mach-O binaries that live inside BepInEx.zip. Tauri treats the zip
+# as opaque resource data, so its outer .app signing never reaches these. The
+# game later loads them under hardened runtime + library validation, which
+# rejects unsigned dylibs.
 sign_macos_resource_binaries() {
     local payload_dir="$1"
     local binary_path=""
@@ -443,27 +447,6 @@ prepare_signed_macos_resource_zip() {
 
     rm -rf "$temp_dir"
     trap - RETURN
-}
-
-notarize_macos_installer_artifact() {
-    local dmg_file="$1"
-
-    if [ -z "$dmg_file" ]; then
-        echo "Error: No macOS DMG artifact found to notarize." >&2
-        exit 1
-    fi
-
-    assert_command xcrun "Install Xcode command line tools first."
-    assert_file "$dmg_file" "macOS DMG artifact"
-
-    invoke_step "Notarizing macOS DMG" \
-        xcrun notarytool submit "$dmg_file" \
-        --key "$APPLE_API_KEY_PATH" \
-        --key-id "$APPLE_API_KEY" \
-        --issuer "$APPLE_API_ISSUER" \
-        --wait
-    invoke_step "Stapling macOS DMG notarization ticket" \
-        xcrun stapler staple "$dmg_file"
 }
 
 run_release_prechecks() {
@@ -629,10 +612,6 @@ build_prod() {
     fi
 
     invoke_step "Bundling $platform installer" "${bundle_command[@]}"
-
-    if [ "$platform" = "macos" ]; then
-        notarize_macos_installer_artifact "$(find_installer_artifact "$platform")"
-    fi
 
     echo
     echo "Build complete."
