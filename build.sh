@@ -371,6 +371,10 @@ load_apple_api_key_path_env() {
         exit 1
     fi
 
+    if [[ "$value" != /* ]]; then
+        value="$SCRIPT_DIR/$value"
+    fi
+
     set_exported_env APPLE_API_KEY_PATH "$value"
     assert_file "$APPLE_API_KEY_PATH" "Apple API key file"
 }

@@ -2,15 +2,15 @@ import { test, expect } from 'vitest';
 import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 
+const projectDir = process.cwd();
+const signingSecretsDir = `${projectDir}/signing-secrets`;
+
 function runShell(script) {
   return execFileSync('bash', ['-lc', script], {
-    cwd: '/Users/yxinyu/codes/bpp_codes/bazaarplusplus-installer',
+    cwd: projectDir,
     encoding: 'utf8'
   });
 }
-
-const projectDir = '/Users/yxinyu/codes/bpp_codes/bazaarplusplus-installer';
-const signingSecretsDir = `${projectDir}/signing-secrets`;
 
 function withSigningSecretFiles(files, fn) {
   const backups = new Map();
@@ -80,7 +80,7 @@ test('macOS production build targets arm64 artifacts', () => {
 
 test('macOS production build removes the entire bundle directory before rebundling', () => {
   const bundleDir =
-    '/Users/yxinyu/codes/bpp_codes/bazaarplusplus-installer/src-tauri/target/aarch64-apple-darwin/release/bundle';
+    `${projectDir}/src-tauri/target/aarch64-apple-darwin/release/bundle`;
   const staleDir = `${bundleDir}/macos`;
   const staleFile = `${staleDir}/rw.test.BazaarPlusPlus_2.0.0_aarch64.dmg`;
 
@@ -234,6 +234,33 @@ test('macOS Developer ID env loads from signing-secrets files', () => {
   );
 });
 
+test('macOS Developer ID env exports relative API key paths as absolute paths', () => {
+  withSigningSecretFiles(
+    {
+      'apple-api-issuer': 'issuer-from-file\n',
+      'apple-api-key': 'RELKEY\n',
+      'apple-api-key-path': 'signing-secrets/AuthKey_RELKEY.p8\n',
+      'apple-signing-identity':
+        'Developer ID Application: Example Builder (TEAMID1234)\n',
+      'AuthKey_RELKEY.p8': 'private key'
+    },
+    () => {
+      const output = runShell(`
+        set -euo pipefail
+        unset APPLE_API_ISSUER APPLE_API_KEY APPLE_API_KEY_PATH APPLE_SIGNING_IDENTITY
+        source ./build.sh
+        load_macos_developer_id_env >/tmp/bpp-apple-env-test.out
+        cat /tmp/bpp-apple-env-test.out
+        printf 'key_path=%s\\n' "$APPLE_API_KEY_PATH"
+      `);
+
+      expect(output).toContain(
+        `key_path=${signingSecretsDir}/AuthKey_RELKEY.p8`
+      );
+    }
+  );
+});
+
 test('macOS Developer ID env detects identity and infers API key path', () => {
   withSigningSecretFiles(
     {
@@ -279,7 +306,7 @@ test('macOS Developer ID env detects identity and infers API key path', () => {
 
 test('Windows upload uses installer and updater R2 paths under the version directory', () => {
   const bundleDir =
-    '/Users/yxinyu/codes/bpp_codes/bazaarplusplus-installer/src-tauri/target/release/bundle/nsis';
+    `${projectDir}/src-tauri/target/release/bundle/nsis`;
   const installerFile = `${bundleDir}/BazaarPlusPlus_2.1.0_x64-setup.exe`;
   const signatureFile = `${installerFile}.sig`;
 
