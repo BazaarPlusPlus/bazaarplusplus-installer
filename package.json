@@ -8,7 +8,7 @@
     "dev": "npm run generate:bindings && vite dev",
     "version:sync": "node scripts/version-sync.mjs",
     "prebuild-check": "node scripts/prebuild-check.mjs",
-    "build": "npm run generate:bindings && vite build",
+    "build": "npm run generate:bindings && svelte-kit sync && vite build",
     "preview": "vite preview",
     "test": "npm run generate:bindings && npm run test:rust && npm run test:unit",
     "test:rust": "cargo test --manifest-path src-tauri/Cargo.toml",
