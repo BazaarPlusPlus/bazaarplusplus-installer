@@ -218,4 +218,17 @@ mod tests {
             .unwrap();
         assert_eq!(count, 0);
     }
+
+    #[test]
+    fn handle_outcome_enqueues_on_pause_until_reconnect() {
+        let (conn, _dir) = fresh_db();
+        let result =
+            handle_attempt_outcome(&conn, "snap-1", Err("client_error:401".into()), false)
+                .unwrap_err();
+        assert!(result.contains("client_error:401"));
+        let count: i64 = conn
+            .query_row("select count(*) from pending_uploads", [], |row| row.get(0))
+            .unwrap();
+        assert_eq!(count, 1);
+    }
 }
