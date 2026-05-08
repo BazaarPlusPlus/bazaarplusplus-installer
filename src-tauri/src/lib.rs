@@ -12,6 +12,7 @@ use tauri::{
 };
 
 use commands::{
+    bazaardb::{connect_bazaardb, disconnect_bazaardb, get_bazaardb_status},
     bepinex::{get_legacy_record_directory_info, install_bepinex, repair_bpp, uninstall_bpp},
     detect::{detect_environment, verify_game_path},
     game_process::detect_bazaar_running,
@@ -56,6 +57,9 @@ pub fn run() {
             }
         })
         .invoke_handler(tauri::generate_handler![
+            connect_bazaardb,
+            disconnect_bazaardb,
+            get_bazaardb_status,
             initialize_installer_context,
             detect_environment,
             detect_bazaar_running,

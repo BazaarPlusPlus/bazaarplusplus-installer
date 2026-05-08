@@ -1,5 +1,6 @@
 import { invoke } from '@tauri-apps/api/core';
 import type { Locale } from '../i18n.ts';
+import type { BazaardbStatus } from '$lib/generated/commands';
 import type {
   EnvironmentInfo,
   GameRunningInfo,
@@ -16,6 +17,9 @@ import type {
 } from '../types.ts';
 
 export interface TauriCommandMap {
+  connect_bazaardb: { input: { request: { token: string } }; output: BazaardbStatus };
+  disconnect_bazaardb: { input: undefined; output: void };
+  get_bazaardb_status: { input: undefined; output: BazaardbStatus };
   verify_game_path: { input: { path: string }; output: boolean };
   initialize_installer_context: {
     input: undefined;
