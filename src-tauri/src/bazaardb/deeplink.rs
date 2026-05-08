@@ -27,25 +27,25 @@ pub fn parse_link_url(raw: &str) -> Result<LinkParams, String> {
 }
 
 fn percent_decode(input: &str) -> String {
-    let mut out = String::with_capacity(input.len());
+    let mut bytes_out: Vec<u8> = Vec::with_capacity(input.len());
     let bytes = input.as_bytes();
     let mut i = 0;
     while i < bytes.len() {
         if bytes[i] == b'%' && i + 2 < bytes.len() {
             if let Ok(byte) = u8::from_str_radix(&input[i + 1..i + 3], 16) {
-                out.push(byte as char);
+                bytes_out.push(byte);
                 i += 3;
                 continue;
             }
         } else if bytes[i] == b'+' {
-            out.push(' ');
+            bytes_out.push(b' ');
             i += 1;
             continue;
         }
-        out.push(bytes[i] as char);
+        bytes_out.push(bytes[i]);
         i += 1;
     }
-    out
+    String::from_utf8_lossy(&bytes_out).into_owned()
 }
 
 #[cfg(test)]
@@ -76,5 +76,12 @@ mod tests {
     #[test]
     fn rejects_missing_token() {
         assert!(parse_link_url("bazaarplusplus://link?account=Xinyu").is_err());
+    }
+
+    #[test]
+    fn percent_decodes_non_ascii_account_display_name() {
+        // %E6%9D%A8 = 杨 (U+6768) in UTF-8
+        let parsed = parse_link_url("bazaarplusplus://link?token=pat&account=%E6%9D%A8").unwrap();
+        assert_eq!(parsed.account.as_deref(), Some("杨"));
     }
 }
