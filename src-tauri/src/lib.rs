@@ -1,3 +1,4 @@
+mod bazaardb;
 mod commands;
 mod config;
 mod stream;
