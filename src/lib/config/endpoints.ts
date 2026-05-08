@@ -1,4 +1,6 @@
 export const V3_API_BASE_URL = 'https://mod-api-v3.bazaarplusplus.com';
+export const BAZAARDB_BASE_URL = 'https://bazaardb.bazaarplusplus.com';
+export const BAZAARDB_TOKEN_PAGE_URL = `${BAZAARDB_BASE_URL}/settings/tokens`;
 export const STEAM_BAZAAR_URL = 'steam://rungameid/1617400';
 export const BILIBILI_URL = 'https://space.bilibili.com/3546978457750467';
 
