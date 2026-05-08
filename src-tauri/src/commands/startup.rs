@@ -34,6 +34,10 @@ impl InstallerContextState {
             .get_or_init(|| Arc::new(compute_startup(app)))
             .clone()
     }
+
+    pub fn game_path(&self) -> Option<PathBuf> {
+        self.inner.get().and_then(|startup| startup.game_path.clone())
+    }
 }
 
 fn compute_startup(app: &AppHandle) -> InstallerStartup {

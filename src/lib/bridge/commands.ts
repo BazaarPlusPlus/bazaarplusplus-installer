@@ -1,6 +1,6 @@
 import { invoke } from '@tauri-apps/api/core';
 import type { Locale } from '../i18n.ts';
-import type { BazaardbStatus } from '$lib/generated/commands';
+import type { BazaardbStatus, UploadResult } from '$lib/generated/commands';
 import type {
   EnvironmentInfo,
   GameRunningInfo,
@@ -102,6 +102,10 @@ export interface TauriCommandMap {
   detect_stream_db_path: {
     input: { gamePath?: string };
     output: StreamDbPathInfo;
+  };
+  upload_screenshot_to_bazaardb: {
+    input: { request: { screenshot_id: string } };
+    output: UploadResult;
   };
 }
 
