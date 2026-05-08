@@ -81,6 +81,7 @@ export type MessageKey =
   | 'navStream'
   | 'navChangelog'
   | 'navAbout'
+  | 'navSettings'
   | 'homeTitle'
   | 'homeIntro'
   | 'homeOpenInstall'
@@ -186,6 +187,7 @@ export const messages: Record<Locale, Record<MessageKey, string>> = {
     navStream: 'Stream Mode',
     navChangelog: 'Changelog',
     navAbout: 'About',
+    navSettings: 'Settings',
     homeTitle: 'BazaarPlusPlus Control Room',
     homeIntro:
       'Use the installer when you need setup work. Use Stream Mode only when you want a localhost overlay page for OBS.',
@@ -287,6 +289,7 @@ export const messages: Record<Locale, Record<MessageKey, string>> = {
     navStream: '直播模式',
     navChangelog: '更新日志',
     navAbout: '关于',
+    navSettings: '设置',
     homeTitle: 'BazaarPlusPlus 控制台',
     homeIntro:
       '安装与修复用于一次性的部署维护；直播模式只在你需要给 OBS 提供本地网页时再开启。',

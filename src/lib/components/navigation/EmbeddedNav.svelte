@@ -10,7 +10,8 @@
     { href: '/', label: t('navHome') },
     { href: '/install', label: t('navInstall') },
     { href: '/stream', label: t('navStream') },
-    { href: '/changelog', label: t('navChangelog') }
+    { href: '/changelog', label: t('navChangelog') },
+    { href: '/settings', label: t('navSettings') }
   ];
 
   function isActive(href: string, pathname: string) {
