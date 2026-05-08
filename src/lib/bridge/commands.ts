@@ -107,6 +107,8 @@ export interface TauriCommandMap {
     input: { request: { screenshot_id: string } };
     output: UploadResult;
   };
+  set_auto_upload_enabled: { input: { enabled: boolean }; output: void };
+  get_auto_upload_enabled: { input: undefined; output: boolean };
 }
 
 type CommandName = keyof TauriCommandMap;

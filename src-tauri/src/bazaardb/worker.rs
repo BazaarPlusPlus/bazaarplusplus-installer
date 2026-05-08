@@ -1,10 +1,11 @@
 use crate::bazaardb::{
+    auto_watcher::find_new_screenshots,
     backoff::next_delay_seconds, client::upload_screenshot,
     endpoints::BAZAARDB_BASE_URL, image_pipeline::encode_for_upload,
     keyring::KeyringStore, payload::ScreenshotMetadata, queue,
 };
 use crate::installer_db::{self, path::default_installer_db_path};
-use crate::stream::records::OverlayRecordRepository;
+use crate::stream::records::{find_database_path_anywhere, resolve_database_path, OverlayRecordRepository};
 use chrono::{Duration, Utc};
 use std::path::PathBuf;
 use std::time::Duration as StdDuration;
@@ -63,6 +64,70 @@ pub fn spawn_worker(game_path: Option<PathBuf>) {
 async fn drain_once(game_path: Option<PathBuf>) -> Result<(), String> {
     let Some(db_path) = default_installer_db_path() else { return Ok(()); };
     let conn = installer_db::open_and_bootstrap(&db_path)?;
+
+    // Auto-watcher: enqueue new end-of-run screenshots if auto-upload is enabled.
+    let auto_enabled = installer_db::get_setting(&conn, "auto_upload_enabled")?
+        .as_deref() == Some("1");
+    if auto_enabled {
+        let mod_db_path = if let Some(ref gp) = game_path {
+            resolve_database_path(gp)
+        } else {
+            find_database_path_anywhere()
+        };
+        match mod_db_path {
+            Err(err) => {
+                eprintln!("auto-watcher: cannot locate mod DB: {err}");
+            }
+            Ok(mod_db_path) => {
+                match rusqlite::Connection::open_with_flags(
+                    &mod_db_path,
+                    rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY,
+                ) {
+                    Err(err) => {
+                        eprintln!("auto-watcher: cannot open mod DB: {err}");
+                    }
+                    Ok(mod_conn) => {
+                        let cursor = installer_db::get_setting(&conn, "auto_upload_cursor")?
+                            .unwrap_or_else(|| "1970-01-01T00:00:00+00:00".to_string());
+                        match find_new_screenshots(&mod_conn, &cursor) {
+                            Err(err) => {
+                                eprintln!("auto-watcher: query failed: {err}");
+                            }
+                            Ok(new_shots) => {
+                                let mut max_cursor = cursor.clone();
+                                for shot in &new_shots {
+                                    if let Err(err) = queue::enqueue(
+                                        &conn,
+                                        &shot.screenshot_id,
+                                        queue::UploadSource::Auto,
+                                    ) {
+                                        eprintln!(
+                                            "auto-watcher: failed to enqueue {}: {err}",
+                                            shot.screenshot_id
+                                        );
+                                    }
+                                    if shot.captured_at_utc > max_cursor {
+                                        max_cursor = shot.captured_at_utc.clone();
+                                    }
+                                }
+                                if max_cursor != cursor {
+                                    if let Err(err) = installer_db::set_setting(
+                                        &conn,
+                                        "auto_upload_cursor",
+                                        &max_cursor,
+                                    ) {
+                                        eprintln!(
+                                            "auto-watcher: failed to update cursor: {err}"
+                                        );
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 
     let pat = match KeyringStore::os().load()? {
         Some(token) => token,

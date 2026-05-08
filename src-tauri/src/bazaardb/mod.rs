@@ -1,3 +1,4 @@
+pub mod auto_watcher;
 pub mod backoff;
 pub mod client;
 pub mod endpoints;

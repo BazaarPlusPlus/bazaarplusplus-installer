@@ -171,6 +171,20 @@ pub async fn upload_screenshot_to_bazaardb(
     }
 }
 
+#[tauri::command]
+pub fn set_auto_upload_enabled(enabled: bool) -> Result<(), String> {
+    let db_path = default_installer_db_path().ok_or_else(|| "no_data_dir".to_string())?;
+    let conn = installer_db::open_and_bootstrap(&db_path)?;
+    installer_db::set_setting(&conn, "auto_upload_enabled", if enabled { "1" } else { "0" })
+}
+
+#[tauri::command]
+pub fn get_auto_upload_enabled() -> Result<bool, String> {
+    let db_path = default_installer_db_path().ok_or_else(|| "no_data_dir".to_string())?;
+    let conn = installer_db::open_and_bootstrap(&db_path)?;
+    Ok(installer_db::get_setting(&conn, "auto_upload_enabled")?.as_deref() == Some("1"))
+}
+
 #[cfg(test)]
 mod tests {
     use super::{handle_attempt_outcome, AttemptResult};

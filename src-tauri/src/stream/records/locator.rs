@@ -26,7 +26,7 @@ pub fn resolve_database_path(game_path: &Path) -> Result<PathBuf, String> {
     ))
 }
 
-pub(super) fn find_database_path_anywhere() -> Result<PathBuf, String> {
+pub fn find_database_path_anywhere() -> Result<PathBuf, String> {
     #[cfg(target_os = "windows")]
     {
         for candidate in STEAM_LIBRARY_FALLBACK_CANDIDATES {

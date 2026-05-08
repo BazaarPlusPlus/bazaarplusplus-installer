@@ -4,7 +4,7 @@ mod mapper;
 mod repo;
 
 use image::resolve_overlay_image_path;
-use locator::{find_database_path_anywhere, resolve_database_path};
+pub use locator::{find_database_path_anywhere, resolve_database_path};
 use mapper::to_overlay_record;
 pub use mapper::OverlayRecord;
 use repo::{

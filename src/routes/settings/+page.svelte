@@ -6,6 +6,7 @@
   import { locale } from '$lib/locale';
   import { formatMessage, messages } from '$lib/i18n';
   import { hasTauriRuntime } from '$lib/installer/runtime';
+  import { call } from '$lib/bridge/commands';
 
   function t(key: keyof typeof messages.en): string {
     return formatMessage($locale, key);
@@ -14,12 +15,19 @@
   let token = '';
   let busy = false;
   let error: string | null = null;
+  let autoUpload = false;
 
   locale.init();
 
   onMount(() => {
     accountStore.refresh().catch((err) => (error = String(err)));
+    call('get_auto_upload_enabled').then((v) => (autoUpload = v)).catch(() => {});
   });
+
+  async function toggleAutoUpload(next: boolean) {
+    autoUpload = next;
+    await call('set_auto_upload_enabled', { enabled: next });
+  }
 
   async function connect() {
     if (!token.trim()) {
@@ -162,6 +170,20 @@
     {#if error}
       <p class="error-text" role="alert">{error}</p>
     {/if}
+  </section>
+
+  <section class="card">
+    <h2 class="section-title">{$locale === 'zh' ? '自动上传' : 'Auto Upload'}</h2>
+    <label class="toggle-label">
+      <input
+        type="checkbox"
+        checked={autoUpload}
+        onchange={(e) => toggleAutoUpload((e.target as HTMLInputElement).checked)}
+      />
+      <span>
+        {$locale === 'zh' ? '自动上传每局结束截图' : 'Auto-upload end-of-run screenshots'}
+      </span>
+    </label>
   </section>
 </main>
 
@@ -466,6 +488,25 @@
     border: 1px solid rgba(220, 100, 80, 0.2);
     border-radius: 2px;
     background: rgba(220, 80, 60, 0.08);
+  }
+
+  .toggle-label {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-family: 'Fira Code', monospace;
+    font-size: 0.78rem;
+    color: rgba(var(--color-cream-rgb), 0.82);
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .toggle-label input[type='checkbox'] {
+    accent-color: rgba(var(--color-accent-rgb), 0.9);
+    width: 1rem;
+    height: 1rem;
+    cursor: pointer;
+    flex-shrink: 0;
   }
 
   @media (max-width: 520px) {
