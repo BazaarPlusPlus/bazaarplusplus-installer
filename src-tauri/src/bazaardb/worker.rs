@@ -9,6 +9,7 @@ use crate::stream::records::{find_database_path_anywhere, resolve_database_path,
 use chrono::{Duration, Utc};
 use std::path::PathBuf;
 use std::time::Duration as StdDuration;
+use tauri::Manager;
 
 #[derive(Debug)]
 pub enum AttemptDecision {
@@ -50,10 +51,14 @@ pub fn decide_after_attempt(
     }
 }
 
-pub fn spawn_worker(game_path: Option<PathBuf>) {
+pub fn spawn_worker(handle: tauri::AppHandle) {
     tokio::spawn(async move {
         loop {
-            if let Err(err) = drain_once(game_path.clone()).await {
+            let game_path = handle
+                .state::<crate::commands::startup::InstallerContextState>()
+                .game_path()
+                .map(PathBuf::from);
+            if let Err(err) = drain_once(game_path).await {
                 eprintln!("upload worker tick failed: {err}");
             }
             tokio::time::sleep(StdDuration::from_secs(60)).await;

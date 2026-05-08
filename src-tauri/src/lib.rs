@@ -62,7 +62,7 @@ pub fn run() {
                     eprintln!("failed to bootstrap installer db: {err}");
                 }
             }
-            crate::bazaardb::worker::spawn_worker(None);
+            crate::bazaardb::worker::spawn_worker(app.handle().clone());
 
             let app_handle_for_deeplink = app.handle().clone();
             app.deep_link().on_open_url(move |event| {

@@ -38,6 +38,11 @@ pub async fn connect_bazaardb(
     match outcome {
         ValidateOutcome::Ok { account_name } => {
             KeyringStore::os().save(&request.token)?;
+            if let Some(db_path) = default_installer_db_path() {
+                if let Ok(conn) = installer_db::open_and_bootstrap(&db_path) {
+                    let _ = unfreeze_paused_uploads(&conn);
+                }
+            }
             Ok(BazaardbStatus { connected: true, account_name: Some(account_name) })
         }
         ValidateOutcome::Unauthorized => Err("unauthorized".to_string()),
@@ -78,6 +83,17 @@ pub enum UploadResult {
 pub enum AttemptResult {
     Uploaded { remote_id: String },
     Queued { reason: String },
+}
+
+pub fn unfreeze_paused_uploads(conn: &rusqlite::Connection) -> Result<(), String> {
+    conn.execute(
+        "update pending_uploads
+         set next_attempt_at = null, last_error = null
+         where last_error like 'client_error:401%'",
+        [],
+    )
+    .map(|_| ())
+    .map_err(|err| err.to_string())
 }
 
 pub fn handle_attempt_outcome(
@@ -217,7 +233,7 @@ pub fn get_auto_upload_enabled() -> Result<bool, String> {
 
 #[cfg(test)]
 mod tests {
-    use super::{handle_attempt_outcome, AttemptResult};
+    use super::{handle_attempt_outcome, unfreeze_paused_uploads, AttemptResult};
     use crate::installer_db::open_and_bootstrap;
     use tempfile::tempdir;
 
@@ -274,5 +290,54 @@ mod tests {
             .query_row("select count(*) from pending_uploads", [], |row| row.get(0))
             .unwrap();
         assert_eq!(count, 1);
+    }
+
+    #[test]
+    fn unfreeze_clears_next_attempt_at_for_401_rows() {
+        let (conn, _dir) = fresh_db();
+        conn.execute(
+            "insert into pending_uploads
+               (screenshot_id, attempts, last_attempt_at, last_error, next_attempt_at, source)
+             values ('snap-1', 3, '2026-04-01T00:00:00+00:00', 'client_error:401',
+                     '2027-04-01T00:00:00+00:00', 'manual')",
+            [],
+        )
+        .unwrap();
+
+        unfreeze_paused_uploads(&conn).unwrap();
+
+        let (next, err): (Option<String>, Option<String>) = conn
+            .query_row(
+                "select next_attempt_at, last_error from pending_uploads where screenshot_id = 'snap-1'",
+                [],
+                |row| Ok((row.get(0)?, row.get(1)?)),
+            )
+            .unwrap();
+        assert!(next.is_none());
+        assert!(err.is_none());
+    }
+
+    #[test]
+    fn unfreeze_does_not_clear_non_401_rows() {
+        let (conn, _dir) = fresh_db();
+        conn.execute(
+            "insert into pending_uploads
+               (screenshot_id, attempts, last_attempt_at, last_error, next_attempt_at, source)
+             values ('snap-1', 1, '2026-04-01T00:00:00+00:00', 'server_error:503',
+                     '2026-04-01T01:00:00+00:00', 'auto')",
+            [],
+        )
+        .unwrap();
+
+        unfreeze_paused_uploads(&conn).unwrap();
+
+        let next: Option<String> = conn
+            .query_row(
+                "select next_attempt_at from pending_uploads where screenshot_id = 'snap-1'",
+                [],
+                |row| row.get(0),
+            )
+            .unwrap();
+        assert_eq!(next.as_deref(), Some("2026-04-01T01:00:00+00:00"));
     }
 }
