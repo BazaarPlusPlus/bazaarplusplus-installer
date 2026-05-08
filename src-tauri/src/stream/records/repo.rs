@@ -346,8 +346,37 @@ pub(super) fn load_overlay_record_by_id(
         return Ok(None);
     }
 
-    let mut stmt = conn
-        .prepare(
+    let battles_available = table_exists(&conn, "battles")?;
+    let mut stmt = match battles_available {
+        true => conn.prepare(
+            "
+select
+  rs.screenshot_id,
+  coalesce(nullif(trim(rs.hero_name), ''), 'Unknown') as hero,
+  'End of run' as game_mode,
+  coalesce(nullif(trim(rs.captured_at_local), ''), rs.captured_at_utc) as captured_at,
+  rs.image_relative_path as image_path,
+  rs.victories_at_capture as wins,
+  rs.player_position,
+  rs.day as battle_count,
+  nullif(trim(rs.player_rank), '') as player_rank,
+  rs.player_rating as player_rating,
+  rs.captured_at_utc,
+  (select b.player_name from battles b
+     where b.run_id = rs.run_id
+     order by b.recorded_at_utc asc
+     limit 1) as player_name,
+  (select b.player_account_id from battles b
+     where b.run_id = rs.run_id
+     order by b.recorded_at_utc asc
+     limit 1) as player_account_id
+from run_screenshots rs
+where rs.capture_source = 'end_of_run_auto'
+  and rs.screenshot_id = ?1
+limit 1
+",
+        ),
+        false => conn.prepare(
             "
 select
   rs.screenshot_id,
@@ -368,8 +397,9 @@ where rs.capture_source = 'end_of_run_auto'
   and rs.screenshot_id = ?1
 limit 1
 ",
-        )
-        .map_err(|err| err.to_string())?;
+        ),
+    }
+    .map_err(|err| err.to_string())?;
 
     let mut rows = stmt.query([record_id]).map_err(|err| err.to_string())?;
     let Some(row) = rows.next().map_err(|err| err.to_string())? else {
@@ -828,6 +858,39 @@ mod tests {
         assert_eq!(records.len(), 2);
         assert_eq!(records[0].player_account_id.as_deref(), Some("acct-B"));
         assert_eq!(records[1].player_account_id.as_deref(), Some("acct-A"));
+    }
+
+    #[test]
+    fn load_overlay_record_by_id_includes_player_identity() {
+        let temp = tempfile::NamedTempFile::new().unwrap();
+        let conn = rusqlite::Connection::open(temp.path()).unwrap();
+        create_run_screenshots_table(&conn);
+        create_battles_table(&conn);
+        conn.execute(
+            "insert into run_screenshots (
+                screenshot_id, run_id, capture_source, image_relative_path,
+                captured_at_local, captured_at_utc, hero_name
+             ) values ('snap-1', 'run-1', 'end_of_run_auto', 'm.png',
+                       '2026-04-10T20:30:05+00:00', '2026-04-10T20:30:05+00:00', 'Mak')",
+            [],
+        )
+        .unwrap();
+        conn.execute(
+            "insert into battles (
+                battle_id, source, run_id, recorded_at_utc, combat_kind,
+                player_name, player_account_id
+             ) values ('b-1', 'LOCAL', 'run-1', '2026-04-10T20:00:00+00:00',
+                       'PVP', 'Xinyu', 'acct-9')",
+            [],
+        )
+        .unwrap();
+
+        let record = load_overlay_record_by_id(temp.path(), "snap-1")
+            .unwrap()
+            .unwrap();
+
+        assert_eq!(record.player_name.as_deref(), Some("Xinyu"));
+        assert_eq!(record.player_account_id.as_deref(), Some("acct-9"));
     }
 
     #[test]
