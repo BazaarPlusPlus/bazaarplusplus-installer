@@ -54,6 +54,8 @@ pub fn run() {
         .manage(TrayMenuState::default())
         .plugin(tauri_plugin_opener::init())
         .setup(|app| {
+            use tauri_plugin_deep_link::DeepLinkExt;
+
             let handle = app.app_handle();
             if let Some(db_path) = installer_db::path::default_installer_db_path() {
                 if let Err(err) = installer_db::open_and_bootstrap(&db_path) {
@@ -61,6 +63,32 @@ pub fn run() {
                 }
             }
             crate::bazaardb::worker::spawn_worker(None);
+
+            let app_handle_for_deeplink = app.handle().clone();
+            app.deep_link().on_open_url(move |event| {
+                for url in event.urls() {
+                    let url_str = url.to_string();
+                    if let Ok(params) = crate::bazaardb::deeplink::parse_link_url(&url_str) {
+                        let handle = app_handle_for_deeplink.clone();
+                        tauri::async_runtime::spawn(async move {
+                            let request = crate::commands::bazaardb::ConnectBazaardbRequest { token: params.token };
+                            match crate::commands::bazaardb::connect_bazaardb(request).await {
+                                Ok(_status) => {
+                                    if let Some(window) = handle.get_webview_window("main") {
+                                        let _ = window.show();
+                                        let _ = window.set_focus();
+                                        let _ = window.eval("window.location.assign('/settings');");
+                                    }
+                                }
+                                Err(err) => {
+                                    eprintln!("deeplink connect failed: {err}");
+                                }
+                            }
+                        });
+                    }
+                }
+            });
+
             build_tray(&handle)?;
             Ok(())
         })
