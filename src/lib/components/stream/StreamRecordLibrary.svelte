@@ -417,7 +417,7 @@
                     type="button"
                     class="record-action record-action-upload"
                     on:click={() => handleUpload(record.id)}
-                    disabled={record.player_account_id == null || uploadStatus.kind === 'pending' || uploadStatus.kind === 'success'}
+                    disabled={record.player_account_id == null || uploadStatus.kind === 'pending' || uploadStatus.kind === 'uploaded' || uploadStatus.kind === 'queued'}
                     title={record.player_account_id == null
                       ? isZh
                         ? '此对局缺少玩家账号 ID，无法上传。'
@@ -426,14 +426,20 @@
                   >
                     {#if uploadStatus.kind === 'pending'}
                       {isZh ? '上传中...' : 'Uploading...'}
-                    {:else if uploadStatus.kind === 'success'}
+                    {:else if uploadStatus.kind === 'uploaded'}
                       {isZh ? '已上传' : 'Uploaded'}
+                    {:else if uploadStatus.kind === 'queued'}
+                      {isZh ? '稍后重试' : 'Will retry'}
                     {:else}
                       {isZh ? '上传' : 'Upload'}
                     {/if}
                   </button>
-                  {#if uploadStatus.kind === 'success'}
+                  {#if uploadStatus.kind === 'uploaded'}
                     <span class="upload-remote-id">{uploadStatus.remoteId}</span>
+                  {:else if uploadStatus.kind === 'queued'}
+                    <span class="upload-queued" title={uploadStatus.reason}>
+                      {isZh ? '已加入队列' : 'Queued'}
+                    </span>
                   {:else if uploadStatus.kind === 'error'}
                     <span class="upload-error">{uploadStatus.message}</span>
                   {/if}
@@ -691,6 +697,16 @@
     color: rgba(150, 210, 160, 0.78);
     word-break: break-all;
     line-height: 1.3;
+  }
+
+  .upload-queued {
+    display: block;
+    font-size: 0.44rem;
+    letter-spacing: 0.06em;
+    color: rgba(200, 200, 140, 0.78);
+    word-break: break-all;
+    line-height: 1.3;
+    cursor: help;
   }
 
   .upload-error {

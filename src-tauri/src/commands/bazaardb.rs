@@ -9,9 +9,14 @@ use crate::bazaardb::{
     image_pipeline::encode_for_upload,
     keyring::KeyringStore,
     payload::ScreenshotMetadata,
+    queue,
+    worker::{decide_after_attempt, AttemptDecision},
 };
 use crate::commands::startup::InstallerContextState;
+use crate::installer_db::{self, path::default_installer_db_path};
 use crate::stream::records::OverlayRecordRepository;
+use chrono::{Duration as ChronoDuration, Utc};
+use rusqlite::Connection;
 
 #[derive(Debug, Clone, Serialize, ts_rs::TS)]
 #[ts(export)]
@@ -64,8 +69,47 @@ pub async fn get_bazaardb_status() -> Result<BazaardbStatus, String> {
 
 #[derive(Debug, Serialize, ts_rs::TS)]
 #[ts(export)]
-pub struct UploadResult {
-    pub remote_id: String,
+pub enum UploadResult {
+    Uploaded { remote_id: String },
+    Queued { reason: String },
+}
+
+#[derive(Debug)]
+pub enum AttemptResult {
+    Uploaded { remote_id: String },
+    Queued { reason: String },
+}
+
+pub fn handle_attempt_outcome(
+    conn: &Connection,
+    screenshot_id: &str,
+    outcome: Result<String, String>,
+    auto: bool,
+) -> Result<AttemptResult, String> {
+    match decide_after_attempt(outcome, 0) {
+        AttemptDecision::Done { remote_id } => Ok(AttemptResult::Uploaded { remote_id }),
+        AttemptDecision::Retry { delay_seconds, message } => {
+            queue::enqueue(
+                conn,
+                screenshot_id,
+                if auto { queue::UploadSource::Auto } else { queue::UploadSource::Manual },
+            )?;
+            let next = Utc::now() + ChronoDuration::seconds(delay_seconds as i64);
+            queue::mark_failure(conn, screenshot_id, &next, &message)?;
+            Ok(AttemptResult::Queued { reason: message })
+        }
+        AttemptDecision::PauseUntilReconnect { message } => {
+            queue::enqueue(
+                conn,
+                screenshot_id,
+                if auto { queue::UploadSource::Auto } else { queue::UploadSource::Manual },
+            )?;
+            let next = Utc::now() + ChronoDuration::days(365);
+            queue::mark_failure(conn, screenshot_id, &next, &message)?;
+            Err(message)
+        }
+        AttemptDecision::Drop { message } => Err(message),
+    }
 }
 
 #[derive(Debug, Deserialize)]
@@ -115,7 +159,63 @@ pub async fn upload_screenshot_to_bazaardb(
         ..Default::default()
     };
 
-    let remote_id =
-        upload_screenshot(BAZAARDB_BASE_URL, &pat, &metadata, &encoded.bytes).await?;
-    Ok(UploadResult { remote_id })
+    let outcome =
+        upload_screenshot(BAZAARDB_BASE_URL, &pat, &metadata, &encoded.bytes).await;
+
+    let db_path = default_installer_db_path().ok_or_else(|| "no_data_dir".to_string())?;
+    let conn = installer_db::open_and_bootstrap(&db_path)?;
+
+    match handle_attempt_outcome(&conn, &request.screenshot_id, outcome, false)? {
+        AttemptResult::Uploaded { remote_id } => Ok(UploadResult::Uploaded { remote_id }),
+        AttemptResult::Queued { reason } => Ok(UploadResult::Queued { reason }),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{handle_attempt_outcome, AttemptResult};
+    use crate::installer_db::open_and_bootstrap;
+    use tempfile::tempdir;
+
+    fn fresh_db() -> (rusqlite::Connection, tempfile::TempDir) {
+        let dir = tempdir().unwrap();
+        let conn = open_and_bootstrap(&dir.path().join("installer.db")).unwrap();
+        (conn, dir)
+    }
+
+    #[test]
+    fn handle_outcome_returns_remote_id_on_success_without_enqueueing() {
+        let (conn, _dir) = fresh_db();
+        let result = handle_attempt_outcome(&conn, "snap-1", Ok("remote-1".into()), false).unwrap();
+        assert!(matches!(result, AttemptResult::Uploaded { .. }));
+        let count: i64 = conn
+            .query_row("select count(*) from pending_uploads", [], |row| row.get(0))
+            .unwrap();
+        assert_eq!(count, 0);
+    }
+
+    #[test]
+    fn handle_outcome_enqueues_on_transient_failure() {
+        let (conn, _dir) = fresh_db();
+        let result =
+            handle_attempt_outcome(&conn, "snap-1", Err("server_error:503".into()), false).unwrap();
+        assert!(matches!(result, AttemptResult::Queued { .. }));
+        let count: i64 = conn
+            .query_row("select count(*) from pending_uploads", [], |row| row.get(0))
+            .unwrap();
+        assert_eq!(count, 1);
+    }
+
+    #[test]
+    fn handle_outcome_drops_on_permanent_4xx() {
+        let (conn, _dir) = fresh_db();
+        let result =
+            handle_attempt_outcome(&conn, "snap-1", Err("client_error:422".into()), false)
+                .unwrap_err();
+        assert!(result.contains("client_error:422"));
+        let count: i64 = conn
+            .query_row("select count(*) from pending_uploads", [], |row| row.get(0))
+            .unwrap();
+        assert_eq!(count, 0);
+    }
 }
