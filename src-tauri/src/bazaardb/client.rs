@@ -42,20 +42,41 @@ struct UploadResponse {
     id: String,
 }
 
+fn metadata_to_form(metadata: &ScreenshotMetadata) -> Result<multipart::Form, String> {
+    let value = serde_json::to_value(metadata).map_err(|err| err.to_string())?;
+    let object = value
+        .as_object()
+        .ok_or_else(|| "metadata did not serialize to a JSON object".to_string())?;
+
+    let mut form = multipart::Form::new();
+    for (key, value) in object {
+        let text = match value {
+            serde_json::Value::Null => continue,
+            serde_json::Value::String(s) => s.clone(),
+            serde_json::Value::Number(n) => n.to_string(),
+            serde_json::Value::Bool(b) => b.to_string(),
+            other => {
+                return Err(format!(
+                    "metadata field '{key}' has unsupported type for multipart text: {other}"
+                ))
+            }
+        };
+        form = form.text(key.clone(), text);
+    }
+    Ok(form)
+}
+
 pub async fn upload_screenshot(
     base_url: &str,
     pat: &str,
     metadata: &ScreenshotMetadata,
     image_bytes: &[u8],
 ) -> Result<String, String> {
-    let metadata_json = serde_json::to_string(metadata).map_err(|err| err.to_string())?;
     let image_part = multipart::Part::bytes(image_bytes.to_vec())
         .file_name("screenshot.jpg")
         .mime_str("image/jpeg")
         .map_err(|err| err.to_string())?;
-    let form = multipart::Form::new()
-        .text("metadata", metadata_json)
-        .part("image", image_part);
+    let form = metadata_to_form(metadata)?.part("image", image_part);
 
     let client = Client::builder()
         .user_agent(concat!("bppinstaller/", env!("CARGO_PKG_VERSION")))
@@ -134,20 +155,49 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn upload_screenshot_returns_id_on_200() {
+    async fn upload_screenshot_sends_flat_multipart_fields() {
         let app = Router::new().route(
             "/api/uploads/screenshot",
             post(|mut multipart: Multipart| async move {
                 let mut saw_image = false;
-                let mut saw_metadata = false;
+                let mut text_fields: std::collections::HashMap<String, String> =
+                    std::collections::HashMap::new();
                 while let Some(field) = multipart.next_field().await.unwrap() {
-                    match field.name() {
-                        Some("image") => { let _ = field.bytes().await.unwrap(); saw_image = true; }
-                        Some("metadata") => { let _ = field.text().await.unwrap(); saw_metadata = true; }
-                        _ => {}
+                    let name = field.name().map(|s| s.to_string());
+                    match name.as_deref() {
+                        Some("image") => {
+                            let _ = field.bytes().await.unwrap();
+                            saw_image = true;
+                        }
+                        Some(other) => {
+                            let key = other.to_string();
+                            let value = field.text().await.unwrap();
+                            text_fields.insert(key, value);
+                        }
+                        None => {}
                     }
                 }
-                assert!(saw_image && saw_metadata);
+
+                assert!(saw_image, "image part missing");
+                assert!(
+                    !text_fields.contains_key("metadata"),
+                    "metadata should not be a nested JSON field; got {:?}",
+                    text_fields.keys().collect::<Vec<_>>()
+                );
+                assert_eq!(text_fields.get("screenshot_id").map(String::as_str), Some("snap-1"));
+                assert_eq!(text_fields.get("player_account_id").map(String::as_str), Some("acct-9"));
+                assert_eq!(
+                    text_fields.get("captured_at_utc").map(String::as_str),
+                    Some("2026-04-10T20:30:05+00:00")
+                );
+                assert_eq!(text_fields.get("schema_version").map(String::as_str), Some("1"));
+                assert_eq!(text_fields.get("auto_uploaded").map(String::as_str), Some("false"));
+                assert_eq!(text_fields.get("image_format").map(String::as_str), Some("jpeg"));
+                // Optional fields with None defaults must not be sent.
+                assert!(!text_fields.contains_key("run_id"));
+                assert!(!text_fields.contains_key("hero_name"));
+                assert!(!text_fields.contains_key("player_name"));
+
                 Json(json!({"id": "remote-id-1"}))
             }),
         );

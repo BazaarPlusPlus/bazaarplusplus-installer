@@ -108,9 +108,14 @@ POST /api/uploads/screenshot          (path TBD with BazaarDB)
 Authorization: Bearer <pat>
 Content-Type: multipart/form-data
 
-image:    <JPEG bytes — see "Image preprocessing" below>
-metadata: <JSON string of all fields above>
+image:                <JPEG bytes — see "Image preprocessing" below>
+<flat fields>:        every metadata field above is sent as its own multipart text part
+                      (not nested in a single JSON `metadata` field). Optional fields are
+                      omitted when not known; numbers and booleans are stringified.
 ```
+
+Server-side max image size is 15 MB; the installer targets ~200–500 KB and caps at 2 MB
+soft, so this margin is comfortable.
 
 ### Image preprocessing
 
@@ -138,9 +143,9 @@ source. The metadata payload sets `image_format: "jpeg"` so BazaarDB can
 unambiguously tell processed from raw, and so the field is in place if a
 future schema version introduces other formats.
 
-Putting metadata into a single JSON form field (rather than one form
-field per attribute) keeps the wire shape stable as fields are added or
-renamed.
+Each metadata attribute is its own multipart text part. Adding a field is
+an extra part on the wire; renaming requires both sides to agree, hence the
+`schema_version` field that lets the server detect drift.
 
 ### SQL extensions on the installer side
 

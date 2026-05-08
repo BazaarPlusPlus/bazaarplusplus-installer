@@ -42,13 +42,35 @@ GET /api/auth/me
 POST /api/uploads/screenshot
 Content-Type: multipart/form-data
 
-image:    <JPEG bytes — see "Image format">
-metadata: <JSON string — see "Fields">
+image:                <JPEG bytes — see "Image format">
+schema_version:       1
+installer_version:    "3.3.0"
+auto_uploaded:        "true" | "false"
+image_format:         "jpeg"
+screenshot_id:        <UUID>
+player_account_id:    <string>
+captured_at_utc:      <ISO 8601>
+run_id:               <string, only if known>
+hero_name:            <string, only if known>
+final_days:           <int as string, only if known>
+final_victories:      <int as string, only if known>
+player_name:          <string, only if known>
+player_rank:          <string, only if known>
+player_rating:        <int as string, only if known>
+player_position:      <int as string, only if known>
 
 200 { "id": "<server-side id>" }    on first upload OR duplicate
 4xx { "error": "..." }              permanent failure (installer surfaces)
 5xx { "error": "..." }              transient failure (installer retries)
 ```
+
+All fields are flat multipart text parts (not a nested JSON `metadata` field). Optional
+fields are omitted when not known; required fields (`schema_version`, `installer_version`,
+`auto_uploaded`, `image_format`, `screenshot_id`, `player_account_id`, `captured_at_utc`)
+are always present. Numbers and booleans are stringified per multipart conventions.
+
+Max image size on the server is 15 MB; the installer targets ~200–500 KB and caps at 2 MB
+soft, so this margin is comfortable.
 
 ## Fields
 
