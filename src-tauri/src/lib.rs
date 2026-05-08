@@ -46,6 +46,7 @@ pub fn run() {
                     eprintln!("failed to bootstrap installer db: {err}");
                 }
             }
+            crate::bazaardb::worker::spawn_worker(None);
             build_tray(&handle)?;
             Ok(())
         })
