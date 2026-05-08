@@ -50,10 +50,12 @@ select
   rs.player_rating as player_rating,
   rs.captured_at_utc,
   (select b.player_name from battles b
-     where b.run_id = rs.run_id and b.player_name is not null
+     where b.run_id = rs.run_id
+     order by b.recorded_at_utc asc
      limit 1) as player_name,
   (select b.player_account_id from battles b
-     where b.run_id = rs.run_id and b.player_account_id is not null
+     where b.run_id = rs.run_id
+     order by b.recorded_at_utc asc
      limit 1) as player_account_id
 from run_screenshots rs
 where rs.capture_source = 'end_of_run_auto'
@@ -100,10 +102,12 @@ select
   rs.player_rating as player_rating,
   rs.captured_at_utc,
   (select b.player_name from battles b
-     where b.run_id = rs.run_id and b.player_name is not null
+     where b.run_id = rs.run_id
+     order by b.recorded_at_utc asc
      limit 1) as player_name,
   (select b.player_account_id from battles b
-     where b.run_id = rs.run_id and b.player_account_id is not null
+     where b.run_id = rs.run_id
+     order by b.recorded_at_utc asc
      limit 1) as player_account_id
 from run_screenshots rs
 where rs.capture_source = 'end_of_run_auto'
@@ -736,5 +740,43 @@ mod tests {
 
         assert!(latest.player_name.is_none());
         assert!(latest.player_account_id.is_none());
+    }
+
+    #[test]
+    fn latest_overlay_record_with_from_filter_includes_player_identity() {
+        let temp = tempfile::NamedTempFile::new().unwrap();
+        let conn = rusqlite::Connection::open(temp.path()).unwrap();
+        create_run_screenshots_table(&conn);
+        create_battles_table(&conn);
+        conn.execute(
+            "insert into run_screenshots (
+                screenshot_id, run_id, capture_source, image_relative_path,
+                captured_at_local, captured_at_utc, hero_name
+             ) values
+             ('snap-before', 'run-old', 'end_of_run_auto', 'before.png',
+              '2026-04-10T19:00:00+00:00', '2026-04-10T19:00:00+00:00', 'Mak'),
+             ('snap-after',  'run-new', 'end_of_run_auto', 'after.png',
+              '2026-04-10T21:00:00+00:00', '2026-04-10T21:00:00+00:00', 'Vanessa')",
+            [],
+        )
+        .unwrap();
+        conn.execute(
+            "insert into battles (
+                battle_id, source, run_id, recorded_at_utc, combat_kind,
+                player_name, player_account_id
+             ) values
+             ('b-old', 'LOCAL', 'run-old', '2026-04-10T18:30:00+00:00', 'PVP', 'Old', 'acct-old'),
+             ('b-new', 'LOCAL', 'run-new', '2026-04-10T20:30:00+00:00', 'PVP', 'New', 'acct-new')",
+            [],
+        )
+        .unwrap();
+
+        let latest = load_latest_overlay_record(temp.path(), Some("2026-04-10T20:00:00+00:00"), 0)
+            .unwrap()
+            .unwrap();
+
+        assert_eq!(latest.id, "snap-after");
+        assert_eq!(latest.player_name.as_deref(), Some("New"));
+        assert_eq!(latest.player_account_id.as_deref(), Some("acct-new"));
     }
 }
