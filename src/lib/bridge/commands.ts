@@ -1,6 +1,6 @@
 import { invoke } from '@tauri-apps/api/core';
 import type { Locale } from '../i18n.ts';
-import type { BazaardbStatus, UploadResult } from '$lib/generated/commands';
+import type { BazaardbStatus, PendingUploadView, UploadResult } from '$lib/generated/commands';
 import type {
   EnvironmentInfo,
   GameRunningInfo,
@@ -109,6 +109,7 @@ export interface TauriCommandMap {
   };
   set_auto_upload_enabled: { input: { enabled: boolean }; output: void };
   get_auto_upload_enabled: { input: undefined; output: boolean };
+  list_pending_uploads: { input: undefined; output: PendingUploadView[] };
 }
 
 type CommandName = keyof TauriCommandMap;

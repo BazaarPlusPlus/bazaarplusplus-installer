@@ -13,7 +13,7 @@ use tauri::{
 };
 
 use commands::{
-    bazaardb::{connect_bazaardb, disconnect_bazaardb, get_auto_upload_enabled, get_bazaardb_status, set_auto_upload_enabled, upload_screenshot_to_bazaardb},
+    bazaardb::{connect_bazaardb, disconnect_bazaardb, get_auto_upload_enabled, get_bazaardb_status, list_pending_uploads, set_auto_upload_enabled, upload_screenshot_to_bazaardb},
     bepinex::{get_legacy_record_directory_info, install_bepinex, repair_bpp, uninstall_bpp},
     detect::{detect_environment, verify_game_path},
     game_process::detect_bazaar_running,
@@ -70,6 +70,7 @@ pub fn run() {
             upload_screenshot_to_bazaardb,
             set_auto_upload_enabled,
             get_auto_upload_enabled,
+            list_pending_uploads,
             initialize_installer_context,
             detect_environment,
             detect_bazaar_running,

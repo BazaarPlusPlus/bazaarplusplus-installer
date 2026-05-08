@@ -171,6 +171,36 @@ pub async fn upload_screenshot_to_bazaardb(
     }
 }
 
+#[derive(Debug, Serialize, ts_rs::TS)]
+#[ts(export)]
+pub struct PendingUploadView {
+    pub screenshot_id: String,
+    pub attempts: i64,
+    pub last_error: Option<String>,
+    pub next_attempt_at: Option<String>,
+    pub source: String,
+}
+
+#[tauri::command]
+pub fn list_pending_uploads() -> Result<Vec<PendingUploadView>, String> {
+    let db_path = default_installer_db_path().ok_or_else(|| "no_data_dir".to_string())?;
+    let conn = installer_db::open_and_bootstrap(&db_path)?;
+    let rows = queue::list_due(&conn, &chrono::DateTime::<chrono::Utc>::MAX_UTC)?;
+    Ok(rows
+        .into_iter()
+        .map(|r| PendingUploadView {
+            screenshot_id: r.screenshot_id,
+            attempts: r.attempts,
+            last_error: r.last_error,
+            next_attempt_at: r.next_attempt_at,
+            source: match r.source {
+                queue::UploadSource::Auto => "auto".to_string(),
+                queue::UploadSource::Manual => "manual".to_string(),
+            },
+        })
+        .collect())
+}
+
 #[tauri::command]
 pub fn set_auto_upload_enabled(enabled: bool) -> Result<(), String> {
     let db_path = default_installer_db_path().ok_or_else(|| "no_data_dir".to_string())?;

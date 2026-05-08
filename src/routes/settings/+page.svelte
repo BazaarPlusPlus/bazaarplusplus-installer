@@ -7,6 +7,7 @@
   import { formatMessage, messages } from '$lib/i18n';
   import { hasTauriRuntime } from '$lib/installer/runtime';
   import { call } from '$lib/bridge/commands';
+  import type { PendingUploadView } from '$lib/generated/commands';
 
   function t(key: keyof typeof messages.en): string {
     return formatMessage($locale, key);
@@ -16,13 +17,19 @@
   let busy = false;
   let error: string | null = null;
   let autoUpload = false;
+  let pending: PendingUploadView[] = [];
 
   locale.init();
 
   onMount(() => {
     accountStore.refresh().catch((err) => (error = String(err)));
     call('get_auto_upload_enabled').then((v) => (autoUpload = v)).catch(() => {});
+    call('list_pending_uploads').then((v) => (pending = v)).catch(() => {});
   });
+
+  async function refreshPending() {
+    pending = await call('list_pending_uploads');
+  }
 
   async function toggleAutoUpload(next: boolean) {
     autoUpload = next;
@@ -184,6 +191,52 @@
         {$locale === 'zh' ? '自动上传每局结束截图' : 'Auto-upload end-of-run screenshots'}
       </span>
     </label>
+  </section>
+
+  <section class="card">
+    <div class="queue-header">
+      <h2 class="section-title">
+        {$locale === 'zh' ? `待上传队列 (${pending.length})` : `Pending uploads (${pending.length})`}
+      </h2>
+      <button class="action-btn" type="button" onclick={refreshPending}>
+        {$locale === 'zh' ? '刷新' : 'Refresh'}
+      </button>
+    </div>
+    {#if pending.length === 0}
+      <p class="help-text">
+        {$locale === 'zh' ? '队列为空。' : 'Queue is empty.'}
+      </p>
+    {:else}
+      <ul class="queue-list">
+        {#each pending as row}
+          <li class="queue-row">
+            <span class="queue-id" title={row.screenshot_id}>
+              {row.screenshot_id.length > 24 ? row.screenshot_id.slice(0, 24) + '…' : row.screenshot_id}
+            </span>
+            <span class="queue-meta">
+              <span class="queue-label">{$locale === 'zh' ? '次数' : 'Attempts'}:</span>
+              <span>{row.attempts}</span>
+            </span>
+            <span class="queue-meta">
+              <span class="queue-label">{$locale === 'zh' ? '来源' : 'Source'}:</span>
+              <span>{row.source}</span>
+            </span>
+            {#if row.last_error}
+              <span class="queue-meta queue-error">
+                <span class="queue-label">{$locale === 'zh' ? '最后错误' : 'Last error'}:</span>
+                <span>{row.last_error}</span>
+              </span>
+            {/if}
+            {#if row.next_attempt_at}
+              <span class="queue-meta">
+                <span class="queue-label">{$locale === 'zh' ? '下次重试' : 'Next retry'}:</span>
+                <span>{row.next_attempt_at}</span>
+              </span>
+            {/if}
+          </li>
+        {/each}
+      </ul>
+    {/if}
   </section>
 </main>
 
@@ -507,6 +560,59 @@
     height: 1rem;
     cursor: pointer;
     flex-shrink: 0;
+  }
+
+  .queue-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+  }
+
+  .queue-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 0.55rem;
+  }
+
+  .queue-row {
+    display: grid;
+    gap: 0.2rem;
+    padding: 0.5rem 0.6rem;
+    background: rgba(10, 7, 4, 0.5);
+    border: 1px solid rgba(180, 130, 48, 0.1);
+    border-radius: 2px;
+    font-family: 'Fira Code', monospace;
+    font-size: 0.72rem;
+  }
+
+  .queue-id {
+    color: rgba(232, 200, 122, 0.88);
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .queue-meta {
+    color: rgba(var(--color-cream-rgb), 0.6);
+    display: flex;
+    gap: 0.35rem;
+    flex-wrap: wrap;
+  }
+
+  .queue-label {
+    color: rgba(var(--color-cream-rgb), 0.38);
+  }
+
+  .queue-error {
+    color: rgba(220, 100, 80, 0.82);
+  }
+
+  .queue-error .queue-label {
+    color: rgba(220, 100, 80, 0.5);
   }
 
   @media (max-width: 520px) {
