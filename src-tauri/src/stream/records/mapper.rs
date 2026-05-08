@@ -9,6 +9,7 @@ use super::repo::OverlayRecordRow;
 #[ts(export, rename = "StreamRecordSummary")]
 pub struct OverlayRecord {
     pub id: String,
+    pub run_id: Option<String>,
     pub title: String,
     pub subtitle: String,
     pub captured_at: String,
@@ -20,6 +21,8 @@ pub struct OverlayRecord {
     pub battle_count: Option<i64>,
     pub rank: Option<String>,
     pub rating: Option<i64>,
+    pub player_name: Option<String>,
+    pub player_account_id: Option<String>,
 }
 
 pub(super) fn to_overlay_record(game_path: Option<&Path>, row: OverlayRecordRow) -> OverlayRecord {
@@ -31,6 +34,7 @@ pub(super) fn to_overlay_record(game_path: Option<&Path>, row: OverlayRecordRow)
 
     OverlayRecord {
         id: row.id,
+        run_id: row.run_id,
         title: row.hero.clone(),
         subtitle: build_subtitle(&row.game_mode, row.wins, row.battle_count),
         captured_at: row.captured_at,
@@ -42,6 +46,8 @@ pub(super) fn to_overlay_record(game_path: Option<&Path>, row: OverlayRecordRow)
         battle_count: row.battle_count,
         rank: row.rank,
         rating: row.rating,
+        player_name: row.player_name,
+        player_account_id: row.player_account_id,
     }
 }
 

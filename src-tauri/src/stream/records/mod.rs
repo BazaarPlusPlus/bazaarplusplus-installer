@@ -33,6 +33,12 @@ impl OverlayRecordRepository {
             .map(|row| to_overlay_record(self.game_path.as_deref(), row)))
     }
 
+    pub fn load_record_by_id(&self, record_id: &str) -> Result<Option<OverlayRecord>, String> {
+        let database_path = self.database_path()?;
+        Ok(load_overlay_record_by_id(&database_path, record_id)?
+            .map(|row| to_overlay_record(self.game_path.as_deref(), row)))
+    }
+
     pub fn count_since(&self, from: Option<&str>) -> Result<usize, String> {
         let database_path = self.database_path()?;
         load_overlay_record_count(&database_path, from)

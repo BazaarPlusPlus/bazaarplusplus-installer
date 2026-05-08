@@ -4,6 +4,7 @@ use std::path::Path;
 #[derive(Clone, Debug)]
 pub(crate) struct OverlayRecordRow {
     pub(super) id: String,
+    pub(super) run_id: Option<String>,
     pub(super) hero: String,
     pub(super) game_mode: String,
     pub(super) captured_at: String,
@@ -39,6 +40,7 @@ pub(super) fn load_latest_overlay_record(
             "
 select
   rs.screenshot_id,
+  rs.run_id,
   coalesce(nullif(trim(rs.hero_name), ''), 'Unknown') as hero,
   'End of run' as game_mode,
   coalesce(nullif(trim(rs.captured_at_local), ''), rs.captured_at_utc) as captured_at,
@@ -68,6 +70,7 @@ limit 1 offset ?2
             "
 select
   rs.screenshot_id,
+  rs.run_id,
   coalesce(nullif(trim(rs.hero_name), ''), 'Unknown') as hero,
   'End of run' as game_mode,
   coalesce(nullif(trim(rs.captured_at_local), ''), rs.captured_at_utc) as captured_at,
@@ -91,6 +94,7 @@ limit 1 offset ?2
             "
 select
   rs.screenshot_id,
+  rs.run_id,
   coalesce(nullif(trim(rs.hero_name), ''), 'Unknown') as hero,
   'End of run' as game_mode,
   coalesce(nullif(trim(rs.captured_at_local), ''), rs.captured_at_utc) as captured_at,
@@ -119,6 +123,7 @@ limit 1 offset ?1
             "
 select
   rs.screenshot_id,
+  rs.run_id,
   coalesce(nullif(trim(rs.hero_name), ''), 'Unknown') as hero,
   'End of run' as game_mode,
   coalesce(nullif(trim(rs.captured_at_local), ''), rs.captured_at_utc) as captured_at,
@@ -220,6 +225,7 @@ pub(super) fn load_overlay_record_list(
             "
 select
   rs.screenshot_id,
+  rs.run_id,
   coalesce(nullif(trim(rs.hero_name), ''), 'Unknown') as hero,
   'End of run' as game_mode,
   coalesce(nullif(trim(rs.captured_at_local), ''), rs.captured_at_utc) as captured_at,
@@ -249,6 +255,7 @@ limit ?2
             "
 select
   rs.screenshot_id,
+  rs.run_id,
   coalesce(nullif(trim(rs.hero_name), ''), 'Unknown') as hero,
   'End of run' as game_mode,
   coalesce(nullif(trim(rs.captured_at_local), ''), rs.captured_at_utc) as captured_at,
@@ -272,6 +279,7 @@ limit ?2
             "
 select
   rs.screenshot_id,
+  rs.run_id,
   coalesce(nullif(trim(rs.hero_name), ''), 'Unknown') as hero,
   'End of run' as game_mode,
   coalesce(nullif(trim(rs.captured_at_local), ''), rs.captured_at_utc) as captured_at,
@@ -300,6 +308,7 @@ limit ?1
             "
 select
   rs.screenshot_id,
+  rs.run_id,
   coalesce(nullif(trim(rs.hero_name), ''), 'Unknown') as hero,
   'End of run' as game_mode,
   coalesce(nullif(trim(rs.captured_at_local), ''), rs.captured_at_utc) as captured_at,
@@ -352,6 +361,7 @@ pub(super) fn load_overlay_record_by_id(
             "
 select
   rs.screenshot_id,
+  rs.run_id,
   coalesce(nullif(trim(rs.hero_name), ''), 'Unknown') as hero,
   'End of run' as game_mode,
   coalesce(nullif(trim(rs.captured_at_local), ''), rs.captured_at_utc) as captured_at,
@@ -380,6 +390,7 @@ limit 1
             "
 select
   rs.screenshot_id,
+  rs.run_id,
   coalesce(nullif(trim(rs.hero_name), ''), 'Unknown') as hero,
   'End of run' as game_mode,
   coalesce(nullif(trim(rs.captured_at_local), ''), rs.captured_at_utc) as captured_at,
@@ -458,18 +469,19 @@ fn table_exists(conn: &Connection, table_name: &str) -> Result<bool, String> {
 fn map_overlay_record_row(row: &rusqlite::Row<'_>) -> Result<OverlayRecordRow, String> {
     Ok(OverlayRecordRow {
         id: row.get(0).map_err(|err| err.to_string())?,
-        hero: row.get(1).map_err(|err| err.to_string())?,
-        game_mode: row.get(2).map_err(|err| err.to_string())?,
-        captured_at: row.get(3).map_err(|err| err.to_string())?,
-        image_path: row.get(4).map_err(|err| err.to_string())?,
-        wins: row.get(5).map_err(|err| err.to_string())?,
-        position: row.get(6).map_err(|err| err.to_string())?,
-        battle_count: row.get(7).map_err(|err| err.to_string())?,
-        rank: row.get(8).map_err(|err| err.to_string())?,
-        rating: row.get(9).map_err(|err| err.to_string())?,
-        captured_at_utc: row.get(10).map_err(|err| err.to_string())?,
-        player_name: row.get(11).map_err(|err| err.to_string())?,
-        player_account_id: row.get(12).map_err(|err| err.to_string())?,
+        run_id: row.get(1).map_err(|err| err.to_string())?,
+        hero: row.get(2).map_err(|err| err.to_string())?,
+        game_mode: row.get(3).map_err(|err| err.to_string())?,
+        captured_at: row.get(4).map_err(|err| err.to_string())?,
+        image_path: row.get(5).map_err(|err| err.to_string())?,
+        wins: row.get(6).map_err(|err| err.to_string())?,
+        position: row.get(7).map_err(|err| err.to_string())?,
+        battle_count: row.get(8).map_err(|err| err.to_string())?,
+        rank: row.get(9).map_err(|err| err.to_string())?,
+        rating: row.get(10).map_err(|err| err.to_string())?,
+        captured_at_utc: row.get(11).map_err(|err| err.to_string())?,
+        player_name: row.get(12).map_err(|err| err.to_string())?,
+        player_account_id: row.get(13).map_err(|err| err.to_string())?,
     })
 }
 
