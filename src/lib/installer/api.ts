@@ -1,4 +1,7 @@
+import { listen } from '@tauri-apps/api/event';
 import { call } from '../bridge/commands.ts';
+import type { FfmpegDetectResult, FfmpegInstallProgress } from '$lib/generated/commands';
+import { FFMPEG_INSTALL_PROGRESS_EVENT } from './controllers/ffmpeg-controller.ts';
 import type {
   EnvironmentInfo,
   GameRunningInfo,
@@ -66,4 +69,30 @@ export async function patchLaunchOptions(
     gamePath,
     skipSteamShutdown
   });
+}
+
+export async function detectFfmpeg(gamePath: string): Promise<FfmpegDetectResult> {
+  return call('detect_ffmpeg', { gamePath });
+}
+
+export async function installFfmpeg(gamePath: string) {
+  return call('install_ffmpeg', { gamePath });
+}
+
+export async function uninstallFfmpeg(gamePath: string) {
+  return call('uninstall_ffmpeg', { gamePath });
+}
+
+export async function repairFfmpeg(gamePath: string) {
+  return call('repair_ffmpeg', { gamePath });
+}
+
+export async function subscribeFfmpegInstallProgress(
+  handler: (progress: FfmpegInstallProgress) => void
+) {
+  const unlisten = await listen<FfmpegInstallProgress>(
+    FFMPEG_INSTALL_PROGRESS_EVENT,
+    (event) => handler(event.payload)
+  );
+  return unlisten;
 }

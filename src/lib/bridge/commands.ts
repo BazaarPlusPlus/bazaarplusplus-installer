@@ -1,6 +1,11 @@
 import { invoke } from '@tauri-apps/api/core';
 import type { Locale } from '../i18n.ts';
-import type { BazaardbStatus, PendingUploadView, UploadResult } from '$lib/generated/commands';
+import type {
+  BazaardbStatus,
+  FfmpegDetectResult,
+  PendingUploadView,
+  UploadResult
+} from '$lib/generated/commands';
 import type {
   EnvironmentInfo,
   GameRunningInfo,
@@ -45,6 +50,10 @@ export interface TauriCommandMap {
     input: { gamePath: string };
     output: LegacyRecordDirectoryInfo;
   };
+  detect_ffmpeg: { input: { gamePath: string }; output: FfmpegDetectResult };
+  install_ffmpeg: { input: { gamePath: string }; output: void };
+  uninstall_ffmpeg: { input: { gamePath: string }; output: void };
+  repair_ffmpeg: { input: { gamePath: string }; output: void };
   patch_launch_options: {
     input: { steamPath: string; gamePath: string; skipSteamShutdown: boolean };
     output: LaunchOptionsPatchResult;

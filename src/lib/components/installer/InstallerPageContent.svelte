@@ -5,6 +5,7 @@
   import type { EnvironmentInfo } from '$lib/types';
   import type { ActionBusy, StepState } from '$lib/installer/state';
   import type { TranslateText } from '$lib/installer/selectors/types.ts';
+  import type { FfmpegStepBundle } from '$lib/installer/ffmpeg-step-bundle';
 
   export let showStreamMode: boolean;
   export let locale: string;
@@ -25,6 +26,7 @@
   export let canInstall: boolean;
   export let canLaunchGame: boolean;
   export let dotnetDownloadUrl: string;
+  export let ffmpegStep: FfmpegStepBundle | null = null;
   export let t: TranslateText;
   export let onPickGamePath: () => void | Promise<void>;
   export let onCheckPath: () => void | Promise<void>;
@@ -64,6 +66,7 @@
     {canLaunchGame}
     {dotnetDownloadUrl}
     effectiveGamePath={effectiveGamePath}
+    {ffmpegStep}
     {t}
     onPickGamePath={onPickGamePath}
     onCheckPath={onCheckPath}
