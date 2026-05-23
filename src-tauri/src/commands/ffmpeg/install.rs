@@ -1,33 +1,40 @@
-// Install pipeline: fetch manifest → download zip → sha256 verify → extract →
-// chmod +x → probe → atomic swap into `<GameRoot>/BazaarPlusPlus/tools/ffmpeg/`.
+// Install pipeline: read bundled zip resource → extract → chmod +x → probe →
+// atomic swap into `<GameRoot>/BazaarPlusPlus/tools/ffmpeg/`.
 //
 // The intent expressed by the design doc is "never let mod see a half-installed
 // binary": every IO step writes to a temp directory adjacent to the real
 // target, and the swap is the last thing that runs. If any earlier step fails
 // we surface a typed error code and leave the previously-installed copy alone.
-use std::io::{Cursor, Read, Write};
+use std::io::{Cursor, Read};
 use std::path::{Path, PathBuf};
-use std::time::Duration;
 
 use chrono::Utc;
 use serde::Serialize;
 use sha2::{Digest, Sha256};
-use tauri::{AppHandle, Emitter};
+use tauri::{AppHandle, Emitter, Manager};
 
-use super::manifest::{self, FfmpegPlatformEntry};
 use super::probe::{self, PROBE_TIMEOUT};
 use super::state::{self, VersionFile};
-use super::{
-    FFMPEG_ERR_EXTRACT_FAILED, FFMPEG_ERR_INVALID_CHECKSUM, FFMPEG_ERR_NETWORK,
-    FFMPEG_ERR_PROBE_FAILED, FFMPEG_INSTALL_PROGRESS_EVENT,
-};
+use super::{FFMPEG_ERR_EXTRACT_FAILED, FFMPEG_ERR_PROBE_FAILED, FFMPEG_INSTALL_PROGRESS_EVENT};
 
-const DOWNLOAD_TIMEOUT: Duration = Duration::from_secs(300);
+pub(crate) const BUNDLED_FFMPEG_VERSION: &str = "7.1";
+const BUNDLED_FFMPEG_DIR: &str = "FfmpegSource";
+const BUNDLED_ZIP_FILE_NAME: &str = "ffmpeg.zip";
 const LICENSE_FILE_NAME: &str = "LICENSE.txt";
 
+#[derive(Debug, Clone)]
+pub(crate) struct BundledFfmpegPackage {
+    pub(crate) version: String,
+    pub(crate) platform: String,
+    pub(crate) sha256: String,
+    pub(crate) entry_in_archive: String,
+    pub(crate) zip_bytes: Vec<u8>,
+    pub(crate) license_bytes: Option<Vec<u8>>,
+}
+
 /// Progress payload emitted to the UI during install. The `phase` string
-/// drives copy switching on the frontend ("downloading" vs "extracting" vs
-/// "probing"). Byte counters are populated only during the download phase.
+/// drives copy switching on the frontend ("extracting" vs "probing"). Byte
+/// counters remain zero because FFmpeg is bundled with the installer.
 #[derive(Debug, Clone, Serialize, ts_rs::TS)]
 #[ts(export)]
 pub struct FfmpegInstallProgress {
@@ -39,14 +46,10 @@ pub struct FfmpegInstallProgress {
 /// Top-level install entry point. The caller (the tauri command) is async, but
 /// the heavy IO is kept synchronous and pushed through `spawn_blocking` —
 /// matches the rest of the codebase and keeps the async surface small.
-pub(crate) async fn install(
-    app: &AppHandle,
-    game_path: &Path,
-) -> Result<(), String> {
-    emit_progress(app, "manifest", 0, 0);
-    let manifest = manifest::fetch_manifest().await?;
+pub(crate) async fn install(app: &AppHandle, game_path: &Path) -> Result<(), String> {
     let platform_key = state::current_platform_key()?;
-    let (version, entry) = manifest.select_current(&platform_key)?;
+    let resource_dir = app.path().resource_dir().map_err(|err| err.to_string())?;
+    let package = load_bundled_package_from_resource_dir(&resource_dir, &platform_key)?;
 
     let tools_root = state::tools_root_dir(game_path);
     std::fs::create_dir_all(&tools_root)
@@ -55,30 +58,17 @@ pub(crate) async fn install(
     let staging = tempfile::tempdir_in(&tools_root)
         .map_err(|err| format!("Cannot create staging dir: {err}"))?;
 
-    let zip_path = staging.path().join("ffmpeg.zip");
-    let total_hint = entry.size_bytes.unwrap_or(0);
-    let downloaded_sha = download_with_progress(app, &entry, &zip_path, total_hint).await?;
-
-    let expected_sha = entry.sha256.trim().to_lowercase();
-    if downloaded_sha != expected_sha {
-        return Err(format!(
-            "{FFMPEG_ERR_INVALID_CHECKSUM}:expected {expected_sha} got {downloaded_sha}"
-        ));
-    }
-
     emit_progress(app, "extracting", 0, 0);
     let extract_dir = staging.path().join("extracted");
     std::fs::create_dir_all(&extract_dir)
         .map_err(|err| format!("Cannot create {}: {err}", extract_dir.display()))?;
-    let zip_bytes = std::fs::read(&zip_path)
-        .map_err(|err| format!("Cannot read downloaded zip: {err}"))?;
-    extract_zip(&zip_bytes, &extract_dir)?;
+    extract_zip(&package.zip_bytes, &extract_dir)?;
 
-    let binary_in_archive = extract_dir.join(&entry.entry_in_archive);
+    let binary_in_archive = extract_dir.join(&package.entry_in_archive);
     if !binary_in_archive.is_file() {
         return Err(format!(
             "{FFMPEG_ERR_EXTRACT_FAILED}:binary {} not found after extract",
-            entry.entry_in_archive
+            package.entry_in_archive
         ));
     }
 
@@ -94,19 +84,15 @@ pub(crate) async fn install(
     probe::run_ffmpeg_version(&final_binary, PROBE_TIMEOUT)
         .map_err(|reason| format!("{FFMPEG_ERR_PROBE_FAILED}:{reason}"))?;
 
-    // LICENSE.txt is best-effort — the mod still runs without it; we only
-    // bundle it for downstream audit. A network blip here shouldn't fail the
-    // install when the binary itself is already verified and probed.
-    if let Some(url) = entry.license_url.as_deref() {
-        if let Err(err) = download_license(url, &final_dir.join(LICENSE_FILE_NAME)).await {
-            eprintln!("[ffmpeg install] LICENSE download skipped: {err}");
-        }
+    if let Some(license_bytes) = package.license_bytes.as_deref() {
+        std::fs::write(final_dir.join(LICENSE_FILE_NAME), license_bytes)
+            .map_err(|err| format!("Cannot stage FFmpeg LICENSE: {err}"))?;
     }
 
     let version_info = VersionFile {
-        version: version.clone(),
-        platform: platform_key.clone(),
-        sha256: expected_sha.clone(),
+        version: package.version.clone(),
+        platform: package.platform.clone(),
+        sha256: package.sha256.clone(),
         installed_at_utc: Utc::now().to_rfc3339(),
     };
     state::write_version_file(&final_dir, &version_info)?;
@@ -116,78 +102,55 @@ pub(crate) async fn install(
     Ok(())
 }
 
-async fn download_with_progress(
-    app: &AppHandle,
-    entry: &FfmpegPlatformEntry,
-    destination: &Path,
-    total_hint: u64,
-) -> Result<String, String> {
-    let client = reqwest::Client::builder()
-        .timeout(DOWNLOAD_TIMEOUT)
-        .build()
-        .map_err(|err| format!("{FFMPEG_ERR_NETWORK}:client init failed: {err}"))?;
-
-    let response = client
-        .get(&entry.asset_url)
-        .send()
-        .await
-        .map_err(|err| format!("{FFMPEG_ERR_NETWORK}:asset request failed: {err}"))?
-        .error_for_status()
-        .map_err(|err| format!("{FFMPEG_ERR_NETWORK}:asset status: {err}"))?;
-
-    let content_length = response.content_length();
-    let total = content_length.unwrap_or(total_hint);
-
-    let mut file = std::fs::File::create(destination)
-        .map_err(|err| format!("Cannot create download file: {err}"))?;
-    let mut hasher = Sha256::new();
-    let mut downloaded: u64 = 0;
-    let mut last_emit: u64 = 0;
-    emit_progress(app, "downloading", downloaded, total);
-
-    let mut stream = response;
-    while let Some(chunk) = stream
-        .chunk()
-        .await
-        .map_err(|err| format!("{FFMPEG_ERR_NETWORK}:chunk read failed: {err}"))?
-    {
-        hasher.update(&chunk);
-        file.write_all(&chunk)
-            .map_err(|err| format!("Cannot write download chunk: {err}"))?;
-        downloaded = downloaded.saturating_add(chunk.len() as u64);
-        // Coalesce progress events to ~64 KiB granularity so we don't drown
-        // the UI bridge in updates on a fast connection.
-        if downloaded - last_emit >= 64 * 1024 {
-            emit_progress(app, "downloading", downloaded, total);
-            last_emit = downloaded;
-        }
-    }
-    file.flush().map_err(|err| format!("Cannot flush download: {err}"))?;
-    drop(file);
-
-    emit_progress(app, "downloading", downloaded, total.max(downloaded));
-    Ok(format!("{:x}", hasher.finalize()))
+pub(crate) fn bundled_zip_relative_path() -> PathBuf {
+    PathBuf::from(BUNDLED_FFMPEG_DIR).join(BUNDLED_ZIP_FILE_NAME)
 }
 
-async fn download_license(url: &str, destination: &Path) -> Result<(), String> {
-    let client = reqwest::Client::builder()
-        .timeout(Duration::from_secs(30))
-        .build()
-        .map_err(|err| format!("license client init failed: {err}"))?;
+pub(crate) fn bundled_license_relative_path() -> PathBuf {
+    PathBuf::from(BUNDLED_FFMPEG_DIR).join(LICENSE_FILE_NAME)
+}
 
-    let body = client
-        .get(url)
-        .send()
-        .await
-        .map_err(|err| format!("license fetch failed: {err}"))?
-        .error_for_status()
-        .map_err(|err| format!("license status: {err}"))?
-        .bytes()
-        .await
-        .map_err(|err| format!("license read failed: {err}"))?;
+pub(crate) fn load_bundled_package_from_resource_dir(
+    resource_dir: &Path,
+    platform: &str,
+) -> Result<BundledFfmpegPackage, String> {
+    let zip_path = resource_dir.join(bundled_zip_relative_path());
+    let license_path = resource_dir.join(bundled_license_relative_path());
+    let zip_bytes = std::fs::read(&zip_path).map_err(|err| {
+        format!(
+            "Cannot read bundled FFmpeg zip {}: {err}",
+            zip_path.display()
+        )
+    })?;
+    let license_bytes = std::fs::read(&license_path).map_err(|err| {
+        format!(
+            "Cannot read bundled FFmpeg LICENSE {}: {err}",
+            license_path.display()
+        )
+    })?;
 
-    std::fs::write(destination, body)
-        .map_err(|err| format!("Cannot write LICENSE: {err}"))
+    Ok(BundledFfmpegPackage {
+        version: BUNDLED_FFMPEG_VERSION.to_string(),
+        platform: platform.to_string(),
+        sha256: sha256_hex(&zip_bytes),
+        entry_in_archive: entry_in_archive_for_platform(platform)?.to_string(),
+        zip_bytes,
+        license_bytes: Some(license_bytes),
+    })
+}
+
+fn entry_in_archive_for_platform(platform: &str) -> Result<&'static str, String> {
+    match platform {
+        "windows-x86_64" => Ok("ffmpeg.exe"),
+        "darwin-aarch64" => Ok("ffmpeg"),
+        _ => Err(super::FFMPEG_ERR_PLATFORM_UNSUPPORTED.to_string()),
+    }
+}
+
+fn sha256_hex(bytes: &[u8]) -> String {
+    let mut hasher = Sha256::new();
+    hasher.update(bytes);
+    format!("{:x}", hasher.finalize())
 }
 
 pub(crate) fn extract_zip(zip_bytes: &[u8], dest_dir: &Path) -> Result<(), String> {
@@ -208,21 +171,33 @@ pub(crate) fn extract_zip(zip_bytes: &[u8], dest_dir: &Path) -> Result<(), Strin
         let output_path = dest_dir.join(relative_path);
 
         if file.is_dir() {
-            std::fs::create_dir_all(&output_path)
-                .map_err(|err| format!("{FFMPEG_ERR_EXTRACT_FAILED}:mkdir {}: {err}", output_path.display()))?;
+            std::fs::create_dir_all(&output_path).map_err(|err| {
+                format!(
+                    "{FFMPEG_ERR_EXTRACT_FAILED}:mkdir {}: {err}",
+                    output_path.display()
+                )
+            })?;
             continue;
         }
 
         if let Some(parent) = output_path.parent() {
-            std::fs::create_dir_all(parent)
-                .map_err(|err| format!("{FFMPEG_ERR_EXTRACT_FAILED}:mkdir {}: {err}", parent.display()))?;
+            std::fs::create_dir_all(parent).map_err(|err| {
+                format!(
+                    "{FFMPEG_ERR_EXTRACT_FAILED}:mkdir {}: {err}",
+                    parent.display()
+                )
+            })?;
         }
 
         let mut contents = Vec::new();
         file.read_to_end(&mut contents)
             .map_err(|err| format!("{FFMPEG_ERR_EXTRACT_FAILED}:read body: {err}"))?;
-        std::fs::write(&output_path, contents)
-            .map_err(|err| format!("{FFMPEG_ERR_EXTRACT_FAILED}:write {}: {err}", output_path.display()))?;
+        std::fs::write(&output_path, contents).map_err(|err| {
+            format!(
+                "{FFMPEG_ERR_EXTRACT_FAILED}:write {}: {err}",
+                output_path.display()
+            )
+        })?;
     }
 
     Ok(())
@@ -238,8 +213,7 @@ fn make_executable(path: &Path) -> Result<(), String> {
         // Owner rwx, group rx, others rx. Matches what BtbN ships in their
         // posix archives and what BepInEx's `run_bepinex.sh` lands as.
         perms.set_mode(0o755);
-        std::fs::set_permissions(path, perms)
-            .map_err(|err| format!("cannot set perms: {err}"))
+        std::fs::set_permissions(path, perms).map_err(|err| format!("cannot set perms: {err}"))
     }
 
     #[cfg(not(unix))]
@@ -256,9 +230,8 @@ fn make_executable(path: &Path) -> Result<(), String> {
 fn swap_into_place(staged: &Path, target: &Path) -> Result<(), String> {
     let backup = if target.exists() {
         let backup_path = sibling_backup_path(target);
-        std::fs::rename(target, &backup_path).map_err(|err| {
-            format!("Cannot stash previous ffmpeg install: {err}")
-        })?;
+        std::fs::rename(target, &backup_path)
+            .map_err(|err| format!("Cannot stash previous ffmpeg install: {err}"))?;
         Some(backup_path)
     } else {
         None
@@ -307,7 +280,7 @@ fn emit_progress(app: &AppHandle, phase: &str, downloaded_bytes: u64, total_byte
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::io::Cursor as StdCursor;
+    use std::io::{Cursor as StdCursor, Write};
 
     fn build_zip_with_binary(entry_path: &str, binary_bytes: &[u8]) -> Vec<u8> {
         let buffer = StdCursor::new(Vec::new());
@@ -316,6 +289,37 @@ mod tests {
         zip.start_file(entry_path, options).unwrap();
         zip.write_all(binary_bytes).unwrap();
         zip.finish().unwrap().into_inner()
+    }
+
+    #[test]
+    fn bundled_resource_paths_are_stable() {
+        assert_eq!(
+            bundled_zip_relative_path(),
+            PathBuf::from("FfmpegSource/ffmpeg.zip")
+        );
+        assert_eq!(
+            bundled_license_relative_path(),
+            PathBuf::from("FfmpegSource/LICENSE.txt")
+        );
+    }
+
+    #[test]
+    fn load_bundled_package_reads_zip_license_and_metadata() {
+        let tmp = tempfile::tempdir().unwrap();
+        let source_dir = tmp.path().join("FfmpegSource");
+        std::fs::create_dir_all(&source_dir).unwrap();
+        let zip = build_zip_with_binary("ffmpeg.exe", b"binary");
+        std::fs::write(source_dir.join("ffmpeg.zip"), &zip).unwrap();
+        std::fs::write(source_dir.join("LICENSE.txt"), b"license").unwrap();
+
+        let package = load_bundled_package_from_resource_dir(tmp.path(), "windows-x86_64").unwrap();
+
+        assert_eq!(package.version, BUNDLED_FFMPEG_VERSION);
+        assert_eq!(package.platform, "windows-x86_64");
+        assert_eq!(package.entry_in_archive, "ffmpeg.exe");
+        assert_eq!(package.zip_bytes, zip);
+        assert_eq!(package.license_bytes.as_deref(), Some(&b"license"[..]));
+        assert_eq!(package.sha256, sha256_hex(&zip));
     }
 
     #[test]
@@ -405,11 +409,7 @@ mod tests {
         let tmp = tempfile::tempdir().unwrap();
         let path = tmp.path().join("ffmpeg");
         std::fs::write(&path, b"binary").unwrap();
-        std::fs::set_permissions(
-            &path,
-            std::fs::Permissions::from_mode(0o600),
-        )
-        .unwrap();
+        std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o600)).unwrap();
 
         make_executable(&path).unwrap();
 

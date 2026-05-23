@@ -4,7 +4,9 @@
     "targets": ["dmg"],
     "icon": ["icons/icon.icns"],
     "resources": {
-      "resources/BepInExSource/macos/BepInEx.zip": "BepInExSource/BepInEx.zip"
+      "resources/BepInExSource/macos/BepInEx.zip": "BepInExSource/BepInEx.zip",
+      "resources/FfmpegSource/macos/ffmpeg.zip": "FfmpegSource/ffmpeg.zip",
+      "resources/FfmpegSource/macos/LICENSE.txt": "FfmpegSource/LICENSE.txt"
     }
   }
 }

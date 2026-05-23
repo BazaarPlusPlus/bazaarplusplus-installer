@@ -8,7 +8,10 @@
     FfmpegBusy,
     FfmpegPhase
   } from '$lib/installer/controllers/ffmpeg-controller';
-  import { describeFfmpegError, type FfmpegError } from '$lib/installer/ffmpeg-errors';
+  import {
+    describeFfmpegError,
+    type FfmpegError
+  } from '$lib/installer/ffmpeg-errors';
   import { selectFfmpegDisplay } from '$lib/installer/selectors/ffmpeg';
 
   export let detect: Readable<FfmpegDetectResult | null>;
@@ -39,7 +42,10 @@
       case 'reinstall':
         return localized('重新安装', 'Reinstall');
       case 'override_install':
-        return localized('覆盖安装到游戏目录', 'Override install in game folder');
+        return localized(
+          '覆盖安装到游戏目录',
+          'Override install in game folder'
+        );
       case 'repair':
         return localized('修复', 'Repair');
       case 'platform_unsupported':
@@ -80,12 +86,6 @@
 
   $: phaseLabel = (() => {
     switch ($phase) {
-      case 'manifest':
-        return localized('读取清单…', 'Fetching manifest…');
-      case 'downloading':
-        return percentage !== null
-          ? localized(`下载中 ${percentage}%`, `Downloading ${percentage}%`)
-          : localized('下载中…', 'Downloading…');
       case 'extracting':
         return localized('解压中…', 'Extracting…');
       case 'probing':
@@ -251,7 +251,9 @@
     border: 1px solid rgba(120, 78, 30, 0.5);
     border-radius: 2px;
     cursor: pointer;
-    transition: opacity 0.15s ease, transform 0.15s ease;
+    transition:
+      opacity 0.15s ease,
+      transform 0.15s ease;
   }
 
   .primary-btn:disabled {

@@ -8,6 +8,8 @@ import {
 } from './version-sync.mjs';
 
 export const sharedBundledZipPath = 'BepInExSource/BepInEx.zip';
+export const sharedBundledFfmpegZipPath = 'FfmpegSource/ffmpeg.zip';
+export const sharedBundledFfmpegLicensePath = 'FfmpegSource/LICENSE.txt';
 
 const platformAliases = new Map([
   ['darwin', 'macos'],
@@ -71,6 +73,23 @@ function sourceZipPathForPlatform(rootDir, platform) {
     platform,
     'BepInEx.zip'
   );
+}
+
+function sourceFfmpegPathForPlatform(rootDir, platform, fileName) {
+  return path.join(
+    rootDir,
+    'src-tauri',
+    'resources',
+    'FfmpegSource',
+    platform,
+    fileName
+  );
+}
+
+export function requiredFfmpegEntryForPlatform(platform) {
+  if (platform === 'windows') return 'ffmpeg.exe';
+  if (platform === 'macos') return 'ffmpeg';
+  throw new Error(`Unsupported FFmpeg platform: ${platform}`);
 }
 
 function findEndOfCentralDirectory(buffer) {
@@ -185,6 +204,40 @@ function ensureZipLooksValid(zipPath, platform) {
   }
 }
 
+function ensureFfmpegResourcesLookValid(rootDir, platform) {
+  const zipPath = sourceFfmpegPathForPlatform(rootDir, platform, 'ffmpeg.zip');
+  const licensePath = sourceFfmpegPathForPlatform(
+    rootDir,
+    platform,
+    'LICENSE.txt'
+  );
+
+  if (!fs.existsSync(zipPath)) {
+    throw new Error(`Missing ${platform} FFmpeg zip: ${zipPath}`);
+  }
+  if (!fs.existsSync(licensePath)) {
+    throw new Error(`Missing ${platform} FFmpeg license: ${licensePath}`);
+  }
+
+  const stats = fs.statSync(zipPath);
+  if (!stats.isFile() || stats.size === 0) {
+    throw new Error(`Invalid ${platform} FFmpeg zip: ${zipPath}`);
+  }
+  const licenseStats = fs.statSync(licensePath);
+  if (!licenseStats.isFile() || licenseStats.size === 0) {
+    throw new Error(`Invalid ${platform} FFmpeg license: ${licensePath}`);
+  }
+
+  const entries = listZipEntries(fs.readFileSync(zipPath));
+  const requiredEntry = requiredFfmpegEntryForPlatform(platform);
+  const present = entries.some((entry) => entry === requiredEntry);
+  if (!present) {
+    throw new Error(
+      `${platform} FFmpeg zip is missing required root entry '${requiredEntry}' in ${zipPath}`
+    );
+  }
+}
+
 export function runPrebuildCheck(rootDir, platformEnv) {
   console.log('Running prebuild check...');
   const snapshot = collectVersionSnapshot(rootDir);
@@ -193,6 +246,7 @@ export function runPrebuildCheck(rootDir, platformEnv) {
 
   for (const platform of platforms) {
     ensureZipLooksValid(sourceZipPathForPlatform(rootDir, platform), platform);
+    ensureFfmpegResourcesLookValid(rootDir, platform);
   }
 }
 

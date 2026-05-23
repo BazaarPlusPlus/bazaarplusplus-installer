@@ -16,13 +16,7 @@ export type FfmpegBusy =
   | 'uninstalling'
   | 'repairing';
 
-export type FfmpegPhase =
-  | 'idle'
-  | 'manifest'
-  | 'downloading'
-  | 'extracting'
-  | 'probing'
-  | 'complete';
+export type FfmpegPhase = 'idle' | 'extracting' | 'probing' | 'complete';
 
 export interface FfmpegProgressUnlisten {
   (): void | Promise<void>;
@@ -49,20 +43,12 @@ export function createFfmpegController(input: {
     // The Rust side may emit phase strings we don't know about yet (forward
     // compatibility). Map unknowns back to the previous known phase rather
     // than letting the UI render garbage.
-    if (
-      next === 'manifest' ||
-      next === 'downloading' ||
-      next === 'extracting' ||
-      next === 'probing' ||
-      next === 'complete'
-    ) {
+    if (next === 'extracting' || next === 'probing' || next === 'complete') {
       phase.set(next);
     }
   }
 
-  async function withProgressChannel<T>(
-    action: () => Promise<T>
-  ): Promise<T> {
+  async function withProgressChannel<T>(action: () => Promise<T>): Promise<T> {
     progress.set(null);
     phase.set('idle');
     let unlisten: FfmpegProgressUnlisten | null = null;

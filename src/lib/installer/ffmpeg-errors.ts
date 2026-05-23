@@ -1,14 +1,10 @@
 // Maps the Rust-side `FFMPEG_ERR_*` prefixes to a typed UI error.
 // Keep in lockstep with `src-tauri/src/commands/ffmpeg/mod.rs`.
-const ERR_NETWORK = 'bpp_ffmpeg_network_failure';
-const ERR_INVALID_CHECKSUM = 'bpp_ffmpeg_invalid_checksum';
 const ERR_EXTRACT_FAILED = 'bpp_ffmpeg_extract_failed';
 const ERR_PROBE_FAILED = 'bpp_ffmpeg_probe_failed';
 const ERR_PLATFORM_UNSUPPORTED = 'bpp_ffmpeg_platform_unsupported';
 
 export type FfmpegError =
-  | { kind: 'network'; detail?: string }
-  | { kind: 'checksum' }
   | { kind: 'extract'; detail?: string }
   | { kind: 'probe'; detail?: string }
   | { kind: 'platform_unsupported' }
@@ -19,12 +15,6 @@ export function parseFfmpegError(error: unknown): FfmpegError {
   const detail = (prefix: string) =>
     raw.length > prefix.length + 1 ? raw.slice(prefix.length + 1) : undefined;
 
-  if (raw === ERR_NETWORK || raw.startsWith(`${ERR_NETWORK}:`)) {
-    return { kind: 'network', detail: detail(ERR_NETWORK) };
-  }
-  if (raw === ERR_INVALID_CHECKSUM || raw.startsWith(`${ERR_INVALID_CHECKSUM}:`)) {
-    return { kind: 'checksum' };
-  }
   if (raw === ERR_EXTRACT_FAILED || raw.startsWith(`${ERR_EXTRACT_FAILED}:`)) {
     return { kind: 'extract', detail: detail(ERR_EXTRACT_FAILED) };
   }
@@ -48,30 +38,12 @@ export function describeFfmpegError(
   localized: (zh: string, en: string) => string
 ): FfmpegErrorCopy {
   switch (error.kind) {
-    case 'network':
-      return {
-        title: localized('下载失败', 'Download failed'),
-        body: localized(
-          '无法连接到 FFmpeg 下载源。请检查网络后重试，或自行下载 ffmpeg 后放入 BazaarPlusPlus/tools/ffmpeg/ 目录。',
-          'Could not reach the FFmpeg download source. Check your network and retry, or place a downloaded ffmpeg into BazaarPlusPlus/tools/ffmpeg/ yourself.'
-        ),
-        retryLabel: localized('重试', 'Retry')
-      };
-    case 'checksum':
-      return {
-        title: localized('校验失败', 'Checksum mismatch'),
-        body: localized(
-          '下载的文件校验值与发布清单不匹配，已自动丢弃。请稍后再试，问题持续请反馈。',
-          'Downloaded file did not match the published checksum and was discarded. Try again later; report it if the failure persists.'
-        ),
-        retryLabel: localized('重试', 'Retry')
-      };
     case 'extract':
       return {
         title: localized('解压失败', 'Extraction failed'),
         body: localized(
-          '下载的压缩包无法解压。请重试，或检查磁盘剩余空间和权限。',
-          'The downloaded archive could not be extracted. Try again, or check disk space and permissions.'
+          '安装器内置的 FFmpeg 压缩包无法解压。请重试，或检查磁盘剩余空间和权限。',
+          'The bundled archive could not be extracted. Try again, or check disk space and permissions.'
         ),
         retryLabel: localized('重试', 'Retry')
       };

@@ -4,31 +4,6 @@ import { describeFfmpegError, parseFfmpegError } from './ffmpeg-errors.ts';
 
 const localized = (zh: string, en: string) => en || zh;
 
-test('parseFfmpegError maps the bare network prefix', () => {
-  expect(parseFfmpegError('bpp_ffmpeg_network_failure')).toEqual({
-    kind: 'network',
-    detail: undefined
-  });
-});
-
-test('parseFfmpegError captures network detail after the colon', () => {
-  expect(
-    parseFfmpegError('bpp_ffmpeg_network_failure:manifest fetch failed: 500')
-  ).toEqual({
-    kind: 'network',
-    detail: 'manifest fetch failed: 500'
-  });
-});
-
-test('parseFfmpegError detects checksum mismatch regardless of detail', () => {
-  expect(parseFfmpegError('bpp_ffmpeg_invalid_checksum')).toEqual({
-    kind: 'checksum'
-  });
-  expect(
-    parseFfmpegError('bpp_ffmpeg_invalid_checksum:expected abc got def')
-  ).toEqual({ kind: 'checksum' });
-});
-
 test('parseFfmpegError detects probe and extract failures', () => {
   expect(parseFfmpegError('bpp_ffmpeg_extract_failed:bad zip')).toEqual({
     kind: 'extract',
@@ -53,16 +28,12 @@ test('parseFfmpegError preserves unknown plain-text errors', () => {
   });
 });
 
-test('describeFfmpegError returns retry copy for network failures', () => {
-  const copy = describeFfmpegError({ kind: 'network' }, localized);
-  expect(copy.title).toMatch(/Download failed/);
-  expect(copy.retryLabel.toLowerCase()).toMatch(/retry/);
+test('describeFfmpegError refers to the bundled archive for extract failures', () => {
+  const copy = describeFfmpegError({ kind: 'extract' }, localized);
+  expect(copy.body).toMatch(/bundled archive/i);
 });
 
 test('describeFfmpegError points at manual fallback for unsupported platforms', () => {
-  const copy = describeFfmpegError(
-    { kind: 'platform_unsupported' },
-    localized
-  );
+  const copy = describeFfmpegError({ kind: 'platform_unsupported' }, localized);
   expect(copy.body).toMatch(/manually/i);
 });

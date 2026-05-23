@@ -2,7 +2,6 @@
 // payload-style helpers in submodules, the four `#[tauri::command]` entry
 // points here. See `docs/combat-replay-ffmpeg-deployment.md` for design.
 mod install;
-mod manifest;
 mod probe;
 mod state;
 mod uninstall;
@@ -14,16 +13,14 @@ pub use state::{FfmpegDetectResult, FfmpegStatus};
 /// Stable error-code prefixes that the frontend pattern-matches to render
 /// targeted UI. Adding a variant requires a matching branch in
 /// `formatFfmpegError` on the TS side.
-pub(crate) const FFMPEG_ERR_NETWORK: &str = "bpp_ffmpeg_network_failure";
-pub(crate) const FFMPEG_ERR_INVALID_CHECKSUM: &str = "bpp_ffmpeg_invalid_checksum";
 pub(crate) const FFMPEG_ERR_EXTRACT_FAILED: &str = "bpp_ffmpeg_extract_failed";
 pub(crate) const FFMPEG_ERR_PROBE_FAILED: &str = "bpp_ffmpeg_probe_failed";
 pub(crate) const FFMPEG_ERR_PLATFORM_UNSUPPORTED: &str = "bpp_ffmpeg_platform_unsupported";
 
 pub(crate) const FFMPEG_TOOLS_SUBDIR: &str = "ffmpeg";
 pub(crate) const VERSION_JSON_FILE_NAME: &str = "version.json";
-/// Tauri event the install pipeline emits while a download is in flight. The
-/// frontend subscribes to this to drive the progress bar.
+/// Tauri event the install pipeline emits while bundled FFmpeg is being
+/// extracted and probed. The frontend subscribes to this to drive the spinner.
 pub const FFMPEG_INSTALL_PROGRESS_EVENT: &str = "ffmpeg:install:progress";
 
 /// Re-export so `uninstall_bpp` can clean up the FFmpeg subtree without
@@ -62,8 +59,8 @@ fn detect_status_blocking(game_path: &Path) -> FfmpegStatus {
     if bundled.is_file() {
         match probe::run_ffmpeg_version(&bundled, probe::PROBE_TIMEOUT) {
             Ok(outcome) => {
-                let recorded = state::read_version_file(&state::ffmpeg_dir(game_path))
-                    .map(|v| v.version);
+                let recorded =
+                    state::read_version_file(&state::ffmpeg_dir(game_path)).map(|v| v.version);
                 return FfmpegStatus::Bundled {
                     version: outcome.version.or(recorded),
                 };
@@ -190,8 +187,6 @@ mod tests {
     fn error_codes_are_stable_prefixes() {
         // Locks the wire format that the TS-side `formatFfmpegError` parses.
         // If you rename one of these you'll need to update both sides.
-        assert_eq!(FFMPEG_ERR_NETWORK, "bpp_ffmpeg_network_failure");
-        assert_eq!(FFMPEG_ERR_INVALID_CHECKSUM, "bpp_ffmpeg_invalid_checksum");
         assert_eq!(FFMPEG_ERR_EXTRACT_FAILED, "bpp_ffmpeg_extract_failed");
         assert_eq!(FFMPEG_ERR_PROBE_FAILED, "bpp_ffmpeg_probe_failed");
         assert_eq!(

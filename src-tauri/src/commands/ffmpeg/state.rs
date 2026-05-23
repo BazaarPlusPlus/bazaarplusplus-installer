@@ -3,22 +3,19 @@
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 
-use super::{
-    FFMPEG_ERR_PLATFORM_UNSUPPORTED, FFMPEG_TOOLS_SUBDIR, VERSION_JSON_FILE_NAME,
-};
+use super::{FFMPEG_ERR_PLATFORM_UNSUPPORTED, FFMPEG_TOOLS_SUBDIR, VERSION_JSON_FILE_NAME};
 
-/// Concrete platform key the installer downloads binaries for. Kept as plain
-/// strings (rather than an enum) because the manifest format is open-ended —
-/// future platforms only need a new R2 entry and `current_platform_key` change.
 pub(crate) fn current_platform_key() -> Result<String, String> {
-    if cfg!(all(target_os = "windows", target_arch = "x86_64")) {
-        Ok("windows-x86_64".to_string())
-    } else if cfg!(all(target_os = "macos", target_arch = "aarch64")) {
-        Ok("darwin-aarch64".to_string())
-    } else if cfg!(all(target_os = "macos", target_arch = "x86_64")) {
-        Ok("darwin-x86_64".to_string())
-    } else {
-        Err(FFMPEG_ERR_PLATFORM_UNSUPPORTED.to_string())
+    platform_key_for_parts(std::env::consts::OS, std::env::consts::ARCH)
+}
+
+/// Concrete platform key for bundled FFmpeg resources. Only the two platforms
+/// with installer-bundled binaries are supported.
+pub(crate) fn platform_key_for_parts(os: &str, arch: &str) -> Result<String, String> {
+    match (os, arch) {
+        ("windows", "x86_64") => Ok("windows-x86_64".to_string()),
+        ("macos", "aarch64") => Ok("darwin-aarch64".to_string()),
+        _ => Err(FFMPEG_ERR_PLATFORM_UNSUPPORTED.to_string()),
     }
 }
 
@@ -83,10 +80,7 @@ pub(crate) fn read_version_file(ffmpeg_root: &Path) -> Option<VersionFile> {
     serde_json::from_str(&raw).ok()
 }
 
-pub(crate) fn write_version_file(
-    ffmpeg_root: &Path,
-    info: &VersionFile,
-) -> Result<(), String> {
+pub(crate) fn write_version_file(ffmpeg_root: &Path, info: &VersionFile) -> Result<(), String> {
     let path = version_json_path(ffmpeg_root);
     if let Some(parent) = path.parent() {
         std::fs::create_dir_all(parent)
@@ -94,13 +88,28 @@ pub(crate) fn write_version_file(
     }
     let body = serde_json::to_vec_pretty(info)
         .map_err(|err| format!("Cannot serialize version.json: {err}"))?;
-    std::fs::write(&path, body)
-        .map_err(|err| format!("Cannot write {}: {err}", path.display()))
+    std::fs::write(&path, body).map_err(|err| format!("Cannot write {}: {err}", path.display()))
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn platform_key_for_parts_supports_only_bundled_platforms() {
+        assert_eq!(
+            platform_key_for_parts("windows", "x86_64").unwrap(),
+            "windows-x86_64"
+        );
+        assert_eq!(
+            platform_key_for_parts("macos", "aarch64").unwrap(),
+            "darwin-aarch64"
+        );
+        assert_eq!(
+            platform_key_for_parts("macos", "x86_64").unwrap_err(),
+            FFMPEG_ERR_PLATFORM_UNSUPPORTED
+        );
+    }
 
     #[test]
     fn version_file_round_trip() {
