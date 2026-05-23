@@ -1,11 +1,6 @@
 import { invoke } from '@tauri-apps/api/core';
 import type { Locale } from '../i18n.ts';
-import type {
-  BazaardbStatus,
-  FfmpegDetectResult,
-  PendingUploadView,
-  UploadResult
-} from '$lib/generated/commands';
+import type { FfmpegDetectResult } from '$lib/generated/commands';
 import type {
   EnvironmentInfo,
   GameRunningInfo,
@@ -22,9 +17,6 @@ import type {
 } from '../types.ts';
 
 export interface TauriCommandMap {
-  connect_bazaardb: { input: { request: { token: string } }; output: BazaardbStatus };
-  disconnect_bazaardb: { input: undefined; output: void };
-  get_bazaardb_status: { input: undefined; output: BazaardbStatus };
   verify_game_path: { input: { path: string }; output: boolean };
   initialize_installer_context: {
     input: undefined;
@@ -112,13 +104,6 @@ export interface TauriCommandMap {
     input: { gamePath?: string };
     output: StreamDbPathInfo;
   };
-  upload_screenshot_to_bazaardb: {
-    input: { request: { screenshot_id: string } };
-    output: UploadResult;
-  };
-  set_auto_upload_enabled: { input: { enabled: boolean }; output: void };
-  get_auto_upload_enabled: { input: undefined; output: boolean };
-  list_pending_uploads: { input: undefined; output: PendingUploadView[] };
 }
 
 type CommandName = keyof TauriCommandMap;

@@ -11,8 +11,6 @@
   } from '$lib/stream/api';
   import { resolveHeroKey } from '$lib/stream/heroes';
   import type { StreamOverlayCropSettings, StreamOverlayDisplayMode, StreamRecordSummary } from '$lib/types';
-  import { uploadScreenshot } from '$lib/bazaardb/upload-actions';
-  import type { UploadStatus } from '$lib/bazaardb/upload-actions';
 
   const badgeAssets = import.meta.glob(
     '../../../../src-tauri/resources/stream/badges/**/*.svg',
@@ -40,7 +38,6 @@
   let previewBaseUrl: string | null = null;
   let lastCropSignature = cropSignature(DEFAULT_CROP);
   let deletingRecordIds = new Set<string>();
-  let uploadStatuses = new Map<string, UploadStatus>();
 
   $: isZh = $locale === 'zh';
   $: requestedGamePath = gamePath?.trim() || persistedGamePath || null;
@@ -172,17 +169,6 @@
       nextDeletingIds.delete(recordId);
       deletingRecordIds = nextDeletingIds;
     }
-  }
-
-  async function handleUpload(recordId: string) {
-    const current = uploadStatuses.get(recordId);
-    if (current?.kind === 'pending') {
-      return;
-    }
-
-    uploadStatuses = new Map(uploadStatuses).set(recordId, { kind: 'pending' });
-    const result = await uploadScreenshot(recordId);
-    uploadStatuses = new Map(uploadStatuses).set(recordId, result);
   }
 
   function normalizeDisplayMode(value: string | undefined): StreamOverlayDisplayMode {
@@ -337,7 +323,6 @@
           {@const winsBadgeSrc = getWinsBadgeAsset(wins, battles)}
           {@const secondaryBadgeSrc = resolveSecondaryBadgeSrc(record)}
           {@const imageSrc = resolveRecordImageSrc(record)}
-          {@const uploadStatus = uploadStatuses.get(record.id) ?? { kind: 'idle' }}
           <article class="record-row">
             <div class="record-card">
               <div class="record-strip-shell">
@@ -413,36 +398,6 @@
                         ? '删除'
                         : 'Delete'}
                   </button>
-                  <button
-                    type="button"
-                    class="record-action record-action-upload"
-                    on:click={() => handleUpload(record.id)}
-                    disabled={record.player_account_id == null || uploadStatus.kind === 'pending' || uploadStatus.kind === 'uploaded' || uploadStatus.kind === 'queued'}
-                    title={record.player_account_id == null
-                      ? isZh
-                        ? '此对局缺少玩家账号 ID，无法上传。'
-                        : 'Player account ID is missing for this run; cannot upload.'
-                      : undefined}
-                  >
-                    {#if uploadStatus.kind === 'pending'}
-                      {isZh ? '上传中...' : 'Uploading...'}
-                    {:else if uploadStatus.kind === 'uploaded'}
-                      {isZh ? '已上传' : 'Uploaded'}
-                    {:else if uploadStatus.kind === 'queued'}
-                      {isZh ? '稍后重试' : 'Will retry'}
-                    {:else}
-                      {isZh ? '上传' : 'Upload'}
-                    {/if}
-                  </button>
-                  {#if uploadStatus.kind === 'uploaded'}
-                    <span class="upload-remote-id">{uploadStatus.remoteId}</span>
-                  {:else if uploadStatus.kind === 'queued'}
-                    <span class="upload-queued" title={uploadStatus.reason}>
-                      {isZh ? '已加入队列' : 'Queued'}
-                    </span>
-                  {:else if uploadStatus.kind === 'error'}
-                    <span class="upload-error">{uploadStatus.message}</span>
-                  {/if}
                 </div>
               </div>
             </div>
@@ -682,40 +637,6 @@
     border-color: rgba(201, 105, 84, 0.22);
     background: rgba(114, 28, 20, 0.12);
     color: rgba(255, 216, 206, 0.9);
-  }
-
-  .record-action-upload {
-    border-color: rgba(88, 148, 201, 0.22);
-    background: rgba(20, 58, 114, 0.12);
-    color: rgba(206, 226, 255, 0.9);
-  }
-
-  .upload-remote-id {
-    display: block;
-    font-size: 0.44rem;
-    letter-spacing: 0.06em;
-    color: rgba(150, 210, 160, 0.78);
-    word-break: break-all;
-    line-height: 1.3;
-  }
-
-  .upload-queued {
-    display: block;
-    font-size: 0.44rem;
-    letter-spacing: 0.06em;
-    color: rgba(200, 200, 140, 0.78);
-    word-break: break-all;
-    line-height: 1.3;
-    cursor: help;
-  }
-
-  .upload-error {
-    display: block;
-    font-size: 0.44rem;
-    letter-spacing: 0.06em;
-    color: rgba(255, 160, 140, 0.82);
-    word-break: break-all;
-    line-height: 1.3;
   }
 
   @media (max-width: 900px) {
