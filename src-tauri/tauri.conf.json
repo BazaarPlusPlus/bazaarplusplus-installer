@@ -29,7 +29,9 @@
   "plugins": {
     "deep-link": {
       "desktop": {
-        "schemes": ["bazaarplusplus"]
+        "schemes": [
+          "bazaarplusplus"
+        ]
       }
     },
     "updater": {
