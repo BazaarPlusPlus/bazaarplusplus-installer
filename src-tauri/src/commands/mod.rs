@@ -1,4 +1,3 @@
-pub mod bazaardb;
 pub mod bepinex;
 pub mod detect;
 pub mod ffmpeg;
