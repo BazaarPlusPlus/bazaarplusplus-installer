@@ -24,7 +24,9 @@ export function persistCustomGamePath(path: string) {
 }
 
 export function loadPersistedDetectedGamePath(): string {
-  return getLocalStorage()?.getItem(DETECTED_GAME_PATH_STORAGE_KEY)?.trim() ?? '';
+  return (
+    getLocalStorage()?.getItem(DETECTED_GAME_PATH_STORAGE_KEY)?.trim() ?? ''
+  );
 }
 
 export function persistDetectedGamePath(path: string) {
@@ -52,14 +54,13 @@ export function persistFfmpegSkipped(skipped: boolean) {
   localStorage.removeItem(FFMPEG_SKIPPED_STORAGE_KEY);
 }
 
-/// Gradual-rollout gate. The feature ships behind this flag so the FFmpeg
-/// step is visible to users we explicitly opt in. In dev the flag defaults
-/// on so the UI is exercised during local iteration without manual setup.
-export function loadFfmpegStepEnabled(devDefault: boolean): boolean {
+/// Feature visibility override. FFmpeg now ships by default, but keeping the
+/// stored override lets us hide the step quickly during local diagnosis.
+export function loadFfmpegStepEnabled(_devDefault: boolean): boolean {
   const stored = getLocalStorage()?.getItem(FFMPEG_STEP_ENABLED_STORAGE_KEY);
   if (stored === 'true') return true;
   if (stored === 'false') return false;
-  return devDefault;
+  return true;
 }
 
 export function persistFfmpegStepEnabled(enabled: boolean) {

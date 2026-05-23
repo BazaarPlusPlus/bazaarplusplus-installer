@@ -84,6 +84,7 @@
     detectSteamRunningApi,
     closeSteamApi,
     installBepinex,
+    installFfmpegApi,
     patchLaunchOptions,
     uninstallBppApi,
     repairBppApi,
@@ -224,30 +225,33 @@
     $bazaarFound
   );
 
-  $: ffmpegStep = (ffmpegStepEnabled
-    ? {
-        show: pageModel.modInstalled && pageState.hasPath,
-        platformSupported: ffmpegPlatformSupported,
-        skipped: $ffmpegSkipped,
-        detect: ffmpegController.detect,
-        busy: ffmpegController.busy,
-        progress: ffmpegController.progress,
-        phase: ffmpegController.phase,
-        error: ffmpegController.error,
-        localized,
-        onInstall: () => {
-          ffmpegSkipped.set(false);
-          persistFfmpegSkipped(false);
-          return ffmpegController.runInstall(pageState.effectiveGamePath);
-        },
-        onRepair: () => ffmpegController.runRepair(pageState.effectiveGamePath),
-        onUninstall: () =>
-          ffmpegController.runUninstall(pageState.effectiveGamePath),
-        onSkip: handleFfmpegSkip,
-        onUnskip: handleFfmpegUnskip,
-        onDismissError: ffmpegController.clearError
-      }
-    : null) satisfies FfmpegStepBundle | null;
+  $: ffmpegStep = (
+    ffmpegStepEnabled
+      ? {
+          show: pageModel.modInstalled && pageState.hasPath,
+          platformSupported: ffmpegPlatformSupported,
+          skipped: $ffmpegSkipped,
+          detect: ffmpegController.detect,
+          busy: ffmpegController.busy,
+          progress: ffmpegController.progress,
+          phase: ffmpegController.phase,
+          error: ffmpegController.error,
+          localized,
+          onInstall: () => {
+            ffmpegSkipped.set(false);
+            persistFfmpegSkipped(false);
+            return ffmpegController.runInstall(pageState.effectiveGamePath);
+          },
+          onRepair: () =>
+            ffmpegController.runRepair(pageState.effectiveGamePath),
+          onUninstall: () =>
+            ffmpegController.runUninstall(pageState.effectiveGamePath),
+          onSkip: handleFfmpegSkip,
+          onUnskip: handleFfmpegUnskip,
+          onDismissError: ffmpegController.clearError
+        }
+      : null
+  ) satisfies FfmpegStepBundle | null;
 
   onMount(() => {
     locale.init();

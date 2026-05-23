@@ -36,6 +36,7 @@ WINDOWS_CONFIG="$SCRIPT_DIR/src-tauri/tauri.windows.conf.json"
 MACOS_CONFIG="$SCRIPT_DIR/src-tauri/tauri.macos.conf.json"
 WINDOWS_ZIP="$SCRIPT_DIR/src-tauri/resources/BepInExSource/windows/BepInEx.zip"
 MACOS_ZIP="$SCRIPT_DIR/src-tauri/resources/BepInExSource/macos/BepInEx.zip"
+MACOS_FFMPEG_ZIP="$SCRIPT_DIR/src-tauri/resources/FfmpegSource/macos/ffmpeg.zip"
 SIGNING_SECRETS_DIR="$SCRIPT_DIR/signing-secrets"
 SIGNING_KEY_PATH="$SIGNING_SECRETS_DIR/tauri-updater.key"
 SIGNING_KEY_PASSWORD_PATH="$SIGNING_SECRETS_DIR/tauri-updater.password"
@@ -71,6 +72,25 @@ invoke_step() {
     shift
     echo "==> $label"
     "$@"
+}
+
+run_checked() {
+    local status=0
+
+    set +e
+    (set -e; "$@")
+    status="$?"
+    set -e
+
+    return "$status"
+}
+
+restore_macos_ffmpeg_zip_backup() {
+    local backup_path="$1"
+
+    if [ -n "$backup_path" ] && [ -f "$backup_path" ]; then
+        mv "$backup_path" "$MACOS_FFMPEG_ZIP"
+    fi
 }
 
 trim_trailing_newlines() {
@@ -392,10 +412,9 @@ is_macho_file() {
     file "$file_path" | grep -q 'Mach-O'
 }
 
-# Pre-signs Mach-O binaries that live inside BepInEx.zip. Tauri treats the zip
-# as opaque resource data, so its outer .app signing never reaches these. The
-# game later loads them under hardened runtime + library validation, which
-# rejects unsigned dylibs.
+# Pre-signs Mach-O binaries that live inside bundled resource zips. Tauri treats
+# zips as opaque resource data, so its outer .app signing never reaches these.
+# Notarization and runtime library validation reject unsigned nested code.
 sign_macos_resource_binaries() {
     local payload_dir="$1"
     local binary_path=""
@@ -563,6 +582,8 @@ build_prod() {
     local bundle_cleanup_path=""
     local release_binary=""
     local tauri_target=""
+    local macos_ffmpeg_zip_backup=""
+    local step_status=0
     local -a build_command
     local -a bundle_command
 
@@ -592,6 +613,9 @@ build_prod() {
 
     assert_file "$config" "$platform Tauri config"
     assert_file "$resource_zip" "$platform resource zip"
+    if [ "$platform" = "macos" ]; then
+        assert_file "$MACOS_FFMPEG_ZIP" "$platform FFmpeg resource zip"
+    fi
 
     if [ -d "$bundle_cleanup_path" ]; then
         invoke_step "Removing stale $platform bundle artifacts" rm -rf "$bundle_cleanup_path"
@@ -612,10 +636,33 @@ build_prod() {
     invoke_step "Building $platform app binary" "${build_command[@]}"
 
     if [ "$platform" = "macos" ]; then
-        prepare_signed_macos_resource_zip "$resource_zip"
+        macos_ffmpeg_zip_backup="$(mktemp)"
+        cp -p "$MACOS_FFMPEG_ZIP" "$macos_ffmpeg_zip_backup"
+
+        if run_checked prepare_signed_macos_resource_zip "$resource_zip"; then
+            :
+        else
+            step_status="$?"
+            restore_macos_ffmpeg_zip_backup "$macos_ffmpeg_zip_backup"
+            exit "$step_status"
+        fi
+        if run_checked prepare_signed_macos_resource_zip "$MACOS_FFMPEG_ZIP"; then
+            :
+        else
+            step_status="$?"
+            restore_macos_ffmpeg_zip_backup "$macos_ffmpeg_zip_backup"
+            exit "$step_status"
+        fi
     fi
 
-    invoke_step "Bundling $platform installer" "${bundle_command[@]}"
+    if run_checked invoke_step "Bundling $platform installer" "${bundle_command[@]}"; then
+        :
+    else
+        step_status="$?"
+        restore_macos_ffmpeg_zip_backup "$macos_ffmpeg_zip_backup"
+        exit "$step_status"
+    fi
+    restore_macos_ffmpeg_zip_backup "$macos_ffmpeg_zip_backup"
 
     echo
     echo "Build complete."

@@ -1,6 +1,12 @@
 import { test, expect } from 'vitest';
 import { execFileSync } from 'node:child_process';
-import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync
+} from 'node:fs';
 
 const projectDir = process.cwd();
 const signingSecretsDir = `${projectDir}/signing-secrets`;
@@ -67,6 +73,9 @@ test('macOS production build targets arm64 artifacts', () => {
     /Preparing signed macos resource zip\|.*src-tauri\/resources\/BepInExSource\/macos\/BepInEx\.zip/
   );
   expect(output).toMatch(
+    /Preparing signed macos resource zip\|.*src-tauri\/resources\/FfmpegSource\/macos\/ffmpeg\.zip/
+  );
+  expect(output).toMatch(
     /Bundling macos installer\|npm run tauri bundle -- --bundles app,dmg --config .*src-tauri\/tauri\.macos\.conf\.json --target aarch64-apple-darwin/
   );
   expect(output).not.toMatch(/Notarizing macos|notarytool|stapler/);
@@ -79,8 +88,7 @@ test('macOS production build targets arm64 artifacts', () => {
 });
 
 test('macOS production build removes the entire bundle directory before rebundling', () => {
-  const bundleDir =
-    `${projectDir}/src-tauri/target/aarch64-apple-darwin/release/bundle`;
+  const bundleDir = `${projectDir}/src-tauri/target/aarch64-apple-darwin/release/bundle`;
   const staleDir = `${bundleDir}/macos`;
   const staleFile = `${staleDir}/rw.test.BazaarPlusPlus_2.0.0_aarch64.dmg`;
 
@@ -107,6 +115,37 @@ test('macOS production build removes the entire bundle directory before rebundli
   } finally {
     rmSync(bundleDir, { force: true, recursive: true });
   }
+});
+
+test('macOS production build restores the source FFmpeg zip after bundling', () => {
+  const output = runShell(`
+    set -euo pipefail
+    source ./build.sh
+    temp_dir="$(mktemp -d)"
+    trap 'rm -rf "$temp_dir"' EXIT
+    MACOS_CONFIG="$temp_dir/tauri.macos.conf.json"
+    MACOS_ZIP="$temp_dir/BepInEx.zip"
+    MACOS_FFMPEG_ZIP="$temp_dir/ffmpeg.zip"
+    printf 'config' > "$MACOS_CONFIG"
+    printf 'bepinex' > "$MACOS_ZIP"
+    printf 'original-ffmpeg' > "$MACOS_FFMPEG_ZIP"
+    prepare_signed_macos_resource_zip() {
+      printf 'prepare|%s\\n' "$1"
+      printf '|signed' >> "$1"
+    }
+    invoke_step() {
+      local label="$1"
+      shift
+      printf '%s|%s\\n' "$label" "$*"
+    }
+    build_prod macos >/tmp/bpp-build-restore-test.out
+    cat /tmp/bpp-build-restore-test.out
+    printf 'ffmpeg_zip=%s\\n' "$(cat "$MACOS_FFMPEG_ZIP")"
+  `);
+
+  expect(output).toContain('prepare|');
+  expect(output).toContain('ffmpeg_zip=original-ffmpeg\n');
+  expect(output).not.toContain('ffmpeg_zip=original-ffmpeg|signed');
 });
 
 test('Windows production build keeps the default target layout', () => {
@@ -305,8 +344,7 @@ test('macOS Developer ID env detects identity and infers API key path', () => {
 });
 
 test('Windows upload uses installer and updater R2 paths under the version directory', () => {
-  const bundleDir =
-    `${projectDir}/src-tauri/target/release/bundle/nsis`;
+  const bundleDir = `${projectDir}/src-tauri/target/release/bundle/nsis`;
   const installerFile = `${bundleDir}/BazaarPlusPlus_2.1.0_x64-setup.exe`;
   const signatureFile = `${installerFile}.sig`;
 

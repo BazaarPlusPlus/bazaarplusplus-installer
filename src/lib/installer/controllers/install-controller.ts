@@ -24,7 +24,9 @@ export function createInstallController(input: {
   isDebugInstallPreview: boolean;
   createInstallDebugEnvironment: () => EnvironmentInfo;
   initializeInstallerContextApi: () => Promise<InstallerContextPayload>;
-  detectEnvironmentApi: (requestedGamePath?: string) => Promise<EnvironmentInfo>;
+  detectEnvironmentApi: (
+    requestedGamePath?: string
+  ) => Promise<EnvironmentInfo>;
   detectSteamRunningApi: () => Promise<SteamRunningInfo>;
   closeSteamApi: () => Promise<unknown>;
   installBepinex: (
@@ -32,6 +34,7 @@ export function createInstallController(input: {
     gamePath: string,
     skipSteamShutdown: boolean
   ) => Promise<unknown>;
+  installFfmpegApi: (gamePath: string) => Promise<unknown>;
   patchLaunchOptions: (
     steamPath: string,
     gamePath: string,
@@ -225,7 +228,10 @@ export function createInstallController(input: {
   }
 
   async function pickGamePath() {
-    const selected = await input.openDialog({ directory: true, multiple: false });
+    const selected = await input.openDialog({
+      directory: true,
+      multiple: false
+    });
     if (typeof selected === 'string') {
       customGamePath.set(selected.trim());
     }
@@ -233,7 +239,10 @@ export function createInstallController(input: {
 
   async function maybeConfirmSteamQuit(action: 'uninstall') {
     const currentEnv = get(env);
-    if (!input.hasTauriRuntime() || !currentEnv?.steam_launch_options_supported) {
+    if (
+      !input.hasTauriRuntime() ||
+      !currentEnv?.steam_launch_options_supported
+    ) {
       return false;
     }
 
@@ -270,7 +279,9 @@ export function createInstallController(input: {
 
     return input.getInstallRuntimeRisks({
       hasTauriRuntime: true,
-      steamLaunchOptionsSupported: Boolean(currentEnv?.steam_launch_options_supported),
+      steamLaunchOptionsSupported: Boolean(
+        currentEnv?.steam_launch_options_supported
+      ),
       steamRunning
     });
   }
@@ -312,6 +323,7 @@ export function createInstallController(input: {
         inputArgs.effectiveGamePath,
         Boolean(inputArgs.skipSteamShutdown)
       );
+      await input.installFfmpegApi(inputArgs.effectiveGamePath);
       if (currentEnv?.steam_launch_options_supported) {
         const patchResult = await input.patchLaunchOptions(
           steamPath,
