@@ -85,7 +85,9 @@
 
 ```
 src/lib/updater.ts                   → src/lib/installer/updater.ts
-src/lib/components/installer/*       → src/lib/installer/components/*
+src/lib/components/installer/*       → src/lib/installer/components/*  （除 InstallerSupportBar.svelte）
+src/lib/components/installer/InstallerSupportBar.svelte
+                                     → src/lib/components/shell/InstallerSupportBar.svelte
 src/lib/components/stream/*          → src/lib/stream/components/*
 src/lib/components/supporters/*      → src/lib/about/components/*
 src/lib/components/shell/HomeStatusCard.svelte
@@ -96,6 +98,8 @@ src/lib/i18n.ts                      → src/lib/i18n/index.ts
 src/lib/locale.ts                    → src/lib/i18n/locale.ts
 src/lib/locale.test.ts               → src/lib/i18n/locale.test.ts
 ```
+
+> **`InstallerSupportBar.svelte` 的特殊处理**：该组件同时被 `/install` 与 `/stream` 两个路由 import（`src/routes/install/+page.svelte:13` 与 `src/routes/stream/+page.svelte:2`），按本 Spec 的命名约定属于 "两个及以上 feature 使用 → 放在 `components/<area>/`"。因此它不进 `installer/components/`，而是迁到 `components/shell/`（与 `AppShell.svelte` 并列，属于跨页面的页面级 chrome）。文件名暂时保留 `InstallerSupportBar.svelte`，以便保留 `git log --follow` 历史；Spec 3 计划用 About 页面整合的 "支持我们" 区段替换它，届时可以连文件名一起重命名或删除。
 
 迁移落地后：
 
@@ -114,6 +118,7 @@ src/lib/locale.test.ts               → src/lib/i18n/locale.test.ts
 2. **测试夹具中的字面量路径字符串**——以下测试通过 `readFileSync` 按相对路径读取源文件，不是 `import`，`npm run check` 不会发现它们：
    - `src/lib/components/installer/install-preview-modal.test.ts`（line 9）；
    - 其他可能存在的同类测试。
+3. **`InstallerSupportBar` 的两个路由 import**——`src/routes/install/+page.svelte:13` 与 `src/routes/stream/+page.svelte:2` 都要改写到新路径 `$lib/components/shell/InstallerSupportBar.svelte`。
 
 实现阶段必须 `grep -r "src/lib/(components|home|i18n|locale|whats-new|updater)" src` 进行一次完整字面量扫描，并把所有命中改写或删除。
 
@@ -147,7 +152,8 @@ src/lib/
     AppModal.svelte
     LocaleToggle.svelte
     shell/AppShell.svelte
-    navigation/EmbeddedNav.svelte   (已删除 /changelog 与 /settings 条目)
+    shell/InstallerSupportBar.svelte   (← components/installer/，因被 /install + /stream 共用)
+    navigation/EmbeddedNav.svelte      (已删除 /changelog 与 /settings 条目)
   types.ts                    # 跨 feature 共享类型
 ```
 
@@ -255,7 +261,8 @@ PR 打开前必须通过：
 3. **跨平台 Rust 编译验证**——Rust 模块迁移可能在 Windows-only / macOS-only `cfg` 分支下断裂。本机如非目标主机，至少需要在 macOS 与 Windows 上各跑一次 `cargo check --manifest-path src-tauri/Cargo.toml`（远程 CI 触发或本地交叉 / VM 任选）。
 4. `npm run prebuild-check`——校验版本对齐、BPP 数据策略、平台资源 ZIP 内容。请注意：该脚本**不**校验 Rust 模块布线或 ts-rs 绑定漂移；这部分的覆盖来自上面第 1 / 3 步以及生成绑定的产物 diff。
 5. 字面量路径扫描——`grep -rn "src/lib/(components|home|i18n|locale|whats-new|updater)" src` 必须无非预期命中。
-6. `./build.sh` 启动 dev app，依次点击 `/install`、`/stream`、`/about`，确认无 import 报错、无丢失路由、无 console error。
+6. **前端 bundle 体积基线**——在改造前于干净 working tree 上跑一次 `npm run build`，记录 `build/` 下产物总大小（`du -sk build`）；改造完成后再次运行并比对。期望变化范围：bundle 总体应**略微减小**（来自删除 changelog / whats-new / settings 文件）。若意外增大（例如未来引入了不必要的依赖或破坏 tree-shaking），必须解释原因。
+7. `./build.sh` 启动 dev app，依次点击 `/install`、`/stream`、`/about`，确认无 import 报错、无丢失路由、无 console error。
 
 `./build.sh --prod` 不在本 Spec 的必跑列表内——打包与发行行为没有变化。
 
@@ -284,6 +291,13 @@ PR 打开前必须通过：
 | 隐藏的 `lib/updater.ts` 类引用（相对路径） | 验证清单第 5 步的 grep 字面量扫描兜底；Spec 内已枚举已知 4 个引用站点。 |
 
 回滚方式：直接 revert 本 PR。本 Spec 不涉及数据迁移、不改变持久化 schema、不改变任何运行时行为。
+
+## 已知遗留问题（不在本 Spec 范围内）
+
+Codex 性能审阅指出的、本 Spec **不解决**但需要后续单独处理的事项：
+
+- **`InstallerPageContent.svelte` 静态导入了 Stream UI**：当前 `InstallerPageContent.svelte` 第 3 / 4 行使用静态 `import` 引入 `StreamModePanel` 与 `StreamRecordLibrary`。这意味着无论 `showStreamMode` 是否为 true，`/install` 的初始 bundle 都包含 Stream UI 模块。这是迁移前就存在的行为，本 Spec 只移动文件、不改变导入语义。修复方案（动态 `import()` + `await import()` 或 `{#await}` 块按需加载）涉及组件加载时序与状态机变化，属于行为变更，留待 Spec 2（NavRail + 战绩页阶段重新审视 Install 页 Stream 嵌入策略时）一并处理。
+- **Rust 模块迁移会触发一次 incremental compile 缓存失效与 ts-rs 重新生成**：这是一次性成本，不会形成持续开销。落地后第一次 `cargo build` 与 `npm run dev` 会比平时慢，符合预期。
 
 ## 该 Spec 解锁的后续工作
 
