@@ -56,6 +56,8 @@ Thumbs.db
 BepInEx.zip
 BazaarPlusPlus.dll
 BazaarPlusPlus.version
+BazaarPlusPlus.ModApi.dll
+BazaarPlusPlus.Storage.dll
 
 signing-secrets
 scripts/supporters-import-state.json
