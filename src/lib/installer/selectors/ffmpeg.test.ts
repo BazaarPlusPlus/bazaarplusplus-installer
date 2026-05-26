@@ -5,7 +5,7 @@ import type { FfmpegDetectResult } from '$lib/generated/commands';
 
 function detect(
   status: FfmpegDetectResult['status'],
-  bundledPath = '/games/Bazaar/BazaarPlusPlus/tools/ffmpeg/ffmpeg'
+  bundledPath = '/games/Bazaar/BazaarPlusPlusV4/tools/ffmpeg/ffmpeg'
 ): FfmpegDetectResult {
   return { status, bundled_path: bundledPath };
 }

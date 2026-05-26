@@ -74,7 +74,7 @@ function createController(
         if (!installState.bepinexInstalled) {
           throw new Error('BepInEx must be installed before FFmpeg');
         }
-        installState.ffmpegBinaryPath = `${gamePath}/BazaarPlusPlus/tools/ffmpeg/ffmpeg`;
+        installState.ffmpegBinaryPath = `${gamePath}/BazaarPlusPlusV4/tools/ffmpeg/ffmpeg`;
       }),
     patchLaunchOptions: async (): Promise<LaunchOptionsPatchResult> => ({
       verified: true
@@ -112,7 +112,7 @@ test('confirmed install deploys bundled FFmpeg into the game tools directory', a
   });
 
   expect(installState.ffmpegBinaryPath).toBe(
-    '/games/The Bazaar/BazaarPlusPlus/tools/ffmpeg/ffmpeg'
+    '/games/The Bazaar/BazaarPlusPlusV4/tools/ffmpeg/ffmpeg'
   );
   expect(get(controller.actionBusy)).toBe('idle');
 });

@@ -60,8 +60,8 @@ export function describeFfmpegError(
       return {
         title: localized('当前平台暂不支持', 'Platform not supported yet'),
         body: localized(
-          '目前安装器仅支持 Windows 与 macOS。如果你确认平台已就绪，请把 ffmpeg 二进制手动放入 BazaarPlusPlus/tools/ffmpeg/ 即可。',
-          'The installer currently only deploys binaries for Windows and macOS. You can drop ffmpeg into BazaarPlusPlus/tools/ffmpeg/ manually if your platform is otherwise ready.'
+          '目前安装器仅支持 Windows 与 macOS。如果你确认平台已就绪，请把 ffmpeg 二进制手动放入 BazaarPlusPlusV4/tools/ffmpeg/ 即可。',
+          'The installer currently only deploys binaries for Windows and macOS. You can drop ffmpeg into BazaarPlusPlusV4/tools/ffmpeg/ manually if your platform is otherwise ready.'
         ),
         retryLabel: localized('我知道了', 'Got it')
       };

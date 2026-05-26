@@ -1,5 +1,5 @@
 // Install pipeline: read bundled zip resource → extract → chmod +x → probe →
-// atomic swap into `<GameRoot>/BazaarPlusPlus/tools/ffmpeg/`.
+// atomic swap into `<GameRoot>/BazaarPlusPlusV4/tools/ffmpeg/`.
 //
 // The intent expressed by the design doc is "never let mod see a half-installed
 // binary": every IO step writes to a temp directory adjacent to the real

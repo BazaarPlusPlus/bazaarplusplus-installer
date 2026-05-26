@@ -9,7 +9,7 @@ use tauri::Manager;
 
 use crate::stream::state::StreamRuntimeState;
 
-pub(crate) const LEGACY_RECORD_DIRECTORY: &str = "BazaarPlusPlus";
+pub(crate) const LEGACY_RECORD_DIRECTORY: &str = "BazaarPlusPlusV4";
 
 macro_rules! debug_log {
     ($($arg:tt)*) => {
@@ -245,8 +245,8 @@ mod tests {
     #[test]
     fn test_format_partial_failure_uses_unit_separator() {
         let formatted = format_partial_failure(&[
-            PathBuf::from("C:/Games/The Bazaar/BazaarPlusPlus/bazaarplusplus.db"),
-            PathBuf::from("C:/Games/The Bazaar/BazaarPlusPlus/Identity/observation.v1.json"),
+            PathBuf::from("C:/Games/The Bazaar/BazaarPlusPlusV4/bazaarplusplus.db"),
+            PathBuf::from("C:/Games/The Bazaar/BazaarPlusPlusV4/Identity/observation.v1.json"),
         ]);
 
         assert!(formatted.starts_with(REPAIR_ERR_PARTIAL_FAILURE));

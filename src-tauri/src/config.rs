@@ -1,4 +1,4 @@
-pub const BAZAAR_DATA_DIRECTORY: &str = "BazaarPlusPlus";
+pub const BAZAAR_DATA_DIRECTORY: &str = "BazaarPlusPlusV4";
 pub const DATABASE_FILE_NAME: &str = "bazaarplusplus.db";
 pub const SCREENSHOTS_DIRECTORY: &str = "Screenshots";
 

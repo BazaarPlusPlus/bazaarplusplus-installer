@@ -50,17 +50,17 @@ mod tests {
         let relative = resolve_overlay_image_path(game_path.clone(), Some("match-1.png")).unwrap();
         let absolute = resolve_overlay_image_path(
             game_path,
-            Some("/tmp/BazaarPlusPlus/Screenshots/match-2.png"),
+            Some("/tmp/BazaarPlusPlusV4/Screenshots/match-2.png"),
         )
         .unwrap();
 
         assert_eq!(
             relative,
-            PathBuf::from("/tmp/TheBazaar/BazaarPlusPlus/Screenshots/match-1.png")
+            PathBuf::from("/tmp/TheBazaar/BazaarPlusPlusV4/Screenshots/match-1.png")
         );
         assert_eq!(
             absolute,
-            PathBuf::from("/tmp/BazaarPlusPlus/Screenshots/match-2.png")
+            PathBuf::from("/tmp/BazaarPlusPlusV4/Screenshots/match-2.png")
         );
     }
 
@@ -68,7 +68,7 @@ mod tests {
     fn resolve_overlay_image_path_supports_bazaarplusplus_screenshots_directory() {
         let temp_dir = tempfile::tempdir().unwrap();
         let game_path = temp_dir.path().join("TheBazaar");
-        let screenshots_dir = game_path.join("BazaarPlusPlus").join("Screenshots");
+        let screenshots_dir = game_path.join("BazaarPlusPlusV4").join("Screenshots");
         std::fs::create_dir_all(&screenshots_dir).unwrap();
         std::fs::write(screenshots_dir.join("match-1.png"), b"png").unwrap();
 
@@ -81,7 +81,7 @@ mod tests {
     fn resolve_overlay_image_path_normalizes_nested_backslash_relative_paths() {
         let temp_dir = tempfile::tempdir().unwrap();
         let game_path = temp_dir.path().join("TheBazaar");
-        let screenshots_dir = game_path.join("BazaarPlusPlus").join("Screenshots");
+        let screenshots_dir = game_path.join("BazaarPlusPlusV4").join("Screenshots");
         let dated_dir = screenshots_dir.join("2026-04-16");
         std::fs::create_dir_all(&dated_dir).unwrap();
         std::fs::write(dated_dir.join("match-1.png"), b"png").unwrap();

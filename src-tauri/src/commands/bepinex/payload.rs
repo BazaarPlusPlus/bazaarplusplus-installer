@@ -75,7 +75,7 @@ fn try_remove_with_retry(path: &Path, is_dir: bool) -> bool {
 /// Bottom-up recursive delete that retries each entry independently and
 /// collects every path it could not remove. Unlike `remove_dir_all`, this does
 /// not abort on the first sharing violation, so a single locked sqlite handle
-/// won't leave the rest of `BazaarPlusPlus/` half-deleted.
+/// won't leave the rest of `BazaarPlusPlusV4/` half-deleted.
 pub(super) fn remove_dir_with_retry(root: &Path) -> RemovalReport {
     let mut report = RemovalReport::default();
 
@@ -303,7 +303,7 @@ mod tests {
     fn test_prepare_install_target_keeps_legacy_directory_for_installed_v1() {
         let tmp = tempfile::tempdir().unwrap();
         let plugins_dir = tmp.path().join("BepInEx/plugins");
-        let legacy_dir = tmp.path().join("BazaarPlusPlus");
+        let legacy_dir = tmp.path().join("BazaarPlusPlusV4");
 
         #[cfg(target_os = "macos")]
         {

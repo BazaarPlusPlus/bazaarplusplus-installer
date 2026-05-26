@@ -2,7 +2,7 @@ use base64::{engine::general_purpose::STANDARD, Engine as _};
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 
-const SETTINGS_DIRECTORY: &str = "BazaarPlusPlus";
+const SETTINGS_DIRECTORY: &str = "BazaarPlusPlusV4";
 const SETTINGS_FILE_NAME: &str = "stream-overlay-crop.json";
 
 #[derive(Clone, Copy, Debug, Deserialize, Serialize, PartialEq, ts_rs::TS)]

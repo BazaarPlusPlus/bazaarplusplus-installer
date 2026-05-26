@@ -12,14 +12,14 @@ test('parseRepairError detects the game-running classification', () => {
 
 test('parseRepairError extracts paths from a partial-failure message', () => {
   const error = parseRepairError(
-    'bpp_data_reset_partial_failure:C:/Games/The Bazaar/BazaarPlusPlus/bazaarplusplus.db\u{1f}C:/Games/The Bazaar/BazaarPlusPlus/Identity/observation.v1.json'
+    'bpp_data_reset_partial_failure:C:/Games/The Bazaar/BazaarPlusPlusV4/bazaarplusplus.db\u{1f}C:/Games/The Bazaar/BazaarPlusPlusV4/Identity/observation.v1.json'
   );
 
   expect(error).toEqual({
     kind: 'partial_failure',
     failedPaths: [
-      'C:/Games/The Bazaar/BazaarPlusPlus/bazaarplusplus.db',
-      'C:/Games/The Bazaar/BazaarPlusPlus/Identity/observation.v1.json'
+      'C:/Games/The Bazaar/BazaarPlusPlusV4/bazaarplusplus.db',
+      'C:/Games/The Bazaar/BazaarPlusPlusV4/Identity/observation.v1.json'
     ]
   });
 });

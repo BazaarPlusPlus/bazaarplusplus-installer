@@ -20,7 +20,7 @@ pub(crate) fn platform_key_for_parts(os: &str, arch: &str) -> Result<String, Str
 }
 
 pub(crate) fn tools_root_dir(game_path: &Path) -> PathBuf {
-    game_path.join("BazaarPlusPlus").join("tools")
+    game_path.join("BazaarPlusPlusV4").join("tools")
 }
 
 pub(crate) fn ffmpeg_dir(game_path: &Path) -> PathBuf {
@@ -136,7 +136,7 @@ mod tests {
         let dir = ffmpeg_dir(&game);
         let bin = ffmpeg_binary_path(&game);
 
-        assert!(dir.ends_with("BazaarPlusPlus/tools/ffmpeg"));
+        assert!(dir.ends_with("BazaarPlusPlusV4/tools/ffmpeg"));
         assert_eq!(bin.parent().unwrap(), dir);
         assert!(bin
             .file_name()

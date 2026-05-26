@@ -6,13 +6,13 @@
 流程里把平台对应的本地 Source 解压到：
 
 ```text
-<GameRoot>/BazaarPlusPlus/tools/ffmpeg/
+<GameRoot>/BazaarPlusPlusV4/tools/ffmpeg/
 ```
 
 Mod 端仍只按原契约查找：
 
 ```text
-<GameRoot>/BazaarPlusPlus/tools/ffmpeg/ffmpeg(.exe)
+<GameRoot>/BazaarPlusPlusV4/tools/ffmpeg/ffmpeg(.exe)
 ```
 
 找不到本地 binary 时再 fallback 到系统 `PATH`。
@@ -57,7 +57,7 @@ macOS x86_64 不再支持；运行到该平台时返回 `bpp_ffmpeg_platform_uns
 5. 取出平台要求的 root entry，chmod +x（POSIX）
 6. 运行 ffmpeg -version 做 probe
 7. 写入 LICENSE.txt 和 version.json
-8. 原子替换到 <GameRoot>/BazaarPlusPlus/tools/ffmpeg/
+8. 原子替换到 <GameRoot>/BazaarPlusPlusV4/tools/ffmpeg/
 ```
 
 中间任何一步失败都保留旧的 `tools/ffmpeg/` 不动，避免 mod 端检测到半安装 binary。

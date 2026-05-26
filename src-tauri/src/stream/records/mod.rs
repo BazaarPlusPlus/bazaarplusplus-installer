@@ -144,7 +144,7 @@ mod tests {
     fn repository_sets_image_url_when_relative_image_exists() {
         let temp_dir = tempfile::tempdir().unwrap();
         let game_path = temp_dir.path().join("TheBazaar");
-        let data_dir = game_path.join("BazaarPlusPlus");
+        let data_dir = game_path.join("BazaarPlusPlusV4");
         let screenshots_dir = data_dir.join("Screenshots");
         std::fs::create_dir_all(&screenshots_dir).unwrap();
         std::fs::write(screenshots_dir.join("match-1.png"), b"png").unwrap();
@@ -174,7 +174,7 @@ mod tests {
     fn repository_preserves_optional_snapshot_metrics() {
         let temp_dir = tempfile::tempdir().unwrap();
         let game_path = temp_dir.path().join("TheBazaar");
-        let data_dir = game_path.join("BazaarPlusPlus");
+        let data_dir = game_path.join("BazaarPlusPlusV4");
         std::fs::create_dir_all(&data_dir).unwrap();
 
         let database_path = data_dir.join(DATABASE_FILE_NAME);
@@ -207,7 +207,7 @@ mod tests {
     fn repository_delete_record_removes_database_row_and_image_file() {
         let temp_dir = tempfile::tempdir().unwrap();
         let game_path = temp_dir.path().join("TheBazaar");
-        let data_dir = game_path.join("BazaarPlusPlus");
+        let data_dir = game_path.join("BazaarPlusPlusV4");
         let screenshots_dir = data_dir.join("Screenshots");
         std::fs::create_dir_all(&screenshots_dir).unwrap();
         let image_path = screenshots_dir.join("match-1.png");

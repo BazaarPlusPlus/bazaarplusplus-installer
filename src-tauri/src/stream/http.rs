@@ -329,7 +329,7 @@ fn overlay_cache_directory() -> PathBuf {
         .or_else(dirs::config_dir)
         .or_else(dirs::data_local_dir)
         .unwrap_or_else(std::env::temp_dir);
-    base.join("BazaarPlusPlus").join("stream-overlay-cache")
+    base.join("BazaarPlusPlusV4").join("stream-overlay-cache")
 }
 
 fn sanitized_cache_name(value: &str) -> String {
