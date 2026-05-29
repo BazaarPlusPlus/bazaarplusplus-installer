@@ -13,7 +13,6 @@
   import InstallerSupportBar from '$lib/components/installer/InstallerSupportBar.svelte';
   import { createInstallController } from '$lib/installer/controllers/install-controller';
   import { createUpdaterController } from '$lib/installer/controllers/updater-controller';
-  import { createFfmpegController } from '$lib/installer/controllers/ffmpeg-controller';
   import {
     closeSteam as closeSteamApi,
     detectEnvironment as detectEnvironmentApi,
@@ -23,24 +22,14 @@
     installBepinex,
     patchLaunchOptions,
     repairBpp as repairBppApi,
-    uninstallBpp as uninstallBppApi,
-    detectFfmpeg as detectFfmpegApi,
-    installFfmpeg as installFfmpegApi,
-    uninstallFfmpeg as uninstallFfmpegApi,
-    repairFfmpeg as repairFfmpegApi,
-    subscribeFfmpegInstallProgress
+    uninstallBpp as uninstallBppApi
   } from '$lib/installer/api';
   import {
     loadPersistedDetectedGamePath,
     loadPersistedCustomGamePath,
     persistDetectedGamePath,
-    persistCustomGamePath,
-    loadFfmpegSkipped,
-    persistFfmpegSkipped,
-    loadFfmpegStepEnabled
+    persistCustomGamePath
   } from '$lib/installer/storage';
-  import type { FfmpegStepBundle } from '$lib/installer/ffmpeg-step-bundle';
-  import { writable } from 'svelte/store';
   import {
     hasTauriRuntime,
     resolveInstallDebugPreview
@@ -84,7 +73,6 @@
     detectSteamRunningApi,
     closeSteamApi,
     installBepinex,
-    installFfmpegApi,
     patchLaunchOptions,
     uninstallBppApi,
     repairBppApi,
@@ -105,52 +93,6 @@
   const updaterController = createUpdaterController({
     hasTauriRuntime
   });
-
-  const ffmpegController = createFfmpegController({
-    detectApi: detectFfmpegApi,
-    installApi: installFfmpegApi,
-    uninstallApi: uninstallFfmpegApi,
-    repairApi: repairFfmpegApi,
-    listenProgress: subscribeFfmpegInstallProgress
-  });
-
-  const ffmpegStepEnabled = loadFfmpegStepEnabled(import.meta.env.DEV);
-  const ffmpegSkipped = writable<boolean>(loadFfmpegSkipped());
-
-  function detectFfmpegPlatformSupported(): boolean {
-    if (typeof navigator === 'undefined') return true;
-    const platform = (navigator.platform || '').toLowerCase();
-    return platform.includes('win') || platform.includes('mac');
-  }
-  const ffmpegPlatformSupported = detectFfmpegPlatformSupported();
-
-  function handleFfmpegSkip() {
-    ffmpegSkipped.set(true);
-    persistFfmpegSkipped(true);
-  }
-
-  function handleFfmpegUnskip() {
-    ffmpegSkipped.set(false);
-    persistFfmpegSkipped(false);
-  }
-
-  let lastFfmpegDetectKey = '';
-  async function maybeDetectFfmpeg(
-    gamePath: string,
-    modInstalled: boolean,
-    bazaarFound: boolean
-  ) {
-    if (!ffmpegStepEnabled || !hasTauriRuntime()) return;
-    if (!gamePath || !modInstalled || !bazaarFound) return;
-    // Re-detect when either the resolved path or the BPP install state
-    // changes — that covers "user just installed BPP" (modInstalled flips
-    // true) and "user picked a different game install" (gamePath changes)
-    // while still ignoring keystroke-level churn in the custom-path input.
-    const key = `${gamePath}:${modInstalled ? '1' : '0'}`;
-    if (lastFfmpegDetectKey === key) return;
-    lastFfmpegDetectKey = key;
-    await ffmpegController.runDetect(gamePath);
-  }
 
   const env = installController.env;
   const dotnetState = installController.dotnetState;
@@ -219,39 +161,6 @@
   $: pageModel = createInstallPageModel(pageModelInput);
   $: pageState = pageModel.pageState;
   $: installController.persistCurrentGamePath();
-  $: void maybeDetectFfmpeg(
-    pageState.effectiveGamePath,
-    pageModel.modInstalled,
-    $bazaarFound
-  );
-
-  $: ffmpegStep = (
-    ffmpegStepEnabled
-      ? {
-          show: pageModel.modInstalled && pageState.hasPath,
-          platformSupported: ffmpegPlatformSupported,
-          skipped: $ffmpegSkipped,
-          detect: ffmpegController.detect,
-          busy: ffmpegController.busy,
-          progress: ffmpegController.progress,
-          phase: ffmpegController.phase,
-          error: ffmpegController.error,
-          localized,
-          onInstall: () => {
-            ffmpegSkipped.set(false);
-            persistFfmpegSkipped(false);
-            return ffmpegController.runInstall(pageState.effectiveGamePath);
-          },
-          onRepair: () =>
-            ffmpegController.runRepair(pageState.effectiveGamePath),
-          onUninstall: () =>
-            ffmpegController.runUninstall(pageState.effectiveGamePath),
-          onSkip: handleFfmpegSkip,
-          onUnskip: handleFfmpegUnskip,
-          onDismissError: ffmpegController.clearError
-        }
-      : null
-  ) satisfies FfmpegStepBundle | null;
 
   onMount(() => {
     locale.init();
@@ -365,7 +274,6 @@
     canInstall={pageModel.canInstall}
     canLaunchGame={pageModel.canLaunchGame}
     dotnetDownloadUrl={pageModel.dotnetDownloadUrl}
-    {ffmpegStep}
     {t}
     onPickGamePath={installController.pickGamePath}
     onCheckPath={() => installController.checkPath(pageState.effectiveGamePath)}

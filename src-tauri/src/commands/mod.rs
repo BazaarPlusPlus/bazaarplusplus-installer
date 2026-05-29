@@ -1,6 +1,5 @@
 pub mod bepinex;
 pub mod detect;
-pub mod ffmpeg;
 pub mod game_process;
 pub mod startup;
 pub mod steam;

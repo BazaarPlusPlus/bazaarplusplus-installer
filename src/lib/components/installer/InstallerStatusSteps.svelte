@@ -2,11 +2,9 @@
   import { messages } from '$lib/i18n';
   import type { EnvironmentInfo } from '$lib/types';
   import type { ActionBusy, StepState } from '$lib/installer/state';
-  import type { FfmpegStepBundle } from '$lib/installer/ffmpeg-step-bundle';
   import InstallerBppStep from './InstallerBppStep.svelte';
   import InstallerBazaarStep from './InstallerBazaarStep.svelte';
   import InstallerActionsStep from './InstallerActionsStep.svelte';
-  import InstallerFfmpegStep from './InstallerFfmpegStep.svelte';
 
   export let env: EnvironmentInfo | null;
   export let dotnetState: StepState;
@@ -25,7 +23,6 @@
   export let canLaunchGame: boolean;
   export let dotnetDownloadUrl: string;
   export let effectiveGamePath: string;
-  export let ffmpegStep: FfmpegStepBundle | null = null;
   export let t: (
     key: keyof typeof messages.en,
     params?: Record<string, string | number>
@@ -81,25 +78,6 @@
     {onUninstall}
     {onLaunchGame}
   />
-
-  {#if ffmpegStep && ffmpegStep.show}
-    <InstallerFfmpegStep
-      detect={ffmpegStep.detect}
-      busy={ffmpegStep.busy}
-      progress={ffmpegStep.progress}
-      phase={ffmpegStep.phase}
-      error={ffmpegStep.error}
-      platformSupported={ffmpegStep.platformSupported}
-      skipped={ffmpegStep.skipped}
-      localized={ffmpegStep.localized}
-      onInstall={ffmpegStep.onInstall}
-      onRepair={ffmpegStep.onRepair}
-      onUninstall={ffmpegStep.onUninstall}
-      onSkip={ffmpegStep.onSkip}
-      onUnskip={ffmpegStep.onUnskip}
-      onDismissError={ffmpegStep.onDismissError}
-    />
-  {/if}
 </div>
 
 <style>

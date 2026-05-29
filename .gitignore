@@ -59,6 +59,12 @@ BazaarPlusPlus.version
 BazaarPlusPlus.ModApi.dll
 BazaarPlusPlus.Storage.dll
 
+# FFmpeg is unzipped into the payload at build time from the committed FfmpegSource/*/ffmpeg.zip.
+# The raw binary (131MB win / 47MB mac) is a transient build output — never commit it.
+/src-tauri/resources/SourceForBuild/*/BepInEx/plugins/ffmpeg
+/src-tauri/resources/SourceForBuild/*/BepInEx/plugins/ffmpeg.exe
+/src-tauri/resources/SourceForBuild/*/BepInEx/plugins/ffmpeg-LICENSE.txt
+
 signing-secrets
 scripts/supporters-import-state.json
 static/support/supporter-pending-review.json

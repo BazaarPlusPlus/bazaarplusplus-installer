@@ -4,9 +4,7 @@
     "targets": ["nsis"],
     "icon": ["icons/icon.ico"],
     "resources": {
-      "resources/BepInExSource/windows/BepInEx.zip": "BepInExSource/BepInEx.zip",
-      "resources/FfmpegSource/windows/ffmpeg.zip": "FfmpegSource/ffmpeg.zip",
-      "resources/FfmpegSource/windows/LICENSE.txt": "FfmpegSource/LICENSE.txt"
+      "resources/BepInExSource/windows/BepInEx.zip": "BepInExSource/BepInEx.zip"
     },
     "windows": {
       "nsis": {

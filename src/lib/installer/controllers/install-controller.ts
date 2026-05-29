@@ -34,7 +34,6 @@ export function createInstallController(input: {
     gamePath: string,
     skipSteamShutdown: boolean
   ) => Promise<unknown>;
-  installFfmpegApi: (gamePath: string) => Promise<unknown>;
   patchLaunchOptions: (
     steamPath: string,
     gamePath: string,
@@ -323,7 +322,6 @@ export function createInstallController(input: {
         inputArgs.effectiveGamePath,
         Boolean(inputArgs.skipSteamShutdown)
       );
-      await input.installFfmpegApi(inputArgs.effectiveGamePath);
       if (currentEnv?.steam_launch_options_supported) {
         const patchResult = await input.patchLaunchOptions(
           steamPath,

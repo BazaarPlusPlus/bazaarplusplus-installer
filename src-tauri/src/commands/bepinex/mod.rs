@@ -163,12 +163,6 @@ pub fn uninstall_bpp(
 
     payload::uninstall_payload(game_path)?;
 
-    // Clean up the installer-managed FFmpeg drop. Scoped to `tools/ffmpeg/`
-    // by design — other future tools under `tools/` keep their state.
-    if let Err(err) = crate::commands::ffmpeg::remove_ffmpeg_dir(game_path) {
-        debug_error!("Failed to remove tools/ffmpeg during uninstall: {err}");
-    }
-
     #[cfg(target_os = "macos")]
     {
         crate::commands::vdf::clear_launch_options_for_steam(Path::new(&_steam_path))?;

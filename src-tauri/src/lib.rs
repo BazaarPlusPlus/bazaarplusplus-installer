@@ -14,7 +14,6 @@ use tauri::{
 use commands::{
     bepinex::{get_legacy_record_directory_info, install_bepinex, repair_bpp, uninstall_bpp},
     detect::{detect_environment, verify_game_path},
-    ffmpeg::{detect_ffmpeg, install_ffmpeg, repair_ffmpeg, uninstall_ffmpeg},
     game_process::detect_bazaar_running,
     startup::{initialize_installer_context, InstallerContextState},
     steam::{close_steam, detect_steam_running},
@@ -87,10 +86,6 @@ pub fn run() {
             repair_bpp,
             get_legacy_record_directory_info,
             uninstall_bpp,
-            detect_ffmpeg,
-            install_ffmpeg,
-            uninstall_ffmpeg,
-            repair_ffmpeg,
             patch_launch_options,
             start_stream_service,
             stop_stream_service,

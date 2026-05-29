@@ -31,15 +31,13 @@ function createController(
       gamePath: string,
       skipSteamShutdown: boolean
     ) => Promise<unknown>;
-    installFfmpegApi?: (gamePath: string) => Promise<unknown>;
     detectEnvironmentApi?: (
       requestedGamePath?: string
     ) => Promise<EnvironmentInfo>;
   } = {}
 ) {
   const installState = {
-    bepinexInstalled: false,
-    ffmpegBinaryPath: ''
+    bepinexInstalled: false
   };
   const env = createEnvironment();
   const controller = createInstallController({
@@ -68,14 +66,6 @@ function createController(
       (async (_steamPath, _gamePath, _skipSteamShutdown) => {
         installState.bepinexInstalled = true;
       }),
-    installFfmpegApi:
-      overrides.installFfmpegApi ??
-      (async (gamePath) => {
-        if (!installState.bepinexInstalled) {
-          throw new Error('BepInEx must be installed before FFmpeg');
-        }
-        installState.ffmpegBinaryPath = `${gamePath}/BazaarPlusPlusV4/tools/ffmpeg/ffmpeg`;
-      }),
     patchLaunchOptions: async (): Promise<LaunchOptionsPatchResult> => ({
       verified: true
     }),
@@ -102,7 +92,7 @@ function createController(
   return { controller, installState };
 }
 
-test('confirmed install deploys bundled FFmpeg into the game tools directory', async () => {
+test('confirmed install deploys the BepInEx payload and settles idle', async () => {
   const { controller, installState } = createController();
 
   await controller.confirmInstall({
@@ -111,8 +101,6 @@ test('confirmed install deploys bundled FFmpeg into the game tools directory', a
     selectedPath: null
   });
 
-  expect(installState.ffmpegBinaryPath).toBe(
-    '/games/The Bazaar/BazaarPlusPlusV4/tools/ffmpeg/ffmpeg'
-  );
+  expect(installState.bepinexInstalled).toBe(true);
   expect(get(controller.actionBusy)).toBe('idle');
 });

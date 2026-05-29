@@ -73,9 +73,6 @@ test('macOS production build targets arm64 artifacts', () => {
     /Preparing signed macos resource zip\|.*src-tauri\/resources\/BepInExSource\/macos\/BepInEx\.zip/
   );
   expect(output).toMatch(
-    /Preparing signed macos resource zip\|.*src-tauri\/resources\/FfmpegSource\/macos\/ffmpeg\.zip/
-  );
-  expect(output).toMatch(
     /Bundling macos installer\|npm run tauri bundle -- --bundles app,dmg --config .*src-tauri\/tauri\.macos\.conf\.json --target aarch64-apple-darwin/
   );
   expect(output).not.toMatch(/Notarizing macos|notarytool|stapler/);
@@ -115,37 +112,6 @@ test('macOS production build removes the entire bundle directory before rebundli
   } finally {
     rmSync(bundleDir, { force: true, recursive: true });
   }
-});
-
-test('macOS production build restores the source FFmpeg zip after bundling', () => {
-  const output = runShell(`
-    set -euo pipefail
-    source ./build.sh
-    temp_dir="$(mktemp -d)"
-    trap 'rm -rf "$temp_dir"' EXIT
-    MACOS_CONFIG="$temp_dir/tauri.macos.conf.json"
-    MACOS_ZIP="$temp_dir/BepInEx.zip"
-    MACOS_FFMPEG_ZIP="$temp_dir/ffmpeg.zip"
-    printf 'config' > "$MACOS_CONFIG"
-    printf 'bepinex' > "$MACOS_ZIP"
-    printf 'original-ffmpeg' > "$MACOS_FFMPEG_ZIP"
-    prepare_signed_macos_resource_zip() {
-      printf 'prepare|%s\\n' "$1"
-      printf '|signed' >> "$1"
-    }
-    invoke_step() {
-      local label="$1"
-      shift
-      printf '%s|%s\\n' "$label" "$*"
-    }
-    build_prod macos >/tmp/bpp-build-restore-test.out
-    cat /tmp/bpp-build-restore-test.out
-    printf 'ffmpeg_zip=%s\\n' "$(cat "$MACOS_FFMPEG_ZIP")"
-  `);
-
-  expect(output).toContain('prepare|');
-  expect(output).toContain('ffmpeg_zip=original-ffmpeg\n');
-  expect(output).not.toContain('ffmpeg_zip=original-ffmpeg|signed');
 });
 
 test('Windows production build keeps the default target layout', () => {

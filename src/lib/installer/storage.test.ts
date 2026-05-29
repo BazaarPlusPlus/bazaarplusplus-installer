@@ -1,12 +1,10 @@
 import { test, expect } from 'vitest';
 
 import {
-  loadFfmpegStepEnabled,
   loadPersistedDetectedGamePath,
   loadPersistedCustomGamePath,
   persistDetectedGamePath,
-  persistCustomGamePath,
-  persistFfmpegStepEnabled
+  persistCustomGamePath
 } from './storage.ts';
 
 function createStorage() {
@@ -67,31 +65,6 @@ test('persistDetectedGamePath stores and clears the detected game path cache', (
 
     persistDetectedGamePath('   ');
     expect(loadPersistedDetectedGamePath()).toBe('');
-  } finally {
-    Object.defineProperty(globalThis, 'window', {
-      configurable: true,
-      value: originalWindow
-    });
-  }
-});
-
-test('FFmpeg step defaults on and still respects explicit storage overrides', () => {
-  const originalWindow = globalThis.window;
-  const localStorage = createStorage();
-
-  Object.defineProperty(globalThis, 'window', {
-    configurable: true,
-    value: { localStorage }
-  });
-
-  try {
-    expect(loadFfmpegStepEnabled(false)).toBe(true);
-
-    persistFfmpegStepEnabled(false);
-    expect(loadFfmpegStepEnabled(true)).toBe(false);
-
-    persistFfmpegStepEnabled(true);
-    expect(loadFfmpegStepEnabled(false)).toBe(true);
   } finally {
     Object.defineProperty(globalThis, 'window', {
       configurable: true,
