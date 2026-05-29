@@ -375,7 +375,11 @@ mod tests {
 
         let report = cleanup_legacy_record_directory(tmp.path());
 
-        assert!(report.is_empty(), "unexpected failures: {:?}", report.failed);
+        assert!(
+            report.is_empty(),
+            "unexpected failures: {:?}",
+            report.failed
+        );
         assert!(!legacy_dir.exists());
     }
 
@@ -399,7 +403,11 @@ mod tests {
 
         let report = cleanup_legacy_record_directory(tmp.path());
 
-        assert!(report.is_empty(), "unexpected failures: {:?}", report.failed);
+        assert!(
+            report.is_empty(),
+            "unexpected failures: {:?}",
+            report.failed
+        );
         assert!(!legacy_dir.exists());
     }
 
@@ -416,19 +424,14 @@ mod tests {
         std::fs::write(unwritable_subdir.join("trapped.bin"), b"x").unwrap();
 
         // Drop write permission on the parent dir so its child can't be unlinked.
-        std::fs::set_permissions(
-            &unwritable_subdir,
-            std::fs::Permissions::from_mode(0o500),
-        )
-        .unwrap();
+        std::fs::set_permissions(&unwritable_subdir, std::fs::Permissions::from_mode(0o500))
+            .unwrap();
 
         let report = cleanup_legacy_record_directory(tmp.path());
 
         // Restore permissions so the tempdir cleanup succeeds even if the test fails.
-        let _ = std::fs::set_permissions(
-            &unwritable_subdir,
-            std::fs::Permissions::from_mode(0o700),
-        );
+        let _ =
+            std::fs::set_permissions(&unwritable_subdir, std::fs::Permissions::from_mode(0o700));
 
         assert!(!report.is_empty(), "expected at least one failed path");
         assert!(!legacy_dir.join("removable.bin").exists());

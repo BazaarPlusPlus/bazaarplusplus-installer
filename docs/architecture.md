@@ -18,13 +18,11 @@ src/
     components/   shared Svelte UI
     config/       frontend constants such as external URLs
     generated/    TypeScript bindings generated from Rust ts-rs exports
-    home/         home-page summary helpers
     installer/    install controllers, selectors, runtime helpers, storage, API calls
     stream/       frontend stream-mode API and state
   routes/
     install/      primary install and repair workflow
     stream/       dedicated stream tools page
-    changelog/    release notes UI
     about/        project metadata and support UI
 
 src-tauri/
@@ -85,12 +83,11 @@ Run `npm run generate:bindings` or a command that invokes it before relying on g
 
 ### `src/lib/components/*`
 
-Components are grouped by feature, but there are still a few large files. Current hotspots:
+Components are grouped by feature, but there are still a few large files. The current hotspot is:
 
-- `src/lib/components/InstallerUpdateHighlights.svelte`
 - `src/lib/components/installer/InstallerStatusSteps.svelte`
 
-If those areas keep growing, split by subpanel or user task before adding new branches inside the existing file.
+If it keeps growing, split by subpanel or user task before adding new branches inside the existing file.
 
 ### `src/lib/about/*`
 

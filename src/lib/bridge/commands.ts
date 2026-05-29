@@ -2,13 +2,11 @@ import { invoke } from '@tauri-apps/api/core';
 import type { Locale } from '../i18n.ts';
 import type {
   EnvironmentInfo,
-  GameRunningInfo,
   InstallerContextPayload,
   LegacyRecordDirectoryInfo,
   LaunchOptionsPatchResult,
   SteamRunningInfo,
   StreamDbPathInfo,
-  StreamOverlayCropSettings,
   StreamOverlayCropSettingsPayload,
   StreamOverlayDisplayMode,
   StreamRecordSummary,
@@ -16,7 +14,6 @@ import type {
 } from '../types.ts';
 
 export interface TauriCommandMap {
-  verify_game_path: { input: { path: string }; output: boolean };
   initialize_installer_context: {
     input: undefined;
     output: InstallerContextPayload;
@@ -27,7 +24,6 @@ export interface TauriCommandMap {
   };
   detect_steam_running: { input: undefined; output: SteamRunningInfo };
   close_steam: { input: undefined; output: void };
-  detect_bazaar_running: { input: undefined; output: GameRunningInfo };
   install_bepinex: {
     input: { steamPath: string; gamePath: string; skipSteamShutdown: boolean };
     output: void;
@@ -71,20 +67,8 @@ export interface TauriCommandMap {
     input: { gamePath?: string; recordId: string };
     output: void;
   };
-  load_stream_record_strip_preview: {
-    input: { gamePath?: string; recordId: string };
-    output: string | null;
-  };
-  load_stream_record_strip_previews: {
-    input: { gamePath?: string; recordIds: string[] };
-    output: Record<string, string>;
-  };
   get_stream_overlay_crop_settings: {
     input: undefined;
-    output: StreamOverlayCropSettingsPayload;
-  };
-  save_stream_overlay_crop_settings: {
-    input: { crop: StreamOverlayCropSettings };
     output: StreamOverlayCropSettingsPayload;
   };
   import_stream_overlay_crop_code: {

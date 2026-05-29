@@ -4,19 +4,15 @@ use std::path::Path;
 #[derive(Clone, Debug)]
 pub(crate) struct OverlayRecordRow {
     pub(super) id: String,
-    pub(super) run_id: Option<String>,
     pub(super) hero: String,
     pub(super) game_mode: String,
     pub(super) captured_at: String,
     pub(super) captured_at_utc: String,
     pub(super) image_path: Option<String>,
     pub(super) wins: Option<i64>,
-    pub(super) position: Option<i64>,
     pub(super) battle_count: Option<i64>,
     pub(super) rank: Option<String>,
     pub(super) rating: Option<i64>,
-    pub(super) player_name: Option<String>,
-    pub(super) player_account_id: Option<String>,
 }
 
 pub(super) fn load_latest_overlay_record(
@@ -34,114 +30,47 @@ pub(super) fn load_latest_overlay_record(
     }
 
     let offset_value = i64::try_from(offset).map_err(|err| err.to_string())?;
-    let battles_available = table_exists(&conn, "battles")?;
-    let mut stmt = match (from.is_some(), battles_available) {
-        (true, true) => conn.prepare(
+    let mut stmt = if from.is_some() {
+        conn.prepare(
             "
 select
   rs.screenshot_id,
-  rs.run_id,
   coalesce(nullif(trim(rs.hero_name), ''), 'Unknown') as hero,
   'End of run' as game_mode,
   coalesce(nullif(trim(rs.captured_at_local), ''), rs.captured_at_utc) as captured_at,
   rs.image_relative_path as image_path,
   rs.victories_at_capture as wins,
-  rs.player_position,
   rs.day as battle_count,
   nullif(trim(rs.player_rank), '') as player_rank,
   rs.player_rating as player_rating,
-  rs.captured_at_utc,
-  (select b.player_name from battles b
-     where b.run_id = rs.run_id
-     order by b.recorded_at_utc asc
-     limit 1) as player_name,
-  (select b.player_account_id from battles b
-     where b.run_id = rs.run_id
-     order by b.recorded_at_utc asc
-     limit 1) as player_account_id
+  rs.captured_at_utc
 from run_screenshots rs
 where rs.capture_source = 'end_of_run_auto'
   and datetime(rs.captured_at_utc) >= datetime(?1)
 order by datetime(rs.captured_at_utc) desc, rs.screenshot_id desc
 limit 1 offset ?2
 ",
-        ),
-        (true, false) => conn.prepare(
+        )
+    } else {
+        conn.prepare(
             "
 select
   rs.screenshot_id,
-  rs.run_id,
   coalesce(nullif(trim(rs.hero_name), ''), 'Unknown') as hero,
   'End of run' as game_mode,
   coalesce(nullif(trim(rs.captured_at_local), ''), rs.captured_at_utc) as captured_at,
   rs.image_relative_path as image_path,
   rs.victories_at_capture as wins,
-  rs.player_position,
   rs.day as battle_count,
   nullif(trim(rs.player_rank), '') as player_rank,
   rs.player_rating as player_rating,
-  rs.captured_at_utc,
-  null as player_name,
-  null as player_account_id
-from run_screenshots rs
-where rs.capture_source = 'end_of_run_auto'
-  and datetime(rs.captured_at_utc) >= datetime(?1)
-order by datetime(rs.captured_at_utc) desc, rs.screenshot_id desc
-limit 1 offset ?2
-",
-        ),
-        (false, true) => conn.prepare(
-            "
-select
-  rs.screenshot_id,
-  rs.run_id,
-  coalesce(nullif(trim(rs.hero_name), ''), 'Unknown') as hero,
-  'End of run' as game_mode,
-  coalesce(nullif(trim(rs.captured_at_local), ''), rs.captured_at_utc) as captured_at,
-  rs.image_relative_path as image_path,
-  rs.victories_at_capture as wins,
-  rs.player_position,
-  rs.day as battle_count,
-  nullif(trim(rs.player_rank), '') as player_rank,
-  rs.player_rating as player_rating,
-  rs.captured_at_utc,
-  (select b.player_name from battles b
-     where b.run_id = rs.run_id
-     order by b.recorded_at_utc asc
-     limit 1) as player_name,
-  (select b.player_account_id from battles b
-     where b.run_id = rs.run_id
-     order by b.recorded_at_utc asc
-     limit 1) as player_account_id
+  rs.captured_at_utc
 from run_screenshots rs
 where rs.capture_source = 'end_of_run_auto'
 order by datetime(rs.captured_at_utc) desc, rs.screenshot_id desc
 limit 1 offset ?1
 ",
-        ),
-        (false, false) => conn.prepare(
-            "
-select
-  rs.screenshot_id,
-  rs.run_id,
-  coalesce(nullif(trim(rs.hero_name), ''), 'Unknown') as hero,
-  'End of run' as game_mode,
-  coalesce(nullif(trim(rs.captured_at_local), ''), rs.captured_at_utc) as captured_at,
-  rs.image_relative_path as image_path,
-  rs.victories_at_capture as wins,
-  rs.player_position,
-  rs.day as battle_count,
-  nullif(trim(rs.player_rank), '') as player_rank,
-  rs.player_rating as player_rating,
-  rs.captured_at_utc,
-  null as player_name,
-  null as player_account_id
-from run_screenshots rs
-where rs.capture_source = 'end_of_run_auto'
-order by datetime(rs.captured_at_utc) desc, rs.screenshot_id desc
-limit 1 offset ?1
-",
-        ),
+        )
     }
     .map_err(|err| err.to_string())?;
     let mut rows = if let Some(from) = from {
@@ -218,115 +147,48 @@ pub(super) fn load_overlay_record_list(
     }
     let limit_value = i64::try_from(effective_limit).map_err(|err| err.to_string())?;
 
-    let battles_available = table_exists(&conn, "battles")?;
     let mut records = Vec::new();
-    let mut stmt = match (from.is_some(), battles_available) {
-        (true, true) => conn.prepare(
+    let mut stmt = if from.is_some() {
+        conn.prepare(
             "
 select
   rs.screenshot_id,
-  rs.run_id,
   coalesce(nullif(trim(rs.hero_name), ''), 'Unknown') as hero,
   'End of run' as game_mode,
   coalesce(nullif(trim(rs.captured_at_local), ''), rs.captured_at_utc) as captured_at,
   rs.image_relative_path as image_path,
   rs.victories_at_capture as wins,
-  rs.player_position,
   rs.day as battle_count,
   nullif(trim(rs.player_rank), '') as player_rank,
   rs.player_rating as player_rating,
-  rs.captured_at_utc,
-  (select b.player_name from battles b
-     where b.run_id = rs.run_id
-     order by b.recorded_at_utc asc
-     limit 1) as player_name,
-  (select b.player_account_id from battles b
-     where b.run_id = rs.run_id
-     order by b.recorded_at_utc asc
-     limit 1) as player_account_id
+  rs.captured_at_utc
 from run_screenshots rs
 where rs.capture_source = 'end_of_run_auto'
   and datetime(rs.captured_at_utc) >= datetime(?1)
 order by datetime(rs.captured_at_utc) desc, rs.screenshot_id desc
 limit ?2
 ",
-        ),
-        (true, false) => conn.prepare(
+        )
+    } else {
+        conn.prepare(
             "
 select
   rs.screenshot_id,
-  rs.run_id,
   coalesce(nullif(trim(rs.hero_name), ''), 'Unknown') as hero,
   'End of run' as game_mode,
   coalesce(nullif(trim(rs.captured_at_local), ''), rs.captured_at_utc) as captured_at,
   rs.image_relative_path as image_path,
   rs.victories_at_capture as wins,
-  rs.player_position,
   rs.day as battle_count,
   nullif(trim(rs.player_rank), '') as player_rank,
   rs.player_rating as player_rating,
-  rs.captured_at_utc,
-  null as player_name,
-  null as player_account_id
-from run_screenshots rs
-where rs.capture_source = 'end_of_run_auto'
-  and datetime(rs.captured_at_utc) >= datetime(?1)
-order by datetime(rs.captured_at_utc) desc, rs.screenshot_id desc
-limit ?2
-",
-        ),
-        (false, true) => conn.prepare(
-            "
-select
-  rs.screenshot_id,
-  rs.run_id,
-  coalesce(nullif(trim(rs.hero_name), ''), 'Unknown') as hero,
-  'End of run' as game_mode,
-  coalesce(nullif(trim(rs.captured_at_local), ''), rs.captured_at_utc) as captured_at,
-  rs.image_relative_path as image_path,
-  rs.victories_at_capture as wins,
-  rs.player_position,
-  rs.day as battle_count,
-  nullif(trim(rs.player_rank), '') as player_rank,
-  rs.player_rating as player_rating,
-  rs.captured_at_utc,
-  (select b.player_name from battles b
-     where b.run_id = rs.run_id
-     order by b.recorded_at_utc asc
-     limit 1) as player_name,
-  (select b.player_account_id from battles b
-     where b.run_id = rs.run_id
-     order by b.recorded_at_utc asc
-     limit 1) as player_account_id
+  rs.captured_at_utc
 from run_screenshots rs
 where rs.capture_source = 'end_of_run_auto'
 order by datetime(rs.captured_at_utc) desc, rs.screenshot_id desc
 limit ?1
 ",
-        ),
-        (false, false) => conn.prepare(
-            "
-select
-  rs.screenshot_id,
-  rs.run_id,
-  coalesce(nullif(trim(rs.hero_name), ''), 'Unknown') as hero,
-  'End of run' as game_mode,
-  coalesce(nullif(trim(rs.captured_at_local), ''), rs.captured_at_utc) as captured_at,
-  rs.image_relative_path as image_path,
-  rs.victories_at_capture as wins,
-  rs.player_position,
-  rs.day as battle_count,
-  nullif(trim(rs.player_rank), '') as player_rank,
-  rs.player_rating as player_rating,
-  rs.captured_at_utc,
-  null as player_name,
-  null as player_account_id
-from run_screenshots rs
-where rs.capture_source = 'end_of_run_auto'
-order by datetime(rs.captured_at_utc) desc, rs.screenshot_id desc
-limit ?1
-",
-        ),
+        )
     }
     .map_err(|err| err.to_string())?;
     let mut rows = if let Some(from) = from {
@@ -355,62 +217,27 @@ pub(super) fn load_overlay_record_by_id(
         return Ok(None);
     }
 
-    let battles_available = table_exists(&conn, "battles")?;
-    let mut stmt = match battles_available {
-        true => conn.prepare(
+    let mut stmt = conn
+        .prepare(
             "
 select
   rs.screenshot_id,
-  rs.run_id,
   coalesce(nullif(trim(rs.hero_name), ''), 'Unknown') as hero,
   'End of run' as game_mode,
   coalesce(nullif(trim(rs.captured_at_local), ''), rs.captured_at_utc) as captured_at,
   rs.image_relative_path as image_path,
   rs.victories_at_capture as wins,
-  rs.player_position,
   rs.day as battle_count,
   nullif(trim(rs.player_rank), '') as player_rank,
   rs.player_rating as player_rating,
-  rs.captured_at_utc,
-  (select b.player_name from battles b
-     where b.run_id = rs.run_id
-     order by b.recorded_at_utc asc
-     limit 1) as player_name,
-  (select b.player_account_id from battles b
-     where b.run_id = rs.run_id
-     order by b.recorded_at_utc asc
-     limit 1) as player_account_id
+  rs.captured_at_utc
 from run_screenshots rs
 where rs.capture_source = 'end_of_run_auto'
   and rs.screenshot_id = ?1
 limit 1
 ",
-        ),
-        false => conn.prepare(
-            "
-select
-  rs.screenshot_id,
-  rs.run_id,
-  coalesce(nullif(trim(rs.hero_name), ''), 'Unknown') as hero,
-  'End of run' as game_mode,
-  coalesce(nullif(trim(rs.captured_at_local), ''), rs.captured_at_utc) as captured_at,
-  rs.image_relative_path as image_path,
-  rs.victories_at_capture as wins,
-  rs.player_position,
-  rs.day as battle_count,
-  nullif(trim(rs.player_rank), '') as player_rank,
-  rs.player_rating as player_rating,
-  rs.captured_at_utc,
-  null as player_name,
-  null as player_account_id
-from run_screenshots rs
-where rs.capture_source = 'end_of_run_auto'
-  and rs.screenshot_id = ?1
-limit 1
-",
-        ),
-    }
-    .map_err(|err| err.to_string())?;
+        )
+        .map_err(|err| err.to_string())?;
 
     let mut rows = stmt.query([record_id]).map_err(|err| err.to_string())?;
     let Some(row) = rows.next().map_err(|err| err.to_string())? else {
@@ -469,19 +296,15 @@ fn table_exists(conn: &Connection, table_name: &str) -> Result<bool, String> {
 fn map_overlay_record_row(row: &rusqlite::Row<'_>) -> Result<OverlayRecordRow, String> {
     Ok(OverlayRecordRow {
         id: row.get(0).map_err(|err| err.to_string())?,
-        run_id: row.get(1).map_err(|err| err.to_string())?,
-        hero: row.get(2).map_err(|err| err.to_string())?,
-        game_mode: row.get(3).map_err(|err| err.to_string())?,
-        captured_at: row.get(4).map_err(|err| err.to_string())?,
-        image_path: row.get(5).map_err(|err| err.to_string())?,
-        wins: row.get(6).map_err(|err| err.to_string())?,
-        position: row.get(7).map_err(|err| err.to_string())?,
-        battle_count: row.get(8).map_err(|err| err.to_string())?,
-        rank: row.get(9).map_err(|err| err.to_string())?,
-        rating: row.get(10).map_err(|err| err.to_string())?,
-        captured_at_utc: row.get(11).map_err(|err| err.to_string())?,
-        player_name: row.get(12).map_err(|err| err.to_string())?,
-        player_account_id: row.get(13).map_err(|err| err.to_string())?,
+        hero: row.get(1).map_err(|err| err.to_string())?,
+        game_mode: row.get(2).map_err(|err| err.to_string())?,
+        captured_at: row.get(3).map_err(|err| err.to_string())?,
+        image_path: row.get(4).map_err(|err| err.to_string())?,
+        wins: row.get(5).map_err(|err| err.to_string())?,
+        battle_count: row.get(6).map_err(|err| err.to_string())?,
+        rank: row.get(7).map_err(|err| err.to_string())?,
+        rating: row.get(8).map_err(|err| err.to_string())?,
+        captured_at_utc: row.get(9).map_err(|err| err.to_string())?,
     })
 }
 
@@ -551,7 +374,6 @@ mod tests {
         assert_eq!(latest.game_mode, "End of run");
         assert_eq!(latest.image_path.as_deref(), Some("2026-04-10\\shot-1.png"));
         assert_eq!(latest.wins, Some(10));
-        assert_eq!(latest.position, Some(1));
         assert_eq!(latest.battle_count, Some(14));
         assert_eq!(latest.rank.as_deref(), Some("Diamond"));
         assert_eq!(latest.rating, Some(1942));
@@ -756,190 +578,5 @@ mod tests {
         assert_eq!(records.len(), 3);
         assert_eq!(records[0].id, "snap-3");
         assert_eq!(records[2].id, "snap-1");
-    }
-
-    fn create_battles_table(conn: &rusqlite::Connection) {
-        conn.execute(
-            "create table battles (
-                battle_id text primary key,
-                source text not null,
-                run_id text,
-                recorded_at_utc text not null,
-                combat_kind text not null,
-                player_name text,
-                player_account_id text
-            )",
-            [],
-        )
-        .unwrap();
-    }
-
-    #[test]
-    fn latest_overlay_record_includes_player_identity_from_battles() {
-        let temp = tempfile::NamedTempFile::new().unwrap();
-        let conn = rusqlite::Connection::open(temp.path()).unwrap();
-        create_run_screenshots_table(&conn);
-        create_battles_table(&conn);
-        conn.execute(
-            "insert into run_screenshots (
-                screenshot_id, run_id, capture_source, image_relative_path,
-                captured_at_local, captured_at_utc, hero_name
-             ) values (
-                'snap-1', 'run-1', 'end_of_run_auto', 'final.png',
-                '2026-04-10T20:30:05+00:00', '2026-04-10T20:30:05+00:00', 'Mak'
-             )",
-            [],
-        )
-        .unwrap();
-        conn.execute(
-            "insert into battles (
-                battle_id, source, run_id, recorded_at_utc, combat_kind,
-                player_name, player_account_id
-             ) values (
-                'b-1', 'LOCAL', 'run-1', '2026-04-10T20:00:00+00:00',
-                'PVP', 'Xinyu', 'acct-9'
-             )",
-            [],
-        )
-        .unwrap();
-
-        let latest = load_latest_overlay_record(temp.path(), None, 0)
-            .unwrap()
-            .unwrap();
-
-        assert_eq!(latest.player_name.as_deref(), Some("Xinyu"));
-        assert_eq!(latest.player_account_id.as_deref(), Some("acct-9"));
-    }
-
-    #[test]
-    fn latest_overlay_record_returns_none_player_identity_when_no_battle() {
-        let temp = tempfile::NamedTempFile::new().unwrap();
-        let conn = rusqlite::Connection::open(temp.path()).unwrap();
-        create_run_screenshots_table(&conn);
-        create_battles_table(&conn);
-        conn.execute(
-            "insert into run_screenshots (
-                screenshot_id, run_id, capture_source, image_relative_path,
-                captured_at_local, captured_at_utc
-             ) values (
-                'snap-orphan', 'run-orphan', 'end_of_run_auto', 'orphan.png',
-                '2026-04-10T20:30:05+00:00', '2026-04-10T20:30:05+00:00'
-             )",
-            [],
-        )
-        .unwrap();
-
-        let latest = load_latest_overlay_record(temp.path(), None, 0)
-            .unwrap()
-            .unwrap();
-
-        assert!(latest.player_name.is_none());
-        assert!(latest.player_account_id.is_none());
-    }
-
-    #[test]
-    fn overlay_record_list_includes_player_identity() {
-        let temp = tempfile::NamedTempFile::new().unwrap();
-        let conn = rusqlite::Connection::open(temp.path()).unwrap();
-        create_run_screenshots_table(&conn);
-        create_battles_table(&conn);
-        conn.execute(
-            "insert into run_screenshots (
-                screenshot_id, run_id, capture_source, image_relative_path,
-                captured_at_local, captured_at_utc, hero_name
-             ) values
-             ('snap-a', 'run-a', 'end_of_run_auto', 'a.png',
-              '2026-04-10T20:30:05+00:00', '2026-04-10T20:30:05+00:00', 'Mak'),
-             ('snap-b', 'run-b', 'end_of_run_auto', 'b.png',
-              '2026-04-10T21:30:05+00:00', '2026-04-10T21:30:05+00:00', 'Vanessa')",
-            [],
-        )
-        .unwrap();
-        conn.execute(
-            "insert into battles (
-                battle_id, source, run_id, recorded_at_utc, combat_kind,
-                player_name, player_account_id
-             ) values
-             ('b-a', 'LOCAL', 'run-a', '2026-04-10T20:00:00+00:00', 'PVP', 'Alice', 'acct-A'),
-             ('b-b', 'LOCAL', 'run-b', '2026-04-10T21:00:00+00:00', 'PVP', 'Bob',   'acct-B')",
-            [],
-        )
-        .unwrap();
-
-        let records = load_overlay_record_list(temp.path(), None, None).unwrap();
-        assert_eq!(records.len(), 2);
-        assert_eq!(records[0].player_account_id.as_deref(), Some("acct-B"));
-        assert_eq!(records[1].player_account_id.as_deref(), Some("acct-A"));
-    }
-
-    #[test]
-    fn load_overlay_record_by_id_includes_player_identity() {
-        let temp = tempfile::NamedTempFile::new().unwrap();
-        let conn = rusqlite::Connection::open(temp.path()).unwrap();
-        create_run_screenshots_table(&conn);
-        create_battles_table(&conn);
-        conn.execute(
-            "insert into run_screenshots (
-                screenshot_id, run_id, capture_source, image_relative_path,
-                captured_at_local, captured_at_utc, hero_name
-             ) values ('snap-1', 'run-1', 'end_of_run_auto', 'm.png',
-                       '2026-04-10T20:30:05+00:00', '2026-04-10T20:30:05+00:00', 'Mak')",
-            [],
-        )
-        .unwrap();
-        conn.execute(
-            "insert into battles (
-                battle_id, source, run_id, recorded_at_utc, combat_kind,
-                player_name, player_account_id
-             ) values ('b-1', 'LOCAL', 'run-1', '2026-04-10T20:00:00+00:00',
-                       'PVP', 'Xinyu', 'acct-9')",
-            [],
-        )
-        .unwrap();
-
-        let record = load_overlay_record_by_id(temp.path(), "snap-1")
-            .unwrap()
-            .unwrap();
-
-        assert_eq!(record.player_name.as_deref(), Some("Xinyu"));
-        assert_eq!(record.player_account_id.as_deref(), Some("acct-9"));
-    }
-
-    #[test]
-    fn latest_overlay_record_with_from_filter_includes_player_identity() {
-        let temp = tempfile::NamedTempFile::new().unwrap();
-        let conn = rusqlite::Connection::open(temp.path()).unwrap();
-        create_run_screenshots_table(&conn);
-        create_battles_table(&conn);
-        conn.execute(
-            "insert into run_screenshots (
-                screenshot_id, run_id, capture_source, image_relative_path,
-                captured_at_local, captured_at_utc, hero_name
-             ) values
-             ('snap-before', 'run-old', 'end_of_run_auto', 'before.png',
-              '2026-04-10T19:00:00+00:00', '2026-04-10T19:00:00+00:00', 'Mak'),
-             ('snap-after',  'run-new', 'end_of_run_auto', 'after.png',
-              '2026-04-10T21:00:00+00:00', '2026-04-10T21:00:00+00:00', 'Vanessa')",
-            [],
-        )
-        .unwrap();
-        conn.execute(
-            "insert into battles (
-                battle_id, source, run_id, recorded_at_utc, combat_kind,
-                player_name, player_account_id
-             ) values
-             ('b-old', 'LOCAL', 'run-old', '2026-04-10T18:30:00+00:00', 'PVP', 'Old', 'acct-old'),
-             ('b-new', 'LOCAL', 'run-new', '2026-04-10T20:30:00+00:00', 'PVP', 'New', 'acct-new')",
-            [],
-        )
-        .unwrap();
-
-        let latest = load_latest_overlay_record(temp.path(), Some("2026-04-10T20:00:00+00:00"), 0)
-            .unwrap()
-            .unwrap();
-
-        assert_eq!(latest.id, "snap-after");
-        assert_eq!(latest.player_name.as_deref(), Some("New"));
-        assert_eq!(latest.player_account_id.as_deref(), Some("acct-new"));
     }
 }

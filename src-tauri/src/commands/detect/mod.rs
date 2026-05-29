@@ -9,7 +9,6 @@ pub(crate) use steam::detect_installation_paths;
 use crate::commands::startup::InstallerContextState;
 use game::{is_bepinex_installed, normalize_game_path, read_installed_bpp_version};
 use serde::{Deserialize, Serialize};
-use std::path::PathBuf;
 use tauri::{AppHandle, State};
 
 #[derive(Debug, Serialize, Deserialize, ts_rs::TS)]
@@ -26,8 +25,7 @@ pub struct EnvironmentInfo {
     pub bundled_bpp_version: Option<String>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, ts_rs::TS)]
-#[ts(export)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DotnetInfo {
     pub dotnet_version: Option<String>,
     pub dotnet_ok: bool,
@@ -86,11 +84,4 @@ pub fn detect_environment(
         bpp_version,
         bundled_bpp_version: startup.bundled_bpp_version.clone(),
     })
-}
-
-/// Returns true if the game installation is found at the given path.
-#[tauri::command]
-pub fn verify_game_path(path: String) -> bool {
-    let base = PathBuf::from(&path);
-    is_valid_game_path(&base)
 }

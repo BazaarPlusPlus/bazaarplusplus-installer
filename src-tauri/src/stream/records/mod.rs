@@ -33,12 +33,6 @@ impl OverlayRecordRepository {
             .map(|row| to_overlay_record(self.game_path.as_deref(), row)))
     }
 
-    pub fn load_record_by_id(&self, record_id: &str) -> Result<Option<OverlayRecord>, String> {
-        let database_path = self.database_path()?;
-        Ok(load_overlay_record_by_id(&database_path, record_id)?
-            .map(|row| to_overlay_record(self.game_path.as_deref(), row)))
-    }
-
     pub fn count_since(&self, from: Option<&str>) -> Result<usize, String> {
         let database_path = self.database_path()?;
         load_overlay_record_count(&database_path, from)
@@ -197,7 +191,6 @@ mod tests {
         let latest = repository.load_record_at_offset(None, 0).unwrap().unwrap();
 
         assert_eq!(latest.wins, Some(10));
-        assert_eq!(latest.position, Some(1));
         assert_eq!(latest.battle_count, Some(14));
         assert_eq!(latest.rank.as_deref(), Some("Diamond"));
         assert_eq!(latest.rating, Some(500));

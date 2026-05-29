@@ -1,15 +1,8 @@
-use serde::Serialize;
 #[cfg(target_os = "windows")]
 use std::process::Command;
 
 #[cfg_attr(not(any(target_os = "windows", test)), allow(dead_code))]
 const BAZAAR_PROCESS_NAME: &str = "TheBazaar.exe";
-
-#[derive(Debug, Serialize, ts_rs::TS)]
-#[ts(export)]
-pub struct GameRunningInfo {
-    pub running: bool,
-}
 
 #[cfg_attr(not(any(target_os = "windows", test)), allow(dead_code))]
 fn tasklist_output_indicates_running(stdout: &[u8]) -> bool {
@@ -61,19 +54,6 @@ pub(crate) fn is_bazaar_running_best_effort() -> bool {
     #[cfg(not(target_os = "windows"))]
     {
         false
-    }
-}
-
-#[tauri::command]
-pub fn detect_bazaar_running() -> Result<GameRunningInfo, String> {
-    #[cfg(target_os = "windows")]
-    {
-        return is_bazaar_running().map(|running| GameRunningInfo { running });
-    }
-
-    #[cfg(not(target_os = "windows"))]
-    {
-        Ok(GameRunningInfo { running: false })
     }
 }
 

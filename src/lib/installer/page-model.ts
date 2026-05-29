@@ -49,7 +49,6 @@ export interface InstallPageModel {
   dotnetDownloadUrl: string;
   localeBadge: string;
   localeButtonLabel: string;
-  updaterProgressLabel: string | null;
   updaterButtonLabel: string;
   updaterButtonTitle: string;
   updaterButtonDisabled: boolean;
@@ -133,7 +132,6 @@ export function createInstallPageModel(
     dotnetDownloadUrl: modeLabels.dotnetDownloadUrl,
     localeBadge: modeLabels.localeBadge,
     localeButtonLabel: modeLabels.localeButtonLabel,
-    updaterProgressLabel: updaterButton.progressLabel,
     updaterButtonLabel: updaterButton.label,
     updaterButtonTitle: updaterButton.title,
     updaterButtonDisabled: updaterButton.disabled,

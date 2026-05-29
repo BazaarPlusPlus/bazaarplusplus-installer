@@ -1,16 +1,4 @@
 import { call } from '../bridge/commands.ts';
-import type {
-  EnvironmentInfo,
-  GameRunningInfo,
-  InstallerContextPayload,
-  LegacyRecordDirectoryInfo,
-  LaunchOptionsPatchResult,
-  SteamRunningInfo
-} from '$lib/types';
-
-export async function verifyGamePath(path: string) {
-  return call('verify_game_path', { path });
-}
 
 export async function initializeInstallerContext() {
   return call('initialize_installer_context');
@@ -28,10 +16,6 @@ export async function detectSteamRunning() {
 
 export async function closeSteam() {
   return call('close_steam');
-}
-
-export async function detectBazaarRunning() {
-  return call('detect_bazaar_running');
 }
 
 export async function installBepinex(

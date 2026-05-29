@@ -1,7 +1,5 @@
 export type {
-  DotnetInfo,
   EnvironmentInfo,
-  GameRunningInfo,
   InstallerContextPayload,
   LaunchOptionsPatchResult,
   LegacyRecordDirectoryInfo,

@@ -2,7 +2,6 @@
   import { open } from '@tauri-apps/plugin-dialog';
   import { openUrl } from '@tauri-apps/plugin-opener';
   import { onMount } from 'svelte';
-  import AppModal from '$lib/components/AppModal.svelte';
   import { BILIBILI_URL } from '$lib/config/endpoints';
   import { locale } from '$lib/locale';
   import { formatMessage, messages } from '$lib/i18n';

@@ -3,7 +3,6 @@ import { hasTauriRuntime } from '$lib/installer/runtime';
 import { buildStreamCommandArgs } from '$lib/stream/command-args';
 import type {
   StreamDbPathInfo,
-  StreamOverlayCropSettings,
   StreamOverlayCropSettingsPayload,
   StreamOverlayDisplayMode,
   StreamRecordSummary,
@@ -194,38 +193,6 @@ export async function deleteStreamRecord(
   );
 }
 
-export async function loadStreamRecordStripPreview(
-  recordId: string,
-  gamePath?: string | null
-): Promise<string | null> {
-  if (!hasTauriRuntime()) {
-    return null;
-  }
-
-  return call(
-    'load_stream_record_strip_preview',
-    buildStreamCommandArgs(gamePath, {
-      recordId
-    })
-  );
-}
-
-export async function loadStreamRecordStripPreviews(
-  recordIds: string[],
-  gamePath?: string | null
-): Promise<Record<string, string>> {
-  if (!hasTauriRuntime() || recordIds.length === 0) {
-    return {};
-  }
-
-  return call(
-    'load_stream_record_strip_previews',
-    buildStreamCommandArgs(gamePath, {
-      recordIds
-    })
-  );
-}
-
 export async function getStreamOverlayCropSettings(): Promise<StreamOverlayCropSettingsPayload> {
   if (!hasTauriRuntime()) {
     return {
@@ -241,20 +208,6 @@ export async function getStreamOverlayCropSettings(): Promise<StreamOverlayCropS
   }
 
   return call('get_stream_overlay_crop_settings');
-}
-
-export async function saveStreamOverlayCropSettings(
-  crop: StreamOverlayCropSettings
-): Promise<StreamOverlayCropSettingsPayload> {
-  if (!hasTauriRuntime()) {
-    return {
-      crop,
-      code: '',
-      display_mode: 'current'
-    };
-  }
-
-  return call('save_stream_overlay_crop_settings', { crop });
 }
 
 export async function importStreamOverlayCropCode(

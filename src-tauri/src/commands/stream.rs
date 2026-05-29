@@ -1,16 +1,11 @@
 use crate::config::{BAZAAR_DATA_DIRECTORY, DATABASE_FILE_NAME};
 use crate::stream::{
     http::remove_overlay_strip_cache,
-    overlay_settings::{
-        OverlayCropSettings, OverlayCropSettingsPayload, OverlayDisplayMode, OverlaySettingsStore,
-    },
+    overlay_settings::{OverlayCropSettingsPayload, OverlayDisplayMode, OverlaySettingsStore},
     path_resolution::{normalize_requested_game_path, resolve_game_path_with_fallback},
     records::{OverlayRecord, OverlayRecordRepository},
     state::{StreamRuntimeState, StreamServiceStatus},
 };
-use base64::{engine::general_purpose::STANDARD, Engine as _};
-use image::{DynamicImage, ImageFormat};
-use std::collections::HashMap;
 use std::process::Command;
 
 #[tauri::command]
@@ -81,13 +76,6 @@ pub fn set_stream_overlay_window_offset(
 #[tauri::command]
 pub fn get_stream_overlay_crop_settings() -> Result<OverlayCropSettingsPayload, String> {
     OverlaySettingsStore::default().load_payload()
-}
-
-#[tauri::command]
-pub fn save_stream_overlay_crop_settings(
-    crop: OverlayCropSettings,
-) -> Result<OverlayCropSettingsPayload, String> {
-    OverlaySettingsStore::default().save(crop)
 }
 
 #[tauri::command]
@@ -188,95 +176,6 @@ pub fn delete_stream_record(
 
     remove_overlay_strip_cache(&record_id)?;
     Ok(())
-}
-
-#[tauri::command]
-pub fn load_stream_record_strip_preview(
-    app: tauri::AppHandle,
-    state: tauri::State<'_, StreamRuntimeState>,
-    game_path: Option<String>,
-    record_id: String,
-) -> Result<Option<String>, String> {
-    let game_path = resolve_game_path_with_fallback(&app, Some(&state), game_path);
-    let repository = OverlayRecordRepository::new(game_path);
-    let Some((_path, bytes)) = repository.load_image(&record_id)? else {
-        return Ok(None);
-    };
-
-    let crop = OverlaySettingsStore::default().load_payload()?.crop;
-    let image = image::load_from_memory(&bytes)
-        .map_err(|err| format!("Failed to decode overlay source image: {err}"))?;
-    let cropped = crop_dynamic_image(image, &crop)?;
-
-    let mut encoded = Vec::new();
-    cropped
-        .write_to(&mut std::io::Cursor::new(&mut encoded), ImageFormat::Png)
-        .map_err(|err| format!("Failed to encode overlay strip image: {err}"))?;
-
-    Ok(Some(format!(
-        "data:image/png;base64,{}",
-        STANDARD.encode(encoded)
-    )))
-}
-
-#[tauri::command]
-pub fn load_stream_record_strip_previews(
-    app: tauri::AppHandle,
-    state: tauri::State<'_, StreamRuntimeState>,
-    game_path: Option<String>,
-    record_ids: Vec<String>,
-) -> Result<HashMap<String, String>, String> {
-    let game_path = resolve_game_path_with_fallback(&app, Some(&state), game_path);
-    let repository = OverlayRecordRepository::new(game_path);
-    let crop = OverlaySettingsStore::default().load_payload()?.crop;
-    let mut previews = HashMap::new();
-
-    for record_id in record_ids {
-        let Some((_path, bytes)) = repository.load_image(&record_id)? else {
-            continue;
-        };
-
-        let image = image::load_from_memory(&bytes)
-            .map_err(|err| format!("Failed to decode overlay source image: {err}"))?;
-        let cropped = crop_dynamic_image(image, &crop)?;
-
-        let mut encoded = Vec::new();
-        cropped
-            .write_to(&mut std::io::Cursor::new(&mut encoded), ImageFormat::Png)
-            .map_err(|err| format!("Failed to encode overlay strip image: {err}"))?;
-
-        previews.insert(
-            record_id,
-            format!("data:image/png;base64,{}", STANDARD.encode(encoded)),
-        );
-    }
-
-    Ok(previews)
-}
-
-fn crop_dynamic_image(
-    image: DynamicImage,
-    crop: &OverlayCropSettings,
-) -> Result<DynamicImage, String> {
-    let left = crop.left.clamp(0.0, 1.0);
-    let top = crop.top.clamp(0.0, 1.0);
-    let width = crop.width.clamp(0.01, 1.0);
-    let height = crop.height.clamp(0.01, 1.0);
-
-    let source_width = image.width().max(1);
-    let source_height = image.height().max(1);
-
-    let left_px = (left * source_width as f64).floor() as u32;
-    let top_px = (top * source_height as f64).floor() as u32;
-    let width_px = ((width * source_width as f64).round() as u32).max(1);
-    let height_px = ((height * source_height as f64).round() as u32).max(1);
-
-    let max_width = source_width.saturating_sub(left_px).max(1);
-    let max_height = source_height.saturating_sub(top_px).max(1);
-    let final_width = width_px.min(max_width);
-    let final_height = height_px.min(max_height);
-
-    Ok(image.crop_imm(left_px, top_px, final_width, final_height))
 }
 
 #[cfg(target_os = "windows")]

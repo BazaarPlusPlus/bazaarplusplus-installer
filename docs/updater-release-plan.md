@@ -57,13 +57,31 @@ Local-only signing material belongs under the ignored directory:
 
 ```text
 signing-secrets/
-  tauri-updater.key
-  tauri-updater.password
+  tauri-updater.key          # Tauri updater private key (all platforms)
+  tauri-updater.password     # optional updater key password
+  apple-api-issuer           # macOS: App Store Connect API issuer id
+  apple-api-key              # macOS: App Store Connect API key id
+  apple-api-key-path         # macOS: path to the .p8 key (optional; inferred if absent)
+  apple-signing-identity     # macOS: Developer ID Application identity (optional; auto-detected if absent)
+  AuthKey_<key-id>.p8        # macOS: App Store Connect API private key
 ```
+
+### Updater signing (all platforms)
 
 `tauri-updater.password` is optional. If it is absent and `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` is not exported, `build.sh` uses an empty password.
 
 Before a release build, either export `TAURI_SIGNING_PRIVATE_KEY` or place the key at `signing-secrets/tauri-updater.key`. `./build.sh --prod` loads the key from `signing-secrets/` when the environment variable is absent.
+
+### Apple signing and notarization (macOS only)
+
+A macOS `./build.sh --prod` build signs the app bundle and the Mach-O binaries bundled inside the BepInEx resource ZIP with a Developer ID Application certificate, then notarizes via the App Store Connect API. For each value it uses the environment variable when set, otherwise the `signing-secrets/` file, otherwise auto-detection where supported:
+
+- `APPLE_API_ISSUER` ← `signing-secrets/apple-api-issuer` — App Store Connect API issuer id (required).
+- `APPLE_API_KEY` ← `signing-secrets/apple-api-key` — API key id (required).
+- `APPLE_API_KEY_PATH` ← `signing-secrets/apple-api-key-path`, or inferred as `signing-secrets/AuthKey_<APPLE_API_KEY>.p8` — the API private key file (required; the `.p8` must exist).
+- `APPLE_SIGNING_IDENTITY` ← `signing-secrets/apple-signing-identity`, or auto-detected from the keychain when exactly one Developer ID Application certificate is installed — the signing identity (required).
+
+Windows `--prod` builds do not use any of the Apple secrets.
 
 ## Build Entry Points
 

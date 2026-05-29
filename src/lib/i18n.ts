@@ -76,20 +76,7 @@ export type MessageKey =
   | 'updaterInstalling'
   | 'updaterInstalledTitle'
   | 'updaterInstalledBody'
-  | 'navHome'
   | 'navInstall'
-  | 'navStream'
-  | 'navChangelog'
-  | 'navAbout'
-  | 'navSettings'
-  | 'homeTitle'
-  | 'homeIntro'
-  | 'homeOpenInstall'
-  | 'homeOpenStream'
-  | 'homeInstallHint'
-  | 'homeStreamHint'
-  | 'homeChangelogHint'
-  | 'homeAboutHint'
   | 'streamTitle';
 
 export const defaultLocale: Locale = 'zh';
@@ -182,24 +169,7 @@ export const messages: Record<Locale, Record<MessageKey, string>> = {
     updaterInstalledTitle: 'Update Ready to Apply',
     updaterInstalledBody:
       'Version {version} is installed. Restart the app to apply it.',
-    navHome: 'Home',
     navInstall: 'Install & Repair',
-    navStream: 'Stream Mode',
-    navChangelog: 'Changelog',
-    navAbout: 'About',
-    navSettings: 'Settings',
-    homeTitle: 'BazaarPlusPlus Control Room',
-    homeIntro:
-      'Use the installer when you need setup work. Use Stream Mode only when you want a localhost overlay page for OBS.',
-    homeOpenInstall: 'Open Install & Repair',
-    homeOpenStream: 'Open Stream Mode',
-    homeInstallHint:
-      'Install, repair, or remove BazaarPlusPlus from the current game directory.',
-    homeStreamHint:
-      'Start the local OBS service, copy the browser-source URL, and verify end-of-run records captured after stream start are loading.',
-    homeChangelogHint:
-      'Review the current release notes and update highlights.',
-    homeAboutHint: 'Project credits, dependencies, and support information.',
     streamTitle: 'Stream Mode'
   },
   zh: {
@@ -284,22 +254,7 @@ export const messages: Record<Locale, Record<MessageKey, string>> = {
     updaterInstalling: '正在安装更新...',
     updaterInstalledTitle: '更新已准备就绪',
     updaterInstalledBody: '新版本 {version} 已安装完成。重启应用后即可生效。',
-    navHome: '首页',
     navInstall: '安装与修复',
-    navStream: '直播模式',
-    navChangelog: '更新日志',
-    navAbout: '关于',
-    navSettings: '设置',
-    homeTitle: 'BazaarPlusPlus 控制台',
-    homeIntro:
-      '安装与修复用于一次性的部署维护；直播模式只在你需要给 OBS 提供本地网页时再开启。',
-    homeOpenInstall: '进入安装与修复',
-    homeOpenStream: '进入直播模式',
-    homeInstallHint: '安装、修复或卸载当前游戏目录中的 BazaarPlusPlus。',
-    homeStreamHint:
-      '启动本地 OBS 服务、复制浏览器源地址，并确认开播后的 End of Run 记录是否正常读取。',
-    homeChangelogHint: '查看当前版本的更新记录与功能亮点。',
-    homeAboutHint: '查看项目说明、依赖信息与支持入口。',
     streamTitle: '直播模式'
   }
 };
