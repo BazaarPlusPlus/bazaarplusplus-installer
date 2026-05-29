@@ -1,6 +1,5 @@
 mod commands;
 mod config;
-mod installer_db;
 mod stream;
 
 use std::sync::Mutex;
@@ -53,12 +52,6 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .setup(|app| {
             let handle = app.app_handle();
-            if let Some(db_path) = installer_db::path::default_installer_db_path() {
-                if let Err(err) = installer_db::open_and_bootstrap(&db_path) {
-                    eprintln!("failed to bootstrap installer db: {err}");
-                }
-            }
-
             build_tray(&handle)?;
             Ok(())
         })
