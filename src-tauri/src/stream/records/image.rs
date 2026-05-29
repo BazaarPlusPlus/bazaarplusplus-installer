@@ -42,26 +42,33 @@ fn normalized_relative_image_path(raw_path: &str) -> PathBuf {
 #[cfg(test)]
 mod tests {
     use super::resolve_overlay_image_path;
-    use std::path::PathBuf;
 
     #[test]
     fn resolve_overlay_image_path_supports_relative_and_absolute_inputs() {
-        let game_path = Some(PathBuf::from("/tmp/TheBazaar"));
-        let relative = resolve_overlay_image_path(game_path.clone(), Some("match-1.png")).unwrap();
-        let absolute = resolve_overlay_image_path(
-            game_path,
-            Some("/tmp/BazaarPlusPlusV4/Screenshots/match-2.png"),
-        )
-        .unwrap();
+        // Derive paths from a portable temp dir so the absolute case is truly
+        // absolute on every OS (a leading "/" is not absolute on Windows) and
+        // build the expected paths with `join` so separators match the platform.
+        let temp_dir = tempfile::tempdir().unwrap();
+        let game_path = temp_dir.path().join("TheBazaar");
 
-        assert_eq!(
-            relative,
-            PathBuf::from("/tmp/TheBazaar/BazaarPlusPlusV4/Screenshots/match-1.png")
-        );
-        assert_eq!(
-            absolute,
-            PathBuf::from("/tmp/BazaarPlusPlusV4/Screenshots/match-2.png")
-        );
+        let expected_relative = game_path
+            .join("BazaarPlusPlusV4")
+            .join("Screenshots")
+            .join("match-1.png");
+        let absolute_input = temp_dir
+            .path()
+            .join("BazaarPlusPlusV4")
+            .join("Screenshots")
+            .join("match-2.png");
+
+        let relative =
+            resolve_overlay_image_path(Some(game_path.clone()), Some("match-1.png")).unwrap();
+        let absolute =
+            resolve_overlay_image_path(Some(game_path), Some(absolute_input.to_str().unwrap()))
+                .unwrap();
+
+        assert_eq!(relative, expected_relative);
+        assert_eq!(absolute, absolute_input);
     }
 
     #[test]
