@@ -14,8 +14,8 @@
     "test:rust": "cargo test --manifest-path src-tauri/Cargo.toml",
     "test:unit": "vitest run",
     "test:watch": "vitest",
-    "format": "prettier --write \"*.json\" \"src/**/*.{ts,svelte,html}\" \"static/**/*.json\" \"scripts/**/*.mjs\" \"src-tauri/*.json\" \"src-tauri/capabilities/**/*.json\" \"svelte.config.js\" \"vite.config.js\"",
-    "format:check": "prettier --check \"*.json\" \"src/**/*.{ts,svelte,html}\" \"static/**/*.json\" \"scripts/**/*.mjs\" \"src-tauri/*.json\" \"src-tauri/capabilities/**/*.json\" \"svelte.config.js\" \"vite.config.js\"",
+    "format": "prettier --write \"*.json\" \"src/**/*.{ts,svelte,html}\" \"scripts/**/*.mjs\" \"src-tauri/*.json\" \"src-tauri/capabilities/**/*.json\" \"svelte.config.js\" \"vite.config.js\"",
+    "format:check": "prettier --check \"*.json\" \"src/**/*.{ts,svelte,html}\" \"scripts/**/*.mjs\" \"src-tauri/*.json\" \"src-tauri/capabilities/**/*.json\" \"svelte.config.js\" \"vite.config.js\"",
     "check": "npm run generate:bindings && svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
     "check:watch": "npm run generate:bindings && svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
     "tauri": "tauri"
