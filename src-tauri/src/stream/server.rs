@@ -58,7 +58,6 @@ pub async fn start(
         host: HOST.to_string(),
         port: Some(PREFERRED_PORT),
         overlay_url: Some(overlay_url),
-        using_fallback_port: false,
         last_error: None,
         started_at: status_with_start.started_at,
         active_from: status_with_start.active_from,

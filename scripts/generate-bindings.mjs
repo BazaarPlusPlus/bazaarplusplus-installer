@@ -17,7 +17,14 @@ mkdirSync(bindingsDir, { recursive: true });
 
 execFileSync(
   'cargo',
-  ['test', 'export_bindings', '--manifest-path', 'src-tauri/Cargo.toml', '--', '--nocapture'],
+  [
+    'test',
+    'export_bindings',
+    '--manifest-path',
+    'src-tauri/Cargo.toml',
+    '--',
+    '--nocapture'
+  ],
   {
     cwd: projectRoot,
     stdio: 'inherit',

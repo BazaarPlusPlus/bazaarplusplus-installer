@@ -10,7 +10,11 @@
     revealStreamRecordImage
   } from '$lib/stream/api';
   import { resolveHeroKey } from '$lib/stream/heroes';
-  import type { StreamOverlayCropSettings, StreamOverlayDisplayMode, StreamRecordSummary } from '$lib/types';
+  import type {
+    StreamOverlayCropSettings,
+    StreamOverlayDisplayMode,
+    StreamRecordSummary
+  } from '$lib/types';
 
   const badgeAssets = import.meta.glob(
     '../../../../src-tauri/resources/stream/badges/**/*.svg',
@@ -53,7 +57,8 @@
     });
 
     const handleDisplayModeChange = (event: Event) => {
-      const nextMode = (event as CustomEvent<{ displayMode?: string }>).detail?.displayMode;
+      const nextMode = (event as CustomEvent<{ displayMode?: string }>).detail
+        ?.displayMode;
       displayMode = normalizeDisplayMode(nextMode);
     };
 
@@ -171,7 +176,9 @@
     }
   }
 
-  function normalizeDisplayMode(value: string | undefined): StreamOverlayDisplayMode {
+  function normalizeDisplayMode(
+    value: string | undefined
+  ): StreamOverlayDisplayMode {
     if (value === 'hero' || value === 'herohalf') {
       return value;
     }
@@ -187,7 +194,10 @@
     );
   }
 
-  function getWinsBadgeAsset(wins: number | null, battles: number | null): string {
+  function getWinsBadgeAsset(
+    wins: number | null,
+    battles: number | null
+  ): string {
     if (wins === null || wins < 0) {
       return resolveBadgeAsset('wins/wins-0-mis.svg');
     }
@@ -216,7 +226,10 @@
     return resolveBadgeAsset(`info/info-${heroKey}-${safeBattles}.svg`);
   }
 
-  function getHeroModeAsset(heroKey: string, mode: StreamOverlayDisplayMode): string {
+  function getHeroModeAsset(
+    heroKey: string,
+    mode: StreamOverlayDisplayMode
+  ): string {
     if (mode === 'hero') {
       return resolveBadgeAsset(`heroes/hero-${heroKey}.svg`);
     }
@@ -226,7 +239,8 @@
   function resolveSecondaryBadgeSrc(record: StreamRecordSummary): string {
     const heroKey = resolveHeroKey(record.title || '');
     const battles =
-      typeof record.battle_count === 'number' && Number.isFinite(record.battle_count)
+      typeof record.battle_count === 'number' &&
+      Number.isFinite(record.battle_count)
         ? record.battle_count
         : null;
 
@@ -246,12 +260,7 @@
   }
 
   function cropSignature(value: StreamOverlayCropSettings): string {
-    return [
-      value.left,
-      value.top,
-      value.width,
-      value.height
-    ]
+    return [value.left, value.top, value.width, value.height]
       .map((item) => Math.round(item * 10_000))
       .join(':');
   }
@@ -269,7 +278,10 @@
     const applyHeight = () => {
       const nextHeight = node.getBoundingClientRect().height;
       if (nextHeight > 0) {
-        cardElement.style.setProperty('--record-preview-height', `${nextHeight}px`);
+        cardElement.style.setProperty(
+          '--record-preview-height',
+          `${nextHeight}px`
+        );
       }
     };
 
@@ -290,16 +302,32 @@
   }
 </script>
 
-<section class="record-library" aria-label={isZh ? '截图记录列表' : 'Screenshot record list'}>
+<section
+  class="record-library"
+  aria-label={isZh ? '截图记录列表' : 'Screenshot record list'}
+>
   <div class="record-library-head">
     <div class="record-library-copy">
-      <p class="record-library-eyebrow">{isZh ? '截图记录' : 'Screenshot Records'}</p>
+      <p class="record-library-eyebrow">
+        {isZh ? '截图记录' : 'Screenshot Records'}
+      </p>
       <h2>{isZh ? '对局截图' : 'Match Screenshots'}</h2>
     </div>
 
     <div class="record-library-actions">
-      <button type="button" class="refresh-button" on:click={refreshRecords} disabled={loading}>
-        {loading ? (isZh ? '刷新中...' : 'Refreshing...') : isZh ? '刷新列表' : 'Refresh'}
+      <button
+        type="button"
+        class="refresh-button"
+        on:click={refreshRecords}
+        disabled={loading}
+      >
+        {loading
+          ? isZh
+            ? '刷新中...'
+            : 'Refreshing...'
+          : isZh
+            ? '刷新列表'
+            : 'Refresh'}
       </button>
     </div>
   </div>
@@ -315,9 +343,12 @@
       <div class="record-list">
         {#each records as record}
           {@const wins =
-            typeof record.wins === 'number' && Number.isFinite(record.wins) ? record.wins : null}
+            typeof record.wins === 'number' && Number.isFinite(record.wins)
+              ? record.wins
+              : null}
           {@const battles =
-            typeof record.battle_count === 'number' && Number.isFinite(record.battle_count)
+            typeof record.battle_count === 'number' &&
+            Number.isFinite(record.battle_count)
               ? record.battle_count
               : null}
           {@const winsBadgeSrc = getWinsBadgeAsset(wins, battles)}
@@ -337,7 +368,9 @@
                       />
                     {/if}
                   </div>
-                  <div class={`badge-shell badge-shell-secondary mode-${displayMode}`}>
+                  <div
+                    class={`badge-shell badge-shell-secondary mode-${displayMode}`}
+                  >
                     {#if secondaryBadgeSrc}
                       <img
                         class="metric-badge-svg"
@@ -416,7 +449,11 @@
     border-radius: 3px;
     border: 1px solid rgba(185, 134, 58, 0.14);
     background:
-      radial-gradient(circle at top left, rgba(var(--color-warm-rgb), 0.05), transparent 42%),
+      radial-gradient(
+        circle at top left,
+        rgba(var(--color-warm-rgb), 0.05),
+        transparent 42%
+      ),
       linear-gradient(180deg, rgba(20, 12, 6, 0.96), rgba(12, 7, 4, 0.94));
     box-shadow:
       0 8px 28px rgba(0, 0, 0, 0.3),
@@ -503,7 +540,11 @@
     overflow: hidden;
     background:
       linear-gradient(180deg, rgba(15, 11, 7, 0.95), rgba(7, 5, 3, 0.95)),
-      radial-gradient(circle at top right, rgba(217, 170, 88, 0.05), transparent 42%);
+      radial-gradient(
+        circle at top right,
+        rgba(217, 170, 88, 0.05),
+        transparent 42%
+      );
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.14);
   }
 

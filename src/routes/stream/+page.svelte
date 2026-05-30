@@ -1,10 +1,10 @@
 <script lang="ts">
-  import InstallerSupportBar from "$lib/components/installer/InstallerSupportBar.svelte";
-  import { loadPersistedCustomGamePath } from "$lib/installer/storage";
-  import StreamModePanel from "$lib/components/stream/StreamModePanel.svelte";
-  import StreamRecordLibrary from "$lib/components/stream/StreamRecordLibrary.svelte";
-  import { locale } from "$lib/locale";
-  import { formatMessage, messages } from "$lib/i18n";
+  import InstallerSupportBar from '$lib/components/installer/InstallerSupportBar.svelte';
+  import { loadPersistedCustomGamePath } from '$lib/installer/storage';
+  import StreamModePanel from '$lib/components/stream/StreamModePanel.svelte';
+  import StreamRecordLibrary from '$lib/components/stream/StreamRecordLibrary.svelte';
+  import { locale } from '$lib/locale';
+  import { formatMessage, messages } from '$lib/i18n';
 
   $: t = (
     key: keyof typeof messages.en,

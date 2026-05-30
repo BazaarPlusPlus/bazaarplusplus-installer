@@ -16,7 +16,9 @@ export function selectModeLabels(input: {
   t: TranslateText;
 }): ModeLabelsSelection {
   return {
-    modeTitle: input.showStreamMode ? input.t('streamTitle') : input.t('subtitle'),
+    modeTitle: input.showStreamMode
+      ? input.t('streamTitle')
+      : input.t('subtitle'),
     modeToggleLabel: input.showStreamMode
       ? input.localized('安装模式', 'Install Mode')
       : input.localized('直播模式', 'Stream Mode'),

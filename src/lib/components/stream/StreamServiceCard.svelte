@@ -32,7 +32,9 @@
   export let onOpenCalibration: () => void | Promise<void>;
   export let onStepEarlier: () => void | Promise<void>;
   export let onStepLater: () => void | Promise<void>;
-  export let onDisplayModeChange: (mode: StreamOverlayDisplayMode) => void | Promise<void>;
+  export let onDisplayModeChange: (
+    mode: StreamOverlayDisplayMode
+  ) => void | Promise<void>;
   export let onCropCodeInput: (value: string) => void;
   export let onImportCropCode: () => void | Promise<void>;
 
@@ -46,7 +48,13 @@
     : isZh
       ? '直播服务未启动'
       : 'Stream service is stopped';
-  $: statusBadge = status.running ? (isZh ? '运行中' : 'Live') : isZh ? '空闲' : 'Idle';
+  $: statusBadge = status.running
+    ? isZh
+      ? '运行中'
+      : 'Live'
+    : isZh
+      ? '空闲'
+      : 'Idle';
   $: utilityActions = [
     {
       label: copyMessage || (isZh ? '复制 OBS 地址' : 'Copy OBS URL'),
@@ -96,7 +104,10 @@
   $: displayModeOptions = [
     { value: 'current' as const, label: isZh ? '战斗场数' : 'Battle Count' },
     { value: 'hero' as const, label: isZh ? '完整英雄' : 'Full Hero' },
-    { value: 'herohalf' as const, label: isZh ? '半高英雄' : 'Half-Height Hero' }
+    {
+      value: 'herohalf' as const,
+      label: isZh ? '半高英雄' : 'Half-Height Hero'
+    }
   ];
 </script>
 
@@ -109,10 +120,20 @@
 
     <div class="badge-group">
       {#if status.running}
-        <span class="count-badge count-after" title={isZh ? '开播后新增记录' : 'Records captured since stream started'}>
+        <span
+          class="count-badge count-after"
+          title={isZh
+            ? '开播后新增记录'
+            : 'Records captured since stream started'}
+        >
           {isZh ? `开播后 ${countAfter}` : `+${countAfter} After`}
         </span>
-        <span class="count-badge count-before" title={isZh ? '开播前已有记录' : 'Records captured before stream started'}>
+        <span
+          class="count-badge count-before"
+          title={isZh
+            ? '开播前已有记录'
+            : 'Records captured before stream started'}
+        >
           {isZh ? `开播前 ${countBefore}` : `${countBefore} Before`}
         </span>
       {/if}
@@ -122,7 +143,13 @@
         class:db-tag-missing={!dbPathInfo.found}
         title={dbPathInfo.path ?? ''}
       >
-        {dbPathInfo.found ? (isZh ? 'DB 已找到' : 'DB OK') : (isZh ? 'DB 未找到' : 'DB Missing')}
+        {dbPathInfo.found
+          ? isZh
+            ? 'DB 已找到'
+            : 'DB OK'
+          : isZh
+            ? 'DB 未找到'
+            : 'DB Missing'}
       </span>
       <span class:online={status.running} class="badge">{statusBadge}</span>
     </div>
@@ -130,7 +157,9 @@
 
   {#if previewUrl}
     <div class="url-shell">
-      <p class="detail-label">{isZh ? 'OBS 浏览器源地址' : 'OBS browser source URL'}</p>
+      <p class="detail-label">
+        {isZh ? 'OBS 浏览器源地址' : 'OBS browser source URL'}
+      </p>
       <div class="url-box">{previewUrl}</div>
     </div>
   {/if}
@@ -143,7 +172,9 @@
     <div class="overview-copy">
       <div class="overview-detail">
         <div>
-          <p class="detail-label">{isZh ? 'Overview 起始时间' : 'Overview Start Time'}</p>
+          <p class="detail-label">
+            {isZh ? 'Overview 起始时间' : 'Overview Start Time'}
+          </p>
           <p class="overview-value">{overviewStartLabel}</p>
         </div>
 
@@ -175,8 +206,14 @@
   </div>
 
   <div class="mode-shell">
-    <p class="detail-label">{isZh ? 'Overlay 显示模式' : 'Overlay Display Mode'}</p>
-    <div class="mode-picker" role="radiogroup" aria-label={isZh ? 'Overlay 显示模式' : 'Overlay display mode'}>
+    <p class="detail-label">
+      {isZh ? 'Overlay 显示模式' : 'Overlay Display Mode'}
+    </p>
+    <div
+      class="mode-picker"
+      role="radiogroup"
+      aria-label={isZh ? 'Overlay 显示模式' : 'Overlay display mode'}
+    >
       {#each displayModeOptions as option}
         <button
           class="mode-chip"
@@ -192,7 +229,12 @@
   </div>
 
   <div class="actions">
-    <button class:running={status.running} class="primary toggle-button" disabled={busy} on:click={toggleAction}>
+    <button
+      class:running={status.running}
+      class="primary toggle-button"
+      disabled={busy}
+      on:click={toggleAction}
+    >
       {toggleActionLabel}
     </button>
 
@@ -213,7 +255,6 @@
         {/each}
       </div>
     </div>
-
   </div>
 
   {#if importPanelOpen}
@@ -239,7 +280,9 @@
     </label>
 
     <div class="import-row">
-      <button disabled={busy || importingCropCode || !cropCodeInput.trim()} on:click={onImportCropCode}
+      <button
+        disabled={busy || importingCropCode || !cropCodeInput.trim()}
+        on:click={onImportCropCode}
         >{isZh ? '应用裁切代码' : 'Apply Crop Code'}</button
       >
       {#if cropCodeMessage}

@@ -14,7 +14,6 @@ pub struct StreamServiceStatus {
     pub host: String,
     pub port: Option<u16>,
     pub overlay_url: Option<String>,
-    pub using_fallback_port: bool,
     pub last_error: Option<String>,
     pub started_at: Option<String>,
     pub active_from: Option<String>,
@@ -28,7 +27,6 @@ impl Default for StreamServiceStatus {
             host: DEFAULT_HOST.to_string(),
             port: None,
             overlay_url: None,
-            using_fallback_port: false,
             last_error: None,
             started_at: None,
             active_from: None,
@@ -106,9 +104,7 @@ impl StreamRuntimeState {
         let mut inner = self.inner.lock().expect("stream runtime poisoned");
         inner.status.running = false;
         inner.status.port = None;
-        inner.status.overlay_url = None;
-        inner.status.using_fallback_port = false;
-        inner.status.started_at = None;
+        inner.status.overlay_url = None;        inner.status.started_at = None;
         inner.status.active_from = None;
         inner.status.active_window_offset = 0;
         inner.task = None;
@@ -119,9 +115,7 @@ impl StreamRuntimeState {
         let mut inner = self.inner.lock().expect("stream runtime poisoned");
         inner.status.running = false;
         inner.status.port = None;
-        inner.status.overlay_url = None;
-        inner.status.using_fallback_port = false;
-        inner.status.started_at = None;
+        inner.status.overlay_url = None;        inner.status.started_at = None;
         inner.status.active_from = None;
         inner.status.active_window_offset = 0;
         inner.status.last_error = Some(message);

@@ -1,7 +1,10 @@
 <script lang="ts">
   import AppModal from '$lib/components/AppModal.svelte';
   import { locale } from '$lib/locale';
-  import { describeRepairError, type RepairError } from '$lib/installer/repair-errors';
+  import {
+    describeRepairError,
+    type RepairError
+  } from '$lib/installer/repair-errors';
 
   export let open: boolean;
   export let acknowledged: boolean;
@@ -116,11 +119,8 @@
     padding: 0.92rem 1rem;
     border: 1px solid rgba(220, 90, 70, 0.42);
     border-radius: 4px;
-    background: linear-gradient(
-        180deg,
-        rgba(220, 90, 70, 0.16),
-        rgba(220, 90, 70, 0.05)
-      ),
+    background:
+      linear-gradient(180deg, rgba(220, 90, 70, 0.16), rgba(220, 90, 70, 0.05)),
       rgba(20, 8, 4, 0.85);
     box-shadow: 0 0 0 1px rgba(255, 181, 166, 0.08) inset;
   }

@@ -15,7 +15,6 @@ const idleStatus: StreamServiceStatus = {
   host: '127.0.0.1',
   port: null,
   overlay_url: null,
-  using_fallback_port: false,
   last_error: null,
   started_at: null,
   active_from: null,
@@ -85,7 +84,8 @@ export async function loadStreamRecordWindowSummary(
       };
     }
 
-    const payload = (await response.json()) as Partial<StreamRecordWindowSummary>;
+    const payload =
+      (await response.json()) as Partial<StreamRecordWindowSummary>;
     return {
       total:
         typeof payload.total === 'number' && Number.isFinite(payload.total)
@@ -122,7 +122,10 @@ export async function loadStreamRecordAtOffset(
   try {
     const endpoint = new URL(`${baseUrl}/api/records/latest`);
     if (offset > 0) {
-      endpoint.searchParams.set('offset', String(Math.max(0, Math.trunc(offset))));
+      endpoint.searchParams.set(
+        'offset',
+        String(Math.max(0, Math.trunc(offset)))
+      );
     }
 
     const response = await fetch(endpoint);

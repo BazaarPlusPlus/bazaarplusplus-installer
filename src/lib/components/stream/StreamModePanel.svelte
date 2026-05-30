@@ -35,7 +35,6 @@
     host: '127.0.0.1',
     port: null,
     overlay_url: null,
-    using_fallback_port: false,
     last_error: null,
     started_at: null,
     active_from: null,
@@ -79,18 +78,19 @@
   $: canStepLater = status.running && selectedOffset > 0;
   $: overviewStartLabel = formatOverviewStartTime(
     selectedOffset > 0
-      ? selectedRecord?.captured_at ?? status.started_at
+      ? (selectedRecord?.captured_at ?? status.started_at)
       : status.started_at
   );
-  $: overviewHeroLabel = selectedOffset > 0
-    ? (selectedRecord?.title || (isZh ? '未知英雄' : 'Unknown hero'))
-    : status.running
-      ? isZh
-        ? '当前开播点'
-        : 'Current live start'
-      : isZh
-        ? '尚未开始'
-        : 'Not started';
+  $: overviewHeroLabel =
+    selectedOffset > 0
+      ? selectedRecord?.title || (isZh ? '未知英雄' : 'Unknown hero')
+      : status.running
+        ? isZh
+          ? '当前开播点'
+          : 'Current live start'
+        : isZh
+          ? '尚未开始'
+          : 'Not started';
   $: overviewDescription = status.running
     ? isZh
       ? `overview 会展示从这个起始时间之后的记录；当前窗口内共有 ${recordWindowSummary.captured_since_start} 条开播后记录。`
@@ -188,7 +188,8 @@
   }
 
   async function refreshOverviewState() {
-    const currentBaseUrl = status.overlay_url?.replace(/\/overlay$/, '') ?? null;
+    const currentBaseUrl =
+      status.overlay_url?.replace(/\/overlay$/, '') ?? null;
     if (!status.running || !currentBaseUrl) {
       recordWindowSummary = {
         total: 0,
@@ -213,7 +214,10 @@
 
     const recordOffset =
       recordWindowSummary.captured_since_start + selectedOffset - 1;
-    selectedRecord = await loadStreamRecordAtOffset(currentBaseUrl, recordOffset);
+    selectedRecord = await loadStreamRecordAtOffset(
+      currentBaseUrl,
+      recordOffset
+    );
   }
 
   async function stepOverviewOffset(direction: 1 | -1) {
@@ -227,7 +231,10 @@
     const nextOffset = Math.max(0, selectedOffset + direction);
 
     try {
-      status = await setStreamOverlayWindowOffset(nextOffset, requestedGamePath);
+      status = await setStreamOverlayWindowOffset(
+        nextOffset,
+        requestedGamePath
+      );
       selectedOffset = status.active_window_offset;
       await refreshOverviewState();
     } catch (error) {
@@ -349,9 +356,10 @@
   }
 
   function showCopyMessage(message: string) {
-    copyMessageTone = message === (isZh ? '复制失败，请重试' : 'Copy failed')
-      ? 'error'
-      : 'success';
+    copyMessageTone =
+      message === (isZh ? '复制失败，请重试' : 'Copy failed')
+        ? 'error'
+        : 'success';
     copyMessage = message;
     clearCopyMessage();
     copyMessageTimer = window.setTimeout(() => {
@@ -376,7 +384,7 @@
       {savingDisplayMode}
       {displayMode}
       {importingCropCode}
-      previewUrl={previewUrl}
+      {previewUrl}
       {cropCodeInput}
       {cropCodeMessage}
       {copyMessage}

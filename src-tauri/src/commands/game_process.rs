@@ -44,7 +44,6 @@ fn is_bazaar_running() -> Result<bool, String> {
 /// avoid touching files the in-game mod still has open. On platforms where we
 /// don't have a reliable probe (macOS today), this always returns false so the
 /// caller proceeds with whatever fallback behavior it already had.
-#[allow(dead_code)]
 pub(crate) fn is_bazaar_running_best_effort() -> bool {
     #[cfg(target_os = "windows")]
     {

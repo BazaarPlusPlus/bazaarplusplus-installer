@@ -55,7 +55,10 @@ export function createUpdaterController(input: {
     const requestId = ++updaterCheckRequestId;
 
     updaterSnapshot.set(
-      createCheckingUpdaterSnapshot(get(updaterSnapshot), input.hasTauriRuntime())
+      createCheckingUpdaterSnapshot(
+        get(updaterSnapshot),
+        input.hasTauriRuntime()
+      )
     );
 
     const result = await runStartupCheck();

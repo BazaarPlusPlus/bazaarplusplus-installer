@@ -160,7 +160,12 @@
     letter-spacing: 0.18em;
     text-transform: uppercase;
     color: #1c0e03;
-    background: linear-gradient(135deg, var(--color-gold-button) 0%, var(--color-gold-dark) 50%, var(--color-gold-button) 100%);
+    background: linear-gradient(
+      135deg,
+      var(--color-gold-button) 0%,
+      var(--color-gold-dark) 50%,
+      var(--color-gold-button) 100%
+    );
     border: 1px solid rgba(210, 158, 60, 0.45);
     border-radius: 2px;
     box-shadow:

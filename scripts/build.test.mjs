@@ -11,10 +11,57 @@ import {
 const projectDir = process.cwd();
 const signingSecretsDir = `${projectDir}/signing-secrets`;
 
+// Resolve a usable bash. On Windows, `bash` is frequently absent from the PATH
+// that npm spawns with (PowerShell/cmd), so fall back to the Git for Windows
+// install before giving up.
+function resolveBashCommand() {
+  if (process.platform !== 'win32') {
+    return 'bash';
+  }
+  const candidates = [];
+  if (process.env.BPP_BASH) {
+    candidates.push(process.env.BPP_BASH);
+  }
+  try {
+    const execPath = execFileSync('git', ['--exec-path'], {
+      encoding: 'utf8'
+    }).trim();
+    const gitRoot = execPath.replace(/[/\\](mingw\d+|usr)[/\\].*$/i, '');
+    if (gitRoot && gitRoot !== execPath) {
+      candidates.push(`${gitRoot}/bin/bash.exe`);
+    }
+  } catch {
+    // git not on PATH; fall back to the well-known install locations below.
+  }
+  candidates.push(
+    'C:/Program Files/Git/bin/bash.exe',
+    'C:/Program Files (x86)/Git/bin/bash.exe'
+  );
+  return (
+    candidates.find((candidate) => candidate && existsSync(candidate)) ?? 'bash'
+  );
+}
+
+const bashCommand = resolveBashCommand();
+
+// Git Bash treats `E:\foo` as a relative path, so any path we hand to build.sh
+// through a config file must be POSIX-style absolute (`/e/foo`) on Windows.
+function toBashPath(p) {
+  return p
+    .replace(/\\/g, '/')
+    .replace(/^([A-Za-z]):/, (_, drive) => `/${drive.toLowerCase()}`);
+}
+
+const signingSecretsDirBash =
+  process.platform === 'win32'
+    ? toBashPath(signingSecretsDir)
+    : signingSecretsDir;
+
 function runShell(script) {
-  return execFileSync('bash', ['-lc', script], {
+  return execFileSync(bashCommand, ['-lc', script], {
     cwd: projectDir,
-    encoding: 'utf8'
+    encoding: 'utf8',
+    timeout: 120000
   });
 }
 
@@ -201,7 +248,7 @@ test('macOS Developer ID env loads from signing-secrets files', () => {
     {
       'apple-api-issuer': 'issuer-from-file\n',
       'apple-api-key': 'KEYFROMFILE\n',
-      'apple-api-key-path': `${signingSecretsDir}/AuthKey_KEYFROMFILE.p8\n`,
+      'apple-api-key-path': `${signingSecretsDirBash}/AuthKey_KEYFROMFILE.p8\n`,
       'apple-signing-identity':
         'Developer ID Application: Example Builder (TEAMID1234)\n',
       'AuthKey_KEYFROMFILE.p8': 'private key'
@@ -229,8 +276,8 @@ test('macOS Developer ID env loads from signing-secrets files', () => {
       );
       expect(output).toContain('issuer=issuer-from-file');
       expect(output).toContain('key=KEYFROMFILE');
-      expect(output).toContain(
-        `key_path=${signingSecretsDir}/AuthKey_KEYFROMFILE.p8`
+      expect(output).toMatch(
+        /key_path=.*[/\\]signing-secrets[/\\]AuthKey_KEYFROMFILE\.p8/
       );
       expect(output).toContain(
         'identity=Developer ID Application: Example Builder (TEAMID1234)'
@@ -259,8 +306,8 @@ test('macOS Developer ID env exports relative API key paths as absolute paths', 
         printf 'key_path=%s\\n' "$APPLE_API_KEY_PATH"
       `);
 
-      expect(output).toContain(
-        `key_path=${signingSecretsDir}/AuthKey_RELKEY.p8`
+      expect(output).toMatch(
+        /key_path=.*[/\\]signing-secrets[/\\]AuthKey_RELKEY\.p8/
       );
     }
   );
@@ -299,8 +346,8 @@ test('macOS Developer ID env detects identity and infers API key path', () => {
       expect(output).toContain(
         'Inferring APPLE_API_KEY_PATH from signing-secrets'
       );
-      expect(output).toContain(
-        `key_path=${signingSecretsDir}/AuthKey_AUTOKEY.p8`
+      expect(output).toMatch(
+        /key_path=.*[/\\]signing-secrets[/\\]AuthKey_AUTOKEY\.p8/
       );
       expect(output).toContain(
         'identity=Developer ID Application: Example Builder (TEAMID1234)'

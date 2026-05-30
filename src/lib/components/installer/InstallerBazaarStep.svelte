@@ -17,10 +17,7 @@
   export let onCustomGamePathInput: () => void;
 </script>
 
-<div
-  class="step"
-  class:step-found={bazaarFound && Boolean(effectiveGamePath)}
->
+<div class="step" class:step-found={bazaarFound && Boolean(effectiveGamePath)}>
   <div class="step-index" aria-hidden="true">II</div>
   <div class="step-body">
     <span class="step-title">

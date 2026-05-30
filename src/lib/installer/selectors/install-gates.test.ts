@@ -122,5 +122,7 @@ test('selectInstallGates prefers the freshly-detected env path over any cached v
     isDebugInstallPreview: false
   });
 
-  expect(selection.pageState.effectiveGamePath).toBe('C:\\Games\\The Bazaar Fresh');
+  expect(selection.pageState.effectiveGamePath).toBe(
+    'C:\\Games\\The Bazaar Fresh'
+  );
 });

@@ -302,7 +302,12 @@
     font-size: clamp(1.2rem, 3.6vw, 1.86rem);
     font-weight: 700;
     line-height: 1;
-    background: linear-gradient(155deg, var(--color-gold-text) 0%, var(--color-gold-deep) 55%, var(--color-gold-text) 100%);
+    background: linear-gradient(
+      155deg,
+      var(--color-gold-text) 0%,
+      var(--color-gold-deep) 55%,
+      var(--color-gold-text) 100%
+    );
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;

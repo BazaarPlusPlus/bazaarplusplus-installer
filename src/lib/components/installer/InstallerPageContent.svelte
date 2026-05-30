@@ -63,16 +63,16 @@
     {canInstall}
     {canLaunchGame}
     {dotnetDownloadUrl}
-    effectiveGamePath={effectiveGamePath}
+    {effectiveGamePath}
     {t}
-    onPickGamePath={onPickGamePath}
-    onCheckPath={onCheckPath}
-    onRequestInstall={onRequestInstall}
-    onRepair={onRepair}
-    onUninstall={onUninstall}
-    onLaunchGame={onLaunchGame}
-    onResetBazaar={onResetBazaar}
-    onCustomGamePathInput={onCustomGamePathInput}
+    {onPickGamePath}
+    {onCheckPath}
+    {onRequestInstall}
+    {onRepair}
+    {onUninstall}
+    {onLaunchGame}
+    {onResetBazaar}
+    {onCustomGamePathInput}
   />
 {/if}
 

@@ -11,19 +11,7 @@ use crate::stream::state::StreamRuntimeState;
 
 pub(crate) const LEGACY_RECORD_DIRECTORY: &str = "BazaarPlusPlusV4";
 
-macro_rules! debug_log {
-    ($($arg:tt)*) => {
-        #[cfg(debug_assertions)]
-        println!($($arg)*);
-    };
-}
-
-macro_rules! debug_error {
-    ($($arg:tt)*) => {
-        #[cfg(debug_assertions)]
-        eprintln!($($arg)*);
-    };
-}
+use super::{debug_error, debug_log};
 
 /// Stable error-code prefixes that the frontend pattern-matches to render
 /// targeted UI. Adding a new variant requires a matching branch in

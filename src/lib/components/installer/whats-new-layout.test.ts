@@ -8,8 +8,12 @@ function readSource(relativePath: string) {
   return readFileSync(resolve(workspaceRoot, relativePath), 'utf8');
 }
 
-const headerSource = readSource('src/lib/components/installer/InstallerHeader.svelte');
-const bppStepSource = readSource('src/lib/components/installer/InstallerBppStep.svelte');
+const headerSource = readSource(
+  'src/lib/components/installer/InstallerHeader.svelte'
+);
+const bppStepSource = readSource(
+  'src/lib/components/installer/InstallerBppStep.svelte'
+);
 const bazaarStepSource = readSource(
   'src/lib/components/installer/InstallerBazaarStep.svelte'
 );
@@ -51,10 +55,12 @@ test('latest-version state removes the green status frame and uses the latest-st
     )
   ).toBe(false);
   expect(bppStepSource.includes('modInstalledHint')).toBe(false);
-  expect(
-    bppStepSource.includes('BazaarPlusPlus 当前已处于最新状态。')
-  ).toBe(false);
-  expect(bppStepSource.includes('BazaarPlusPlus 当前已处于最新状态')).toBe(true);
+  expect(bppStepSource.includes('BazaarPlusPlus 当前已处于最新状态。')).toBe(
+    false
+  );
+  expect(bppStepSource.includes('BazaarPlusPlus 当前已处于最新状态')).toBe(
+    true
+  );
   expect(bppStepSource.includes('{:else if modInstalled}')).toBe(true);
 });
 

@@ -1,4 +1,4 @@
-export const HERO_KEY_BY_NAME: Record<string, string> = {
+const HERO_KEY_BY_NAME: Record<string, string> = {
   Vanessa: 'van',
   Pygmalien: 'pyg',
   Dooley: 'doo',
@@ -8,7 +8,7 @@ export const HERO_KEY_BY_NAME: Record<string, string> = {
   Stelle: 'ste'
 };
 
-export const UNKNOWN_HERO_KEY = 'unk';
+const UNKNOWN_HERO_KEY = 'unk';
 
 export function resolveHeroKey(heroName: string | null | undefined): string {
   const normalized = heroName?.trim() || '';
