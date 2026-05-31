@@ -87,6 +87,11 @@ export const projectDependencies: LicensedDependency[] = [
     name: 'BepInEx',
     license: 'LGPL-2.1',
     url: 'https://github.com/BepInEx/BepInEx'
+  },
+  {
+    name: 'Source Han Sans CN',
+    license: 'SIL OFL 1.1',
+    url: 'https://github.com/adobe-fonts/source-han-sans'
   }
 ];
 
