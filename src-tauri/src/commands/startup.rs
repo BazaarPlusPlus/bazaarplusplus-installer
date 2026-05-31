@@ -1,8 +1,7 @@
 use std::path::PathBuf;
 use std::sync::{Arc, OnceLock};
 
-use serde::{Deserialize, Serialize};
-use tauri::{AppHandle, Manager};
+use tauri::AppHandle;
 
 use super::bepinex;
 use super::detect::{detect_installation_paths, dotnet_detect_for_startup, DotnetInfo};
@@ -67,37 +66,4 @@ fn compute_startup(app: &AppHandle) -> InstallerStartup {
         game_path: detected_paths.game_path,
         steam_launch_options_supported: detected_paths.steam_launch_options_supported,
     }
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, ts_rs::TS)]
-#[ts(export)]
-pub struct InstallerContextPayload {
-    pub bundled_bpp_version: Option<String>,
-    pub dotnet_version: Option<String>,
-    pub dotnet_ok: bool,
-}
-
-impl InstallerContextPayload {
-    fn from_startup(startup: &InstallerStartup) -> Self {
-        InstallerContextPayload {
-            bundled_bpp_version: startup.bundled_bpp_version.clone(),
-            dotnet_version: startup.dotnet.dotnet_version.clone(),
-            dotnet_ok: startup.dotnet.dotnet_ok,
-        }
-    }
-}
-
-#[tauri::command]
-pub async fn initialize_installer_context(
-    app: AppHandle,
-) -> Result<InstallerContextPayload, String> {
-    let app_clone = app.clone();
-    let startup = tauri::async_runtime::spawn_blocking(move || {
-        let state = app_clone.state::<InstallerContextState>();
-        state.get_or_initialize(&app_clone)
-    })
-    .await
-    .map_err(|err| format!("failed to initialize installer context: {err}"))?;
-
-    Ok(InstallerContextPayload::from_startup(startup.as_ref()))
 }

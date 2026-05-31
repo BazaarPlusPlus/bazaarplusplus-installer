@@ -41,10 +41,8 @@ pub fn detect_environment(
         "[detect_environment] start requested_game_path={:?}",
         game_path
     );
-    // Read cached startup context. On first call this lazily initializes
-    // (reads the bundled payload, probes .NET, and resolves Steam/game paths)
-    // as a safety net; normal flow calls `initialize_installer_context` from
-    // the frontend first so this lookup is just a cached read.
+    // Read cached startup context. On first call this lazily initializes:
+    // reads the bundled payload, probes .NET, and resolves Steam/game paths.
     let startup = state.get_or_initialize(&app);
 
     let requested_game_path = normalize_game_path(game_path);

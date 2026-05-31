@@ -1,5 +1,6 @@
 mod commands;
 mod config;
+mod history;
 mod stream;
 
 use std::sync::Mutex;
@@ -11,17 +12,21 @@ use tauri::{
 };
 
 use commands::{
-    bepinex::{get_legacy_record_directory_info, install_bepinex, repair_bpp, uninstall_bpp},
-    detect::detect_environment,
-    startup::{initialize_installer_context, InstallerContextState},
-    steam::{close_steam, detect_steam_running},
-    stream::{
-        delete_stream_record, detect_stream_db_path, get_stream_overlay_crop_settings,
-        get_stream_service_status, import_stream_overlay_crop_code, list_stream_overlay_records,
-        reveal_stream_record_image, save_stream_overlay_display_mode,
-        set_stream_overlay_window_offset, start_stream_service, stop_stream_service,
+    app::get_app_bootstrap,
+    history::{
+        delete_battle_video, delete_run_videos, get_history_run_detail, list_history_runs,
+        reveal_battle_video, reveal_run_screenshot,
     },
-    vdf::patch_launch_options,
+    install::{
+        choose_game_directory, get_install_state, install_mod, launch_game, repair_mod,
+        uninstall_mod,
+    },
+    startup::InstallerContextState,
+    steam::close_steam,
+    stream::{
+        apply_overlay_crop_code, ensure_stream_session, get_overlay_settings, get_stream_session,
+        reset_overlay_crop, restart_stream_session, save_overlay_display_mode, set_stream_window,
+    },
 };
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -50,6 +55,11 @@ pub fn run() {
         .setup(|app| {
             let handle = app.app_handle();
             build_tray(&handle)?;
+            let app_handle = handle.clone();
+            tauri::async_runtime::spawn(async move {
+                let state = app_handle.state::<crate::stream::state::StreamRuntimeState>();
+                let _ = crate::stream::server::start(app_handle.clone(), state.inner(), None).await;
+            });
             Ok(())
         })
         .on_window_event(|window, event| {
@@ -66,27 +76,29 @@ pub fn run() {
             }
         })
         .invoke_handler(tauri::generate_handler![
-            initialize_installer_context,
-            detect_environment,
-            detect_steam_running,
+            get_app_bootstrap,
+            set_app_locale,
             close_steam,
-            install_bepinex,
-            repair_bpp,
-            get_legacy_record_directory_info,
-            uninstall_bpp,
-            patch_launch_options,
-            start_stream_service,
-            stop_stream_service,
-            set_tray_locale,
-            get_stream_service_status,
-            set_stream_overlay_window_offset,
-            get_stream_overlay_crop_settings,
-            save_stream_overlay_display_mode,
-            import_stream_overlay_crop_code,
-            list_stream_overlay_records,
-            reveal_stream_record_image,
-            delete_stream_record,
-            detect_stream_db_path,
+            get_install_state,
+            choose_game_directory,
+            install_mod,
+            repair_mod,
+            uninstall_mod,
+            launch_game,
+            ensure_stream_session,
+            restart_stream_session,
+            get_stream_session,
+            set_stream_window,
+            get_overlay_settings,
+            save_overlay_display_mode,
+            apply_overlay_crop_code,
+            reset_overlay_crop,
+            list_history_runs,
+            get_history_run_detail,
+            reveal_run_screenshot,
+            reveal_battle_video,
+            delete_battle_video,
+            delete_run_videos,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
@@ -230,12 +242,25 @@ impl TrayMenuState {
     }
 }
 
+#[derive(Clone, Debug, serde::Serialize, ts_rs::TS)]
+#[ts(export)]
+struct AppLocalePayload {
+    locale: String,
+}
+
 #[tauri::command]
-async fn set_tray_locale(
+async fn set_app_locale(
     state: tauri::State<'_, TrayMenuState>,
     locale: String,
-) -> Result<(), String> {
-    state.apply_locale(TrayLocale::from_code(&locale))
+) -> Result<AppLocalePayload, String> {
+    let normalized = match locale.as_str() {
+        "en" => "en",
+        _ => "zh",
+    };
+    state.apply_locale(TrayLocale::from_code(normalized))?;
+    Ok(AppLocalePayload {
+        locale: normalized.to_string(),
+    })
 }
 
 fn should_show_main_window_for_tray_event(event: &TrayIconEvent) -> bool {

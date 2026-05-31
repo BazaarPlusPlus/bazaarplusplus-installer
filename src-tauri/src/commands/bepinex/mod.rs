@@ -3,7 +3,6 @@ mod zip_archive;
 
 pub(crate) use zip_archive::read_bundled_bpp_version;
 
-use serde::Serialize;
 use std::path::{Path, PathBuf};
 use tauri::Manager;
 
@@ -18,12 +17,6 @@ use super::{debug_error, debug_log};
 /// `formatRepairError` on the TS side.
 pub(crate) const REPAIR_ERR_GAME_RUNNING: &str = "bpp_data_reset_blocked_by_game";
 pub(crate) const REPAIR_ERR_PARTIAL_FAILURE: &str = "bpp_data_reset_partial_failure";
-
-#[derive(Debug, Serialize, ts_rs::TS)]
-#[ts(export)]
-pub struct LegacyRecordDirectoryInfo {
-    pub total_bytes: u64,
-}
 
 #[tauri::command]
 pub async fn repair_bpp(
@@ -65,22 +58,6 @@ fn format_partial_failure(paths: &[PathBuf]) -> String {
         .collect::<Vec<_>>()
         .join("\u{1f}");
     format!("{REPAIR_ERR_PARTIAL_FAILURE}:{joined}")
-}
-
-#[tauri::command]
-pub async fn get_legacy_record_directory_info(
-    game_path: String,
-) -> Result<LegacyRecordDirectoryInfo, String> {
-    tauri::async_runtime::spawn_blocking(move || {
-        let game_path = Path::new(&game_path);
-        payload::ensure_valid_game_path(game_path)?;
-
-        Ok(LegacyRecordDirectoryInfo {
-            total_bytes: payload::legacy_record_directory_size_bytes(game_path)?,
-        })
-    })
-    .await
-    .map_err(|err| format!("failed to inspect BazaarPlusPlus data directory: {err}"))?
 }
 
 #[tauri::command]

@@ -247,36 +247,6 @@ limit 1
     Ok(Some(map_overlay_record_row(row)?))
 }
 
-pub(super) fn delete_overlay_record_row(
-    database_path: &Path,
-    record_id: &str,
-) -> Result<(bool, Option<String>), String> {
-    if !database_path.exists() {
-        return Ok((false, None));
-    }
-
-    let conn = Connection::open(database_path).map_err(|err| err.to_string())?;
-    if !table_exists(&conn, "run_screenshots")? {
-        return Ok((false, None));
-    }
-
-    let image_relative_path =
-        load_overlay_record_by_id(database_path, record_id)?.and_then(|row| row.image_path);
-
-    let deleted = conn
-        .execute(
-            "
-delete from run_screenshots
-where capture_source = 'end_of_run_auto'
-  and screenshot_id = ?1
-",
-            [record_id],
-        )
-        .map_err(|err| err.to_string())?;
-
-    Ok((deleted > 0, image_relative_path))
-}
-
 fn table_exists(conn: &Connection, table_name: &str) -> Result<bool, String> {
     let exists = conn
         .query_row(

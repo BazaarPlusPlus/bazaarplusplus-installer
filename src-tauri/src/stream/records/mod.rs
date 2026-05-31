@@ -8,8 +8,8 @@ pub use locator::{find_database_path_anywhere, resolve_database_path};
 use mapper::to_overlay_record;
 pub use mapper::OverlayRecord;
 use repo::{
-    delete_overlay_record_row, load_latest_overlay_record, load_overlay_record_by_id,
-    load_overlay_record_count, load_overlay_record_list,
+    load_latest_overlay_record, load_overlay_record_by_id, load_overlay_record_count,
+    load_overlay_record_list,
 };
 use std::path::PathBuf;
 
@@ -70,30 +70,6 @@ impl OverlayRecordRepository {
             .filter(|path| path.exists()))
     }
 
-    pub fn delete_record(&self, record_id: &str) -> Result<bool, String> {
-        let database_path = self.database_path()?;
-        let (deleted, image_relative_path) = delete_overlay_record_row(&database_path, record_id)?;
-        if !deleted {
-            return Ok(false);
-        }
-        let image_path = self.resolve_image_path(image_relative_path.as_deref());
-
-        if let Some(path) = image_path {
-            match std::fs::remove_file(&path) {
-                Ok(()) => {}
-                Err(err) if err.kind() == std::io::ErrorKind::NotFound => {}
-                Err(err) => {
-                    eprintln!(
-                        "failed to remove deleted stream image {}: {err}",
-                        path.display()
-                    );
-                }
-            }
-        }
-
-        Ok(true)
-    }
-
     fn database_path(&self) -> Result<PathBuf, String> {
         if let Some(game_path) = &self.game_path {
             return resolve_database_path(game_path);
@@ -135,7 +111,7 @@ mod tests {
     }
 
     #[test]
-    fn repository_sets_image_url_when_relative_image_exists() {
+    fn repository_sets_strip_url_when_relative_image_exists() {
         let temp_dir = tempfile::tempdir().unwrap();
         let game_path = temp_dir.path().join("TheBazaar");
         let data_dir = game_path.join("BazaarPlusPlusV4");
@@ -161,7 +137,7 @@ mod tests {
         let repository = OverlayRecordRepository::new(Some(game_path));
         let latest = repository.load_record_at_offset(None, 0).unwrap().unwrap();
 
-        assert_eq!(latest.image_url.as_deref(), Some("/images/snap-1"));
+        assert_eq!(latest.strip_url.as_deref(), Some("/images/snap-1/strip"));
     }
 
     #[test]
@@ -194,41 +170,5 @@ mod tests {
         assert_eq!(latest.battle_count, Some(14));
         assert_eq!(latest.rank.as_deref(), Some("Diamond"));
         assert_eq!(latest.rating, Some(500));
-    }
-
-    #[test]
-    fn repository_delete_record_removes_database_row_and_image_file() {
-        let temp_dir = tempfile::tempdir().unwrap();
-        let game_path = temp_dir.path().join("TheBazaar");
-        let data_dir = game_path.join("BazaarPlusPlusV4");
-        let screenshots_dir = data_dir.join("Screenshots");
-        std::fs::create_dir_all(&screenshots_dir).unwrap();
-        let image_path = screenshots_dir.join("match-1.png");
-        std::fs::write(&image_path, b"png").unwrap();
-
-        let database_path = data_dir.join(DATABASE_FILE_NAME);
-        let conn = rusqlite::Connection::open(&database_path).unwrap();
-        create_run_screenshots_table(&conn);
-        conn.execute(
-            "insert into run_screenshots (
-                screenshot_id, run_id, capture_source, image_relative_path, captured_at_local, captured_at_utc
-             ) values (
-                'snap-1', 'run-1', 'end_of_run_auto', 'match-1.png',
-                '2026-04-10T20:30:05+00:00', '2026-04-10T20:30:05+00:00'
-             )",
-            [],
-        )
-        .unwrap();
-
-        let repository = OverlayRecordRepository::new(Some(game_path));
-
-        assert_eq!(repository.delete_record("snap-1").unwrap(), true);
-        assert_eq!(repository.delete_record("snap-1").unwrap(), false);
-        assert!(!image_path.exists());
-
-        let remaining: i64 = conn
-            .query_row("select count(*) from run_screenshots", [], |row| row.get(0))
-            .unwrap();
-        assert_eq!(remaining, 0);
     }
 }

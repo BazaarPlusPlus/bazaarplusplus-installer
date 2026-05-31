@@ -41,9 +41,10 @@ struct HealthResponse {
 
 #[derive(Serialize)]
 struct RecordWindowSummaryResponse {
-    total: usize,
+    total_records: usize,
     existing_before_start: usize,
     captured_since_start: usize,
+    active_from: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -90,9 +91,9 @@ pub fn router(
         .route("/health", get(health))
         .route("/overlay", get(overlay_page))
         .route("/settings", get(settings_page))
-        .route("/api/records/latest", get(latest_record))
-        .route("/api/records/list", get(record_list))
-        .route("/api/records/summary", get(record_window_summary))
+        .route("/api/stream/records/latest", get(latest_record))
+        .route("/api/stream/records", get(record_list))
+        .route("/api/stream/window-summary", get(record_window_summary))
         .route(
             "/api/overlay/crop-config",
             get(get_crop_config).post(save_crop_config),
@@ -198,9 +199,10 @@ async fn record_window_summary(State(app_state): State<HttpAppState>) -> Respons
         Ok(captured_since_start) => {
             let existing_before_start = total.saturating_sub(captured_since_start);
             Json(RecordWindowSummaryResponse {
-                total,
+                total_records: total,
                 existing_before_start,
                 captured_since_start,
+                active_from: from,
             })
             .into_response()
         }
@@ -340,49 +342,6 @@ fn sanitized_cache_name(value: &str) -> String {
             _ => '_',
         })
         .collect()
-}
-
-pub(crate) fn remove_overlay_strip_cache(record_id: &str) -> Result<(), String> {
-    let directory = overlay_cache_directory();
-    if !directory.exists() {
-        return Ok(());
-    }
-
-    let prefix = format!("{}-", sanitized_cache_name(record_id));
-    let entries = std::fs::read_dir(&directory).map_err(|err| {
-        format!(
-            "Failed to read overlay cache directory {}: {err}",
-            directory.display()
-        )
-    })?;
-
-    for entry in entries {
-        let entry = entry.map_err(|err| {
-            format!(
-                "Failed to read overlay cache entry in {}: {err}",
-                directory.display()
-            )
-        })?;
-        let file_name = entry.file_name();
-        let Some(file_name) = file_name.to_str() else {
-            continue;
-        };
-        if !file_name.starts_with(&prefix) {
-            continue;
-        }
-
-        let path = entry.path();
-        if path.is_file() {
-            std::fs::remove_file(&path).map_err(|err| {
-                format!(
-                    "Failed to remove cached overlay strip {}: {err}",
-                    path.display()
-                )
-            })?;
-        }
-    }
-
-    Ok(())
 }
 
 fn crop_cache_path(

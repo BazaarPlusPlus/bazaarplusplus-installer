@@ -5,9 +5,9 @@ import { fileURLToPath } from 'node:url';
 
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const projectRoot = path.resolve(scriptDir, '..');
-const generatedDir = path.join(projectRoot, 'src/lib/generated');
+const generatedDir = path.join(projectRoot, 'src/types/generated');
 const bindingsDir = path.join(generatedDir, 'bindings');
-const barrelPath = path.join(generatedDir, 'commands.ts');
+const barrelPath = path.join(generatedDir, 'index.ts');
 const tauriBindingsDir = path.join(projectRoot, 'src-tauri/bindings');
 
 mkdirSync(generatedDir, { recursive: true });
@@ -30,7 +30,7 @@ execFileSync(
     stdio: 'inherit',
     env: {
       ...process.env,
-      TS_RS_EXPORT_DIR: '../src/lib/generated/bindings',
+      TS_RS_EXPORT_DIR: '../src/types/generated/bindings',
       TS_RS_LARGE_INT: 'number'
     }
   }

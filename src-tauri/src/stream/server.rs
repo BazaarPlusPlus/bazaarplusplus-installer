@@ -3,8 +3,12 @@ use super::{
     overlay_settings::OverlaySettingsStore,
     path_resolution::resolve_game_path_with_fallback,
     records::OverlayRecordRepository,
-    state::{StreamRuntimeState, StreamServiceStatus, StreamTaskHandle},
+    state::{
+        StreamDbStatus, StreamRuntimeState, StreamServiceStatus, StreamTaskHandle,
+        StreamWindowStatus,
+    },
 };
+use crate::config::{BAZAAR_DATA_DIRECTORY, DATABASE_FILE_NAME};
 use chrono::{Local, SecondsFormat};
 use std::path::PathBuf;
 use tokio::{net::TcpListener, sync::oneshot};
@@ -31,7 +35,7 @@ pub async fn start(
             return Err(err);
         }
     };
-    let overlay_url = format!("http://{HOST}:{PREFERRED_PORT}/overlay");
+    let urls = service_urls(HOST, PREFERRED_PORT);
     let status_with_start = state.mark_started(current_timestamp());
     let game_path = resolve_game_path_with_fallback(
         &app,
@@ -39,6 +43,11 @@ pub async fn start(
         requested_game_path.map(|path| path.to_string_lossy().into_owned()),
     );
     let overlay_record_repository = OverlayRecordRepository::new(game_path.clone());
+    let db = stream_db_status(game_path.as_ref());
+    let window = stream_window_status(
+        &overlay_record_repository,
+        status_with_start.started_at.as_deref(),
+    );
     let overlay_settings = OverlaySettingsStore::default();
     let router = http::router(overlay_record_repository, state.clone(), overlay_settings);
     let (shutdown_tx, shutdown_rx) = oneshot::channel();
@@ -57,11 +66,15 @@ pub async fn start(
         running: true,
         host: HOST.to_string(),
         port: Some(PREFERRED_PORT),
-        overlay_url: Some(overlay_url),
+        base_url: Some(urls.base_url),
+        overlay_url: Some(urls.overlay_url),
+        settings_url: Some(urls.settings_url),
         last_error: None,
         started_at: status_with_start.started_at,
         active_from: status_with_start.active_from,
         active_window_offset: status_with_start.active_window_offset,
+        db,
+        window,
     };
     state.set_running(
         status.clone(),
@@ -75,6 +88,55 @@ pub async fn start(
     Ok(status)
 }
 
+fn stream_db_status(game_path: Option<&PathBuf>) -> StreamDbStatus {
+    let Some(game_path) = game_path else {
+        return StreamDbStatus::default();
+    };
+    let database_path = game_path
+        .join(BAZAAR_DATA_DIRECTORY)
+        .join(DATABASE_FILE_NAME);
+    StreamDbStatus {
+        found: database_path.exists(),
+        path: Some(database_path.to_string_lossy().into_owned()),
+    }
+}
+
+fn stream_window_status(
+    repository: &OverlayRecordRepository,
+    started_at: Option<&str>,
+) -> StreamWindowStatus {
+    let total_records = repository.count_since(None).unwrap_or(0);
+    let captured_since_start = repository.count_since(started_at).unwrap_or(0);
+    let existing_before_start = total_records.saturating_sub(captured_since_start);
+    let current = repository
+        .load_record_at_offset(started_at, 0)
+        .ok()
+        .flatten();
+
+    StreamWindowStatus {
+        total_records,
+        existing_before_start,
+        captured_since_start,
+        current_hero: current.as_ref().map(|record| record.title.clone()),
+        current_start_label: current.map(|record| record.captured_at),
+    }
+}
+
+struct ServiceUrls {
+    base_url: String,
+    overlay_url: String,
+    settings_url: String,
+}
+
+fn service_urls(host: &str, port: u16) -> ServiceUrls {
+    let base_url = format!("http://{host}:{port}");
+    ServiceUrls {
+        overlay_url: format!("{base_url}/overlay"),
+        settings_url: format!("{base_url}/settings"),
+        base_url,
+    }
+}
+
 pub async fn stop(state: &StreamRuntimeState) -> Result<StreamServiceStatus, String> {
     if let Some(task) = state.take_task() {
         let _ = task.shutdown.send(());
@@ -82,6 +144,15 @@ pub async fn stop(state: &StreamRuntimeState) -> Result<StreamServiceStatus, Str
     }
 
     Ok(state.set_idle())
+}
+
+pub async fn restart(
+    app: tauri::AppHandle,
+    state: &StreamRuntimeState,
+    requested_game_path: Option<PathBuf>,
+) -> Result<StreamServiceStatus, String> {
+    stop(state).await?;
+    start(app, state, requested_game_path).await
 }
 
 async fn bind_listener(host: &str, port: u16) -> Result<TcpListener, String> {
@@ -98,7 +169,7 @@ fn current_timestamp() -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::bind_listener;
+    use super::{bind_listener, service_urls};
     use tokio::net::TcpListener;
 
     #[tokio::test]
@@ -109,5 +180,14 @@ mod tests {
         let error = bind_listener("127.0.0.1", occupied_port).await.unwrap_err();
 
         assert!(error.contains("OBS overlay port"));
+    }
+
+    #[test]
+    fn service_urls_expose_base_overlay_and_settings_urls() {
+        let urls = service_urls("127.0.0.1", 17654);
+
+        assert_eq!(urls.base_url, "http://127.0.0.1:17654");
+        assert_eq!(urls.overlay_url, "http://127.0.0.1:17654/overlay");
+        assert_eq!(urls.settings_url, "http://127.0.0.1:17654/settings");
     }
 }

@@ -211,46 +211,13 @@ pub(super) fn cleanup_legacy_record_directory(game_path: &Path) -> RemovalReport
     remove_dir_with_retry(&game_path.join(LEGACY_RECORD_DIRECTORY))
 }
 
-pub(super) fn legacy_record_directory_size_bytes(game_path: &Path) -> Result<u64, String> {
-    fn collect_size(path: &Path) -> Result<u64, String> {
-        if !path.exists() {
-            return Ok(0);
-        }
-
-        let metadata = std::fs::symlink_metadata(path)
-            .map_err(|err| format!("Cannot read metadata for {}: {err}", path.display()))?;
-        let file_type = metadata.file_type();
-        if file_type.is_symlink() {
-            return Ok(0);
-        }
-        if metadata.is_file() {
-            return Ok(metadata.len());
-        }
-        if !metadata.is_dir() {
-            return Ok(0);
-        }
-
-        let mut total = 0;
-        let entries = std::fs::read_dir(path)
-            .map_err(|err| format!("Cannot read directory {}: {err}", path.display()))?;
-        for entry in entries {
-            let entry = entry.map_err(|err| err.to_string())?;
-            total += collect_size(&entry.path())?;
-        }
-
-        Ok(total)
-    }
-
-    collect_size(&game_path.join(LEGACY_RECORD_DIRECTORY))
-}
-
 #[cfg(test)]
 mod tests {
     use super::LEGACY_RECORD_DIRECTORY;
     use super::{
-        cleanup_legacy_record_directory, ensure_valid_game_path,
-        legacy_record_directory_size_bytes, prepare_install_target, preserve_file_if_exists,
-        restore_preserved_file, uninstall_payload, PreservedFile, BPP_CONFIG_RELATIVE_PATH,
+        cleanup_legacy_record_directory, ensure_valid_game_path, prepare_install_target,
+        preserve_file_if_exists, restore_preserved_file, uninstall_payload, PreservedFile,
+        BPP_CONFIG_RELATIVE_PATH,
     };
 
     #[test]
@@ -435,47 +402,6 @@ mod tests {
 
         assert!(!report.is_empty(), "expected at least one failed path");
         assert!(!legacy_dir.join("removable.bin").exists());
-    }
-
-    #[test]
-    fn test_legacy_record_directory_size_bytes_sums_nested_files() {
-        let tmp = tempfile::tempdir().unwrap();
-        let legacy_dir = tmp.path().join(LEGACY_RECORD_DIRECTORY);
-        std::fs::create_dir_all(legacy_dir.join("nested")).unwrap();
-        std::fs::write(legacy_dir.join("a.bin"), [0_u8; 3]).unwrap();
-        std::fs::write(legacy_dir.join("nested").join("b.bin"), [0_u8; 5]).unwrap();
-
-        let total = legacy_record_directory_size_bytes(tmp.path()).unwrap();
-
-        assert_eq!(total, 8);
-    }
-
-    #[test]
-    fn test_legacy_record_directory_size_bytes_returns_zero_when_missing() {
-        let tmp = tempfile::tempdir().unwrap();
-
-        let total = legacy_record_directory_size_bytes(tmp.path()).unwrap();
-
-        assert_eq!(total, 0);
-    }
-
-    #[cfg(unix)]
-    #[test]
-    fn test_legacy_record_directory_size_bytes_ignores_symlink_targets() {
-        let tmp = tempfile::tempdir().unwrap();
-        let legacy_dir = tmp.path().join(LEGACY_RECORD_DIRECTORY);
-        std::fs::create_dir_all(&legacy_dir).unwrap();
-        std::fs::write(legacy_dir.join("a.bin"), [0_u8; 3]).unwrap();
-        std::fs::write(tmp.path().join("outside.bin"), [0_u8; 100]).unwrap();
-        std::os::unix::fs::symlink(
-            tmp.path().join("outside.bin"),
-            legacy_dir.join("outside-link.bin"),
-        )
-        .unwrap();
-
-        let total = legacy_record_directory_size_bytes(tmp.path()).unwrap();
-
-        assert_eq!(total, 3);
     }
 
     #[test]
