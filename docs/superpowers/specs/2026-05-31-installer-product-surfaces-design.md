@@ -6,16 +6,18 @@ Date: 2026-05-31
 
 Approved prototype surfaces:
 
+- Global shell: `Global Header v2`
 - Run detail: `Run Detail v5`
 - Stream: `Stream Detail v4`
 - History: `History Detail v4`
 - Install: `Install Detail v2`
 
-These surfaces share the Run Detail v5 visual language: left rail, compact dark-gold panels, entity-scoped actions, and data-first layout.
+These surfaces share the Run Detail v5 visual language: a full-width BazaarPlusPlus header, left rail below the header, compact dark-gold panels, entity-scoped actions, and data-first layout.
 
 ## Shared Rules
 
 - Keep the left rail: `安装 / 战绩 / 直播 / 关于`.
+- Keep the `BazaarPlusPlus` global header as a full-width banner above the rail and page content.
 - Keep pages dense and operational. Do not introduce landing-page or tutorial-style hero layouts.
 - Place actions on the object they operate on.
   - Run screenshot actions live on the run card.
@@ -24,6 +26,35 @@ These surfaces share the Run Detail v5 visual language: left rail, compact dark-
   - Install and maintenance actions live in the install action sidebar.
 - Show only existing local data. Do not invent battle screenshots, card art, or video previews.
 - Prefer one visible primary action per surface.
+
+## Global Shell
+
+Approved version: `Global Header v2`.
+
+The application shell uses two vertical regions:
+
+- Top row: full-width `BazaarPlusPlus` global header.
+- Bottom row: left rail plus page content.
+
+The left rail starts below the global header. It must not pass through or sit beside the header. The header spans the whole window width.
+
+Global header content:
+
+- Brand:
+  - `BazaarPlusPlus`
+  - subtitle such as `因热爱而生`
+- Global actions:
+  - `检查更新`
+  - `支持项目`
+  - locale toggle
+
+The old standalone support strip is removed. Support functionality moves into the header `支持项目` popover:
+
+- `WePay` opens the payment QR modal.
+- `Ko-fi` opens the external support link.
+- `支持者名单` opens the supporter list.
+
+`直播模式` must not remain a header toggle because stream is now its own rail page.
 
 ## Install Page
 
