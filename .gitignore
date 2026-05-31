@@ -35,6 +35,7 @@ pnpm-debug.log*
 
 # Editors and local tooling
 .claude/
+.superpowers/
 .worktrees/
 .idea/
 .trae/
