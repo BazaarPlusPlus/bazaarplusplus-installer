@@ -7,6 +7,7 @@ Date: 2026-05-31
 Approved prototype surfaces:
 
 - Global shell: `Global Header v2`
+- About: `About Detail v1`
 - Run detail: `Run Detail v5`
 - Stream: `Stream Detail v4`
 - History: `History Detail v4`
@@ -55,6 +56,40 @@ The old standalone support strip is removed. Support functionality moves into th
 - `支持者名单` opens the supporter list.
 
 `直播模式` must not remain a header toggle because stream is now its own rail page.
+
+## About Page
+
+Approved version: `About Detail v1`.
+
+The about page uses the global shell:
+
+- full-width `BazaarPlusPlus` header
+- left rail below the header
+- rail active on `关于`
+
+The about page is for project information, acknowledgements, data sources, and licenses. It must not repeat the support section because support now lives in the global header popover.
+
+Page content:
+
+- `Project`
+  - app version
+  - project license
+  - source link
+- `致谢`
+  - author
+  - co-creators
+  - inspired-by projects
+- `数据来源`
+  - BazaarDB
+- `Licenses`
+  - key project dependencies, including BepInEx and Source Han Sans CN
+  - frontend and backend dependencies
+
+Remove from the about page:
+
+- standalone support section
+- duplicate payment/supporter-list entry cards
+- local page-only header that conflicts with the global shell
 
 ## Install Page
 
