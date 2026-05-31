@@ -4,7 +4,6 @@
 # Frontend build output and caches
 /build/
 /dist/
-/.svelte-kit/
 /package/
 /coverage/
 /.vite/

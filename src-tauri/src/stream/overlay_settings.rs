@@ -317,9 +317,9 @@ mod tests {
     }
 
     #[test]
-    fn store_loads_legacy_crop_document_with_current_mode() {
+    fn store_loads_v1_crop_document_with_current_mode() {
         let dir = tempfile::tempdir().unwrap();
-        let path = dir.path().join("legacy-overlay.json");
+        let path = dir.path().join("v1-overlay.json");
         let store = OverlaySettingsStore::new(path.clone());
 
         std::fs::write(

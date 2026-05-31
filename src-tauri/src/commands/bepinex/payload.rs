@@ -3,7 +3,7 @@ use std::path::{Path, PathBuf};
 use std::thread;
 use std::time::Duration;
 
-use super::LEGACY_RECORD_DIRECTORY;
+use crate::config::BAZAAR_DATA_DIRECTORY;
 
 pub(super) const BPP_CONFIG_RELATIVE_PATH: &str = "BepInEx/config/BazaarPlusPlus.cfg";
 
@@ -207,15 +207,16 @@ pub(super) fn restore_preserved_file(
         .map_err(|err| format!("Cannot restore {}: {err}", path.display()))
 }
 
-pub(super) fn cleanup_legacy_record_directory(game_path: &Path) -> RemovalReport {
-    remove_dir_with_retry(&game_path.join(LEGACY_RECORD_DIRECTORY))
+pub(super) fn cleanup_bpp_data_directory(game_path: &Path) -> RemovalReport {
+    remove_dir_with_retry(&game_path.join(BAZAAR_DATA_DIRECTORY))
 }
 
 #[cfg(test)]
 mod tests {
-    use super::LEGACY_RECORD_DIRECTORY;
+    use crate::config::BAZAAR_DATA_DIRECTORY;
+
     use super::{
-        cleanup_legacy_record_directory, ensure_valid_game_path, prepare_install_target,
+        cleanup_bpp_data_directory, ensure_valid_game_path, prepare_install_target,
         preserve_file_if_exists, restore_preserved_file, uninstall_payload, PreservedFile,
         BPP_CONFIG_RELATIVE_PATH,
     };
@@ -267,10 +268,10 @@ mod tests {
     }
 
     #[test]
-    fn test_prepare_install_target_keeps_legacy_directory_for_installed_v1() {
+    fn test_prepare_install_target_keeps_bpp_data_directory_for_installed_v1() {
         let tmp = tempfile::tempdir().unwrap();
         let plugins_dir = tmp.path().join("BepInEx/plugins");
-        let legacy_dir = tmp.path().join("BazaarPlusPlusV4");
+        let data_dir = tmp.path().join(BAZAAR_DATA_DIRECTORY);
 
         #[cfg(target_os = "macos")]
         {
@@ -287,13 +288,13 @@ mod tests {
         }
 
         std::fs::create_dir_all(&plugins_dir).unwrap();
-        std::fs::create_dir_all(&legacy_dir).unwrap();
+        std::fs::create_dir_all(&data_dir).unwrap();
         std::fs::write(plugins_dir.join("BazaarPlusPlus.version"), b"1.9.0").unwrap();
-        std::fs::write(legacy_dir.join("legacy.dll"), b"dll").unwrap();
+        std::fs::write(data_dir.join("stale.dll"), b"dll").unwrap();
 
         prepare_install_target(tmp.path()).unwrap();
 
-        assert!(legacy_dir.exists());
+        assert!(data_dir.exists());
     }
 
     #[test]
@@ -334,74 +335,74 @@ mod tests {
     }
 
     #[test]
-    fn test_cleanup_legacy_record_directory_removes_bazaarplusplus_directory() {
+    fn test_cleanup_bpp_data_directory_removes_bazaarplusplus_directory() {
         let tmp = tempfile::tempdir().unwrap();
-        let legacy_dir = tmp.path().join(LEGACY_RECORD_DIRECTORY);
-        std::fs::create_dir_all(&legacy_dir).unwrap();
-        std::fs::write(legacy_dir.join("legacy.dll"), b"dll").unwrap();
+        let data_dir = tmp.path().join(BAZAAR_DATA_DIRECTORY);
+        std::fs::create_dir_all(&data_dir).unwrap();
+        std::fs::write(data_dir.join("stale.dll"), b"dll").unwrap();
 
-        let report = cleanup_legacy_record_directory(tmp.path());
+        let report = cleanup_bpp_data_directory(tmp.path());
 
         assert!(
             report.is_empty(),
             "unexpected failures: {:?}",
             report.failed
         );
-        assert!(!legacy_dir.exists());
+        assert!(!data_dir.exists());
     }
 
     #[test]
-    fn test_cleanup_legacy_record_directory_is_no_op_when_directory_missing() {
+    fn test_cleanup_bpp_data_directory_is_no_op_when_directory_missing() {
         let tmp = tempfile::tempdir().unwrap();
 
-        let report = cleanup_legacy_record_directory(tmp.path());
+        let report = cleanup_bpp_data_directory(tmp.path());
 
         assert!(report.is_empty());
     }
 
     #[test]
-    fn test_cleanup_legacy_record_directory_walks_nested_subdirectories() {
+    fn test_cleanup_bpp_data_directory_walks_nested_subdirectories() {
         let tmp = tempfile::tempdir().unwrap();
-        let legacy_dir = tmp.path().join(LEGACY_RECORD_DIRECTORY);
-        let nested = legacy_dir.join("Identity").join("inner");
+        let data_dir = tmp.path().join(BAZAAR_DATA_DIRECTORY);
+        let nested = data_dir.join("Identity").join("inner");
         std::fs::create_dir_all(&nested).unwrap();
-        std::fs::write(legacy_dir.join("bazaarplusplus.db"), b"db").unwrap();
+        std::fs::write(data_dir.join("bazaarplusplus.db"), b"db").unwrap();
         std::fs::write(nested.join("auth.json"), b"auth").unwrap();
 
-        let report = cleanup_legacy_record_directory(tmp.path());
+        let report = cleanup_bpp_data_directory(tmp.path());
 
         assert!(
             report.is_empty(),
             "unexpected failures: {:?}",
             report.failed
         );
-        assert!(!legacy_dir.exists());
+        assert!(!data_dir.exists());
     }
 
     #[cfg(unix)]
     #[test]
-    fn test_cleanup_legacy_record_directory_reports_locked_files_without_aborting_siblings() {
+    fn test_cleanup_bpp_data_directory_reports_locked_files_without_aborting_siblings() {
         use std::os::unix::fs::PermissionsExt;
 
         let tmp = tempfile::tempdir().unwrap();
-        let legacy_dir = tmp.path().join(LEGACY_RECORD_DIRECTORY);
-        let unwritable_subdir = legacy_dir.join("locked");
+        let data_dir = tmp.path().join(BAZAAR_DATA_DIRECTORY);
+        let unwritable_subdir = data_dir.join("locked");
         std::fs::create_dir_all(&unwritable_subdir).unwrap();
-        std::fs::write(legacy_dir.join("removable.bin"), b"x").unwrap();
+        std::fs::write(data_dir.join("removable.bin"), b"x").unwrap();
         std::fs::write(unwritable_subdir.join("trapped.bin"), b"x").unwrap();
 
         // Drop write permission on the parent dir so its child can't be unlinked.
         std::fs::set_permissions(&unwritable_subdir, std::fs::Permissions::from_mode(0o500))
             .unwrap();
 
-        let report = cleanup_legacy_record_directory(tmp.path());
+        let report = cleanup_bpp_data_directory(tmp.path());
 
         // Restore permissions so the tempdir cleanup succeeds even if the test fails.
         let _ =
             std::fs::set_permissions(&unwritable_subdir, std::fs::Permissions::from_mode(0o700));
 
         assert!(!report.is_empty(), "expected at least one failed path");
-        assert!(!legacy_dir.join("removable.bin").exists());
+        assert!(!data_dir.join("removable.bin").exists());
     }
 
     #[test]

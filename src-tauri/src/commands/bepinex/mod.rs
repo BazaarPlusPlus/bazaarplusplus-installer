@@ -8,8 +8,6 @@ use tauri::Manager;
 
 use crate::stream::state::StreamRuntimeState;
 
-pub(crate) const LEGACY_RECORD_DIRECTORY: &str = "BazaarPlusPlusV4";
-
 use super::{debug_error, debug_log};
 
 /// Stable error-code prefixes that the frontend pattern-matches to render
@@ -40,7 +38,7 @@ fn repair_bpp_blocking(game_path: &Path) -> Result<(), String> {
         return Err(REPAIR_ERR_GAME_RUNNING.to_string());
     }
 
-    let report = payload::cleanup_legacy_record_directory(game_path);
+    let report = payload::cleanup_bpp_data_directory(game_path);
     if !report.is_empty() {
         return Err(format_partial_failure(&report.failed));
     }
@@ -166,39 +164,39 @@ mod tests {
     }
 
     #[test]
-    fn test_repair_bpp_removes_legacy_directory() {
+    fn test_repair_bpp_removes_bpp_data_directory() {
         let tmp = make_valid_game_dir();
-        let legacy_dir = tmp.path().join(LEGACY_RECORD_DIRECTORY);
+        let data_dir = tmp.path().join(crate::config::BAZAAR_DATA_DIRECTORY);
 
-        std::fs::create_dir_all(&legacy_dir).unwrap();
-        std::fs::write(legacy_dir.join("legacy.dll"), b"dll").unwrap();
+        std::fs::create_dir_all(&data_dir).unwrap();
+        std::fs::write(data_dir.join("stale.dll"), b"dll").unwrap();
 
         repair_bpp_blocking(tmp.path()).unwrap();
 
-        assert!(!legacy_dir.exists());
+        assert!(!data_dir.exists());
     }
 
     #[test]
     fn test_repair_bpp_is_noop_when_directory_missing() {
         let tmp = make_valid_game_dir();
-        let legacy_dir = tmp.path().join(LEGACY_RECORD_DIRECTORY);
-        assert!(!legacy_dir.exists());
+        let data_dir = tmp.path().join(crate::config::BAZAAR_DATA_DIRECTORY);
+        assert!(!data_dir.exists());
 
         repair_bpp_blocking(tmp.path()).unwrap();
 
-        assert!(!legacy_dir.exists());
+        assert!(!data_dir.exists());
     }
 
     #[test]
     fn test_repair_bpp_is_idempotent_when_run_twice() {
         let tmp = make_valid_game_dir();
-        let legacy_dir = tmp.path().join(LEGACY_RECORD_DIRECTORY);
-        std::fs::create_dir_all(&legacy_dir).unwrap();
+        let data_dir = tmp.path().join(crate::config::BAZAAR_DATA_DIRECTORY);
+        std::fs::create_dir_all(&data_dir).unwrap();
 
         repair_bpp_blocking(tmp.path()).unwrap();
         repair_bpp_blocking(tmp.path()).unwrap();
 
-        assert!(!legacy_dir.exists());
+        assert!(!data_dir.exists());
     }
 
     #[test]

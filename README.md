@@ -1,6 +1,6 @@
 # BazaarPlusPlus
 
-Desktop app for BazaarPlusPlus, built with Tauri, SvelteKit, and TypeScript.
+Desktop app for BazaarPlusPlus, built with Tauri, React, Vite, and TypeScript.
 
 ## Development
 
@@ -48,7 +48,7 @@ Artifacts are written under `src-tauri/target/release/` on Windows and
 
 ## Structure
 
-- `src/`: SvelteKit frontend
+- `src/`: React frontend
 - `src-tauri/`: native Tauri commands and packaging
 - `scripts/prebuild-check.mjs`: build-time validation
 
