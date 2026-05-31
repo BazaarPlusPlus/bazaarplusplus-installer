@@ -1,0 +1,39 @@
+@import "tailwindcss";
+
+@theme {
+  --color-bg: #0b0906;
+  --color-text: #e8dcc8;
+  --color-gold-text: #e8c87a;
+  --color-soft-gold: #f3d38d;
+  --color-gold-button: #d4a040;
+  --color-pale-gold: #f6ebd1;
+  --color-gold-deep: #bf852e;
+  --color-gold-dark: #9e5c1e;
+}
+
+:root {
+  --color-accent-rgb: 200, 148, 55;
+  --color-cream-rgb: 228, 216, 191;
+  --color-warm-rgb: 255, 214, 140;
+  --color-warm-bright-rgb: 255, 198, 98;
+  --color-muted-gold-rgb: 200, 170, 120;
+}
+
+html, body {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  font-family: 'IM Fell English', 'Noto Serif SC', 'Songti SC', Georgia, serif;
+}
+
+#root {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.cinzel { font-family: 'Cinzel', serif; }
+.cinzel-decorative { font-family: 'Cinzel Decorative', serif; }
+.fira-code { font-family: 'Fira Code', monospace; }
