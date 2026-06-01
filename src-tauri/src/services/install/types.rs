@@ -1,0 +1,68 @@
+use serde::Serialize;
+
+#[derive(Clone, Debug, Serialize, ts_rs::TS)]
+#[ts(export)]
+pub struct InstallState {
+    pub selected_game_path: Option<String>,
+    pub steam_path: Option<String>,
+    pub steam_running: bool,
+    pub steam_launch_options_supported: bool,
+    pub game: InstallGameState,
+    pub mod_state: InstallModState,
+    pub runtime: InstallRuntimeState,
+    pub actions: InstallActions,
+    pub warnings: Vec<InstallWarning>,
+}
+
+#[derive(Clone, Debug, Serialize, ts_rs::TS)]
+#[ts(export)]
+pub struct InstallGameState {
+    pub found: bool,
+    pub path_valid: bool,
+    pub display_version: Option<String>,
+}
+
+#[derive(Clone, Debug, Serialize, ts_rs::TS)]
+#[ts(export)]
+pub struct InstallModState {
+    pub installed: bool,
+    pub installed_version: Option<String>,
+    pub bundled_version: Option<String>,
+    pub version_matches: bool,
+}
+
+#[derive(Clone, Debug, Serialize, ts_rs::TS)]
+#[ts(export)]
+pub struct InstallRuntimeState {
+    pub dotnet_version: Option<String>,
+    pub dotnet_ok: bool,
+}
+
+#[derive(Clone, Debug, Serialize, ts_rs::TS)]
+#[ts(export)]
+pub struct InstallActions {
+    pub can_install: bool,
+    pub can_reinstall: bool,
+    pub can_repair: bool,
+    pub can_uninstall: bool,
+    pub can_launch: bool,
+}
+
+#[derive(Clone, Debug, Serialize, ts_rs::TS)]
+#[ts(export)]
+pub struct InstallWarning {
+    pub code: String,
+    pub message: String,
+}
+
+#[derive(Clone, Debug, Serialize, ts_rs::TS)]
+#[ts(export)]
+pub struct GameDirectorySelection {
+    pub game_path: Option<String>,
+}
+
+#[derive(Clone, Debug, Serialize, ts_rs::TS)]
+#[ts(export)]
+pub struct FileActionResult {
+    pub ok: bool,
+}

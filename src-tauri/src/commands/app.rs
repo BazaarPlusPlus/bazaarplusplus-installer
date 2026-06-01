@@ -1,7 +1,7 @@
 use serde::Serialize;
 use tauri::AppHandle;
 
-use super::startup::InstallerContextState;
+use crate::services::startup::InstallerContextState;
 
 #[derive(Clone, Debug, Serialize, ts_rs::TS)]
 #[ts(export)]

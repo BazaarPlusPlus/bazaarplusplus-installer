@@ -1,7 +1,6 @@
 use super::{
     http,
     overlay_settings::OverlaySettingsStore,
-    path_resolution::resolve_game_path_with_fallback,
     records::OverlayRecordRepository,
     state::{
         StreamDbStatus, StreamRuntimeState, StreamServiceStatus, StreamTaskHandle,
@@ -9,6 +8,7 @@ use super::{
     },
 };
 use crate::config::{BAZAAR_DATA_DIRECTORY, DATABASE_FILE_NAME};
+use crate::services::path::resolve_game_path_with_fallback;
 use chrono::{Local, SecondsFormat};
 use std::path::PathBuf;
 use tokio::{net::TcpListener, sync::oneshot};

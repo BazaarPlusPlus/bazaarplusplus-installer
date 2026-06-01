@@ -138,7 +138,7 @@ fn candidate_steam_paths() -> Vec<PathBuf> {
         }
     }
 
-    crate::commands::debug_log!(
+    crate::services::debug_log!(
         "[detect::steam] steam root candidates={:?}",
         debug_paths_label(&candidates)
     );
@@ -147,13 +147,13 @@ fn candidate_steam_paths() -> Vec<PathBuf> {
 }
 
 fn get_game_path_from_single_steam_root(steam_path: &Path) -> Option<PathBuf> {
-    crate::commands::debug_log!(
+    crate::services::debug_log!(
         "[detect::steam] probing steam root={}",
         steam_path.display()
     );
 
     if let Some(path) = get_game_path_from_vdf(steam_path) {
-        crate::commands::debug_log!(
+        crate::services::debug_log!(
             "[detect::steam] hit from libraryfolders.vdf root={} game_path={}",
             steam_path.display(),
             path.display()
@@ -163,7 +163,7 @@ fn get_game_path_from_single_steam_root(steam_path: &Path) -> Option<PathBuf> {
 
     let candidate = steam_path.join("steamapps/common/The Bazaar");
     if candidate.exists() {
-        crate::commands::debug_log!(
+        crate::services::debug_log!(
             "[detect::steam] hit from default steam library root={} game_path={}",
             steam_path.display(),
             candidate.display()
@@ -171,7 +171,7 @@ fn get_game_path_from_single_steam_root(steam_path: &Path) -> Option<PathBuf> {
         return Some(candidate);
     }
 
-    crate::commands::debug_log!(
+    crate::services::debug_log!(
         "[detect::steam] miss for steam root={}",
         steam_path.display()
     );
@@ -227,7 +227,7 @@ fn get_game_path_from_detected_steam_roots(
 ) -> Option<PathBuf> {
     let steam_roots = ordered_steam_roots(primary_steam_root, candidate_roots);
 
-    crate::commands::debug_log!(
+    crate::services::debug_log!(
         "[detect::steam] ordered steam roots for game lookup={:?}",
         debug_paths_label(&steam_roots)
     );
@@ -238,13 +238,13 @@ fn get_game_path_from_detected_steam_roots(
 
     #[cfg(target_os = "windows")]
     {
-        crate::commands::debug_log!(
+        crate::services::debug_log!(
             "[detect::steam] probing common Windows candidates count={}",
             windows_common_game_candidates().len()
         );
         for path in windows_common_game_candidates() {
             if path.exists() {
-                crate::commands::debug_log!(
+                crate::services::debug_log!(
                     "[detect::steam] hit from common Windows candidate game_path={}",
                     path.display()
                 );
@@ -253,7 +253,7 @@ fn get_game_path_from_detected_steam_roots(
         }
     }
 
-    crate::commands::debug_log!("[detect::steam] failed to resolve game path");
+    crate::services::debug_log!("[detect::steam] failed to resolve game path");
     None
 }
 
@@ -265,10 +265,10 @@ pub(crate) fn detect_installation_paths() -> SteamInstallPaths {
         .and_then(|path| get_game_path_from_detected_steam_roots(path, &steam_roots));
     let steam_launch_options_supported = steam_path
         .as_deref()
-        .map(crate::commands::steam::supports_launch_option_updates)
+        .map(crate::services::steam::supports_launch_option_updates)
         .unwrap_or(false);
 
-    crate::commands::debug_log!(
+    crate::services::debug_log!(
         "[detect::steam] detected startup paths steam_path={:?} game_path={:?} launch_options_supported={}",
         steam_path.as_ref().map(|path| path.display().to_string()),
         game_path.as_ref().map(|path| path.display().to_string()),
@@ -287,7 +287,7 @@ fn get_game_path_from_vdf(steam_path: &Path) -> Option<PathBuf> {
     let library_vdf = match std::fs::read_to_string(&library_vdf_path) {
         Ok(content) => content,
         Err(_error) => {
-            crate::commands::debug_log!(
+            crate::services::debug_log!(
                 "[detect::steam] cannot read libraryfolders.vdf path={} error={}",
                 library_vdf_path.display(),
                 _error
@@ -299,7 +299,7 @@ fn get_game_path_from_vdf(steam_path: &Path) -> Option<PathBuf> {
     let parsed_folders = match parse_library_folders(&library_vdf, bazaar_app_id()) {
         Some(folders) => folders,
         None => {
-            crate::commands::debug_log!(
+            crate::services::debug_log!(
                 "[detect::steam] failed to parse libraryfolders.vdf path={}",
                 library_vdf_path.display()
             );
@@ -307,7 +307,7 @@ fn get_game_path_from_vdf(steam_path: &Path) -> Option<PathBuf> {
         }
     };
 
-    crate::commands::debug_log!(
+    crate::services::debug_log!(
         "[detect::steam] parsed libraryfolders path={} folders={:?}",
         library_vdf_path.display(),
         parsed_folders

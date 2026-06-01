@@ -33,7 +33,7 @@ pub async fn repair_bpp(
 fn repair_bpp_blocking(game_path: &Path) -> Result<(), String> {
     payload::ensure_valid_game_path(game_path)?;
 
-    if crate::commands::game_process::is_bazaar_running_best_effort() {
+    if crate::services::game_process::is_bazaar_running_best_effort() {
         return Err(REPAIR_ERR_GAME_RUNNING.to_string());
     }
 
@@ -68,10 +68,7 @@ pub fn install_bepinex(
     #[cfg(not(target_os = "macos"))]
     let _ = &steam_path;
     #[cfg(target_os = "macos")]
-    crate::commands::steam::prepare_steam_for_launch_option_update(
-        Path::new(&steam_path),
-        true,
-    )?;
+    crate::services::steam::prepare_steam_for_launch_option_update(Path::new(&steam_path), true)?;
     payload::prepare_install_target(game_path)?;
 
     let install_result = (|| -> Result<(), String> {
@@ -118,13 +115,13 @@ pub fn uninstall_bpp(
     payload::ensure_valid_game_path(game_path)?;
 
     #[cfg(target_os = "macos")]
-    crate::commands::steam::prepare_steam_for_launch_option_update(Path::new(&_steam_path), false)?;
+    crate::services::steam::prepare_steam_for_launch_option_update(Path::new(&_steam_path), false)?;
 
     payload::uninstall_payload(game_path)?;
 
     #[cfg(target_os = "macos")]
     {
-        crate::commands::vdf::clear_launch_options_for_steam(Path::new(&_steam_path))?;
+        crate::services::vdf::clear_launch_options_for_steam(Path::new(&_steam_path))?;
     }
 
     debug_log!(

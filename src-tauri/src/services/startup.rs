@@ -40,7 +40,7 @@ fn compute_startup(app: &AppHandle) -> InstallerStartup {
     let (dotnet_version, dotnet_ok) = dotnet_detect_for_startup();
     let detected_paths = detect_installation_paths();
 
-    crate::commands::debug_log!(
+    crate::services::debug_log!(
         "[startup] initialized bundled_bpp_version={:?} dotnet_version={:?} dotnet_ok={} steam_path={:?} game_path={:?} launch_options_supported={}",
         bundled_bpp_version,
         dotnet_version,

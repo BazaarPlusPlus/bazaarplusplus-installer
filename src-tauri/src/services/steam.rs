@@ -1,4 +1,4 @@
-use crate::commands::debug_log;
+use crate::services::debug_log;
 use serde::Serialize;
 use std::path::Path;
 use std::process::Command;

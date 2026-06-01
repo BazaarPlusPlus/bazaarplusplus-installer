@@ -160,7 +160,7 @@ pub(super) fn uninstall_payload(game_path: &Path) -> Result<(), String> {
 }
 
 pub(super) fn ensure_valid_game_path(game_path: &Path) -> Result<(), String> {
-    if crate::commands::detect::is_valid_game_path(game_path) {
+    if crate::services::detect::is_valid_game_path(game_path) {
         return Ok(());
     }
 

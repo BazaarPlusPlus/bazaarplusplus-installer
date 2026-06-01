@@ -1,6 +1,7 @@
 mod commands;
 mod config;
 mod history;
+mod services;
 mod stream;
 mod tray;
 
@@ -16,12 +17,12 @@ use commands::{
         choose_game_directory, get_install_state, install_mod, launch_game, repair_mod,
         uninstall_mod,
     },
-    startup::InstallerContextState,
     stream::{
         apply_overlay_crop_code, ensure_stream_session, get_overlay_settings, reset_overlay_crop,
         restart_stream_session, save_overlay_display_mode, set_stream_window,
     },
 };
+use services::startup::InstallerContextState;
 use tray::{build_tray, set_app_locale, TrayMenuState};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]

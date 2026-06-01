@@ -495,7 +495,7 @@ fn verify_patched_localconfigs(steam_path: &Path, expected_args: &str) -> Result
 }
 
 pub fn clear_launch_options_for_steam(steam_path: &Path) -> Result<(), String> {
-    if !crate::commands::steam::supports_launch_option_updates(steam_path) {
+    if !crate::services::steam::supports_launch_option_updates(steam_path) {
         debug_log!(
             "Skipping launch option cleanup because Steam userdata was not found at {}.",
             steam_path.display()
@@ -526,7 +526,7 @@ pub fn patch_launch_options(
     }
 
     let steam_path = Path::new(&_steam_path);
-    if !crate::commands::steam::supports_launch_option_updates(steam_path) {
+    if !crate::services::steam::supports_launch_option_updates(steam_path) {
         debug_log!(
             "Skipping launch option patch because Steam userdata was not found at {}.",
             steam_path.display()
@@ -534,10 +534,7 @@ pub fn patch_launch_options(
         return Ok(LaunchOptionsPatchResult { verified: true });
     }
 
-    crate::commands::steam::prepare_steam_for_launch_option_update(
-        steam_path,
-        true,
-    )?;
+    crate::services::steam::prepare_steam_for_launch_option_update(steam_path, true)?;
 
     #[cfg(target_os = "macos")]
     {

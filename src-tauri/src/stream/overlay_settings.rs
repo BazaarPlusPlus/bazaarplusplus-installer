@@ -122,31 +122,7 @@ impl OverlaySettingsStore {
             .load()
             .map(|settings| settings.display_mode)
             .unwrap_or_default();
-        let settings = OverlaySettings { crop, display_mode };
-        let document = OverlayCropDocument {
-            v: OVERLAY_SETTINGS_VERSION,
-            settings,
-        };
-        let raw = serde_json::to_string_pretty(&document)
-            .map_err(|err| format!("Failed to serialize overlay crop settings: {err}"))?;
-
-        if let Some(parent) = self.path.parent() {
-            std::fs::create_dir_all(parent).map_err(|err| {
-                format!(
-                    "Failed to create overlay settings directory {}: {err}",
-                    parent.display()
-                )
-            })?;
-        }
-
-        std::fs::write(&self.path, raw).map_err(|err| {
-            format!(
-                "Failed to write overlay crop settings to {}: {err}",
-                self.path.display()
-            )
-        })?;
-
-        Ok(self.payload(settings))
+        self.write_settings(OverlaySettings { crop, display_mode })
     }
 
     pub fn save_display_mode(
@@ -157,7 +133,13 @@ impl OverlaySettingsStore {
             .load()
             .map(|settings| settings.crop)
             .unwrap_or_default();
-        let settings = OverlaySettings { crop, display_mode };
+        self.write_settings(OverlaySettings { crop, display_mode })
+    }
+
+    fn write_settings(
+        &self,
+        settings: OverlaySettings,
+    ) -> Result<OverlayCropSettingsPayload, String> {
         let document = OverlayCropDocument {
             v: OVERLAY_SETTINGS_VERSION,
             settings,

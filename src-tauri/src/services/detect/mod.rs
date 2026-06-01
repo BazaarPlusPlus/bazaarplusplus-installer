@@ -6,8 +6,9 @@ pub(crate) use dotnet::detect_dotnet as dotnet_detect_for_startup;
 pub(crate) use game::is_valid_game_path;
 pub(crate) use steam::detect_installation_paths;
 
-use crate::commands::startup::InstallerContextState;
-use game::{is_bepinex_installed, normalize_game_path, read_installed_bpp_version};
+use crate::services::path::normalize_requested_game_path;
+use crate::services::startup::InstallerContextState;
+use game::{is_bepinex_installed, read_installed_bpp_version};
 use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, State};
 
@@ -35,7 +36,7 @@ pub fn detect_environment(
     state: State<'_, InstallerContextState>,
     game_path: Option<String>,
 ) -> Result<EnvironmentInfo, String> {
-    crate::commands::debug_log!(
+    crate::services::debug_log!(
         "[detect_environment] start requested_game_path={:?}",
         game_path
     );
@@ -43,7 +44,7 @@ pub fn detect_environment(
     // reads the bundled payload, probes .NET, and resolves Steam/game paths.
     let startup = state.get_or_initialize(&app);
 
-    let requested_game_path = normalize_game_path(game_path);
+    let requested_game_path = normalize_requested_game_path(game_path);
     let steam_path = startup.steam_path.clone();
     let game_path = requested_game_path
         .clone()
@@ -61,7 +62,7 @@ pub fn detect_environment(
         .map(|path| is_bepinex_installed(path))
         .unwrap_or(false);
 
-    crate::commands::debug_log!(
+    crate::services::debug_log!(
         "[detect_environment] resolved steam_path={:?} game_path={:?} bepinex_installed={} bundled_bpp_version={:?}",
         steam_path.as_ref().map(|path| path.display().to_string()),
         game_path.as_ref().map(|path| path.display().to_string()),

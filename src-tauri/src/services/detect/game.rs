@@ -1,12 +1,4 @@
-use std::path::{Path, PathBuf};
-
-pub(super) fn normalize_game_path(game_path: Option<String>) -> Option<PathBuf> {
-    game_path
-        .as_deref()
-        .map(str::trim)
-        .filter(|path| !path.is_empty())
-        .map(PathBuf::from)
-}
+use std::path::Path;
 
 pub(super) fn is_bepinex_installed(game_path: &Path) -> bool {
     if !game_path
@@ -102,7 +94,11 @@ mod tests {
 
     #[test]
     fn test_normalize_game_path_trims_whitespace() {
-        let game_path = normalize_game_path(Some("  C:\\Games\\The Bazaar  ".to_string()));
+        use crate::services::path::normalize_requested_game_path;
+        use std::path::PathBuf;
+
+        let game_path =
+            normalize_requested_game_path(Some("  C:\\Games\\The Bazaar  ".to_string()));
         assert_eq!(game_path, Some(PathBuf::from("C:\\Games\\The Bazaar")));
     }
 }

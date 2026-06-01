@@ -1,8 +1,8 @@
-use crate::commands::startup::InstallerContextState;
 #[cfg(target_os = "windows")]
 use crate::config::STEAM_LIBRARY_FALLBACK_CANDIDATES;
 #[cfg(target_os = "windows")]
 use crate::config::{BAZAAR_DATA_DIRECTORY, DATABASE_FILE_NAME};
+use crate::services::startup::InstallerContextState;
 use crate::stream::state::StreamRuntimeState;
 use std::path::PathBuf;
 use tauri::Manager;
@@ -29,7 +29,7 @@ pub fn resolve_game_path_with_fallback(
     requested_game_path: Option<String>,
 ) -> Option<PathBuf> {
     let context_state = app.state::<InstallerContextState>();
-    if let Ok(env) = crate::commands::detect::detect_environment(
+    if let Ok(env) = crate::services::detect::detect_environment(
         app.clone(),
         context_state,
         requested_game_path.clone(),
