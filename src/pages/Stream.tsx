@@ -26,7 +26,7 @@ export default function Stream() {
 
   return (
     <div className="flex flex-col gap-6 w-full h-full max-w-5xl mx-auto">
-      <PageHeader eyebrow="Stream Mode" title="直播模式" />
+      <PageHeader eyebrow="Stream" title="直播" />
 
       <div className="flex flex-col gap-6 flex-1 min-h-0 w-full">
         <div className="p-6 bg-[rgba(18,11,5,0.88)] border border-[rgba(180,130,48,0.13)] rounded-sm shadow-[0_6px_28px_rgba(0,0,0,0.35)] flex flex-col gap-8 relative overflow-hidden">
@@ -123,51 +123,37 @@ export default function Stream() {
               <label className="cinzel text-[10px] tracking-widest text-[rgba(220,195,145,0.8)] uppercase">
                 展示窗口
               </label>
-              <span className="text-xs text-[rgba(200,170,120,0.8)]">
-                {status.active_window_offset === 0
-                  ? '当前展示最新记录'
-                  : `向前补 ${status.active_window_offset} 条记录`}
-              </span>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <button
-                type="button"
-                disabled={!status.running || page.action === 'window'}
-                onClick={() => page.moveWindow(1)}
-                className="flex flex-col items-center gap-1 p-2 text-[rgba(200,170,120,0.6)] hover:text-[#e8dcc8] disabled:opacity-40 transition-colors"
-              >
-                <Maximize size={16} />
-                <span className="text-[10px]">↑ 更多历史</span>
-              </button>
-
-              <div className="flex-1 px-8 flex items-center justify-center">
-                <div className="w-full max-w-sm h-8 relative flex items-center">
-                  <div className="absolute inset-0 bg-[rgba(0,0,0,0.3)] rounded-full border border-[rgba(200,148,55,0.2)] overflow-hidden">
-                    <div className="h-full w-3/4 bg-[rgba(200,148,55,0.15)] ml-auto border-l border-[rgba(200,148,55,0.4)]" />
-                  </div>
-                  <div className="absolute left-1/4 -translate-x-1/2 -top-6 text-[10px] fira-code text-[rgba(200,170,120,0.8)]">
-                    START
-                  </div>
-                  <div className="absolute right-0 translate-x-1/2 -top-6 text-[10px] fira-code text-[#e8c87a] font-bold">
-                    LIVE
-                  </div>
+              <div className="flex items-center gap-4">
+                <span className="text-xs text-[rgba(200,170,120,0.8)]">
+                  {status.active_window_offset === 0
+                    ? '当前展示最新记录'
+                    : `向前补 ${status.active_window_offset} 条记录`}
+                </span>
+                <div className="flex items-center gap-2 border-l border-[rgba(200,148,55,0.2)] pl-4">
+                  <button
+                    type="button"
+                    disabled={!status.running || page.action === 'window'}
+                    onClick={() => page.moveWindow(1)}
+                    className="flex items-center gap-1.5 px-2 py-1 bg-[rgba(200,148,55,0.06)] border border-[rgba(180,130,48,0.2)] rounded-sm hover:bg-[rgba(200,148,55,0.12)] disabled:opacity-40 disabled:hover:bg-[rgba(200,148,55,0.06)] transition-colors text-[10px] text-[#e8dcc8]"
+                  >
+                    <Maximize size={12} />
+                    更多历史
+                  </button>
+                  <button
+                    type="button"
+                    disabled={
+                      !status.running ||
+                      status.active_window_offset === 0 ||
+                      page.action === 'window'
+                    }
+                    onClick={() => page.moveWindow(-1)}
+                    className="flex items-center gap-1.5 px-2 py-1 bg-[rgba(200,148,55,0.06)] border border-[rgba(180,130,48,0.2)] rounded-sm hover:bg-[rgba(200,148,55,0.12)] disabled:opacity-40 disabled:hover:bg-[rgba(200,148,55,0.06)] transition-colors text-[10px] text-[#e8dcc8]"
+                  >
+                    <Minimize size={12} />
+                    更少历史
+                  </button>
                 </div>
               </div>
-
-              <button
-                type="button"
-                disabled={
-                  !status.running ||
-                  status.active_window_offset === 0 ||
-                  page.action === 'window'
-                }
-                onClick={() => page.moveWindow(-1)}
-                className="flex flex-col items-center gap-1 p-2 text-[rgba(200,170,120,0.6)] hover:text-[#e8dcc8] disabled:opacity-40 transition-colors"
-              >
-                <Minimize size={16} />
-                <span className="text-[10px]">↓ 更少历史</span>
-              </button>
             </div>
 
             <div className="grid grid-cols-4 gap-4 mt-2 pt-4 border-t border-[rgba(200,148,55,0.1)]">
