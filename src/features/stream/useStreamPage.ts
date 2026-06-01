@@ -4,6 +4,7 @@ import type {
   StreamOverlayDisplayMode,
   StreamServiceStatus
 } from '../../types/backend';
+import { toErrorMessage } from '../shared/errors';
 import {
   applyCropCode,
   defaultCropSettings,
@@ -50,7 +51,7 @@ export function useStreamPage() {
       setCropSettings(nextCropSettings);
       setCropCode(nextCropSettings.code);
     } catch (caught) {
-      setError(toMessage(caught));
+      setError(toErrorMessage(caught));
     } finally {
       setLoading(false);
     }
@@ -71,7 +72,7 @@ export function useStreamPage() {
       try {
         await task();
       } catch (caught) {
-        setError(toMessage(caught));
+        setError(toErrorMessage(caught));
       } finally {
         setAction(null);
       }
@@ -182,8 +183,4 @@ export function useStreamPage() {
     resetCropCode,
     moveWindow
   };
-}
-
-function toMessage(error: unknown) {
-  return error instanceof Error ? error.message : String(error);
 }

@@ -11,6 +11,7 @@
   - Do not add tests whose primary purpose is demonstrating coverage or asserting mock call sequences — these are considered invalid tests
   - Do not add source-text tests that only assert exact code snippets or lines exist in a file; those are not meaningful verification
 - Write paths as relative paths from the project root
+- For frontend debugging, start Vite with `npm run dev -- --host 127.0.0.1 --port 1420` and open `http://127.0.0.1:1420/`; keep the dev server on port `1420` for browser and Tauri smoke checks
 - On Windows, do not rely on PowerShell default encoding for Chinese text; use explicit UTF-8 when reading or writing files
 - On Windows, when a command or script needs Chinese text, use a UTF-8-safe approach such as file edits or a small script instead of embedding complex Chinese text directly in shell command lines
 - Keep agent-authored docs minimal; do not add or rewrite README-style files unless the task explicitly requires user-facing documentation

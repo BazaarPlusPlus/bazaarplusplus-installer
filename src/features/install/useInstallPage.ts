@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { InstallState } from '../../types/backend';
+import { toErrorMessage } from '../shared/errors';
 import {
   chooseGameDirectory,
   emptyInstallState,
@@ -37,7 +38,7 @@ export function useInstallPage() {
         setState(nextState);
         setSelectedPath(nextState.selected_game_path ?? gamePath);
       } catch (caught) {
-        setError(toMessage(caught));
+        setError(toErrorMessage(caught));
       } finally {
         setAction(null);
       }
@@ -57,7 +58,7 @@ export function useInstallPage() {
       try {
         await task();
       } catch (caught) {
-        setError(toMessage(caught));
+        setError(toErrorMessage(caught));
       } finally {
         setAction(null);
       }
@@ -163,8 +164,4 @@ function createInstallStatus(state: InstallState) {
       : 'Missing',
     steam: state.steam_path ? 'Steam' : '-'
   };
-}
-
-function toMessage(error: unknown) {
-  return error instanceof Error ? error.message : String(error);
 }

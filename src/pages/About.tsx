@@ -1,19 +1,13 @@
 import { ExternalLink } from 'lucide-react';
-import { useAppBootstrap } from '../features/about/useAppBootstrap';
+import { PageHeader } from '../components/ui/PageHeader';
+import { useAppBootstrap } from '../features/about/AppBootstrapProvider';
 
 export default function About() {
   const { bootstrap } = useAppBootstrap();
 
   return (
     <div className="flex flex-col gap-6 w-full h-full pb-12 max-w-5xl mx-auto">
-      <div className="flex flex-col gap-1 shrink-0">
-        <p className="cinzel text-[10px] tracking-widest text-[rgba(200,148,55,0.52)] uppercase">
-          About
-        </p>
-        <h2 className="cinzel text-lg tracking-wider text-[rgba(232,220,194,0.92)] uppercase m-0">
-          关于
-        </h2>
-      </div>
+      <PageHeader eyebrow="About" title="关于" />
 
       <div className="flex flex-col gap-6 flex-1 min-h-0 w-full">
         <section className="p-5 bg-[rgba(18,11,5,0.88)] border border-[rgba(180,130,48,0.13)] rounded-sm shadow-[0_6px_28px_rgba(0,0,0,0.35)] flex flex-col gap-4">

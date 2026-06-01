@@ -22,8 +22,11 @@ pub async fn start(
     requested_game_path: Option<PathBuf>,
 ) -> Result<StreamServiceStatus, String> {
     let snapshot = state.snapshot();
-    if snapshot.running {
+    if state.is_running_for_game_path(requested_game_path.as_deref()) {
         return Ok(snapshot);
+    }
+    if snapshot.running {
+        stop(state).await?;
     }
 
     state.clear_error();

@@ -6,6 +6,7 @@ import {
   Trash2
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { PageHeader } from '../components/ui/PageHeader';
 import type { HistoryRunRow } from '../types/backend';
 import {
   formatDateTime,
@@ -18,14 +19,10 @@ export default function History() {
 
   return (
     <div className="flex flex-col gap-6 w-full h-full max-w-5xl mx-auto">
-      <div className="flex flex-col gap-1 shrink-0">
-        <p className="cinzel text-[10px] tracking-widest text-[rgba(200,148,55,0.52)] uppercase">
-          Run History
-        </p>
-        <div className="flex items-center justify-between">
-          <h2 className="cinzel text-lg tracking-wider text-[rgba(232,220,194,0.92)] uppercase m-0">
-            战绩
-          </h2>
+      <PageHeader
+        eyebrow="Run History"
+        title="战绩"
+        action={
           <button
             type="button"
             onClick={page.refresh}
@@ -38,8 +35,8 @@ export default function History() {
             />
             刷新
           </button>
-        </div>
-      </div>
+        }
+      />
 
       <div className="flex flex-col gap-6 flex-1 min-h-0 w-full">
         <div className="grid grid-cols-4 gap-4 shrink-0">

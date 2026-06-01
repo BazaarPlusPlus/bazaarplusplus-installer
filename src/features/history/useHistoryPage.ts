@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { composeStripPreviewUrl } from '../../api/http';
 import { ensureStreamSession } from '../stream/streamApi';
 import type { HistoryRunList, HistoryRunRow } from '../../types/backend';
+import { toErrorMessage } from '../shared/errors';
+import { optionalStripPreviewUrl } from './stripPreview';
 import {
   deleteRunVideos,
   emptyHistoryRunList,
@@ -26,7 +27,7 @@ export function useHistoryPage() {
       setBaseUrl(session.base_url);
       setPayload(list);
     } catch (caught) {
-      setError(toMessage(caught));
+      setError(toErrorMessage(caught));
     } finally {
       setLoading(false);
     }
@@ -42,21 +43,14 @@ export function useHistoryPage() {
     try {
       setPayload(await deleteRunVideos(runId));
     } catch (caught) {
-      setError(toMessage(caught));
+      setError(toErrorMessage(caught));
     } finally {
       setActionRunId(null);
     }
   }, []);
 
   const previewUrl = useCallback(
-    (run: HistoryRunRow) => {
-      if (!baseUrl || !run.strip_url) return null;
-      try {
-        return composeStripPreviewUrl(baseUrl, run.strip_url);
-      } catch {
-        return null;
-      }
-    },
+    (run: HistoryRunRow) => optionalStripPreviewUrl(baseUrl, run.strip_url),
     [baseUrl]
   );
 
@@ -95,8 +89,4 @@ export function formatDateTime(value: string | null | undefined) {
     hour: '2-digit',
     minute: '2-digit'
   }).format(date);
-}
-
-function toMessage(error: unknown) {
-  return error instanceof Error ? error.message : String(error);
 }

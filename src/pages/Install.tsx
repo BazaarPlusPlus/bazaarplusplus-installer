@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useState } from 'react';
+import { PageHeader } from '../components/ui/PageHeader';
 import { useInstallPage } from '../features/install/useInstallPage';
 
 export default function Install() {
@@ -31,14 +32,7 @@ export default function Install() {
 
   return (
     <div className="flex flex-col gap-6 w-full h-full max-w-5xl mx-auto">
-      <div className="flex flex-col gap-1 shrink-0">
-        <p className="cinzel text-[10px] tracking-widest text-[rgba(200,148,55,0.52)] uppercase">
-          Install Mode
-        </p>
-        <h2 className="cinzel text-lg tracking-wider text-[rgba(232,220,194,0.92)] uppercase m-0">
-          安装模式
-        </h2>
-      </div>
+      <PageHeader eyebrow="Install Mode" title="安装模式" />
 
       <div className="grid grid-cols-12 gap-8 w-full">
         <div className="col-span-7 flex flex-col gap-6">
@@ -253,6 +247,19 @@ export default function Install() {
                   </a>
                 </div>
               </div>
+
+              {page.state.steam_running && (
+                <div className="flex items-start gap-3 p-4 border border-[rgba(232,190,120,0.24)] rounded-[4px] bg-[rgba(200,148,55,0.08)] text-[rgba(232,220,194,0.82)]">
+                  <AlertCircle
+                    size={16}
+                    className="mt-0.5 shrink-0 text-[rgba(232,190,120,0.9)]"
+                  />
+                  <p className="m-0 text-[13px] leading-relaxed">
+                    Steam 正在运行。安装器不会自动关闭 Steam；请先手动退出
+                    Steam，再继续安装以确保启动项写入生效。
+                  </p>
+                </div>
+              )}
 
               <label className="flex items-start gap-3 p-3 border border-[rgba(200,148,55,0.18)] rounded-[4px] bg-gradient-to-b from-[rgba(200,148,55,0.055)] to-[rgba(200,148,55,0.015)] cursor-pointer group">
                 <input

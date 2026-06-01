@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { composeStripPreviewUrl } from '../../api/http';
 import type { HistoryRunDetail } from '../../types/backend';
+import { toErrorMessage } from '../shared/errors';
 import { ensureStreamSession } from '../stream/streamApi';
 import {
   deleteBattleVideo,
@@ -9,6 +9,7 @@ import {
   revealBattleVideo,
   revealRunScreenshot
 } from './historyApi';
+import { optionalStripPreviewUrl } from './stripPreview';
 
 export function useRunDetailPage() {
   const { runId } = useParams<{ runId: string }>();
@@ -34,7 +35,7 @@ export function useRunDetailPage() {
       setBaseUrl(session.base_url);
       setDetail(nextDetail);
     } catch (caught) {
-      setError(toMessage(caught));
+      setError(toErrorMessage(caught));
     } finally {
       setLoading(false);
     }
@@ -51,7 +52,7 @@ export function useRunDetailPage() {
       try {
         await task();
       } catch (caught) {
-        setError(toMessage(caught));
+        setError(toErrorMessage(caught));
       } finally {
         setAction(null);
       }
@@ -83,10 +84,7 @@ export function useRunDetailPage() {
     [runAction]
   );
 
-  const stripUrl =
-    baseUrl && detail?.run.strip_url
-      ? composeStripPreviewUrl(baseUrl, detail.run.strip_url)
-      : null;
+  const stripUrl = optionalStripPreviewUrl(baseUrl, detail?.run.strip_url);
 
   return {
     runId,
@@ -100,8 +98,4 @@ export function useRunDetailPage() {
     revealVideo,
     deleteVideo
   };
-}
-
-function toMessage(error: unknown) {
-  return error instanceof Error ? error.message : String(error);
 }

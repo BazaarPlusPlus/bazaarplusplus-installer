@@ -186,7 +186,8 @@ fn install_state_from_environment(env: EnvironmentInfo, steam_running: bool) -> 
     if steam_running {
         warnings.push(InstallWarning {
             code: "steam_running".to_string(),
-            message: "Steam 正在运行；安装时可能需要关闭 Steam 以写入启动项。".to_string(),
+            message: "Steam 正在运行；安装器不会自动关闭 Steam，请手动退出后再继续安装。"
+                .to_string(),
         });
     }
     if !game_found || !env.game_path_valid {

@@ -1,7 +1,10 @@
-use rusqlite::{params, Connection, OptionalExtension};
+use rusqlite::{params, params_from_iter, Connection, OptionalExtension};
 use serde::Serialize;
-use std::path::{Path, PathBuf};
-use std::time::Duration;
+use std::{
+    collections::HashMap,
+    path::{Path, PathBuf},
+    time::Duration,
+};
 
 #[derive(Clone, Debug, PartialEq, Serialize, ts_rs::TS)]
 #[ts(export)]
@@ -171,14 +174,23 @@ pub fn list_history_runs(database_path: &Path, limit: usize) -> Result<HistoryRu
         })
         .map_err(|err| err.to_string())?;
 
+    let rows = rows
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(|err| err.to_string())?;
+    let run_ids = rows
+        .iter()
+        .map(|row| row.run_id.clone())
+        .collect::<Vec<_>>();
+    let screenshot_ids = primary_screenshot_ids(&conn, &run_ids)?;
+    let video_counts = completed_video_counts(&conn, &run_ids)?;
+
     let mut runs = Vec::new();
     for row in rows {
-        let row = row.map_err(|err| err.to_string())?;
-        let screenshot_id = primary_screenshot(&conn, &row.run_id)?.map(|screenshot| screenshot.id);
+        let screenshot_id = screenshot_ids.get(&row.run_id).cloned();
         let strip_url = screenshot_id
             .as_ref()
             .map(|id| format!("/images/{id}/strip"));
-        let video_count = completed_video_count(&conn, &row.run_id)?;
+        let video_count = video_counts.get(&row.run_id).copied().unwrap_or(0);
         runs.push(HistoryRunRow {
             result: derive_run_result(&row.status, row.victories),
             run_id: row.run_id,
@@ -203,6 +215,113 @@ pub fn list_history_runs(database_path: &Path, limit: usize) -> Result<HistoryRu
         runs,
         next_cursor: None,
     })
+}
+
+fn sql_placeholders(count: usize) -> String {
+    std::iter::repeat("?")
+        .take(count)
+        .collect::<Vec<_>>()
+        .join(", ")
+}
+
+fn primary_screenshot_ids(
+    conn: &Connection,
+    run_ids: &[String],
+) -> Result<HashMap<String, String>, String> {
+    if run_ids.is_empty() || !table_exists(conn, "run_screenshots")? {
+        return Ok(HashMap::new());
+    }
+
+    let mut selected = HashMap::new();
+    let placeholders = sql_placeholders(run_ids.len());
+    let primary_sql = format!(
+        "
+        select run_id, screenshot_id
+        from run_screenshots
+        where run_id in ({placeholders}) and is_primary = 1
+        "
+    );
+    let mut stmt = conn.prepare(&primary_sql).map_err(|err| err.to_string())?;
+    let rows = stmt
+        .query_map(params_from_iter(run_ids.iter()), |row| {
+            Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
+        })
+        .map_err(|err| err.to_string())?;
+
+    for row in rows {
+        let (run_id, screenshot_id) = row.map_err(|err| err.to_string())?;
+        selected.entry(run_id).or_insert(screenshot_id);
+    }
+
+    let missing_run_ids = run_ids
+        .iter()
+        .filter(|run_id| !selected.contains_key(*run_id))
+        .collect::<Vec<_>>();
+    if missing_run_ids.is_empty() {
+        return Ok(selected);
+    }
+
+    let placeholders = sql_placeholders(missing_run_ids.len());
+    let fallback_sql = format!(
+        "
+        select run_id, screenshot_id
+        from run_screenshots
+        where run_id in ({placeholders}) and capture_source = 'end_of_run_auto'
+        order by run_id asc, captured_at_utc desc, screenshot_id desc
+        "
+    );
+    let mut stmt = conn.prepare(&fallback_sql).map_err(|err| err.to_string())?;
+    let rows = stmt
+        .query_map(params_from_iter(missing_run_ids), |row| {
+            Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
+        })
+        .map_err(|err| err.to_string())?;
+
+    for row in rows {
+        let (run_id, screenshot_id) = row.map_err(|err| err.to_string())?;
+        selected.entry(run_id).or_insert(screenshot_id);
+    }
+
+    Ok(selected)
+}
+
+fn completed_video_counts(
+    conn: &Connection,
+    run_ids: &[String],
+) -> Result<HashMap<String, i64>, String> {
+    if run_ids.is_empty()
+        || !table_exists(conn, "combat_replay_videos")?
+        || !table_exists(conn, "battles")?
+    {
+        return Ok(HashMap::new());
+    }
+
+    let placeholders = sql_placeholders(run_ids.len());
+    let sql = format!(
+        "
+        select b.run_id, count(*)
+        from combat_replay_videos cv
+        join battles b on b.battle_id = cv.battle_id
+        where b.run_id in ({placeholders})
+          and b.deleted_at_utc is null
+          and cv.status = 'COMPLETED'
+        group by b.run_id
+        "
+    );
+    let mut stmt = conn.prepare(&sql).map_err(|err| err.to_string())?;
+    let rows = stmt
+        .query_map(params_from_iter(run_ids.iter()), |row| {
+            Ok((row.get::<_, String>(0)?, row.get::<_, i64>(1)?))
+        })
+        .map_err(|err| err.to_string())?;
+
+    let mut counts = HashMap::new();
+    for row in rows {
+        let (run_id, count) = row.map_err(|err| err.to_string())?;
+        counts.insert(run_id, count);
+    }
+
+    Ok(counts)
 }
 
 pub fn get_history_run_detail(

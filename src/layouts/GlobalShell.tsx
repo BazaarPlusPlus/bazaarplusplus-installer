@@ -14,9 +14,20 @@ import {
   Users
 } from 'lucide-react';
 import clsx from 'clsx';
-import { useAppBootstrap } from '../features/about/useAppBootstrap';
+import {
+  AppBootstrapProvider,
+  useAppBootstrap
+} from '../features/about/AppBootstrapProvider';
 
 export default function GlobalShell() {
+  return (
+    <AppBootstrapProvider>
+      <GlobalShellContent />
+    </AppBootstrapProvider>
+  );
+}
+
+function GlobalShellContent() {
   const [showSupport, setShowSupport] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const app = useAppBootstrap();

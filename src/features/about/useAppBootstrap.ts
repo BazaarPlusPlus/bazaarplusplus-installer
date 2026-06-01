@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { AppBootstrap } from '../../types/backend';
+import { toErrorMessage } from '../shared/errors';
 import {
   checkForUpdate,
   fallbackBootstrap,
@@ -7,7 +8,7 @@ import {
   setAppLocale
 } from './aboutApi';
 
-export function useAppBootstrap() {
+export function useAppBootstrapState() {
   const [bootstrap, setBootstrap] = useState<AppBootstrap>(fallbackBootstrap);
   const [updateMessage, setUpdateMessage] = useState<string | null>(null);
   const [checkingUpdate, setCheckingUpdate] = useState(false);
@@ -37,7 +38,7 @@ export function useAppBootstrap() {
     try {
       setUpdateMessage(await checkForUpdate());
     } catch (error) {
-      setUpdateMessage(error instanceof Error ? error.message : String(error));
+      setUpdateMessage(toErrorMessage(error));
     } finally {
       setCheckingUpdate(false);
     }
@@ -51,3 +52,5 @@ export function useAppBootstrap() {
     checkUpdates
   };
 }
+
+export type AppBootstrapController = ReturnType<typeof useAppBootstrapState>;

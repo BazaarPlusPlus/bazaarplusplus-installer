@@ -266,16 +266,15 @@ async fn record_strip_image(
         Err(message) => return (StatusCode::INTERNAL_SERVER_ERROR, message).into_response(),
     };
 
-    let strip_bytes = if query.preview.unwrap_or(false) {
-        match crop_strip_image(&bytes, crop) {
-            Ok(bytes) => bytes,
-            Err(message) => return (StatusCode::INTERNAL_SERVER_ERROR, message).into_response(),
-        }
+    let strip_result = if query.preview.unwrap_or(false) {
+        run_strip_image_task(move || crop_strip_image(&bytes, crop)).await
     } else {
-        match load_or_create_strip_cache(&record_id, &path, &bytes, crop) {
-            Ok(bytes) => bytes,
-            Err(message) => return (StatusCode::INTERNAL_SERVER_ERROR, message).into_response(),
-        }
+        run_strip_image_task(move || load_or_create_strip_cache(&record_id, &path, &bytes, crop))
+            .await
+    };
+    let strip_bytes = match strip_result {
+        Ok(bytes) => bytes,
+        Err(message) => return (StatusCode::INTERNAL_SERVER_ERROR, message).into_response(),
     };
 
     (
@@ -286,6 +285,15 @@ async fn record_strip_image(
         strip_bytes,
     )
         .into_response()
+}
+
+async fn run_strip_image_task<F>(task: F) -> Result<Vec<u8>, String>
+where
+    F: FnOnce() -> Result<Vec<u8>, String> + Send + 'static,
+{
+    tauri::async_runtime::spawn_blocking(task)
+        .await
+        .map_err(|err| format!("Overlay strip task failed: {err}"))?
 }
 
 fn resolve_strip_crop(
