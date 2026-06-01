@@ -20,7 +20,7 @@ export default function History() {
   return (
     <div className="flex flex-col gap-6 w-full h-full max-w-5xl mx-auto">
       <PageHeader
-        eyebrow="Run History"
+        eyebrow="History"
         title="战绩"
         action={
           <button
@@ -39,10 +39,9 @@ export default function History() {
       />
 
       <div className="flex flex-col gap-6 flex-1 min-h-0 w-full">
-        <div className="grid grid-cols-4 gap-4 shrink-0">
+        <div className="grid grid-cols-3 gap-4 shrink-0">
           <SummaryCard label="Runs" value={page.summary.runs} />
           <SummaryCard label="Videos" value={page.summary.videos} />
-          <SummaryCard label="Last Run" value={page.summary.lastRun} isFira />
           <SummaryCard label="Win Rate" value={page.summary.winRate} />
         </div>
 

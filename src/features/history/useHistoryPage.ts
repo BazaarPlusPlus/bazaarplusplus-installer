@@ -58,7 +58,6 @@ export function useHistoryPage() {
     () => ({
       runs: String(payload.summary.runs),
       videos: String(payload.summary.videos),
-      lastRun: formatDateTime(payload.summary.last_run_at_utc),
       winRate:
         payload.summary.win_rate === null
           ? '-'
