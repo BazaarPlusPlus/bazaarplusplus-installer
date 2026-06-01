@@ -172,6 +172,7 @@ export default function Install() {
 
                 <div className="grid grid-cols-2 gap-2 mt-auto pt-2">
                   <ActionButton
+                    className="col-span-2"
                     disabled={primaryDisabled}
                     busy={page.action === 'install'}
                     onClick={() => {
@@ -347,7 +348,8 @@ function ActionButton({
   onClick,
   disabled = false,
   busy = false,
-  danger = false
+  danger = false,
+  className = ''
 }: {
   icon: ReactNode;
   label: string;
@@ -355,6 +357,7 @@ function ActionButton({
   disabled?: boolean;
   busy?: boolean;
   danger?: boolean;
+  className?: string;
 }) {
   return (
     <button
@@ -365,7 +368,7 @@ function ActionButton({
         danger
           ? 'bg-[rgba(160,50,50,0.08)] border-[rgba(190,80,80,0.2)] hover:bg-[rgba(160,50,50,0.14)] text-[rgba(232,190,190,0.9)]'
           : 'bg-[rgba(200,148,55,0.04)] border-[rgba(180,130,48,0.2)] hover:bg-[rgba(200,148,55,0.1)] text-[#e8dcc8]'
-      }`}
+      } ${className}`}
     >
       {busy ? <Loader2 size={14} className="animate-spin" /> : icon}
       {label}
