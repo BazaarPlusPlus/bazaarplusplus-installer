@@ -14,8 +14,8 @@
     "windows": [
       {
         "title": "BazaarPlusPlus",
-        "width": 680,
-        "height": 960
+        "width": 1000,
+        "height": 720
       }
     ],
     "security": {
