@@ -20,9 +20,17 @@ export default function Install() {
   const page = useInstallPage();
   const [showInstallModal, setShowInstallModal] = useState(false);
   const [installAcknowledged, setInstallAcknowledged] = useState(false);
-  const primaryDisabled =
-    page.busy ||
-    (!page.state.actions.can_install && !page.state.actions.can_reinstall);
+  const primaryMode: 'install' | 'reinstall' | 'launch' = !page.state.mod_state
+    .installed
+    ? 'install'
+    : page.state.mod_state.version_matches
+      ? 'launch'
+      : 'reinstall';
+
+  const openInstallModal = () => {
+    setShowInstallModal(true);
+    setInstallAcknowledged(false);
+  };
 
   const confirmInstall = async () => {
     await page.install();
@@ -32,7 +40,7 @@ export default function Install() {
 
   return (
     <div className="flex flex-col gap-6 w-full h-full max-w-5xl mx-auto">
-      <PageHeader eyebrow="Install Mode" title="安装模式" />
+      <PageHeader eyebrow="Install" title="安装" />
 
       <div className="grid grid-cols-12 gap-8 w-full">
         <div className="col-span-7 flex flex-col gap-6">
@@ -110,21 +118,58 @@ export default function Install() {
               </h2>
               <div className="flex flex-col gap-5 flex-1">
                 <div className="text-center pb-2">
-                  <button
-                    type="button"
-                    disabled={
-                      !page.state.actions.can_launch || page.action === 'launch'
-                    }
-                    onClick={page.launch}
-                    className="w-full py-4 bg-gradient-to-b from-[#d4a040] to-[#9e5c1e] text-[#0b0906] font-bold cinzel tracking-wider rounded-sm shadow-[0_0_15px_rgba(212,160,64,0.4)] hover:brightness-110 disabled:opacity-45 disabled:hover:brightness-100 transition-all flex items-center justify-center gap-2 text-lg"
-                  >
-                    {page.action === 'launch' ? (
-                      <Loader2 size={20} className="animate-spin" />
-                    ) : (
-                      <Play size={20} fill="currentColor" />
-                    )}
-                    启动游戏
-                  </button>
+                  {primaryMode === 'launch' ? (
+                    <button
+                      type="button"
+                      disabled={
+                        !page.state.actions.can_launch ||
+                        page.action === 'launch'
+                      }
+                      onClick={page.launch}
+                      className="w-full py-4 bg-gradient-to-b from-[#d4a040] to-[#9e5c1e] text-[#0b0906] font-bold cinzel tracking-wider rounded-sm shadow-[0_0_15px_rgba(212,160,64,0.4)] hover:brightness-110 disabled:opacity-45 disabled:hover:brightness-100 transition-all flex items-center justify-center gap-2 text-lg"
+                    >
+                      {page.action === 'launch' ? (
+                        <Loader2 size={20} className="animate-spin" />
+                      ) : (
+                        <Play size={20} fill="currentColor" />
+                      )}
+                      启动游戏
+                    </button>
+                  ) : primaryMode === 'reinstall' ? (
+                    <button
+                      type="button"
+                      disabled={
+                        !page.state.actions.can_reinstall ||
+                        page.action === 'install'
+                      }
+                      onClick={openInstallModal}
+                      className="w-full py-4 bg-gradient-to-b from-[#d24a4a] to-[#8e1e1e] text-[#fdeaea] font-bold cinzel tracking-wider rounded-sm shadow-[0_0_15px_rgba(200,60,60,0.4)] hover:brightness-110 disabled:opacity-45 disabled:hover:brightness-100 transition-all flex items-center justify-center gap-2 text-lg"
+                    >
+                      {page.action === 'install' ? (
+                        <Loader2 size={20} className="animate-spin" />
+                      ) : (
+                        <RefreshCw size={20} />
+                      )}
+                      重新安装
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      disabled={
+                        !page.state.actions.can_install ||
+                        page.action === 'install'
+                      }
+                      onClick={openInstallModal}
+                      className="w-full py-4 bg-gradient-to-b from-[#d4a040] to-[#9e5c1e] text-[#0b0906] font-bold cinzel tracking-wider rounded-sm shadow-[0_0_15px_rgba(212,160,64,0.4)] hover:brightness-110 disabled:opacity-45 disabled:hover:brightness-100 transition-all flex items-center justify-center gap-2 text-lg"
+                    >
+                      {page.action === 'install' ? (
+                        <Loader2 size={20} className="animate-spin" />
+                      ) : (
+                        <DownloadCloud size={20} />
+                      )}
+                      安装
+                    </button>
+                  )}
                 </div>
 
                 <div className="h-px bg-gradient-to-r from-transparent via-[rgba(200,148,55,0.3)] to-transparent" />
@@ -138,12 +183,7 @@ export default function Install() {
                         : 'Not Installed'
                     }
                   />
-                  <FactItem
-                    label="Plugin Loader"
-                    value={page.state.mod_state.bundled_version ?? 'Bundled'}
-                  />
                   <FactItem label=".NET Runtime" value={page.status.dotnet} />
-                  <FactItem label="Game Client" value={page.status.steam} />
                 </ul>
 
                 {page.state.warnings.length > 0 && (
@@ -171,17 +211,6 @@ export default function Install() {
                 <div className="h-px bg-gradient-to-r from-transparent via-[rgba(200,148,55,0.3)] to-transparent" />
 
                 <div className="grid grid-cols-2 gap-2 mt-auto pt-2">
-                  <ActionButton
-                    className="col-span-2"
-                    disabled={primaryDisabled}
-                    busy={page.action === 'install'}
-                    onClick={() => {
-                      setShowInstallModal(true);
-                      setInstallAcknowledged(false);
-                    }}
-                    icon={<RefreshCw size={14} />}
-                    label={page.status.primaryAction}
-                  />
                   <ActionButton
                     disabled={page.busy || !page.state.actions.can_repair}
                     busy={page.action === 'repair'}
