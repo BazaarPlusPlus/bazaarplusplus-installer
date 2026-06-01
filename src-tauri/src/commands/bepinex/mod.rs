@@ -203,11 +203,11 @@ mod tests {
     fn test_format_partial_failure_uses_unit_separator() {
         let formatted = format_partial_failure(&[
             PathBuf::from("C:/Games/The Bazaar/BazaarPlusPlusV4/bazaarplusplus.db"),
-            PathBuf::from("C:/Games/The Bazaar/BazaarPlusPlusV4/Identity/observation.v1.json"),
+            PathBuf::from("C:/Games/The Bazaar/BazaarPlusPlusV4/Identity/observation.json"),
         ]);
 
         assert!(formatted.starts_with(REPAIR_ERR_PARTIAL_FAILURE));
         assert!(formatted.contains('\u{1f}'));
-        assert!(formatted.ends_with("observation.v1.json"));
+        assert!(formatted.ends_with("observation.json"));
     }
 }

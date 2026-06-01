@@ -7,7 +7,7 @@ Date: 2026-05-31
 Approved prototype surfaces:
 
 - Global shell: `Global Header v2`
-- About: `About Detail v1`
+- About: `About Detail current`
 - Run detail: `Run Detail v5`
 - Stream: `Stream Detail v4`
 - History: `History Detail v4`
@@ -59,7 +59,7 @@ The old standalone support strip is removed. Support functionality moves into th
 
 ## About Page
 
-Approved version: `About Detail v1`.
+Approved version: `About Detail current`.
 
 The about page uses the global shell:
 

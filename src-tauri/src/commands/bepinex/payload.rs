@@ -172,7 +172,21 @@ pub(super) fn ensure_valid_game_path(game_path: &Path) -> Result<(), String> {
 
 pub(super) fn prepare_install_target(game_path: &Path) -> Result<(), String> {
     ensure_valid_game_path(game_path)?;
-    uninstall_payload(game_path)
+    uninstall_payload(game_path)?;
+    let report = cleanup_bpp_data_directory(game_path);
+    if !report.is_empty() {
+        let joined = report
+            .failed
+            .iter()
+            .map(|path| path.display().to_string())
+            .collect::<Vec<_>>()
+            .join("; ");
+        return Err(format!(
+            "Cannot remove existing BazaarPlusPlus data directory entries: {joined}"
+        ));
+    }
+
+    Ok(())
 }
 
 pub(super) fn preserve_file_if_exists(
@@ -268,7 +282,7 @@ mod tests {
     }
 
     #[test]
-    fn test_prepare_install_target_keeps_bpp_data_directory_for_installed_v1() {
+    fn test_prepare_install_target_cleans_bpp_data_directory() {
         let tmp = tempfile::tempdir().unwrap();
         let plugins_dir = tmp.path().join("BepInEx/plugins");
         let data_dir = tmp.path().join(BAZAAR_DATA_DIRECTORY);
@@ -289,12 +303,12 @@ mod tests {
 
         std::fs::create_dir_all(&plugins_dir).unwrap();
         std::fs::create_dir_all(&data_dir).unwrap();
-        std::fs::write(plugins_dir.join("BazaarPlusPlus.version"), b"1.9.0").unwrap();
+        std::fs::write(plugins_dir.join("BazaarPlusPlus.version"), b"4.0.0").unwrap();
         std::fs::write(data_dir.join("stale.dll"), b"dll").unwrap();
 
         prepare_install_target(tmp.path()).unwrap();
 
-        assert!(data_dir.exists());
+        assert!(!data_dir.exists());
     }
 
     #[test]
