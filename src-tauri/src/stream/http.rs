@@ -11,7 +11,7 @@ use axum::{
 };
 use image::{DynamicImage, ImageFormat};
 use include_dir::{include_dir, Dir};
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use std::{
     io::Cursor,
     path::{Path as FsPath, PathBuf},
@@ -32,19 +32,6 @@ pub struct HttpAppState {
     pub overlay_records: OverlayRecordRepository,
     pub runtime: StreamRuntimeState,
     pub overlay_settings: OverlaySettingsStore,
-}
-
-#[derive(Serialize)]
-struct HealthResponse {
-    ok: bool,
-}
-
-#[derive(Serialize)]
-struct RecordWindowSummaryResponse {
-    total_records: usize,
-    existing_before_start: usize,
-    captured_since_start: usize,
-    active_from: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -88,12 +75,10 @@ pub fn router(
         .allow_headers(Any);
 
     Router::new()
-        .route("/health", get(health))
         .route("/overlay", get(overlay_page))
         .route("/settings", get(settings_page))
         .route("/api/stream/records/latest", get(latest_record))
         .route("/api/stream/records", get(record_list))
-        .route("/api/stream/window-summary", get(record_window_summary))
         .route(
             "/api/overlay/crop-config",
             get(get_crop_config).post(save_crop_config),
@@ -111,10 +96,6 @@ pub fn router(
             runtime,
             overlay_settings,
         })
-}
-
-async fn health() -> Json<HealthResponse> {
-    Json(HealthResponse { ok: true })
 }
 
 #[cfg(any(debug_assertions, test))]
@@ -184,28 +165,6 @@ async fn record_list(
         .load_record_list(from, Some(limit))
     {
         Ok(records) => Json(records).into_response(),
-        Err(message) => (StatusCode::INTERNAL_SERVER_ERROR, message).into_response(),
-    }
-}
-
-async fn record_window_summary(State(app_state): State<HttpAppState>) -> Response {
-    let from = app_state.runtime.snapshot().started_at;
-    let total = match app_state.overlay_records.count_since(None) {
-        Ok(total) => total,
-        Err(message) => return (StatusCode::INTERNAL_SERVER_ERROR, message).into_response(),
-    };
-
-    match app_state.overlay_records.count_since(from.as_deref()) {
-        Ok(captured_since_start) => {
-            let existing_before_start = total.saturating_sub(captured_since_start);
-            Json(RecordWindowSummaryResponse {
-                total_records: total,
-                existing_before_start,
-                captured_since_start,
-                active_from: from,
-            })
-            .into_response()
-        }
         Err(message) => (StatusCode::INTERNAL_SERVER_ERROR, message).into_response(),
     }
 }

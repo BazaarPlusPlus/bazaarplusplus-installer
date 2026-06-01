@@ -12,9 +12,7 @@ pub async fn ensure_stream_session(
     app: tauri::AppHandle,
     state: tauri::State<'_, StreamRuntimeState>,
     game_path: Option<String>,
-    reason: Option<String>,
 ) -> Result<StreamServiceStatus, String> {
-    let _ = reason;
     crate::stream::server::start(app, state.inner(), normalize_requested_game_path(game_path)).await
 }
 
@@ -23,16 +21,9 @@ pub async fn restart_stream_session(
     app: tauri::AppHandle,
     state: tauri::State<'_, StreamRuntimeState>,
     game_path: Option<String>,
-    reason: Option<String>,
 ) -> Result<StreamServiceStatus, String> {
-    let _ = reason;
     crate::stream::server::restart(app, state.inner(), normalize_requested_game_path(game_path))
         .await
-}
-
-#[tauri::command]
-pub fn get_stream_session(state: tauri::State<'_, StreamRuntimeState>) -> StreamServiceStatus {
-    state.snapshot()
 }
 
 #[tauri::command]

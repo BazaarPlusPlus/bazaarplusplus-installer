@@ -11,8 +11,7 @@ use game::{is_bepinex_installed, normalize_game_path, read_installed_bpp_version
 use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, State};
 
-#[derive(Debug, Serialize, Deserialize, ts_rs::TS)]
-#[ts(export)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct EnvironmentInfo {
     pub steam_path: Option<String>,
     pub steam_launch_options_supported: bool,
@@ -31,7 +30,6 @@ pub struct DotnetInfo {
     pub dotnet_ok: bool,
 }
 
-#[tauri::command]
 pub fn detect_environment(
     app: AppHandle,
     state: State<'_, InstallerContextState>,

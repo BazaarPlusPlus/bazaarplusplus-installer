@@ -21,7 +21,7 @@ export function useHistoryPage() {
     setError(null);
     try {
       const [session, list] = await Promise.all([
-        ensureStreamSession('history'),
+        ensureStreamSession(),
         listHistoryRuns()
       ]);
       setBaseUrl(session.base_url);

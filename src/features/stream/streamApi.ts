@@ -42,12 +42,12 @@ export const defaultCropSettings: StreamOverlayCropSettingsPayload = {
   display_mode: 'current'
 };
 
-export async function ensureStreamSession(reason: 'route_enter' | 'history') {
+export async function ensureStreamSession() {
   if (!hasTauriRuntime()) {
     return idleStreamStatus;
   }
 
-  return invokeCommand('ensure_stream_session', { reason });
+  return invokeCommand('ensure_stream_session', {});
 }
 
 export async function restartStreamSession() {
@@ -55,7 +55,7 @@ export async function restartStreamSession() {
     return idleStreamStatus;
   }
 
-  return invokeCommand('restart_stream_session', { reason: 'manual' });
+  return invokeCommand('restart_stream_session', {});
 }
 
 export async function setStreamWindowOffset(offset: number) {

@@ -49,7 +49,7 @@ export async function chooseGameDirectory() {
 }
 
 export async function installMod(gamePath: string) {
-  return invokeCommand('install_mod', { gamePath, skipSteamShutdown: true });
+  return invokeCommand('install_mod', { gamePath });
 }
 
 export async function repairMod(gamePath: string) {

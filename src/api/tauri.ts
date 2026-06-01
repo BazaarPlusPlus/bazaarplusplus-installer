@@ -21,7 +21,6 @@ export interface TauriCommandMap {
     input: { locale: 'zh' | 'en' };
     output: AppLocalePayload;
   };
-  close_steam: { input: undefined; output: void };
   get_install_state: {
     input: { gamePath?: string };
     output: InstallState;
@@ -31,7 +30,7 @@ export interface TauriCommandMap {
     output: GameDirectorySelection;
   };
   install_mod: {
-    input: { gamePath: string; skipSteamShutdown: boolean };
+    input: { gamePath: string };
     output: InstallState;
   };
   repair_mod: {
@@ -47,15 +46,11 @@ export interface TauriCommandMap {
     output: FileActionResult;
   };
   ensure_stream_session: {
-    input: { gamePath?: string; reason?: string };
+    input: { gamePath?: string };
     output: StreamServiceStatus;
   };
   restart_stream_session: {
-    input: { gamePath?: string; reason?: string };
-    output: StreamServiceStatus;
-  };
-  get_stream_session: {
-    input: undefined;
+    input: { gamePath?: string };
     output: StreamServiceStatus;
   };
   set_stream_window: {
@@ -79,7 +74,7 @@ export interface TauriCommandMap {
     output: StreamOverlayCropSettingsPayload;
   };
   list_history_runs: {
-    input: { gamePath?: string; limit?: number; cursor?: string };
+    input: { gamePath?: string; limit?: number };
     output: HistoryRunList;
   };
   get_history_run_detail: {
@@ -103,7 +98,6 @@ export interface TauriCommandMap {
       gamePath?: string;
       runId: string;
       limit?: number;
-      cursor?: string;
     };
     output: HistoryRunList;
   };

@@ -17,10 +17,9 @@ use commands::{
         uninstall_mod,
     },
     startup::InstallerContextState,
-    steam::close_steam,
     stream::{
-        apply_overlay_crop_code, ensure_stream_session, get_overlay_settings, get_stream_session,
-        reset_overlay_crop, restart_stream_session, save_overlay_display_mode, set_stream_window,
+        apply_overlay_crop_code, ensure_stream_session, get_overlay_settings, reset_overlay_crop,
+        restart_stream_session, save_overlay_display_mode, set_stream_window,
     },
 };
 use tray::{build_tray, set_app_locale, TrayMenuState};
@@ -41,7 +40,6 @@ pub fn run() {
     }
 
     builder
-        .plugin(tauri_plugin_deep_link::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_dialog::init())
         .manage(crate::stream::state::StreamRuntimeState::default())
@@ -74,7 +72,6 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             get_app_bootstrap,
             set_app_locale,
-            close_steam,
             get_install_state,
             choose_game_directory,
             install_mod,
@@ -83,7 +80,6 @@ pub fn run() {
             launch_game,
             ensure_stream_session,
             restart_stream_session,
-            get_stream_session,
             set_stream_window,
             get_overlay_settings,
             save_overlay_display_mode,

@@ -114,7 +114,6 @@ pub fn install_mod(
     app: tauri::AppHandle,
     state: tauri::State<'_, InstallerContextState>,
     game_path: String,
-    skip_steam_shutdown: bool,
 ) -> Result<InstallState, String> {
     let before = detect_environment(app.clone(), state, Some(game_path.clone()))?;
     let steam_path = before
@@ -122,14 +121,9 @@ pub fn install_mod(
         .clone()
         .ok_or_else(|| "Steam path is not configured.".to_string())?;
 
-    install_bepinex(
-        app.clone(),
-        steam_path.clone(),
-        game_path.clone(),
-        skip_steam_shutdown,
-    )?;
+    install_bepinex(app.clone(), steam_path.clone(), game_path.clone())?;
     if before.steam_launch_options_supported {
-        let _ = patch_launch_options(app.clone(), steam_path, game_path.clone(), true)?;
+        let _ = patch_launch_options(app.clone(), steam_path, game_path.clone())?;
     }
 
     let app_for_state = app.clone();

@@ -27,13 +27,6 @@
     "createUpdaterArtifacts": true
   },
   "plugins": {
-    "deep-link": {
-      "desktop": {
-        "schemes": [
-          "bazaarplusplus"
-        ]
-      }
-    },
     "updater": {
       "endpoints": [
         "https://bppinstaller.bazaarplusplus.com/latest.json"

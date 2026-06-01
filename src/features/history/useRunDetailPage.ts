@@ -29,7 +29,7 @@ export function useRunDetailPage() {
     setError(null);
     try {
       const [session, nextDetail] = await Promise.all([
-        ensureStreamSession('history'),
+        ensureStreamSession(),
         loadHistoryRunDetail(runId)
       ]);
       setBaseUrl(session.base_url);

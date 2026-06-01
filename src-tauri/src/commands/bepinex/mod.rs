@@ -16,7 +16,6 @@ use super::{debug_error, debug_log};
 pub(crate) const REPAIR_ERR_GAME_RUNNING: &str = "bpp_data_reset_blocked_by_game";
 pub(crate) const REPAIR_ERR_PARTIAL_FAILURE: &str = "bpp_data_reset_partial_failure";
 
-#[tauri::command]
 pub async fn repair_bpp(
     stream_state: tauri::State<'_, StreamRuntimeState>,
     game_path: String,
@@ -58,22 +57,20 @@ fn format_partial_failure(paths: &[PathBuf]) -> String {
     format!("{REPAIR_ERR_PARTIAL_FAILURE}:{joined}")
 }
 
-#[tauri::command]
 pub fn install_bepinex(
     app: tauri::AppHandle,
     steam_path: String,
     game_path: String,
-    skip_steam_shutdown: bool,
 ) -> Result<(), String> {
     let game_path = Path::new(&game_path);
     let preserved_bpp_config =
         payload::preserve_file_if_exists(game_path, payload::BPP_CONFIG_RELATIVE_PATH)?;
     #[cfg(not(target_os = "macos"))]
-    let _ = (&steam_path, skip_steam_shutdown);
+    let _ = &steam_path;
     #[cfg(target_os = "macos")]
     crate::commands::steam::prepare_steam_for_launch_option_update(
         Path::new(&steam_path),
-        skip_steam_shutdown,
+        true,
     )?;
     payload::prepare_install_target(game_path)?;
 
@@ -112,7 +109,6 @@ pub fn install_bepinex(
     }
 }
 
-#[tauri::command]
 pub fn uninstall_bpp(
     _app: tauri::AppHandle,
     _steam_path: String,

@@ -43,7 +43,7 @@ export function useStreamPage() {
     setError(null);
     try {
       const [nextStatus, nextCropSettings] = await Promise.all([
-        ensureStreamSession('route_enter'),
+        ensureStreamSession(),
         loadCropSettings()
       ]);
       setStatus(nextStatus);

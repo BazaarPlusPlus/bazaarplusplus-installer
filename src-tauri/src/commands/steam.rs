@@ -15,8 +15,7 @@ pub fn supports_launch_option_updates(steam_path: &Path) -> bool {
     steam_path.join("userdata").is_dir()
 }
 
-#[derive(Debug, Serialize, ts_rs::TS)]
-#[ts(export)]
+#[derive(Debug, Serialize)]
 pub struct SteamRunningInfo {
     pub running: bool,
 }
@@ -116,7 +115,6 @@ fn is_steam_running() -> Result<bool, String> {
     }
 }
 
-#[tauri::command]
 pub fn detect_steam_running() -> Result<SteamRunningInfo, String> {
     #[cfg(target_os = "macos")]
     {
@@ -182,23 +180,6 @@ fn close_steam_internal() -> Result<bool, String> {
         STEAM_EXIT_WAIT_ATTEMPTS,
         STEAM_EXIT_WAIT_INTERVAL,
     )
-}
-
-#[tauri::command]
-pub fn close_steam() -> Result<(), String> {
-    #[cfg(any(target_os = "macos", target_os = "windows"))]
-    {
-        let stopped = close_steam_internal()?;
-        if stopped {
-            debug_log!("Steam was running and has been closed.");
-        }
-        return Ok(());
-    }
-
-    #[cfg(not(any(target_os = "macos", target_os = "windows")))]
-    {
-        Ok(())
-    }
 }
 
 #[cfg(any(target_os = "macos", target_os = "windows"))]

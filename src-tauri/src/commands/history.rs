@@ -16,9 +16,7 @@ pub fn list_history_runs(
     state: tauri::State<'_, StreamRuntimeState>,
     game_path: Option<String>,
     limit: Option<usize>,
-    cursor: Option<String>,
 ) -> Result<HistoryRunList, String> {
-    let _ = cursor;
     let Some(paths) = resolve_history_paths(&app, Some(&state), game_path) else {
         return Ok(empty_history_list());
     };
@@ -100,9 +98,7 @@ pub fn delete_run_videos(
     game_path: Option<String>,
     run_id: String,
     limit: Option<usize>,
-    cursor: Option<String>,
 ) -> Result<HistoryRunList, String> {
-    let _ = cursor;
     let paths = require_history_paths(&app, Some(&state), game_path)?;
     delete_run_videos_in_repo(&paths.database_path, &paths.data_dir, &run_id)?;
     list_runs_from_repo(&paths.database_path, limit.unwrap_or(50).clamp(1, 200))

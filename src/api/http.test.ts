@@ -4,8 +4,8 @@ import { composeStripPreviewUrl, joinServiceUrl } from './http';
 describe('stream HTTP URL helpers', () => {
   it('joins a local service base URL and relative route without duplicate slashes', () => {
     expect(
-      joinServiceUrl('http://127.0.0.1:17654/', '/api/stream/window-summary')
-    ).toBe('http://127.0.0.1:17654/api/stream/window-summary');
+      joinServiceUrl('http://127.0.0.1:17654/', '/api/stream/records')
+    ).toBe('http://127.0.0.1:17654/api/stream/records');
   });
 
   it('composes strip preview URLs from relative strip paths only', () => {
