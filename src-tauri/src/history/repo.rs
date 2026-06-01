@@ -11,7 +11,6 @@ use std::{
 pub struct HistoryRunList {
     pub summary: HistorySummary,
     pub runs: Vec<HistoryRunRow>,
-    pub next_cursor: Option<String>,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, ts_rs::TS)]
@@ -122,7 +121,6 @@ pub fn list_history_runs(database_path: &Path, limit: usize) -> Result<HistoryRu
                 win_rate: None,
             },
             runs: Vec::new(),
-            next_cursor: None,
         });
     }
 
@@ -136,7 +134,6 @@ pub fn list_history_runs(database_path: &Path, limit: usize) -> Result<HistoryRu
                 win_rate: None,
             },
             runs: Vec::new(),
-            next_cursor: None,
         });
     }
 
@@ -213,7 +210,6 @@ pub fn list_history_runs(database_path: &Path, limit: usize) -> Result<HistoryRu
     Ok(HistoryRunList {
         summary,
         runs,
-        next_cursor: None,
     })
 }
 

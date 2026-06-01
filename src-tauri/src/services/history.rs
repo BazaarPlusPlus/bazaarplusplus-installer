@@ -102,7 +102,6 @@ pub fn empty_history_list() -> HistoryRunList {
             win_rate: None,
         },
         runs: Vec::new(),
-        next_cursor: None,
     }
 }
 

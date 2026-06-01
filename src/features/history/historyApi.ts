@@ -9,8 +9,7 @@ export const emptyHistoryRunList: HistoryRunList = {
     last_run_at_utc: null,
     win_rate: null
   },
-  runs: [],
-  next_cursor: null
+  runs: []
 };
 
 export async function listHistoryRuns(limit = 50) {
