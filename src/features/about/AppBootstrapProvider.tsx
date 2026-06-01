@@ -1,4 +1,4 @@
-import { createContext, useContext } from 'react';
+import { createContext, use } from 'react';
 import type { ReactNode } from 'react';
 import {
   useAppBootstrapState,
@@ -17,7 +17,7 @@ export function AppBootstrapProvider({ children }: { children: ReactNode }) {
 }
 
 export function useAppBootstrap() {
-  const app = useContext(AppBootstrapContext);
+  const app = use(AppBootstrapContext);
   if (!app) {
     throw new Error(
       'useAppBootstrap must be used inside AppBootstrapProvider.'

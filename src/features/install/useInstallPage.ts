@@ -43,8 +43,16 @@ export function useInstallPage() {
   );
 
   useEffect(() => {
-    void refresh();
-  }, []);
+    void run(
+      'load',
+      async () => {
+        const nextState = await loadInstallState(undefined);
+        setState(nextState);
+        setSelectedPath(nextState.selected_game_path ?? undefined);
+      },
+      { onStart: () => setMessage(null) }
+    );
+  }, [run]);
 
   const chooseDirectory = useCallback(
     () =>

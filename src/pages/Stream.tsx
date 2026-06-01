@@ -87,11 +87,18 @@ export default function Stream() {
           <div className="h-px bg-gradient-to-r from-[rgba(200,148,55,0.3)] to-transparent opacity-50" />
 
           <div className="flex flex-col gap-2">
-            <label className="cinzel text-[10px] tracking-widest text-[rgba(220,195,145,0.8)] uppercase">
+            <span
+              id="stream-obs-url-label"
+              className="cinzel text-[10px] tracking-widest text-[rgba(220,195,145,0.8)] uppercase"
+            >
               OBS URL
-            </label>
+            </span>
             <div className="flex gap-2">
-              <div className="flex-1 px-3 py-2 bg-[rgba(0,0,0,0.4)] border border-[rgba(180,130,48,0.2)] rounded-sm fira-code text-sm text-[rgba(228,216,191,0.8)] overflow-hidden text-ellipsis whitespace-nowrap">
+              <div
+                id="stream-obs-url"
+                className="flex-1 px-3 py-2 bg-[rgba(0,0,0,0.4)] border border-[rgba(180,130,48,0.2)] rounded-sm fira-code text-sm text-[rgba(228,216,191,0.8)] overflow-hidden text-ellipsis whitespace-nowrap"
+                aria-labelledby="stream-obs-url-label"
+              >
                 {viewModel.obsUrl ?? '服务启动后显示 OBS Browser Source 地址'}
               </div>
               <button
@@ -118,9 +125,9 @@ export default function Stream() {
 
           <div className="flex flex-col gap-4 bg-[rgba(200,148,55,0.02)] p-4 rounded-sm border border-[rgba(200,148,55,0.08)]">
             <div className="flex justify-between items-center">
-              <label className="cinzel text-[10px] tracking-widest text-[rgba(220,195,145,0.8)] uppercase">
+              <span className="cinzel text-[10px] tracking-widest text-[rgba(220,195,145,0.8)] uppercase">
                 展示窗口
-              </label>
+              </span>
               <div className="flex items-center gap-4">
                 <span className="text-xs text-[rgba(200,170,120,0.8)]">
                   {status.active_window_offset === 0
@@ -169,9 +176,9 @@ export default function Stream() {
           </div>
 
           <div className="flex flex-col gap-4">
-            <label className="cinzel text-[10px] tracking-widest text-[rgba(220,195,145,0.8)] uppercase">
+            <span className="cinzel text-[10px] tracking-widest text-[rgba(220,195,145,0.8)] uppercase">
               Overlay 配置
-            </label>
+            </span>
 
             <div className="flex gap-2">
               {displayModes.map((mode) => (
@@ -191,7 +198,11 @@ export default function Stream() {
             </div>
 
             <div className="flex gap-2 mt-2">
+              <label htmlFor="stream-crop-code" className="sr-only">
+                裁切代码
+              </label>
               <input
+                id="stream-crop-code"
                 type="text"
                 placeholder="输入裁切代码..."
                 value={page.cropCode}

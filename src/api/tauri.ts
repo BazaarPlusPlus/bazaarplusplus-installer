@@ -135,7 +135,7 @@ export async function invokeCommand<K extends CommandName>(
   }
 }
 
-export function normalizeBackendError(error: unknown): Error {
+function normalizeBackendError(error: unknown): Error {
   if (error instanceof Error) {
     return error;
   }

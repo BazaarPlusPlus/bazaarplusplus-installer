@@ -253,8 +253,8 @@ function BattleRow({
                 battle.video &&
                 page.deleteVideo(battle.battle_id, battle.video.video_id)
               }
-              className="flex items-center justify-center w-8 h-8 rounded-sm hover:bg-[rgba(255,50,50,0.1)] hover:text-[#ff4444] disabled:opacity-40 transition-colors text-[rgba(200,170,120,0.45)]"
-              title="删除视频"
+              className="flex items-center justify-center size-8 rounded-sm hover:bg-[rgba(255,50,50,0.1)] hover:text-[#ff4444] disabled:opacity-40 transition-colors text-[rgba(200,170,120,0.45)]"
+              aria-label="删除视频"
             >
               {deleteAction ? (
                 <Loader2 size={14} className="animate-spin" />

@@ -5,7 +5,7 @@ import {
   RefreshCw,
   Trash2
 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { ErrorBanner } from '../components/ui/ErrorBanner';
 import { LoadingPanel } from '../components/ui/LoadingPanel';
 import { PageShell } from '../components/ui/PageShell';
@@ -14,7 +14,6 @@ import { useHistoryPage } from '../features/history/useHistoryPage';
 import type { HistoryRunRow } from '../types/backend';
 
 export default function History() {
-  const navigate = useNavigate();
   const page = useHistoryPage();
 
   return (
@@ -59,9 +58,6 @@ export default function History() {
                 run={run}
                 previewUrl={page.previewUrl(run)}
                 deleting={page.actionRunId === run.run_id}
-                onClick={() =>
-                  navigate(`/history/${encodeURIComponent(run.run_id)}`)
-                }
                 onDelete={() => page.deleteVideos(run.run_id)}
               />
             ))
@@ -99,88 +95,85 @@ function RunRow({
   run,
   previewUrl,
   deleting,
-  onClick,
   onDelete
 }: {
   run: HistoryRunRow;
   previewUrl: string | null;
   deleting: boolean;
-  onClick: () => void;
   onDelete: () => void;
 }) {
   const result = formatRunResultLabel(run.result);
+  const detailPath = `/history/${encodeURIComponent(run.run_id)}`;
 
   return (
-    <div
-      onClick={onClick}
-      className="group flex items-center p-3 bg-[rgba(18,11,5,0.88)] border border-[rgba(180,130,48,0.13)] rounded-sm hover:border-[rgba(200,148,55,0.4)] hover:bg-[rgba(200,148,55,0.04)] cursor-pointer transition-all gap-6 shadow-[0_4px_12px_rgba(0,0,0,0.2)]"
-    >
-      <div className="w-40 h-16 bg-[#000] border border-[rgba(200,148,55,0.2)] rounded-sm flex items-center justify-center text-[rgba(200,170,120,0.3)] group-hover:border-[rgba(200,148,55,0.5)] transition-colors overflow-hidden relative">
-        {previewUrl ? (
-          <img
-            src={previewUrl}
-            alt=""
-            className="absolute inset-0 w-full h-full object-cover"
-          />
-        ) : (
-          <>
-            <div className="absolute inset-0 opacity-20 bg-gradient-to-r from-transparent via-[rgba(200,148,55,0.2)] to-transparent" />
-            <ImageIcon size={20} />
-          </>
-        )}
-      </div>
-
-      <div className="flex-1 flex items-center justify-between min-w-0">
-        <div className="flex flex-col gap-1 w-36 min-w-0">
-          <span className="cinzel font-bold text-lg text-[#e8dcc8] truncate">
-            {run.hero}
-          </span>
-          <span className="fira-code text-[10px] text-[rgba(200,170,120,0.5)] truncate">
-            {formatDateTime(run.started_at_utc)}
-          </span>
+    <div className="group flex items-center p-3 bg-[rgba(18,11,5,0.88)] border border-[rgba(180,130,48,0.13)] rounded-sm hover:border-[rgba(200,148,55,0.4)] hover:bg-[rgba(200,148,55,0.04)] transition-all gap-6 shadow-[0_4px_12px_rgba(0,0,0,0.2)]">
+      <Link
+        to={detailPath}
+        className="flex flex-1 items-center gap-6 min-w-0 no-underline text-inherit"
+      >
+        <div className="w-40 h-16 bg-[#000] border border-[rgba(200,148,55,0.2)] rounded-sm flex items-center justify-center text-[rgba(200,170,120,0.3)] group-hover:border-[rgba(200,148,55,0.5)] transition-colors overflow-hidden relative">
+          {previewUrl ? (
+            <img
+              src={previewUrl}
+              alt=""
+              className="absolute inset-0 w-full h-full object-cover"
+            />
+          ) : (
+            <>
+              <div className="absolute inset-0 opacity-20 bg-gradient-to-r from-transparent via-[rgba(200,148,55,0.2)] to-transparent" />
+              <ImageIcon size={20} />
+            </>
+          )}
         </div>
 
-        <div className="flex items-center gap-10">
-          <Metric label="Result" value={result.label} tone={result.tone} />
-          <Metric
-            label="Day"
-            value={run.final_day ? `Day ${run.final_day}` : '-'}
-          />
-          <Metric label="Rank" value={run.final_player_rank ?? '-'} gold />
-          <Metric
-            label="Rating"
-            value={
-              run.final_player_rating === null
-                ? '-'
-                : String(run.final_player_rating)
-            }
-          />
-          <Metric label="Videos" value={String(run.video_count)} />
-        </div>
+        <div className="flex-1 flex items-center justify-between min-w-0">
+          <div className="flex flex-col gap-1 w-36 min-w-0">
+            <span className="cinzel font-bold text-lg text-[#e8dcc8] truncate">
+              {run.hero}
+            </span>
+            <span className="fira-code text-[10px] text-[rgba(200,170,120,0.5)] truncate">
+              {formatDateTime(run.started_at_utc)}
+            </span>
+          </div>
 
-        <div className="flex items-center gap-4 ml-4">
-          <button
-            type="button"
-            disabled={deleting || run.video_count === 0}
-            onClick={(event) => {
-              event.stopPropagation();
-              onDelete();
-            }}
-            className="flex items-center justify-center w-8 h-8 rounded-sm hover:bg-[rgba(255,50,50,0.1)] hover:text-[#ff4444] disabled:opacity-30 disabled:hover:bg-transparent transition-colors text-[rgba(200,170,120,0.4)] border border-transparent hover:border-[rgba(255,50,50,0.2)]"
-            title="删除本局视频"
-          >
-            {deleting ? (
-              <Loader2 size={16} className="animate-spin" />
-            ) : (
-              <Trash2 size={16} />
-            )}
-          </button>
-          <div className="flex items-center gap-2 text-[rgba(200,148,55,0.6)] group-hover:text-[#e8c87a] transition-colors">
+          <div className="flex items-center gap-10">
+            <Metric label="Result" value={result.label} tone={result.tone} />
+            <Metric
+              label="Day"
+              value={run.final_day ? `Day ${run.final_day}` : '-'}
+            />
+            <Metric label="Rank" value={run.final_player_rank ?? '-'} gold />
+            <Metric
+              label="Rating"
+              value={
+                run.final_player_rating === null
+                  ? '-'
+                  : String(run.final_player_rating)
+              }
+            />
+            <Metric label="Videos" value={String(run.video_count)} />
+          </div>
+
+          <div className="flex items-center gap-2 text-[rgba(200,148,55,0.6)] group-hover:text-[#e8c87a] transition-colors ml-4">
             <span className="text-xs">查看详情</span>
             <ChevronRight size={16} />
           </div>
         </div>
-      </div>
+      </Link>
+
+      <button
+        type="button"
+        disabled={deleting || run.video_count === 0}
+        onClick={onDelete}
+        className="flex items-center justify-center size-8 rounded-sm hover:bg-[rgba(255,50,50,0.1)] hover:text-[#ff4444] disabled:opacity-30 disabled:hover:bg-transparent transition-colors text-[rgba(200,170,120,0.4)] border border-transparent hover:border-[rgba(255,50,50,0.2)]"
+        aria-label="删除本局视频"
+      >
+        {deleting ? (
+          <Loader2 size={16} className="animate-spin" />
+        ) : (
+          <Trash2 size={16} />
+        )}
+      </button>
     </div>
   );
 }
