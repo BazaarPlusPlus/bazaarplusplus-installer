@@ -9,7 +9,7 @@ import {
   Settings2
 } from 'lucide-react';
 import type { StreamOverlayDisplayMode } from '../types/backend';
-import { PageHeader } from '../components/ui/PageHeader';
+import { PageShell } from '../components/ui/PageShell';
 import { useStreamPage } from '../features/stream/useStreamPage';
 
 const displayModes: Array<{ value: StreamOverlayDisplayMode; label: string }> =
@@ -25,9 +25,7 @@ export default function Stream() {
   const dbLabel = dbPath.found ? 'DB Connected' : 'DB Missing';
 
   return (
-    <div className="flex flex-col gap-6 w-full h-full max-w-5xl mx-auto">
-      <PageHeader eyebrow="Stream" title="直播" />
-
+    <PageShell eyebrow="Stream" title="直播">
       <div className="flex flex-col gap-6 flex-1 min-h-0 w-full">
         <div className="p-6 bg-[rgba(18,11,5,0.88)] border border-[rgba(180,130,48,0.13)] rounded-sm shadow-[0_6px_28px_rgba(0,0,0,0.35)] flex flex-col gap-8 relative overflow-hidden">
           <div className="flex items-center justify-between">
@@ -227,7 +225,7 @@ export default function Stream() {
           </div>
         </div>
       </div>
-    </div>
+    </PageShell>
   );
 }
 

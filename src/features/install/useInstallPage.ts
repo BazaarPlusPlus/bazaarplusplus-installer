@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { InstallState } from '../../types/backend';
-import { toErrorMessage } from '../shared/errors';
+import { useAsyncAction } from '../shared/useAsyncAction';
 import {
   chooseGameDirectory,
   emptyInstallState,
@@ -17,102 +17,94 @@ type InstallAction =
   | 'install'
   | 'repair'
   | 'uninstall'
-  | 'launch'
-  | null;
+  | 'launch';
 
 export function useInstallPage() {
   const [state, setState] = useState<InstallState>(emptyInstallState);
   const [selectedPath, setSelectedPath] = useState<string | undefined>(
     undefined
   );
-  const [action, setAction] = useState<InstallAction>('load');
-  const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const { action, error, run, busy } = useAsyncAction<InstallAction>();
 
   const refresh = useCallback(
     async (gamePath = selectedPath) => {
-      setAction('load');
-      setError(null);
-      try {
-        const nextState = await loadInstallState(gamePath);
-        setState(nextState);
-        setSelectedPath(nextState.selected_game_path ?? gamePath);
-      } catch (caught) {
-        setError(toErrorMessage(caught));
-      } finally {
-        setAction(null);
-      }
+      await run(
+        'load',
+        async () => {
+          const nextState = await loadInstallState(gamePath);
+          setState(nextState);
+          setSelectedPath(nextState.selected_game_path ?? gamePath);
+        },
+        { onStart: () => setMessage(null) }
+      );
     },
-    [selectedPath]
+    [run, selectedPath]
   );
 
   useEffect(() => {
     void refresh();
   }, []);
 
-  const runAction = useCallback(
-    async (name: Exclude<InstallAction, null>, task: () => Promise<void>) => {
-      setAction(name);
-      setError(null);
-      setMessage(null);
-      try {
-        await task();
-      } catch (caught) {
-        setError(toErrorMessage(caught));
-      } finally {
-        setAction(null);
-      }
-    },
-    []
-  );
-
   const chooseDirectory = useCallback(
     () =>
-      runAction('choose', async () => {
+      run('choose', async () => {
         const selection = await chooseGameDirectory();
         if (!selection.game_path) return;
         setSelectedPath(selection.game_path);
         setState(await loadInstallState(selection.game_path));
       }),
-    [runAction]
+    [run]
   );
 
   const install = useCallback(
     () =>
-      runAction('install', async () => {
-        const path = requireGamePath(state);
-        setState(await installMod(path));
-        setMessage('安装完成');
-      }),
-    [runAction, state]
+      run(
+        'install',
+        async () => {
+          const path = requireGamePath(state);
+          setState(await installMod(path));
+          setMessage('安装完成');
+        },
+        { onStart: () => setMessage(null) }
+      ),
+    [run, state]
   );
 
   const repair = useCallback(
     () =>
-      runAction('repair', async () => {
-        const path = requireGamePath(state);
-        setState(await repairMod(path));
-        setMessage('修复完成');
-      }),
-    [runAction, state]
+      run(
+        'repair',
+        async () => {
+          const path = requireGamePath(state);
+          setState(await repairMod(path));
+          setMessage('修复完成');
+        },
+        { onStart: () => setMessage(null) }
+      ),
+    [run, state]
   );
 
   const uninstall = useCallback(
     () =>
-      runAction('uninstall', async () => {
-        const path = requireGamePath(state);
-        setState(await uninstallMod(path));
-        setMessage('卸载完成');
-      }),
-    [runAction, state]
+      run(
+        'uninstall',
+        async () => {
+          const path = requireGamePath(state);
+          setState(await uninstallMod(path));
+          setMessage('卸载完成');
+        },
+        { onStart: () => setMessage(null) }
+      ),
+    [run, state]
   );
 
   const launch = useCallback(
     () =>
-      runAction('launch', async () => {
+      run('launch', async () => {
         await launchGame(state.selected_game_path ?? undefined);
       }),
-    [runAction, state.selected_game_path]
+    [run, state.selected_game_path]
   );
 
   const status = useMemo(() => createInstallStatus(state), [state]);
@@ -121,7 +113,7 @@ export function useInstallPage() {
     state,
     status,
     action,
-    busy: action !== null,
+    busy,
     error,
     message,
     refresh,

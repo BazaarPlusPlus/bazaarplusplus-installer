@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import type { HistoryRunDetail } from '../../types/backend';
 import { toErrorMessage } from '../shared/errors';
+import { useAsyncAction } from '../shared/useAsyncAction';
 import { ensureStreamSession } from '../stream/streamApi';
 import {
   deleteBattleVideo,
@@ -16,8 +17,7 @@ export function useRunDetailPage() {
   const [detail, setDetail] = useState<HistoryRunDetail | null>(null);
   const [baseUrl, setBaseUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [action, setAction] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const { action, error, setError, run } = useAsyncAction<string>();
 
   const refresh = useCallback(async () => {
     if (!runId) {
@@ -39,49 +39,33 @@ export function useRunDetailPage() {
     } finally {
       setLoading(false);
     }
-  }, [runId]);
+  }, [runId, setError]);
 
   useEffect(() => {
     void refresh();
   }, [refresh]);
 
-  const runAction = useCallback(
-    async (name: string, task: () => Promise<void>) => {
-      setAction(name);
-      setError(null);
-      try {
-        await task();
-      } catch (caught) {
-        setError(toErrorMessage(caught));
-      } finally {
-        setAction(null);
-      }
-    },
-    []
-  );
-
   const revealScreenshot = useCallback(() => {
     if (!detail) return;
-    void runAction('screenshot', () => revealRunScreenshot(detail.run.run_id));
-  }, [detail, runAction]);
+    void run('screenshot', () => revealRunScreenshot(detail.run.run_id));
+  }, [detail, run]);
 
   const revealVideo = useCallback(
     (battleId: string, videoId?: string) => {
-      void runAction(`video:${battleId}`, () =>
+      void run(`video:${battleId}`, () =>
         revealBattleVideo(battleId, videoId)
       );
     },
-    [runAction]
+    [run]
   );
 
   const deleteVideo = useCallback(
     (battleId: string, videoId: string) => {
-      void runAction(`delete:${battleId}`, async () => {
-        const nextDetail = await deleteBattleVideo(battleId, videoId);
-        setDetail(nextDetail);
+      void run(`delete:${battleId}`, async () => {
+        setDetail(await deleteBattleVideo(battleId, videoId));
       });
     },
-    [runAction]
+    [run]
   );
 
   const stripUrl = optionalStripPreviewUrl(baseUrl, detail?.run.strip_url);

@@ -9,7 +9,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import type { HistoryBattleRow } from '../types/backend';
 import { useRunDetailPage } from '../features/history/useRunDetailPage';
-import { formatDateTime } from '../features/history/useHistoryPage';
+import { formatDateTime } from '../features/history/format';
 
 export default function RunDetail() {
   const navigate = useNavigate();

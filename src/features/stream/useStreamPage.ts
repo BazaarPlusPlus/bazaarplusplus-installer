@@ -5,6 +5,7 @@ import type {
   StreamServiceStatus
 } from '../../types/backend';
 import { toErrorMessage } from '../shared/errors';
+import { useAsyncAction } from '../shared/useAsyncAction';
 import {
   applyCropCode,
   defaultCropSettings,
@@ -26,8 +27,7 @@ type StreamAction =
   | 'open_settings'
   | 'crop'
   | 'display_mode'
-  | 'window'
-  | null;
+  | 'window';
 
 export function useStreamPage() {
   const [status, setStatus] = useState<StreamServiceStatus>(idleStreamStatus);
@@ -35,9 +35,8 @@ export function useStreamPage() {
     useState<StreamOverlayCropSettingsPayload>(defaultCropSettings);
   const [cropCode, setCropCode] = useState(defaultCropSettings.code);
   const [loading, setLoading] = useState(true);
-  const [action, setAction] = useState<StreamAction>(null);
-  const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const { action, error, setError, run } = useAsyncAction<StreamAction>();
 
   const refresh = useCallback(async () => {
     setLoading(true);
@@ -55,108 +54,99 @@ export function useStreamPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [setError]);
 
   useEffect(() => {
     void refresh();
   }, [refresh]);
 
-  const runAction = useCallback(
-    async (
-      nextAction: Exclude<StreamAction, null>,
-      task: () => Promise<void>
-    ) => {
-      setAction(nextAction);
-      setError(null);
-      setMessage(null);
-      try {
-        await task();
-      } catch (caught) {
-        setError(toErrorMessage(caught));
-      } finally {
-        setAction(null);
-      }
-    },
-    []
-  );
-
   const restart = useCallback(
     () =>
-      runAction('restart', async () => {
-        const nextStatus = await restartStreamSession();
-        setStatus(nextStatus);
+      run('restart', async () => {
+        setStatus(await restartStreamSession());
       }),
-    [runAction]
+    [run]
   );
 
   const copyObsUrl = useCallback(
     () =>
-      runAction('copy', async () => {
-        if (!status.overlay_url) return;
-        await navigator.clipboard.writeText(status.overlay_url);
-        setMessage('OBS URL 已复制');
-      }),
-    [runAction, status.overlay_url]
+      run(
+        'copy',
+        async () => {
+          if (!status.overlay_url) return;
+          await navigator.clipboard.writeText(status.overlay_url);
+          setMessage('OBS URL 已复制');
+        },
+        { onStart: () => setMessage(null) }
+      ),
+    [run, status.overlay_url]
   );
 
   const openOverlay = useCallback(
     () =>
-      runAction('open_overlay', async () => {
+      run('open_overlay', async () => {
         if (status.overlay_url) {
           await openExternal(status.overlay_url);
         }
       }),
-    [runAction, status.overlay_url]
+    [run, status.overlay_url]
   );
 
   const openSettings = useCallback(
     () =>
-      runAction('open_settings', async () => {
+      run('open_settings', async () => {
         if (status.settings_url) {
           await openExternal(status.settings_url);
         }
       }),
-    [runAction, status.settings_url]
+    [run, status.settings_url]
   );
 
   const changeDisplayMode = useCallback(
     (displayMode: StreamOverlayDisplayMode) =>
-      runAction('display_mode', async () => {
-        const payload = await saveDisplayMode(displayMode);
-        setCropSettings(payload);
+      run('display_mode', async () => {
+        setCropSettings(await saveDisplayMode(displayMode));
       }),
-    [runAction]
+    [run]
   );
 
   const submitCropCode = useCallback(
     () =>
-      runAction('crop', async () => {
-        const payload = await applyCropCode(cropCode.trim());
-        setCropSettings(payload);
-        setCropCode(payload.code);
-        setMessage('裁切代码已保存');
-      }),
-    [cropCode, runAction]
+      run(
+        'crop',
+        async () => {
+          const payload = await applyCropCode(cropCode.trim());
+          setCropSettings(payload);
+          setCropCode(payload.code);
+          setMessage('裁切代码已保存');
+        },
+        { onStart: () => setMessage(null) }
+      ),
+    [cropCode, run]
   );
 
   const resetCropCode = useCallback(
     () =>
-      runAction('crop', async () => {
-        const payload = await resetCropSettings();
-        setCropSettings(payload);
-        setCropCode(payload.code);
-        setMessage('裁切设置已恢复默认');
-      }),
-    [runAction]
+      run(
+        'crop',
+        async () => {
+          const payload = await resetCropSettings();
+          setCropSettings(payload);
+          setCropCode(payload.code);
+          setMessage('裁切设置已恢复默认');
+        },
+        { onStart: () => setMessage(null) }
+      ),
+    [run]
   );
 
   const moveWindow = useCallback(
     (delta: number) =>
-      runAction('window', async () => {
+      run('window', async () => {
         const nextOffset = Math.max(0, status.active_window_offset + delta);
         setStatus(await setStreamWindowOffset(nextOffset));
       }),
-    [runAction, status.active_window_offset]
+    [run, status.active_window_offset]
   );
 
   const viewModel = useMemo(

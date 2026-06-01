@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useState } from 'react';
-import { PageHeader } from '../components/ui/PageHeader';
+import { PageShell } from '../components/ui/PageShell';
 import { useInstallPage } from '../features/install/useInstallPage';
 
 export default function Install() {
@@ -39,9 +39,7 @@ export default function Install() {
   };
 
   return (
-    <div className="flex flex-col gap-6 w-full h-full max-w-5xl mx-auto">
-      <PageHeader eyebrow="Install" title="安装" />
-
+    <PageShell eyebrow="Install" title="安装">
       <div className="grid grid-cols-12 gap-8 w-full">
         <div className="col-span-7 flex flex-col gap-6">
           <div className="p-5 bg-[rgba(18,11,5,0.88)] border border-[rgba(180,130,48,0.13)] rounded-sm shadow-[0_6px_28px_rgba(0,0,0,0.35)] flex flex-col gap-6 h-full">
@@ -326,7 +324,7 @@ export default function Install() {
           </div>
         </div>
       )}
-    </div>
+    </PageShell>
   );
 }
 

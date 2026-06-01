@@ -6,38 +6,36 @@ import {
   Trash2
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { PageHeader } from '../components/ui/PageHeader';
+import { ErrorBanner } from '../components/ui/ErrorBanner';
+import { LoadingPanel } from '../components/ui/LoadingPanel';
+import { PageShell } from '../components/ui/PageShell';
+import { formatDateTime, formatRunResultLabel } from '../features/history/format';
+import { useHistoryPage } from '../features/history/useHistoryPage';
 import type { HistoryRunRow } from '../types/backend';
-import {
-  formatDateTime,
-  useHistoryPage
-} from '../features/history/useHistoryPage';
 
 export default function History() {
   const navigate = useNavigate();
   const page = useHistoryPage();
 
   return (
-    <div className="flex flex-col gap-6 w-full h-full max-w-5xl mx-auto">
-      <PageHeader
-        eyebrow="History"
-        title="战绩"
-        action={
-          <button
-            type="button"
-            onClick={page.refresh}
-            disabled={page.loading}
-            className="flex items-center gap-2 px-3 py-1.5 bg-[rgba(200,148,55,0.06)] border border-[rgba(180,130,48,0.2)] rounded-sm hover:bg-[rgba(200,148,55,0.12)] disabled:opacity-40 transition-colors text-xs text-[#e8dcc8]"
-          >
-            <RefreshCw
-              size={14}
-              className={page.loading ? 'animate-spin' : ''}
-            />
-            刷新
-          </button>
-        }
-      />
-
+    <PageShell
+      eyebrow="History"
+      title="战绩"
+      action={
+        <button
+          type="button"
+          onClick={page.refresh}
+          disabled={page.loading}
+          className="flex items-center gap-2 px-3 py-1.5 bg-[rgba(200,148,55,0.06)] border border-[rgba(180,130,48,0.2)] rounded-sm hover:bg-[rgba(200,148,55,0.12)] disabled:opacity-40 transition-colors text-xs text-[#e8dcc8]"
+        >
+          <RefreshCw
+            size={14}
+            className={page.loading ? 'animate-spin' : ''}
+          />
+          刷新
+        </button>
+      }
+    >
       <div className="flex flex-col gap-6 flex-1 min-h-0 w-full">
         <div className="grid grid-cols-3 gap-4 shrink-0">
           <SummaryCard label="Runs" value={page.summary.runs} />
@@ -45,24 +43,17 @@ export default function History() {
           <SummaryCard label="Win Rate" value={page.summary.winRate} />
         </div>
 
-        {page.error && (
-          <p className="m-0 px-4 py-3 border border-[rgba(217,109,109,0.28)] bg-[rgba(217,109,109,0.08)] text-[#d96d6d] text-sm">
-            {page.error}
-          </p>
-        )}
+        {page.error && <ErrorBanner message={page.error} />}
 
         <div className="flex flex-col gap-3 flex-1 min-h-0 overflow-y-auto custom-scrollbar pr-2">
           {page.loading ? (
-            <div className="flex items-center justify-center h-48 text-[rgba(200,170,120,0.6)] gap-2">
-              <Loader2 size={18} className="animate-spin" />
-              <span className="text-sm">读取战绩中</span>
-            </div>
+            <LoadingPanel label="读取战绩中" />
           ) : page.payload.runs.length === 0 ? (
             <div className="flex items-center justify-center h-48 text-[rgba(200,170,120,0.55)] border border-[rgba(180,130,48,0.12)] bg-[rgba(18,11,5,0.6)]">
               暂无本地战绩
             </div>
           ) : (
-            page.payload.runs.map((run) => (
+            page.payload.runs.map((run: HistoryRunRow) => (
               <RunRow
                 key={run.run_id}
                 run={run}
@@ -77,7 +68,7 @@ export default function History() {
           )}
         </div>
       </div>
-    </div>
+    </PageShell>
   );
 }
 
@@ -117,15 +108,7 @@ function RunRow({
   onClick: () => void;
   onDelete: () => void;
 }) {
-  const isWin = run.result === 'win';
-  const resultLabel =
-    run.result === 'win'
-      ? 'VICTORY'
-      : run.result === 'loss'
-        ? 'DEFEAT'
-        : run.result === 'abandoned'
-          ? 'ABANDONED'
-          : 'ACTIVE';
+  const result = formatRunResultLabel(run.result);
 
   return (
     <div
@@ -158,11 +141,7 @@ function RunRow({
         </div>
 
         <div className="flex items-center gap-10">
-          <Metric
-            label="Result"
-            value={resultLabel}
-            tone={isWin ? 'ok' : 'bad'}
-          />
+          <Metric label="Result" value={result.label} tone={result.tone} />
           <Metric
             label="Day"
             value={run.final_day ? `Day ${run.final_day}` : '-'}
