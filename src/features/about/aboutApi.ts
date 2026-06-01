@@ -9,7 +9,8 @@ export const fallbackBootstrap: AppBootstrap = {
   locale: 'zh',
   links: {
     github: 'https://github.com/cauyxy/BazaarPlusPlus',
-    bilibili: 'https://space.bilibili.com/3546978457750467',
+    bilibili_project: 'https://space.bilibili.com/3546978457750467',
+    bilibili_author: 'https://space.bilibili.com/1564408396',
     xiaohongshu: '#',
     kofi: 'https://ko-fi.com/cauyxy',
     supporter_list: 'https://bazaarplusplus.com/support'

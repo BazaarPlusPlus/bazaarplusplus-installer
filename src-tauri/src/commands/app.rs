@@ -18,7 +18,8 @@ pub struct AppBootstrap {
 #[ts(export)]
 pub struct AppLinks {
     pub github: String,
-    pub bilibili: String,
+    pub bilibili_project: String,
+    pub bilibili_author: String,
     pub xiaohongshu: String,
     pub kofi: String,
     pub supporter_list: String,
@@ -51,7 +52,8 @@ pub fn get_app_bootstrap(
         locale: "zh".to_string(),
         links: AppLinks {
             github: "https://github.com/cauyxy/BazaarPlusPlus".to_string(),
-            bilibili: "https://space.bilibili.com/3546978457750467".to_string(),
+            bilibili_project: "https://space.bilibili.com/3546978457750467".to_string(),
+            bilibili_author: "https://space.bilibili.com/1564408396".to_string(),
             xiaohongshu: "https://www.xiaohongshu.com/user/profile/5d414f64000000000100a5f6"
                 .to_string(),
             kofi: "https://ko-fi.com/cauyxy".to_string(),
