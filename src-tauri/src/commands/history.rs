@@ -1,4 +1,4 @@
-use crate::history::repo::HistoryRunDetail;
+use crate::history::HistoryRunDetail;
 use crate::services::history::{
     delete_battle_video as delete_battle_video_service,
     delete_run_videos as delete_run_videos_service, empty_history_list, get_run_detail, list_runs,
@@ -13,9 +13,13 @@ pub fn list_history_runs(
     state: tauri::State<'_, StreamRuntimeState>,
     game_path: Option<String>,
     limit: Option<usize>,
-) -> Result<crate::history::repo::HistoryRunList, String> {
+) -> Result<crate::history::HistoryRunList, String> {
     let Some(paths) =
-        crate::services::history::resolve_history_paths(&app, Some(&state), game_path)
+        crate::services::history::resolve_history_paths(
+            &app,
+            state.get_game_path(),
+            game_path,
+        )
     else {
         return Ok(empty_history_list());
     };
@@ -30,7 +34,7 @@ pub fn get_history_run_detail(
     game_path: Option<String>,
     run_id: String,
 ) -> Result<HistoryRunDetail, String> {
-    let paths = require_history_paths(&app, Some(&state), game_path)?;
+    let paths = require_history_paths(&app, state.get_game_path(), game_path)?;
     get_run_detail(&paths.database_path, &run_id)
 }
 
@@ -41,7 +45,7 @@ pub fn reveal_run_screenshot(
     game_path: Option<String>,
     run_id: String,
 ) -> Result<(), String> {
-    let paths = require_history_paths(&app, Some(&state), game_path)?;
+    let paths = require_history_paths(&app, state.get_game_path(), game_path)?;
     reveal_run_screenshot_file(&paths.database_path, &paths.game_path, &run_id)
 }
 
@@ -53,7 +57,7 @@ pub fn reveal_battle_video(
     battle_id: String,
     video_id: Option<String>,
 ) -> Result<(), String> {
-    let paths = require_history_paths(&app, Some(&state), game_path)?;
+    let paths = require_history_paths(&app, state.get_game_path(), game_path)?;
     reveal_battle_video_file(
         &paths.database_path,
         &paths.data_dir,
@@ -70,7 +74,7 @@ pub fn delete_battle_video(
     battle_id: String,
     video_id: String,
 ) -> Result<HistoryRunDetail, String> {
-    let paths = require_history_paths(&app, Some(&state), game_path)?;
+    let paths = require_history_paths(&app, state.get_game_path(), game_path)?;
     delete_battle_video_service(&paths.database_path, &paths.data_dir, &battle_id, &video_id)
 }
 
@@ -81,8 +85,8 @@ pub fn delete_run_videos(
     game_path: Option<String>,
     run_id: String,
     limit: Option<usize>,
-) -> Result<crate::history::repo::HistoryRunList, String> {
-    let paths = require_history_paths(&app, Some(&state), game_path)?;
+) -> Result<crate::history::HistoryRunList, String> {
+    let paths = require_history_paths(&app, state.get_game_path(), game_path)?;
     delete_run_videos_service(
         &paths.database_path,
         &paths.data_dir,

@@ -2,14 +2,13 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 
 use crate::config::{BAZAAR_DATA_DIRECTORY, DATABASE_FILE_NAME};
-use crate::history::repo::{
+use crate::history::{
     delete_battle_video as delete_battle_video_in_repo,
     delete_run_videos as delete_run_videos_in_repo, get_history_run_detail as get_detail_from_repo,
     list_history_runs as list_runs_from_repo, load_battle_video_path, load_run_id_for_battle,
     load_run_screenshot_path, HistoryRunDetail, HistoryRunList, HistorySummary,
 };
-use crate::services::path::resolve_game_path_with_fallback;
-use crate::stream::state::StreamRuntimeState;
+use crate::services::game_path::resolve_game_path;
 
 pub struct HistoryPaths {
     pub game_path: PathBuf,
@@ -19,19 +18,19 @@ pub struct HistoryPaths {
 
 pub fn resolve_history_paths(
     app: &tauri::AppHandle,
-    state: Option<&StreamRuntimeState>,
+    session_game_path: Option<PathBuf>,
     game_path: Option<String>,
 ) -> Option<HistoryPaths> {
-    let game_path = resolve_game_path_with_fallback(app, state, game_path)?;
+    let game_path = resolve_game_path(app, game_path, session_game_path)?;
     Some(history_paths_for_game_path(game_path))
 }
 
 pub fn require_history_paths(
     app: &tauri::AppHandle,
-    state: Option<&StreamRuntimeState>,
+    session_game_path: Option<PathBuf>,
     game_path: Option<String>,
 ) -> Result<HistoryPaths, String> {
-    resolve_history_paths(app, state, game_path)
+    resolve_history_paths(app, session_game_path, game_path)
         .ok_or_else(|| "Game path is not configured.".to_string())
 }
 

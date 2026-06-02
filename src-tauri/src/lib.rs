@@ -7,23 +7,8 @@ mod tray;
 
 use tauri::{Manager, WindowEvent};
 
-use commands::{
-    app::get_app_bootstrap,
-    history::{
-        delete_battle_video, delete_run_videos, get_history_run_detail, list_history_runs,
-        reveal_battle_video, reveal_run_screenshot,
-    },
-    install::{
-        choose_game_directory, get_install_state, install_mod, launch_game, repair_mod,
-        uninstall_mod,
-    },
-    stream::{
-        apply_overlay_crop_code, ensure_stream_session, get_overlay_settings, reset_overlay_crop,
-        restart_stream_session, save_overlay_display_mode, set_stream_window,
-    },
-};
 use services::startup::InstallerContextState;
-use tray::{build_tray, set_app_locale, TrayMenuState};
+use tray::{build_tray, TrayMenuState};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -70,29 +55,7 @@ pub fn run() {
                 }
             }
         })
-        .invoke_handler(tauri::generate_handler![
-            get_app_bootstrap,
-            set_app_locale,
-            get_install_state,
-            choose_game_directory,
-            install_mod,
-            repair_mod,
-            uninstall_mod,
-            launch_game,
-            ensure_stream_session,
-            restart_stream_session,
-            set_stream_window,
-            get_overlay_settings,
-            save_overlay_display_mode,
-            apply_overlay_crop_code,
-            reset_overlay_crop,
-            list_history_runs,
-            get_history_run_detail,
-            reveal_run_screenshot,
-            reveal_battle_video,
-            delete_battle_video,
-            delete_run_videos,
-        ])
+        .invoke_handler(invoke_handler!())
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

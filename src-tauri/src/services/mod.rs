@@ -1,5 +1,6 @@
 pub mod bepinex;
 pub mod detect;
+pub mod game_path;
 pub mod game_process;
 pub mod history;
 pub mod install;

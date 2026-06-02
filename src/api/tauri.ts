@@ -11,6 +11,7 @@ import type {
   StreamOverlayDisplayMode,
   StreamServiceStatus
 } from '../types/backend';
+import type { TauriCommandName } from '../types/generated/tauri-command-names';
 
 export interface TauriCommandMap {
   get_app_bootstrap: {
@@ -103,7 +104,7 @@ export interface TauriCommandMap {
   };
 }
 
-type CommandName = keyof TauriCommandMap;
+type CommandName = Extract<TauriCommandName, keyof TauriCommandMap>;
 type CommandInput<K extends CommandName> = TauriCommandMap[K]['input'];
 type CommandOutput<K extends CommandName> = TauriCommandMap[K]['output'];
 type CommandArgs<K extends CommandName> =

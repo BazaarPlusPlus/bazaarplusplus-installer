@@ -1,3 +1,4 @@
+import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
@@ -185,8 +186,33 @@ function ensureZipLooksValid(zipPath, platform) {
   }
 }
 
+const generatedTypesDir = 'src/types/generated';
+
+export function assertBindingsUpToDate(rootDir) {
+  console.log('Checking TypeScript bindings...');
+  execFileSync('npm', ['run', 'generate:bindings'], {
+    cwd: rootDir,
+    stdio: 'inherit'
+  });
+
+  const porcelain = execFileSync(
+    'git',
+    ['status', '--porcelain', '--untracked-files=all', '--', generatedTypesDir],
+    { cwd: rootDir, encoding: 'utf8' }
+  ).trim();
+
+  if (porcelain) {
+    throw new Error(
+      `Generated TypeScript bindings are out of date under ${generatedTypesDir}. ` +
+        'Run npm run generate:bindings and commit all files under that directory.\n' +
+        porcelain
+    );
+  }
+}
+
 export function runPrebuildCheck(rootDir, platformEnv) {
   console.log('Running prebuild check...');
+  assertBindingsUpToDate(rootDir);
   const snapshot = collectVersionSnapshot(rootDir);
   assertVersionsAreAligned(snapshot);
   const platforms = resolveTargetPlatforms(platformEnv);

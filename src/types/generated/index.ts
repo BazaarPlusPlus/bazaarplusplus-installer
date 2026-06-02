@@ -25,3 +25,4 @@ export type { StreamOverlayCropSettingsPayload } from './bindings/StreamOverlayC
 export type { StreamOverlayDisplayMode } from './bindings/StreamOverlayDisplayMode';
 export type { StreamServiceStatus } from './bindings/StreamServiceStatus';
 export type { StreamWindowStatus } from './bindings/StreamWindowStatus';
+export type { TauriCommandName } from './tauri-command-names';

@@ -12,8 +12,8 @@ use game::{is_bepinex_installed, read_installed_bpp_version};
 use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, State};
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct EnvironmentInfo {
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub(crate) struct InstallEnvironmentSnapshot {
     pub steam_path: Option<String>,
     pub steam_launch_options_supported: bool,
     pub game_path: Option<String>,
@@ -31,11 +31,11 @@ pub struct DotnetInfo {
     pub dotnet_ok: bool,
 }
 
-pub fn detect_environment(
+pub fn detect_for_install(
     app: AppHandle,
     state: State<'_, InstallerContextState>,
     game_path: Option<String>,
-) -> Result<EnvironmentInfo, String> {
+) -> Result<InstallEnvironmentSnapshot, String> {
     crate::services::debug_log!(
         "[detect_environment] start requested_game_path={:?}",
         game_path
@@ -70,7 +70,7 @@ pub fn detect_environment(
         startup.bundled_bpp_version
     );
 
-    Ok(EnvironmentInfo {
+    Ok(InstallEnvironmentSnapshot {
         steam_path: steam_path.map(|path| path.to_string_lossy().into_owned()),
         steam_launch_options_supported,
         game_path: game_path.map(|path| path.to_string_lossy().into_owned()),
@@ -81,4 +81,12 @@ pub fn detect_environment(
         bpp_version,
         bundled_bpp_version: startup.bundled_bpp_version.clone(),
     })
+}
+
+pub fn detect_environment(
+    app: AppHandle,
+    state: State<'_, InstallerContextState>,
+    game_path: Option<String>,
+) -> Result<InstallEnvironmentSnapshot, String> {
+    detect_for_install(app, state, game_path)
 }

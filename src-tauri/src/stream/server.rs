@@ -8,7 +8,7 @@ use super::{
     },
 };
 use crate::config::{BAZAAR_DATA_DIRECTORY, DATABASE_FILE_NAME};
-use crate::services::path::resolve_game_path_with_fallback;
+use crate::services::game_path::resolve_game_path;
 use chrono::{Local, SecondsFormat};
 use std::path::PathBuf;
 use tokio::{net::TcpListener, sync::oneshot};
@@ -40,10 +40,10 @@ pub async fn start(
     };
     let urls = service_urls(HOST, PREFERRED_PORT);
     let status_with_start = state.mark_started(current_timestamp());
-    let game_path = resolve_game_path_with_fallback(
+    let game_path = resolve_game_path(
         &app,
-        None,
         requested_game_path.map(|path| path.to_string_lossy().into_owned()),
+        None,
     );
     let overlay_record_repository = OverlayRecordRepository::new(game_path.clone());
     let db = stream_db_status(game_path.as_ref());

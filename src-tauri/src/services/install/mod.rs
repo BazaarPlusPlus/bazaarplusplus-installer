@@ -11,7 +11,7 @@ use tauri::Manager;
 
 use crate::services::{
     bepinex::{install_bepinex, repair_bpp, uninstall_bpp},
-    detect::{detect_environment, EnvironmentInfo},
+    detect::detect_for_install,
     startup::InstallerContextState,
     steam::detect_steam_running,
     vdf::patch_launch_options,
@@ -25,11 +25,11 @@ pub fn build_install_state(
     state: tauri::State<'_, InstallerContextState>,
     game_path: Option<String>,
 ) -> Result<InstallState, String> {
-    let env = detect_environment(app, state, game_path)?;
+    let snapshot = detect_for_install(app, state, game_path)?;
     let steam_running = detect_steam_running()
         .map(|info| info.running)
         .unwrap_or(false);
-    Ok(install_state_from_environment(env, steam_running))
+    Ok(install_state_from_snapshot(snapshot, steam_running))
 }
 
 pub fn run_install(
@@ -37,7 +37,7 @@ pub fn run_install(
     state: tauri::State<'_, InstallerContextState>,
     game_path: String,
 ) -> Result<InstallState, String> {
-    let before = detect_environment(app.clone(), state, Some(game_path.clone()))?;
+    let before = detect_for_install(app.clone(), state, Some(game_path.clone()))?;
     let steam_path = before
         .steam_path
         .clone()
@@ -68,7 +68,7 @@ pub fn run_uninstall(
     state: tauri::State<'_, InstallerContextState>,
     game_path: String,
 ) -> Result<InstallState, String> {
-    let before = detect_environment(app.clone(), state, Some(game_path.clone()))?;
+    let before = detect_for_install(app.clone(), state, Some(game_path.clone()))?;
     uninstall_bpp(
         app.clone(),
         before.steam_path.clone().unwrap_or_default(),
@@ -84,7 +84,10 @@ pub fn launch_game_via_steam() -> Result<(), String> {
     open_url(STEAM_BAZAAR_URL)
 }
 
-fn install_state_from_environment(env: EnvironmentInfo, steam_running: bool) -> InstallState {
+fn install_state_from_snapshot(
+    env: crate::services::detect::InstallEnvironmentSnapshot,
+    steam_running: bool,
+) -> InstallState {
     let selected_game_path = env.game_path.clone();
     let game_found = selected_game_path.is_some();
     let installed = env.bepinex_installed;
