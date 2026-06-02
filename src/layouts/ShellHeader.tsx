@@ -7,7 +7,9 @@ import {
   QrCode,
   Users
 } from 'lucide-react';
+import type { CSSProperties, ReactNode } from 'react';
 import type { AppBootstrapController } from '../features/about/useAppBootstrap';
+import douyinPng from '../../static/support/douyin.png';
 import xiaohongshuSvg from '../../static/support/xiaohongshu.svg';
 
 type ShellHeaderProps = {
@@ -229,6 +231,89 @@ function ShellHeaderActions({
   );
 }
 
+type QrSocialEntryProps = {
+  href?: string;
+  accent: string;
+  badge: string;
+  label: string;
+  qrAlt: string;
+  qrSrc: string;
+  qrRound?: boolean;
+  subtitle: string;
+  title: string;
+  children: ReactNode;
+};
+
+function QrSocialEntry({
+  href,
+  accent,
+  badge,
+  label,
+  qrAlt,
+  qrSrc,
+  qrRound = false,
+  subtitle,
+  title,
+  children
+}: QrSocialEntryProps) {
+  const triggerClassName =
+    'flex items-center justify-center size-8 text-[rgba(200,170,120,0.6)] hover:text-[var(--social-accent)] focus-visible:text-[var(--social-accent)] transition-colors';
+
+  const trigger = href ? (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className={triggerClassName}
+      aria-label={label}
+    >
+      {children}
+    </a>
+  ) : (
+    <button type="button" className={triggerClassName} aria-label={label}>
+      {children}
+    </button>
+  );
+
+  return (
+    <div
+      className="relative group flex"
+      style={{ '--social-accent': accent } as CSSProperties}
+    >
+      {trigger}
+      <div className="absolute top-[calc(100%+0.5rem)] left-1/2 w-[260px] bg-[#0b0906] border border-[rgba(200,148,55,0.2)] rounded-[4px] shadow-[0_16px_40px_rgba(0,0,0,0.6),inset_0_0_0_1px_rgba(255,198,98,0.05)] p-5 z-50 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:pointer-events-auto transition-all duration-200 transform -translate-x-1/2 translate-y-2 group-hover:translate-y-0 group-focus-within:translate-y-0 flex flex-col items-center gap-4">
+        <div
+          className="border rounded-[2px] px-3 py-[0.15rem] text-[0.55rem] tracking-[0.15em] font-bold"
+          style={{
+            borderColor: `${accent}80`,
+            color: accent,
+            backgroundColor: `${accent}10`
+          }}
+        >
+          {badge}
+        </div>
+        <div
+          className={`w-full aspect-square bg-[#f8f0e3] ${qrRound ? 'rounded-full' : 'rounded-[2px]'} p-2 shadow-[inset_0_0_0_1px_rgba(212,160,64,0.4)] flex items-center justify-center`}
+        >
+          <img
+            src={qrSrc}
+            alt={qrAlt}
+            className="w-full h-full object-contain"
+          />
+        </div>
+        <div className="flex flex-col items-center gap-[0.15rem]">
+          <h3 className="font-bold text-[#d4a040] tracking-[0.08em] text-[1.05rem] m-0 leading-none">
+            {title}
+          </h3>
+          <p className="text-[rgba(200,170,120,0.8)] text-[0.72rem] tracking-wide m-0">
+            {subtitle}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function ShellSocialLinks({
   bootstrap,
   showBilibili,
@@ -264,52 +349,58 @@ function ShellSocialLinks({
           <path d="M9 18c-4.51 2-5-2-7-2" />
         </svg>
       </a>
-      <div className="relative group flex">
-        <a
-          href={bootstrap.links.xiaohongshu}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center justify-center size-8 text-[rgba(200,170,120,0.6)] hover:text-[#ff2442] transition-colors"
-          aria-label="小红书"
+      <QrSocialEntry
+        href={bootstrap.links.xiaohongshu}
+        accent="#ff2442"
+        badge="REDNOTE"
+        label="小红书"
+        qrAlt="作者小红书二维码"
+        qrSrc={xiaohongshuSvg}
+        title="来小红书找我"
+        subtitle="VibeCoding 日常和碎碎念"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="18"
+          height="18"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="18"
-            height="18"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20" />
-            <path d="M8 11h8" />
-            <path d="M8 7h8" />
-          </svg>
-        </a>
+          <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20" />
+          <path d="M8 11h8" />
+          <path d="M8 7h8" />
+        </svg>
+      </QrSocialEntry>
 
-        <div className="absolute top-[calc(100%+0.5rem)] left-1/2 w-[260px] bg-[#0b0906] border border-[rgba(200,148,55,0.2)] rounded-[4px] shadow-[0_16px_40px_rgba(0,0,0,0.6),inset_0_0_0_1px_rgba(255,198,98,0.05)] p-5 z-50 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-all duration-200 transform -translate-x-1/2 translate-y-2 group-hover:translate-y-0 flex flex-col items-center gap-4">
-          <div className="border border-[rgba(255,36,66,0.5)] rounded-[2px] px-3 py-[0.15rem] text-[#ff2442] text-[0.55rem] tracking-[0.15em] font-bold bg-[rgba(255,36,66,0.04)]">
-            REDNOTE
-          </div>
-          <div className="w-full aspect-square bg-[#f8f0e3] rounded-[2px] p-2 shadow-[inset_0_0_0_1px_rgba(212,160,64,0.4)] flex items-center justify-center">
-            <img
-              src={xiaohongshuSvg}
-              alt="作者小红书二维码"
-              className="w-full h-full object-contain"
-            />
-          </div>
-          <div className="flex flex-col items-center gap-[0.15rem]">
-            <h3 className="font-bold text-[#d4a040] tracking-[0.08em] text-[1.05rem] m-0 leading-none">
-              来小红书找我
-            </h3>
-            <p className="text-[rgba(200,170,120,0.8)] text-[0.72rem] tracking-wide m-0">
-              VibeCoding 日常和碎碎念
-            </p>
-          </div>
-        </div>
-      </div>
+      <QrSocialEntry
+        accent="#d4a040"
+        badge="DOUYIN"
+        label="抖音"
+        qrAlt="作者抖音二维码"
+        qrSrc={douyinPng}
+        qrRound
+        title="来抖音找我"
+        subtitle="短视频、开发切片和日常"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="18"
+          height="18"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M14 3v11.5a4.5 4.5 0 1 1-4.5-4.5" />
+          <path d="M14 6c1.35 2.25 3.1 3.5 5 3.8" />
+        </svg>
+      </QrSocialEntry>
       <div className="relative">
         <button
           type="button"
