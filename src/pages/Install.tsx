@@ -4,8 +4,10 @@ import { InstallActionsPanel } from '../features/install/InstallActionsPanel';
 import { InstallConfirmModal } from '../features/install/InstallConfirmModal';
 import { InstallStatusPanel } from '../features/install/InstallStatusPanel';
 import { useInstallPage } from '../features/install/useInstallPage';
+import { useI18n } from '../i18n/LocaleProvider';
 
 export default function Install() {
+  const { t } = useI18n();
   const page = useInstallPage();
   const [showInstallModal, setShowInstallModal] = useState(false);
   const [installAcknowledged, setInstallAcknowledged] = useState(false);
@@ -28,7 +30,7 @@ export default function Install() {
   };
 
   return (
-    <PageShell eyebrow="Install" title="安装">
+    <PageShell eyebrow="Install" title={t('installTitle')}>
       <div className="grid grid-cols-12 gap-8 w-full">
         <InstallStatusPanel page={page} />
         <InstallActionsPanel

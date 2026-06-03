@@ -4,6 +4,7 @@ import type {
   StreamOverlayDisplayMode,
   StreamServiceStatus
 } from '../../types/backend';
+import { useI18n } from '../../i18n/LocaleProvider';
 import { toErrorMessage } from '../shared/errors';
 import { useAsyncAction } from '../shared/useAsyncAction';
 import {
@@ -30,6 +31,7 @@ type StreamAction =
   | 'window';
 
 export function useStreamPage() {
+  const { t } = useI18n();
   const [status, setStatus] = useState<StreamServiceStatus>(idleStreamStatus);
   const [cropSettings, setCropSettings] =
     useState<StreamOverlayCropSettingsPayload>(defaultCropSettings);
@@ -75,11 +77,11 @@ export function useStreamPage() {
         async () => {
           if (!status.overlay_url) return;
           await navigator.clipboard.writeText(status.overlay_url);
-          setMessage('OBS URL 已复制');
+          setMessage(t('streamCopied'));
         },
         { onStart: () => setMessage(null) }
       ),
-    [run, status.overlay_url]
+    [run, status.overlay_url, t]
   );
 
   const openOverlay = useCallback(
@@ -118,11 +120,11 @@ export function useStreamPage() {
           const payload = await applyCropCode(cropCode.trim());
           setCropSettings(payload);
           setCropCode(payload.code);
-          setMessage('裁切代码已保存');
+          setMessage(t('streamCropSaved'));
         },
         { onStart: () => setMessage(null) }
       ),
-    [cropCode, run]
+    [cropCode, run, t]
   );
 
   const resetCropCode = useCallback(
@@ -133,11 +135,11 @@ export function useStreamPage() {
           const payload = await resetCropSettings();
           setCropSettings(payload);
           setCropCode(payload.code);
-          setMessage('裁切设置已恢复默认');
+          setMessage(t('streamCropReset'));
         },
         { onStart: () => setMessage(null) }
       ),
-    [run]
+    [run, t]
   );
 
   const moveWindow = useCallback(

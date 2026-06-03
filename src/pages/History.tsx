@@ -9,17 +9,22 @@ import { Link } from 'react-router-dom';
 import { ErrorBanner } from '../components/ui/ErrorBanner';
 import { LoadingPanel } from '../components/ui/LoadingPanel';
 import { PageShell } from '../components/ui/PageShell';
-import { formatDateTime, formatRunResultLabel } from '../features/history/format';
+import {
+  formatDateTime,
+  formatRunResultLabel
+} from '../features/history/format';
 import { useHistoryPage } from '../features/history/useHistoryPage';
+import { useI18n } from '../i18n/LocaleProvider';
 import type { HistoryRunRow } from '../types/backend';
 
 export default function History() {
   const page = useHistoryPage();
+  const { t } = useI18n();
 
   return (
     <PageShell
       eyebrow="History"
-      title="战绩"
+      title={t('historyTitle')}
       action={
         <button
           type="button"
@@ -27,11 +32,8 @@ export default function History() {
           disabled={page.loading}
           className="flex items-center gap-2 px-3 py-1.5 bg-[rgba(200,148,55,0.06)] border border-[rgba(180,130,48,0.2)] rounded-sm hover:bg-[rgba(200,148,55,0.12)] disabled:opacity-40 transition-colors text-xs text-[#e8dcc8]"
         >
-          <RefreshCw
-            size={14}
-            className={page.loading ? 'animate-spin' : ''}
-          />
-          刷新
+          <RefreshCw size={14} className={page.loading ? 'animate-spin' : ''} />
+          {t('refresh')}
         </button>
       }
     >
@@ -46,10 +48,10 @@ export default function History() {
 
         <div className="flex flex-col gap-3 flex-1 min-h-0 overflow-y-auto custom-scrollbar pr-2">
           {page.loading ? (
-            <LoadingPanel label="读取战绩中" />
+            <LoadingPanel label={t('historyLoading')} />
           ) : page.payload.runs.length === 0 ? (
             <div className="flex items-center justify-center h-48 text-[rgba(200,170,120,0.55)] border border-[rgba(180,130,48,0.12)] bg-[rgba(18,11,5,0.6)]">
-              暂无本地战绩
+              {t('noLocalRuns')}
             </div>
           ) : (
             page.payload.runs.map((run: HistoryRunRow) => (
@@ -102,6 +104,7 @@ function RunRow({
   deleting: boolean;
   onDelete: () => void;
 }) {
+  const { t } = useI18n();
   const result = formatRunResultLabel(run.result);
   const detailPath = `/history/${encodeURIComponent(run.run_id)}`;
 
@@ -137,7 +140,7 @@ function RunRow({
           </div>
 
           <div className="flex items-center gap-10">
-            <Metric label="Result" value={result.label} tone={result.tone} />
+            <Metric label="Result" value={t(result.key)} tone={result.tone} />
             <Metric
               label="Day"
               value={run.final_day ? `Day ${run.final_day}` : '-'}
@@ -155,7 +158,7 @@ function RunRow({
           </div>
 
           <div className="flex items-center gap-2 text-[rgba(200,148,55,0.6)] group-hover:text-[#e8c87a] transition-colors ml-4">
-            <span className="text-xs">查看详情</span>
+            <span className="text-xs">{t('viewDetail')}</span>
             <ChevronRight size={16} />
           </div>
         </div>
@@ -166,7 +169,7 @@ function RunRow({
         disabled={deleting || run.video_count === 0}
         onClick={onDelete}
         className="flex items-center justify-center size-8 rounded-sm hover:bg-[rgba(255,50,50,0.1)] hover:text-[#ff4444] disabled:opacity-30 disabled:hover:bg-transparent transition-colors text-[rgba(200,170,120,0.4)] border border-transparent hover:border-[rgba(255,50,50,0.2)]"
-        aria-label="删除本局视频"
+        aria-label={t('deleteRunVideos')}
       >
         {deleting ? (
           <Loader2 size={16} className="animate-spin" />

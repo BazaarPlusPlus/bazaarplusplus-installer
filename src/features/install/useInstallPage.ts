@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { InstallState } from '../../types/backend';
+import { useI18n, type Translate } from '../../i18n/LocaleProvider';
 import { useAsyncAction } from '../shared/useAsyncAction';
 import {
   chooseGameDirectory,
@@ -20,6 +21,7 @@ type InstallAction =
   | 'launch';
 
 export function useInstallPage() {
+  const { t } = useI18n();
   const [state, setState] = useState<InstallState>(emptyInstallState);
   const [selectedPath, setSelectedPath] = useState<string | undefined>(
     undefined
@@ -70,13 +72,13 @@ export function useInstallPage() {
       run(
         'install',
         async () => {
-          const path = requireGamePath(state);
+          const path = requireGamePath(state, t);
           setState(await installMod(path));
-          setMessage('安装完成');
+          setMessage(t('installDone'));
         },
         { onStart: () => setMessage(null) }
       ),
-    [run, state]
+    [run, state, t]
   );
 
   const repair = useCallback(
@@ -84,13 +86,13 @@ export function useInstallPage() {
       run(
         'repair',
         async () => {
-          const path = requireGamePath(state);
+          const path = requireGamePath(state, t);
           setState(await repairMod(path));
-          setMessage('修复完成');
+          setMessage(t('repairDone'));
         },
         { onStart: () => setMessage(null) }
       ),
-    [run, state]
+    [run, state, t]
   );
 
   const uninstall = useCallback(
@@ -98,13 +100,13 @@ export function useInstallPage() {
       run(
         'uninstall',
         async () => {
-          const path = requireGamePath(state);
+          const path = requireGamePath(state, t);
           setState(await uninstallMod(path));
-          setMessage('卸载完成');
+          setMessage(t('uninstallDone'));
         },
         { onStart: () => setMessage(null) }
       ),
-    [run, state]
+    [run, state, t]
   );
 
   const launch = useCallback(
@@ -115,7 +117,7 @@ export function useInstallPage() {
     [run, state.selected_game_path]
   );
 
-  const status = useMemo(() => createInstallStatus(state), [state]);
+  const status = useMemo(() => createInstallStatus(state, t), [state, t]);
 
   return {
     state,
@@ -133,35 +135,35 @@ export function useInstallPage() {
   };
 }
 
-function requireGamePath(state: InstallState) {
+function requireGamePath(state: InstallState, t: Translate) {
   if (!state.selected_game_path) {
-    throw new Error('请先选择 The Bazaar 安装目录。');
+    throw new Error(t('selectGameDirFirst'));
   }
   return state.selected_game_path;
 }
 
-function createInstallStatus(state: InstallState) {
+function createInstallStatus(state: InstallState, t: Translate) {
   const installed = state.mod_state.installed;
   return {
-    gameLabel: state.game.path_valid ? '游戏文件完整' : '未找到游戏',
+    gameLabel: state.game.path_valid ? t('gameFilesOk') : t('gameNotFound'),
     gameTone: state.game.path_valid ? ('ok' as const) : ('warn' as const),
     modLabel: installed
       ? state.mod_state.version_matches
-        ? '核心组件就绪'
-        : '需要重新安装'
-      : '尚未安装',
+        ? t('modReady')
+        : t('modNeedsReinstall')
+      : t('modNotInstalled'),
     modTone:
       installed && state.mod_state.version_matches
         ? ('ok' as const)
         : ('warn' as const),
-    primaryAction: installed ? '重新安装' : '安装',
+    primaryAction: installed ? t('actionReinstall') : t('actionInstall'),
     modVersion:
       state.mod_state.installed_version ??
       state.mod_state.bundled_version ??
       '-',
     dotnet: state.runtime.dotnet_ok
-      ? (state.runtime.dotnet_version ?? 'Ready')
-      : 'Missing',
+      ? (state.runtime.dotnet_version ?? t('ready'))
+      : t('missing'),
     steam: state.steam_path ? 'Steam' : '-'
   };
 }

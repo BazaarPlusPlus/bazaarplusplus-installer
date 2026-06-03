@@ -1,13 +1,15 @@
 import { ExternalLink } from 'lucide-react';
 import { PageHeader } from '../components/ui/PageHeader';
 import { useAppBootstrap } from '../features/about/AppBootstrapProvider';
+import { useI18n } from '../i18n/LocaleProvider';
 
 export default function About() {
   const { bootstrap } = useAppBootstrap();
+  const { t } = useI18n();
 
   return (
     <div className="flex flex-col gap-6 w-full h-full pb-12 max-w-5xl mx-auto">
-      <PageHeader eyebrow="About" title="关于" />
+      <PageHeader eyebrow="About" title={t('aboutTitle')} />
 
       <div className="flex flex-col gap-6 flex-1 min-h-0 w-full">
         <section className="p-5 bg-[rgba(18,11,5,0.88)] border border-[rgba(180,130,48,0.13)] rounded-sm shadow-[0_6px_28px_rgba(0,0,0,0.35)] flex flex-col gap-4">
@@ -47,7 +49,7 @@ export default function About() {
 
           <div className="flex flex-col gap-3">
             <h4 className="cinzel text-[10px] tracking-widest text-[rgba(200,148,55,0.55)] uppercase m-0">
-              致谢 Credits
+              {t('aboutCredits')}
             </h4>
             <ul className="flex flex-col gap-1 m-0 p-0 list-none">
               {bootstrap.credits.map((credit) => (
@@ -63,7 +65,7 @@ export default function About() {
 
         <section className="p-5 bg-[rgba(18,11,5,0.88)] border border-[rgba(180,130,48,0.13)] rounded-sm shadow-[0_6px_28px_rgba(0,0,0,0.35)] flex flex-col gap-4">
           <h3 className="cinzel text-xs tracking-widest text-[rgba(220,195,145,0.8)] uppercase m-0">
-            Licenses
+            {t('aboutLicenses')}
           </h3>
           <ul className="flex flex-col gap-1 m-0 p-0 list-none">
             {bootstrap.licenses.map((license) => (

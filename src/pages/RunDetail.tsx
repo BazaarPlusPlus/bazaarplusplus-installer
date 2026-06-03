@@ -10,11 +10,13 @@ import { useNavigate } from 'react-router-dom';
 import type { HistoryBattleRow } from '../types/backend';
 import { useRunDetailPage } from '../features/history/useRunDetailPage';
 import { formatDateTime } from '../features/history/format';
+import { useI18n } from '../i18n/LocaleProvider';
 
 export default function RunDetail() {
   const navigate = useNavigate();
   const page = useRunDetailPage();
   const detail = page.detail;
+  const { t } = useI18n();
 
   return (
     <div className="flex flex-col gap-6 h-full overflow-hidden pb-8 max-w-5xl mx-auto w-full">
@@ -24,17 +26,17 @@ export default function RunDetail() {
         className="flex items-center gap-2 text-[rgba(200,170,120,0.8)] hover:text-[#e8c87a] transition-colors w-fit cinzel text-sm tracking-wider uppercase"
       >
         <ArrowLeft size={16} />
-        返回战绩列表
+        {t('runDetailBack')}
       </button>
 
       {page.loading ? (
         <div className="flex items-center justify-center h-64 text-[rgba(200,170,120,0.65)] gap-2">
           <Loader2 size={18} className="animate-spin" />
-          <span>读取详情中</span>
+          <span>{t('runDetailLoading')}</span>
         </div>
       ) : !detail ? (
         <div className="p-6 bg-[rgba(18,11,5,0.88)] border border-[rgba(180,130,48,0.13)] rounded-sm text-[rgba(200,170,120,0.7)]">
-          {page.error ?? '没有找到这局战绩'}
+          {page.error ?? t('runDetailNotFound')}
         </div>
       ) : (
         <>
@@ -84,28 +86,28 @@ export default function RunDetail() {
                 onClick={page.revealScreenshot}
                 className="flex items-center gap-2 px-4 py-2 bg-[rgba(200,148,55,0.06)] border border-[rgba(180,130,48,0.2)] rounded-sm hover:bg-[rgba(200,148,55,0.12)] disabled:opacity-40 transition-colors text-sm text-[#e8dcc8]"
               >
-                <ImageIcon size={16} /> 打开截图位置
+                <ImageIcon size={16} /> {t('openScreenshotLocation')}
               </button>
             </div>
 
             <div className="flex gap-12 border-t border-[rgba(200,148,55,0.1)] pt-5">
               <StatBlock
-                label="胜 / 负"
+                label={t('statWinLoss')}
                 value={`${detail.run.victories ?? '-'} / ${detail.run.losses ?? '-'}`}
               />
               <StatBlock
-                label="结束日"
+                label={t('statFinalDay')}
                 value={
                   detail.run.final_day ? `Day ${detail.run.final_day}` : '-'
                 }
               />
               <StatBlock
-                label="最终段位"
+                label={t('statFinalRank')}
                 value={detail.run.final_player_rank ?? '-'}
                 isText
               />
               <StatBlock
-                label="最终评分"
+                label={t('statFinalRating')}
                 value={
                   detail.run.final_player_rating === null
                     ? '-'
@@ -146,7 +148,7 @@ export default function RunDetail() {
             <div className="flex-1 overflow-y-auto">
               {detail.battles.length === 0 ? (
                 <div className="px-6 py-8 text-sm text-[rgba(200,170,120,0.55)]">
-                  暂无本地战斗记录
+                  {t('noLocalBattles')}
                 </div>
               ) : (
                 detail.battles.map((battle) => (
@@ -195,6 +197,7 @@ function BattleRow({
   battle: HistoryBattleRow;
   page: ReturnType<typeof useRunDetailPage>;
 }) {
+  const { t } = useI18n();
   const isWin = battle.result === 'win';
   const videoAction = page.action === `video:${battle.battle_id}`;
   const deleteAction = page.action === `delete:${battle.battle_id}`;
@@ -244,7 +247,7 @@ function BattleRow({
               ) : (
                 <Video size={14} />
               )}
-              打开视频位置
+              {t('openVideoLocation')}
             </button>
             <button
               type="button"
@@ -254,7 +257,7 @@ function BattleRow({
                 page.deleteVideo(battle.battle_id, battle.video.video_id)
               }
               className="flex items-center justify-center size-8 rounded-sm hover:bg-[rgba(255,50,50,0.1)] hover:text-[#ff4444] disabled:opacity-40 transition-colors text-[rgba(200,170,120,0.45)]"
-              aria-label="删除视频"
+              aria-label={t('deleteVideo')}
             >
               {deleteAction ? (
                 <Loader2 size={14} className="animate-spin" />
@@ -265,7 +268,7 @@ function BattleRow({
           </>
         ) : (
           <span className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-[rgba(200,170,120,0.4)] cursor-not-allowed">
-            <FileQuestion size={14} /> 无视频
+            <FileQuestion size={14} /> {t('noVideo')}
           </span>
         )}
       </div>

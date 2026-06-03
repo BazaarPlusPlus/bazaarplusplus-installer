@@ -1,5 +1,6 @@
 import { AlertCircle, DownloadCloud, ExternalLink, X } from 'lucide-react';
 import type { useInstallPage } from './useInstallPage';
+import { useI18n } from '../../i18n/LocaleProvider';
 
 type InstallPage = ReturnType<typeof useInstallPage>;
 
@@ -16,24 +17,22 @@ export function InstallConfirmModal({
   onClose: () => void;
   onConfirm: () => void;
 }) {
+  const { t } = useI18n();
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-[2px]">
       <div className="bg-[#0b0906] border border-[rgba(200,148,55,0.18)] rounded-[4px] shadow-[0_24px_64px_rgba(0,0,0,0.5)] w-full max-w-md mx-4 relative animate-[fade-up_0.2s_ease-out]">
         <div className="flex justify-between items-center px-5 py-4 border-b border-[rgba(200,148,55,0.15)] bg-[rgba(200,148,55,0.02)]">
           <div className="flex items-center gap-3">
-            <DownloadCloud
-              size={18}
-              className="text-[rgba(200,148,55,0.8)]"
-            />
+            <DownloadCloud size={18} className="text-[rgba(200,148,55,0.8)]" />
             <h2 className="cinzel text-[1.1rem] text-[#e8dcc8] m-0 tracking-wider">
-              安装 BazaarPlusPlus
+              {t('installModalTitle')}
             </h2>
           </div>
           <button
             type="button"
             onClick={onClose}
             className="text-[rgba(200,170,120,0.6)] hover:text-[#e8dcc8] transition-colors"
-            aria-label="关闭"
+            aria-label={t('close')}
           >
             <X size={20} />
           </button>
@@ -44,10 +43,10 @@ export function InstallConfirmModal({
             <div className="flex justify-between items-center gap-4">
               <div className="flex flex-col gap-1.5">
                 <p className="cinzel text-[10px] tracking-[0.18em] text-[rgba(216,188,123,0.8)] uppercase m-0">
-                  使用教程
+                  {t('tutorialKicker')}
                 </p>
                 <p className="text-[13px] leading-relaxed text-[rgba(200,170,120,0.7)] m-0">
-                  安装会写入 BazaarPlusPlus 与 BepInEx 组件。
+                  {t('installModalBody')}
                 </p>
               </div>
               <a
@@ -56,7 +55,7 @@ export function InstallConfirmModal({
                 rel="noreferrer"
                 className="shrink-0 flex items-center justify-center gap-2 px-3 py-2 border border-[rgba(214,169,84,0.24)] rounded-[3px] bg-gradient-to-b from-[rgba(200,148,55,0.12)] to-[rgba(200,148,55,0.06)] text-[rgba(236,225,202,0.88)] cinzel text-[10px] tracking-[0.12em] uppercase hover:border-[rgba(200,148,55,0.4)] transition-all no-underline"
               >
-                查看教程
+                {t('viewTutorial')}
                 <ExternalLink size={12} />
               </a>
             </div>
@@ -69,8 +68,7 @@ export function InstallConfirmModal({
                 className="mt-0.5 shrink-0 text-[rgba(232,190,120,0.9)]"
               />
               <p className="m-0 text-[13px] leading-relaxed">
-                Steam 正在运行。安装器不会自动关闭 Steam；请先手动退出
-                Steam，再继续安装以确保启动项写入生效。
+                {t('installSteamWarning')}
               </p>
             </div>
           )}
@@ -80,12 +78,10 @@ export function InstallConfirmModal({
               type="checkbox"
               className="mt-1"
               checked={installAcknowledged}
-              onChange={(event) =>
-                onAcknowledgedChange(event.target.checked)
-              }
+              onChange={(event) => onAcknowledgedChange(event.target.checked)}
             />
             <span className="text-[13px] leading-relaxed text-[rgba(232,220,194,0.78)]">
-              我确认安装插件存在风险，并愿意自行承担相关责任
+              {t('installAcknowledge')}
             </span>
           </label>
 
@@ -95,7 +91,7 @@ export function InstallConfirmModal({
               onClick={onClose}
               className="px-5 py-2 bg-[rgba(200,148,55,0.04)] border border-[rgba(180,130,48,0.2)] rounded-sm hover:bg-[rgba(200,148,55,0.1)] transition-colors text-sm text-[#e8dcc8]"
             >
-              取消
+              {t('cancel')}
             </button>
             <button
               type="button"
@@ -103,7 +99,9 @@ export function InstallConfirmModal({
               onClick={onConfirm}
               className="px-5 py-2 rounded-sm text-sm cinzel font-bold tracking-wider transition-all bg-gradient-to-b from-[#d4a040] to-[#9e5c1e] text-[#0b0906] shadow-[0_0_15px_rgba(212,160,64,0.4)] hover:brightness-110 disabled:opacity-45 disabled:hover:brightness-100"
             >
-              {page.action === 'install' ? '安装中...' : '确认安装'}
+              {page.action === 'install'
+                ? t('installing')
+                : t('confirmInstall')}
             </button>
           </div>
         </div>

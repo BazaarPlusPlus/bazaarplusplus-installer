@@ -1,3 +1,5 @@
+import type { MessageKey } from '../../i18n/messages';
+
 const dateTimeFormatter = new Intl.DateTimeFormat('zh-CN', {
   month: '2-digit',
   day: '2-digit',
@@ -12,15 +14,18 @@ export function formatDateTime(value: string | null | undefined) {
   return dateTimeFormatter.format(date);
 }
 
-export function formatRunResultLabel(result: string) {
+export function formatRunResultLabel(result: string): {
+  key: MessageKey;
+  tone: 'ok' | 'bad' | undefined;
+} {
   switch (result) {
     case 'win':
-      return { label: 'VICTORY', tone: 'ok' as const };
+      return { key: 'runResultVictory', tone: 'ok' };
     case 'loss':
-      return { label: 'DEFEAT', tone: 'bad' as const };
+      return { key: 'runResultDefeat', tone: 'bad' };
     case 'abandoned':
-      return { label: 'ABANDONED', tone: 'bad' as const };
+      return { key: 'runResultAbandoned', tone: 'bad' };
     default:
-      return { label: 'ACTIVE', tone: undefined };
+      return { key: 'runResultActive', tone: undefined };
   }
 }

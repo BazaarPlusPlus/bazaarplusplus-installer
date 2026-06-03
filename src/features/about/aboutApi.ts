@@ -6,9 +6,9 @@ import type { AppBootstrap } from '../../types/backend';
 export const fallbackBootstrap: AppBootstrap = {
   app_version: '4.0.0',
   bundled_bpp_version: null,
-  locale: 'zh',
   links: {
     github: 'https://github.com/cauyxy/BazaarPlusPlus',
+    x: 'https://x.com/yxinyu715',
     bilibili_project: 'https://space.bilibili.com/3546978457750467',
     bilibili_author: 'https://space.bilibili.com/1564408396',
     xiaohongshu: '#',
@@ -37,19 +37,18 @@ export async function loadAppBootstrap() {
   return invokeCommand('get_app_bootstrap');
 }
 
-export async function setAppLocale(locale: 'zh' | 'en') {
-  if (!hasTauriRuntime()) {
-    return { locale };
-  }
+export type UpdateCheckResult =
+  | { status: 'preview' }
+  | { status: 'available'; version: string }
+  | { status: 'current' };
 
-  return invokeCommand('set_app_locale', { locale });
-}
-
-export async function checkForUpdate() {
+export async function checkForUpdate(): Promise<UpdateCheckResult> {
   if (!hasTauriRuntime()) {
-    return '当前为浏览器预览环境';
+    return { status: 'preview' };
   }
 
   const update = await check();
-  return update ? `发现新版本 ${update.version}` : '当前已是最新版本';
+  return update
+    ? { status: 'available', version: update.version }
+    : { status: 'current' };
 }

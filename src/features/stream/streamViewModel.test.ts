@@ -27,7 +27,7 @@ const baseStatus: StreamServiceStatus = {
 };
 
 describe('createStreamViewModel', () => {
-  it('shows a starting state while route-enter ensure is loading', () => {
+  it('reports a starting state while route-enter ensure is loading', () => {
     const model = createStreamViewModel({
       status: baseStatus,
       loading: true,
@@ -35,8 +35,8 @@ describe('createStreamViewModel', () => {
       error: null
     });
 
-    expect(model.statusLabel).toBe('Overlay Starting');
-    expect(model.statusDetail).toBe('正在启动本地服务');
+    expect(model.state).toBe('starting');
+    expect(model.message).toBeNull();
     expect(model.canOpenOverlay).toBe(false);
   });
 
@@ -55,8 +55,7 @@ describe('createStreamViewModel', () => {
       error: null
     });
 
-    expect(model.statusLabel).toBe('Overlay Running');
-    expect(model.statusDetail).toBe('Port 17654');
+    expect(model.state).toBe('running');
     expect(model.obsUrl).toBe('http://127.0.0.1:17654/overlay');
     expect(model.canOpenOverlay).toBe(true);
     expect(model.canOpenSettings).toBe(true);
@@ -70,8 +69,8 @@ describe('createStreamViewModel', () => {
       error: 'Port is occupied'
     });
 
-    expect(model.statusLabel).toBe('Overlay Error');
-    expect(model.statusDetail).toBe('Port is occupied');
+    expect(model.state).toBe('error');
+    expect(model.message).toBe('Port is occupied');
     expect(model.canOpenOverlay).toBe(false);
   });
 });

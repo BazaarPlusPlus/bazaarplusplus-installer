@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import type { CSSProperties, ReactNode } from 'react';
 import type { AppBootstrapController } from '../features/about/useAppBootstrap';
+import { useI18n } from '../i18n/LocaleProvider';
 import douyinPng from '../../static/support/douyin.png';
 import xiaohongshuSvg from '../../static/support/xiaohongshu.svg';
 
@@ -92,6 +93,7 @@ function ShellHeaderCorners() {
 }
 
 function ShellBrand() {
+  const { t } = useI18n();
   return (
     <div className="flex items-center gap-3 z-10 ml-6">
       <div
@@ -134,7 +136,7 @@ function ShellBrand() {
           BazaarPlusPlus
         </h1>
         <p className="m-0 italic text-[13px] text-[rgba(200,170,120,0.58)]">
-          因热爱而生
+          {t('kicker')}
         </p>
       </div>
     </div>
@@ -164,6 +166,7 @@ function ShellHeaderActions({
   onCloseBilibili,
   onCloseSupport
 }: ShellHeaderActionsProps) {
+  const { t, toggle } = useI18n();
   return (
     <div className="flex items-center gap-3 z-10 justify-end mr-6">
       <ShellSocialLinks
@@ -190,7 +193,9 @@ function ShellHeaderActions({
           className={app.checkingUpdate ? 'animate-pulse' : ''}
         />
         <span className="inline">
-          {app.checkingUpdate ? '检查中' : '检查更新'}
+          {app.checkingUpdate
+            ? t('headerCheckingUpdate')
+            : t('headerCheckUpdate')}
         </span>
       </button>
       {app.updateMessage && (
@@ -212,7 +217,7 @@ function ShellHeaderActions({
 
       <button
         type="button"
-        onClick={app.changeLocale}
+        onClick={toggle}
         className="flex items-center justify-center size-8 border border-[rgba(200,148,55,0.24)] rounded-[2px] transition-all hover:border-[rgba(200,148,55,0.4)] flex"
         style={{
           background:
@@ -220,10 +225,8 @@ function ShellHeaderActions({
           color: 'rgba(228,216,191,0.82)',
           boxShadow: '0 0 0 1px rgba(255,198,98,0.08) inset'
         }}
-        title={bootstrap.locale === 'en' ? '切换中文' : 'Switch to English'}
-        aria-label={
-          bootstrap.locale === 'en' ? '切换中文' : 'Switch to English'
-        }
+        title={t('languageToggle')}
+        aria-label={t('languageToggle')}
       >
         <Globe size={16} />
       </button>
@@ -325,6 +328,7 @@ function ShellSocialLinks({
   onToggleBilibili: () => void;
   onCloseBilibili: () => void;
 }) {
+  const { t } = useI18n();
   return (
     <div className="flex items-center gap-1 mr-2 flex">
       <a
@@ -349,15 +353,33 @@ function ShellSocialLinks({
           <path d="M9 18c-4.51 2-5-2-7-2" />
         </svg>
       </a>
+      <a
+        href={bootstrap.links.x}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex items-center justify-center size-8 text-[rgba(200,170,120,0.6)] hover:text-[#e8c87a] transition-colors"
+        aria-label="X"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="currentColor"
+          aria-hidden="true"
+        >
+          <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24h-6.66l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+        </svg>
+      </a>
       <QrSocialEntry
         href={bootstrap.links.xiaohongshu}
         accent="#ff2442"
         badge="REDNOTE"
-        label="小红书"
-        qrAlt="作者小红书二维码"
+        label={t('socialXiaohongshu')}
+        qrAlt={t('socialXiaohongshuTitle')}
         qrSrc={xiaohongshuSvg}
-        title="来小红书找我"
-        subtitle="VibeCoding 日常和碎碎念"
+        title={t('socialXiaohongshuTitle')}
+        subtitle={t('socialXiaohongshuSubtitle')}
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -379,12 +401,12 @@ function ShellSocialLinks({
       <QrSocialEntry
         accent="#d4a040"
         badge="DOUYIN"
-        label="抖音"
-        qrAlt="作者抖音二维码"
+        label={t('socialDouyin')}
+        qrAlt={t('socialDouyinTitle')}
         qrSrc={douyinPng}
         qrRound
-        title="来抖音找我"
-        subtitle="短视频、开发切片和日常"
+        title={t('socialDouyinTitle')}
+        subtitle={t('socialDouyinSubtitle')}
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -412,7 +434,7 @@ function ShellSocialLinks({
             color: 'rgba(228,216,191,0.82)',
             boxShadow: '0 0 0 1px rgba(255,198,98,0.06) inset'
           }}
-          aria-label="Bilibili"
+          aria-label={t('socialBilibili')}
           aria-expanded={showBilibili}
         >
           <svg
@@ -432,7 +454,7 @@ function ShellSocialLinks({
             <line x1="9" y1="13" x2="9.01" y2="13" />
             <line x1="15" y1="13" x2="15.01" y2="13" />
           </svg>
-          <span className="whitespace-nowrap">B 站</span>
+          <span className="whitespace-nowrap">{t('socialBilibili')}</span>
         </button>
         {showBilibili && (
           <div className="absolute top-[calc(100%+0.5rem)] left-1/2 w-[260px] bg-[rgba(18,11,5,0.95)] backdrop-blur-md border border-[rgba(200,148,55,0.2)] rounded-sm shadow-[0_16px_40px_rgba(0,0,0,0.6)] p-1.5 z-50 flex flex-col gap-1 transform -translate-x-1/2">
@@ -451,7 +473,7 @@ function ShellSocialLinks({
                   BazaarPlusPlus
                 </span>
                 <span className="text-[10px] text-[rgba(200,170,120,0.5)]">
-                  教程、演示和项目内容
+                  {t('bilibiliProjectSubtitle')}
                 </span>
               </div>
             </a>
@@ -473,7 +495,7 @@ function ShellSocialLinks({
                   小杨不努力
                 </span>
                 <span className="text-[10px] text-[rgba(200,170,120,0.5)]">
-                  VibeCoding 和日常碎碎念
+                  {t('bilibiliAuthorSubtitle')}
                 </span>
               </div>
             </a>
@@ -498,6 +520,7 @@ function ShellSupportMenu({
   onOpenPayment: () => void;
   onCloseSupport: () => void;
 }) {
+  const { t } = useI18n();
   return (
     <div className="relative">
       <button
@@ -512,7 +535,7 @@ function ShellSupportMenu({
         onClick={onToggleSupport}
       >
         <Heart size={14} />
-        <span>支持项目</span>
+        <span>{t('supportProject')}</span>
       </button>
       {showSupport && (
         <div className="absolute top-[calc(100%+0.5rem)] right-0 w-56 bg-[rgba(18,11,5,0.95)] backdrop-blur-md border border-[rgba(200,148,55,0.2)] rounded-sm shadow-[0_16px_40px_rgba(0,0,0,0.6)] p-1.5 z-50 flex flex-col gap-1">
@@ -526,10 +549,10 @@ function ShellSupportMenu({
             </div>
             <div className="flex flex-col">
               <span className="text-sm font-medium text-[#e8dcc8] group-hover:text-[#f4ead5] transition-colors">
-                微信支付
+                {t('wechatPay')}
               </span>
               <span className="text-[10px] text-[rgba(200,170,120,0.5)]">
-                打开收款码
+                {t('wechatPayOpen')}
               </span>
             </div>
           </button>
@@ -551,7 +574,7 @@ function ShellSupportMenu({
                 Ko-fi
               </span>
               <span className="text-[10px] text-[rgba(200,170,120,0.5)]">
-                请作者喝杯咖啡
+                {t('kofiSubtitle')}
               </span>
             </div>
           </a>
@@ -570,10 +593,10 @@ function ShellSupportMenu({
             </div>
             <div className="flex flex-col">
               <span className="text-sm font-medium text-[#e8dcc8] group-hover:text-[#f4ead5] transition-colors">
-                支持者名单
+                {t('supporterList')}
               </span>
               <span className="text-[10px] text-[rgba(200,170,120,0.5)]">
-                查看名单
+                {t('supporterListSubtitle')}
               </span>
             </div>
           </a>

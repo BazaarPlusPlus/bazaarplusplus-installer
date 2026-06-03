@@ -20,7 +20,6 @@ fn load_static_bootstrap() -> AppBootstrapStatic {
 pub struct AppBootstrap {
     pub app_version: String,
     pub bundled_bpp_version: Option<String>,
-    pub locale: String,
     pub links: AppLinks,
     pub credits: Vec<AppCredit>,
     pub licenses: Vec<AppLicense>,
@@ -30,6 +29,7 @@ pub struct AppBootstrap {
 #[ts(export)]
 pub struct AppLinks {
     pub github: String,
+    pub x: String,
     pub bilibili_project: String,
     pub bilibili_author: String,
     pub xiaohongshu: String,
@@ -62,7 +62,6 @@ pub fn get_app_bootstrap(
     AppBootstrap {
         app_version: env!("CARGO_PKG_VERSION").to_string(),
         bundled_bpp_version: startup.bundled_bpp_version.clone(),
-        locale: "zh".to_string(),
         links: static_content.links,
         credits: static_content.credits,
         licenses: static_content.licenses,

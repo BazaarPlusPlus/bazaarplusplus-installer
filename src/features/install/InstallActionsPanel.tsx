@@ -10,6 +10,7 @@ import {
 import type { useInstallPage } from './useInstallPage';
 import { InstallActionButton } from './InstallActionButton';
 import { InstallFactItem } from './InstallFactItem';
+import { useI18n } from '../../i18n/LocaleProvider';
 
 type InstallPage = ReturnType<typeof useInstallPage>;
 
@@ -22,12 +23,13 @@ export function InstallActionsPanel({
   primaryMode: 'install' | 'reinstall' | 'launch';
   onOpenInstallModal: () => void;
 }) {
+  const { t } = useI18n();
   return (
     <div className="col-span-5 flex flex-col gap-6">
       <div className="p-5 bg-[rgba(18,11,5,0.88)] border border-[rgba(180,130,48,0.13)] rounded-sm shadow-[0_6px_28px_rgba(0,0,0,0.35)] flex flex-col gap-5 h-full">
         <section className="flex-1 flex flex-col">
           <h2 className="cinzel text-xs tracking-widest text-[rgba(220,195,145,0.8)] mb-3 uppercase">
-            安装操作
+            {t('installActionsHeading')}
           </h2>
           <div className="flex flex-col gap-5 flex-1">
             <div className="text-center pb-2">
@@ -45,11 +47,14 @@ export function InstallActionsPanel({
                 label="BazaarPlusPlus"
                 value={
                   page.state.mod_state.installed
-                    ? 'Installed'
-                    : 'Not Installed'
+                    ? t('installed')
+                    : t('notInstalled')
                 }
               />
-              <InstallFactItem label=".NET Runtime" value={page.status.dotnet} />
+              <InstallFactItem
+                label=".NET Runtime"
+                value={page.status.dotnet}
+              />
             </ul>
 
             {page.state.warnings.length > 0 && (
@@ -82,14 +87,14 @@ export function InstallActionsPanel({
                 busy={page.action === 'repair'}
                 onClick={page.repair}
                 icon={<Wrench size={14} />}
-                label="修复"
+                label={t('actionRepair')}
               />
               <InstallActionButton
                 disabled={page.busy || !page.state.actions.can_uninstall}
                 busy={page.action === 'uninstall'}
                 onClick={page.uninstall}
                 icon={<Trash2 size={14} />}
-                label="卸载"
+                label={t('actionUninstall')}
                 danger
               />
             </div>
@@ -109,6 +114,7 @@ function PrimaryActionButton({
   primaryMode: 'install' | 'reinstall' | 'launch';
   onOpenInstallModal: () => void;
 }) {
+  const { t } = useI18n();
   if (primaryMode === 'launch') {
     return (
       <button
@@ -122,7 +128,7 @@ function PrimaryActionButton({
         ) : (
           <Play size={20} fill="currentColor" />
         )}
-        启动游戏
+        {t('launchGame')}
       </button>
     );
   }
@@ -142,7 +148,7 @@ function PrimaryActionButton({
         ) : (
           <RefreshCw size={20} />
         )}
-        重新安装
+        {t('actionReinstall')}
       </button>
     );
   }
@@ -159,7 +165,7 @@ function PrimaryActionButton({
       ) : (
         <DownloadCloud size={20} />
       )}
-      安装
+      {t('actionInstall')}
     </button>
   );
 }

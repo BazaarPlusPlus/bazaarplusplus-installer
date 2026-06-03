@@ -1,5 +1,7 @@
 import type { StreamServiceStatus } from '../../types/backend';
 
+export type StreamOverlayState = 'error' | 'starting' | 'running' | 'idle';
+
 export interface StreamViewModelInput {
   status: StreamServiceStatus;
   loading: boolean;
@@ -8,8 +10,9 @@ export interface StreamViewModelInput {
 }
 
 export interface StreamViewModel {
-  statusLabel: string;
-  statusDetail: string;
+  state: StreamOverlayState;
+  // Backend-provided error text (only set when state is 'error'); not localized.
+  message: string | null;
   obsUrl: string | null;
   settingsUrl: string | null;
   canOpenOverlay: boolean;
@@ -29,8 +32,8 @@ export function createStreamViewModel(
 
   if (message) {
     return {
-      statusLabel: 'Overlay Error',
-      statusDetail: message,
+      state: 'error',
+      message,
       obsUrl,
       settingsUrl,
       canOpenOverlay: false,
@@ -42,8 +45,8 @@ export function createStreamViewModel(
 
   if (input.loading) {
     return {
-      statusLabel: 'Overlay Starting',
-      statusDetail: '正在启动本地服务',
+      state: 'starting',
+      message: null,
       obsUrl,
       settingsUrl,
       canOpenOverlay: false,
@@ -54,11 +57,8 @@ export function createStreamViewModel(
   }
 
   return {
-    statusLabel: running ? 'Overlay Running' : 'Overlay Idle',
-    statusDetail:
-      running && input.status.port
-        ? `Port ${input.status.port}`
-        : '服务尚未启动',
+    state: running ? 'running' : 'idle',
+    message: null,
     obsUrl,
     settingsUrl,
     canOpenOverlay: running && obsUrl !== null,

@@ -1,7 +1,9 @@
 import { X } from 'lucide-react';
 import wechatPaySvg from '../../static/support/wechat-pay.svg';
+import { useI18n } from '../i18n/LocaleProvider';
 
 export function ShellPaymentModal({ onClose }: { onClose: () => void }) {
+  const { t } = useI18n();
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-[2px]">
       <div className="bg-[#0b0906] border border-[rgba(200,148,55,0.18)] rounded-[4px] shadow-[0_24px_64px_rgba(0,0,0,0.5)] w-full max-w-md mx-4 relative animate-[fade-up_0.2s_ease-out]">
@@ -11,14 +13,14 @@ export function ShellPaymentModal({ onClose }: { onClose: () => void }) {
               BazaarPlusPlus
             </p>
             <h2 className="cinzel text-[1.1rem] text-[#e8dcc8] m-0">
-              支持项目
+              {t('supportProject')}
             </h2>
           </div>
           <button
             type="button"
             onClick={onClose}
             className="text-[rgba(200,170,120,0.6)] hover:text-[#e8dcc8] transition-colors"
-            aria-label="关闭"
+            aria-label={t('close')}
           >
             <X size={20} />
           </button>
@@ -44,20 +46,20 @@ export function ShellPaymentModal({ onClose }: { onClose: () => void }) {
 
             <div className="flex flex-col gap-[0.18rem] z-10">
               <h3 className="m-0 cinzel text-[0.82rem] tracking-[0.04em] text-[rgba(238,220,182,0.94)]">
-                微信支付
+                {t('wechatPay')}
               </h3>
               <p className="m-0 text-[0.66rem] leading-[1.45] text-[rgba(200,170,120,0.8)]">
-                请 Bazaar++ 喝一杯
+                {t('wechatPayTagline')}
               </p>
             </div>
           </article>
 
           <div className="flex flex-col gap-1 mt-2">
             <p className="m-0 text-[0.76rem] leading-[1.6] text-[rgba(214,190,146,0.76)]">
-              有你支持，Bazaar++ 会冒出更多好东西
+              {t('supportLine1')}
             </p>
             <p className="m-0 text-[0.72rem] leading-[1.65] text-[rgba(240,220,184,0.82)] max-w-[28rem]">
-              如果愿意，欢迎在备注里留一个支持者 ID
+              {t('supportLine2')}
             </p>
           </div>
         </div>

@@ -2,14 +2,24 @@ import { NavLink } from 'react-router-dom';
 import type { ReactNode } from 'react';
 import { Download, History, Info, MonitorPlay } from 'lucide-react';
 import clsx from 'clsx';
+import { useI18n } from '../i18n/LocaleProvider';
 
 export function ShellNavRail() {
+  const { t } = useI18n();
   return (
     <nav className="flex-none w-48 border-r border-[rgba(200,148,55,0.18)] bg-[#0b0906] flex flex-col py-6 z-0 flex">
-      <RailItem to="/" icon={<Download size={18} />} label="安装" />
-      <RailItem to="/history" icon={<History size={18} />} label="战绩" />
-      <RailItem to="/stream" icon={<MonitorPlay size={18} />} label="直播" />
-      <RailItem to="/about" icon={<Info size={18} />} label="关于" />
+      <RailItem to="/" icon={<Download size={18} />} label={t('navInstall')} />
+      <RailItem
+        to="/history"
+        icon={<History size={18} />}
+        label={t('navHistory')}
+      />
+      <RailItem
+        to="/stream"
+        icon={<MonitorPlay size={18} />}
+        label={t('navStream')}
+      />
+      <RailItem to="/about" icon={<Info size={18} />} label={t('navAbout')} />
     </nav>
   );
 }
