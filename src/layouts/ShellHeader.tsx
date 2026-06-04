@@ -97,7 +97,7 @@ function ShellBrand() {
   return (
     <div className="flex items-center gap-3 z-10 ml-6">
       <div
-        className="text-[rgba(205,150,60,0.65)] animate-[spin_45s_linear_infinite] flex-shrink-0"
+        className="text-[rgba(205,150,60,0.65)] flex-shrink-0"
         style={{ filter: 'drop-shadow(0 0 7px rgba(205,150,60,0.22))' }}
       >
         <svg width="28" height="28" viewBox="0 0 44 44" fill="none">
@@ -135,7 +135,7 @@ function ShellBrand() {
         >
           BazaarPlusPlus
         </h1>
-        <p className="m-0 italic text-[13px] text-[rgba(200,170,120,0.58)]">
+        <p className="m-0 italic text-[13px] text-[rgba(200,170,120,0.8)]">
           {t('kicker')}
         </p>
       </div>
@@ -200,7 +200,7 @@ function ShellHeaderActions({
       </button>
       {app.updateMessage && (
         <span
-          className="max-w-36 truncate text-[10px] text-[rgba(200,170,120,0.62)]"
+          className="max-w-36 truncate text-[10px] text-[rgba(200,170,120,0.8)]"
           title={app.updateMessage}
         >
           {app.updateMessage}
@@ -218,7 +218,7 @@ function ShellHeaderActions({
       <button
         type="button"
         onClick={toggle}
-        className="flex items-center justify-center size-8 border border-[rgba(200,148,55,0.24)] rounded-[2px] transition-all hover:border-[rgba(200,148,55,0.4)] flex"
+        className="flex items-center justify-center size-8 border border-[rgba(200,148,55,0.24)] rounded-[2px] transition-all hover:border-[rgba(200,148,55,0.4)]"
         style={{
           background:
             'linear-gradient(180deg, rgba(200,148,55,0.12), rgba(200,148,55,0.06))',
@@ -260,7 +260,7 @@ function QrSocialEntry({
   children
 }: QrSocialEntryProps) {
   const triggerClassName =
-    'flex items-center justify-center size-8 text-[rgba(200,170,120,0.6)] hover:text-[var(--social-accent)] focus-visible:text-[var(--social-accent)] transition-colors';
+    'flex items-center justify-center size-8 text-[rgba(200,170,120,0.72)] hover:text-[var(--social-accent)] focus-visible:text-[var(--social-accent)] transition-colors';
 
   const trigger = href ? (
     <a
@@ -330,12 +330,12 @@ function ShellSocialLinks({
 }) {
   const { t } = useI18n();
   return (
-    <div className="flex items-center gap-1 mr-2 flex">
+    <div className="flex items-center gap-1 mr-2">
       <a
         href={bootstrap.links.github}
         target="_blank"
         rel="noopener noreferrer"
-        className="flex items-center justify-center size-8 text-[rgba(200,170,120,0.6)] hover:text-[#e8c87a] transition-colors"
+        className="flex items-center justify-center size-8 text-[rgba(200,170,120,0.72)] hover:text-[#e8c87a] transition-colors"
         aria-label="GitHub"
       >
         <svg
@@ -357,7 +357,7 @@ function ShellSocialLinks({
         href={bootstrap.links.x}
         target="_blank"
         rel="noopener noreferrer"
-        className="flex items-center justify-center size-8 text-[rgba(200,170,120,0.6)] hover:text-[#e8c87a] transition-colors"
+        className="flex items-center justify-center size-8 text-[rgba(200,170,120,0.72)] hover:text-[#e8c87a] transition-colors"
         aria-label="X"
       >
         <svg
@@ -423,7 +423,7 @@ function ShellSocialLinks({
           <path d="M14 6c1.35 2.25 3.1 3.5 5 3.8" />
         </svg>
       </QrSocialEntry>
-      <div className="relative">
+      <div className="relative" data-dropdown>
         <button
           type="button"
           onClick={onToggleBilibili}
@@ -472,7 +472,7 @@ function ShellSocialLinks({
                 <span className="text-sm font-medium text-[#e8dcc8] group-hover:text-[#f4ead5] transition-colors">
                   BazaarPlusPlus
                 </span>
-                <span className="text-[10px] text-[rgba(200,170,120,0.5)]">
+                <span className="text-[10px] text-[rgba(200,170,120,0.8)]">
                   {t('bilibiliProjectSubtitle')}
                 </span>
               </div>
@@ -494,7 +494,7 @@ function ShellSocialLinks({
                 <span className="text-sm font-medium text-[#e8dcc8] group-hover:text-[#f4ead5] transition-colors">
                   小杨不努力
                 </span>
-                <span className="text-[10px] text-[rgba(200,170,120,0.5)]">
+                <span className="text-[10px] text-[rgba(200,170,120,0.8)]">
                   {t('bilibiliAuthorSubtitle')}
                 </span>
               </div>
@@ -551,7 +551,7 @@ function ShellSupportMenu({
               <span className="text-sm font-medium text-[#e8dcc8] group-hover:text-[#f4ead5] transition-colors">
                 {t('wechatPay')}
               </span>
-              <span className="text-[10px] text-[rgba(200,170,120,0.5)]">
+              <span className="text-[10px] text-[rgba(200,170,120,0.8)]">
                 {t('wechatPayOpen')}
               </span>
             </div>
@@ -573,7 +573,7 @@ function ShellSupportMenu({
               <span className="text-sm font-medium text-[#e8dcc8] group-hover:text-[#f4ead5] transition-colors">
                 Ko-fi
               </span>
-              <span className="text-[10px] text-[rgba(200,170,120,0.5)]">
+              <span className="text-[10px] text-[rgba(200,170,120,0.8)]">
                 {t('kofiSubtitle')}
               </span>
             </div>
@@ -595,7 +595,7 @@ function ShellSupportMenu({
               <span className="text-sm font-medium text-[#e8dcc8] group-hover:text-[#f4ead5] transition-colors">
                 {t('supporterList')}
               </span>
-              <span className="text-[10px] text-[rgba(200,170,120,0.5)]">
+              <span className="text-[10px] text-[rgba(200,170,120,0.8)]">
                 {t('supporterListSubtitle')}
               </span>
             </div>

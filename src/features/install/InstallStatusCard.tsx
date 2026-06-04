@@ -16,7 +16,7 @@ export function InstallStatusCard({
       <div className="min-w-0">
         <h3 className="cinzel font-bold text-[#e8dcc8]">{title}</h3>
         <p
-          className="fira-code text-xs text-[rgba(200,170,120,0.5)] mt-1 truncate"
+          className="fira-code text-xs text-[rgba(200,170,120,0.8)] mt-1 truncate selectable"
           title={detail}
         >
           {detail}

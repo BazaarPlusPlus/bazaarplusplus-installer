@@ -9,7 +9,7 @@ export function LoadingPanel({
 }) {
   return (
     <div
-      className={`flex items-center justify-center ${className} text-[rgba(200,170,120,0.6)] gap-2`}
+      className={`flex items-center justify-center ${className} text-[rgba(200,170,120,0.8)] gap-2`}
     >
       <Loader2 size={18} className="animate-spin" />
       <span className="text-sm">{label}</span>

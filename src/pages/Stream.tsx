@@ -76,7 +76,7 @@ export default function Stream() {
                 <h3 className="font-bold text-[#e8dcc8] flex items-center gap-2">
                   {statusLabel}
                 </h3>
-                <p className="text-xs text-[rgba(200,170,120,0.6)] fira-code mt-0.5">
+                <p className="text-xs text-[rgba(200,170,120,0.8)] fira-code mt-0.5">
                   {statusDetail}
                   {status.running ? ` · ${dbLabel}` : ''}
                 </p>
@@ -118,7 +118,7 @@ export default function Stream() {
             <div className="flex gap-2">
               <div
                 id="stream-obs-url"
-                className="flex-1 px-3 py-2 bg-[rgba(0,0,0,0.4)] border border-[rgba(180,130,48,0.2)] rounded-sm fira-code text-sm text-[rgba(228,216,191,0.8)] overflow-hidden text-ellipsis whitespace-nowrap"
+                className="flex-1 px-3 py-2 bg-[rgba(0,0,0,0.4)] border border-[rgba(180,130,48,0.2)] rounded-sm fira-code text-sm text-[rgba(228,216,191,0.8)] overflow-hidden text-ellipsis whitespace-nowrap selectable"
                 aria-labelledby="stream-obs-url-label"
               >
                 {viewModel.obsUrl ?? t('streamObsPlaceholder')}
@@ -134,6 +134,8 @@ export default function Stream() {
             </div>
             {(page.message || page.error) && (
               <p
+                role={page.error ? 'alert' : 'status'}
+                aria-live={page.error ? 'assertive' : 'polite'}
                 className={`m-0 text-xs ${
                   page.error
                     ? 'text-[#d96d6d]'
@@ -221,7 +223,7 @@ export default function Stream() {
               ))}
             </div>
 
-            <div className="flex gap-2 mt-2">
+            <div className="flex flex-wrap gap-2 mt-2">
               <label htmlFor="stream-crop-code" className="sr-only">
                 {t('streamCropCodeLabel')}
               </label>
@@ -231,7 +233,7 @@ export default function Stream() {
                 placeholder={t('streamCropCodePlaceholder')}
                 value={page.cropCode}
                 onChange={(event) => page.setCropCode(event.target.value)}
-                className="flex-1 min-w-0 px-3 py-2 bg-[rgba(0,0,0,0.4)] border border-[rgba(180,130,48,0.2)] rounded-sm fira-code text-sm text-[rgba(228,216,191,0.8)] focus:outline-none focus:border-[rgba(200,148,55,0.6)]"
+                className="flex-1 min-w-[12rem] px-3 py-2 bg-[rgba(0,0,0,0.4)] border border-[rgba(180,130,48,0.2)] rounded-sm fira-code text-sm text-[rgba(228,216,191,0.8)] focus:border-[rgba(200,148,55,0.6)]"
               />
               <button
                 type="button"
@@ -244,7 +246,7 @@ export default function Stream() {
               <button
                 type="button"
                 onClick={page.resetCropCode}
-                className="shrink-0 whitespace-nowrap px-4 py-2 bg-transparent border border-transparent hover:bg-[rgba(255,255,255,0.05)] rounded-sm transition-colors text-sm text-[rgba(200,170,120,0.6)]"
+                className="shrink-0 whitespace-nowrap px-4 py-2 bg-transparent border border-transparent hover:bg-[rgba(255,255,255,0.05)] rounded-sm transition-colors text-sm text-[rgba(200,170,120,0.8)]"
               >
                 {t('streamResetCrop')}
               </button>
@@ -267,7 +269,7 @@ export default function Stream() {
 function InfoMetric({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex flex-col gap-1">
-      <span className="text-[10px] text-[rgba(200,170,120,0.5)]">{label}</span>
+      <span className="text-[10px] text-[rgba(200,170,120,0.8)]">{label}</span>
       <span className="text-xs fira-code text-[#e8dcc8]">{value}</span>
     </div>
   );

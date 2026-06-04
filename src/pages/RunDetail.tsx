@@ -7,6 +7,7 @@ import {
   Video
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { ErrorBanner } from '../components/ui/ErrorBanner';
 import type { HistoryBattleRow } from '../types/backend';
 import { useRunDetailPage } from '../features/history/useRunDetailPage';
 import { formatDateTime } from '../features/history/format';
@@ -30,33 +31,29 @@ export default function RunDetail() {
       </button>
 
       {page.loading ? (
-        <div className="flex items-center justify-center h-64 text-[rgba(200,170,120,0.65)] gap-2">
+        <div className="flex items-center justify-center h-64 text-[rgba(200,170,120,0.8)] gap-2">
           <Loader2 size={18} className="animate-spin" />
           <span>{t('runDetailLoading')}</span>
         </div>
       ) : !detail ? (
-        <div className="p-6 bg-[rgba(18,11,5,0.88)] border border-[rgba(180,130,48,0.13)] rounded-sm text-[rgba(200,170,120,0.7)]">
+        <div className="p-6 bg-[rgba(18,11,5,0.88)] border border-[rgba(180,130,48,0.13)] rounded-sm text-[rgba(200,170,120,0.8)]">
           {page.error ?? t('runDetailNotFound')}
         </div>
       ) : (
         <>
-          {page.error && (
-            <p className="m-0 px-4 py-3 border border-[rgba(217,109,109,0.28)] bg-[rgba(217,109,109,0.08)] text-[#d96d6d] text-sm">
-              {page.error}
-            </p>
-          )}
+          {page.error && <ErrorBanner message={page.error} />}
 
           <div className="p-6 bg-[rgba(18,11,5,0.88)] border border-[rgba(180,130,48,0.13)] rounded-sm shadow-[0_6px_28px_rgba(0,0,0,0.35)] flex flex-col gap-6">
             <div className="flex justify-between items-start">
               <div className="flex flex-col gap-1 min-w-0">
                 <h2 className="cinzel-decorative text-2xl font-bold text-[#e8dcc8] m-0 truncate">
                   {detail.run.hero}
-                  <span className="text-[rgba(200,170,120,0.5)]">
+                  <span className="text-[rgba(200,170,120,0.8)]">
                     {' '}
                     · {detail.run.result.toUpperCase()}
                   </span>
                 </h2>
-                <div className="flex flex-wrap items-center gap-3 fira-code text-xs text-[rgba(200,170,120,0.6)]">
+                <div className="flex flex-wrap items-center gap-3 fira-code text-xs text-[rgba(200,170,120,0.8)] selectable">
                   <span>Player {detail.run.player_name ?? '-'}</span>
                   <span>•</span>
                   <span>{detail.run.game_mode}</span>
@@ -126,7 +123,7 @@ export default function RunDetail() {
               ) : (
                 <>
                   <div className="absolute inset-0 bg-gradient-to-r from-[rgba(20,10,5,0.8)] via-transparent to-[rgba(20,10,5,0.8)] z-10" />
-                  <span className="absolute z-20 text-[rgba(200,170,120,0.5)] flex items-center gap-2 cinzel tracking-widest text-xs uppercase">
+                  <span className="absolute z-20 text-[rgba(200,170,120,0.8)] flex items-center gap-2 cinzel tracking-widest text-xs uppercase">
                     <ImageIcon size={16} /> End of Run Screenshot
                   </span>
                 </>
@@ -135,30 +132,32 @@ export default function RunDetail() {
           </div>
 
           <div className="flex-1 flex flex-col bg-[rgba(18,11,5,0.88)] border border-[rgba(180,130,48,0.13)] rounded-sm shadow-[0_6px_28px_rgba(0,0,0,0.35)] overflow-hidden">
-            <div className="grid grid-cols-7 gap-4 px-6 py-3 border-b border-[rgba(200,148,55,0.15)] bg-[rgba(200,148,55,0.02)] cinzel text-[10px] tracking-widest text-[rgba(200,170,120,0.6)] uppercase">
-              <div>Day</div>
-              <div>Result</div>
-              <div>Opponent Hero</div>
-              <div>Opponent Player</div>
-              <div>Rank</div>
-              <div>Rating</div>
-              <div className="text-right">Video</div>
-            </div>
-
-            <div className="flex-1 overflow-y-auto">
-              {detail.battles.length === 0 ? (
-                <div className="px-6 py-8 text-sm text-[rgba(200,170,120,0.55)]">
-                  {t('noLocalBattles')}
+            <div className="flex-1 overflow-auto custom-scrollbar">
+              <div className="min-w-[720px]">
+                <div className="grid grid-cols-7 gap-4 px-6 py-3 border-b border-[rgba(200,148,55,0.15)] bg-[rgba(200,148,55,0.02)] cinzel text-[10px] tracking-widest text-[rgba(200,170,120,0.8)] uppercase">
+                  <div>Day</div>
+                  <div>Result</div>
+                  <div>Opponent Hero</div>
+                  <div>Opponent Player</div>
+                  <div>Rank</div>
+                  <div>Rating</div>
+                  <div className="text-right">Video</div>
                 </div>
-              ) : (
-                detail.battles.map((battle) => (
-                  <BattleRow
-                    key={battle.battle_id}
-                    battle={battle}
-                    page={page}
-                  />
-                ))
-              )}
+
+                {detail.battles.length === 0 ? (
+                  <div className="px-6 py-8 text-sm text-[rgba(200,170,120,0.8)]">
+                    {t('noLocalBattles')}
+                  </div>
+                ) : (
+                  detail.battles.map((battle) => (
+                    <BattleRow
+                      key={battle.battle_id}
+                      battle={battle}
+                      page={page}
+                    />
+                  ))
+                )}
+              </div>
             </div>
           </div>
         </>
@@ -178,7 +177,7 @@ function StatBlock({
 }) {
   return (
     <div className="flex flex-col gap-1">
-      <span className="cinzel text-[10px] tracking-widest text-[rgba(200,170,120,0.5)] uppercase">
+      <span className="cinzel text-[10px] tracking-widest text-[rgba(200,170,120,0.8)] uppercase">
         {label}
       </span>
       <span
@@ -204,7 +203,10 @@ function BattleRow({
 
   return (
     <div className="grid grid-cols-7 gap-4 px-6 py-4 border-b border-[rgba(200,148,55,0.05)] items-center relative group hover:bg-[rgba(200,148,55,0.03)] transition-colors">
-      <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-[0.02] flex items-center justify-center">
+      <div
+        aria-hidden="true"
+        className="absolute inset-0 overflow-hidden pointer-events-none opacity-[0.02] flex items-center justify-center"
+      >
         <span className="cinzel-decorative text-8xl font-bold text-[#e8c87a]">
           {battle.opponent_hero ?? '-'}
         </span>
@@ -256,7 +258,7 @@ function BattleRow({
                 battle.video &&
                 page.deleteVideo(battle.battle_id, battle.video.video_id)
               }
-              className="flex items-center justify-center size-8 rounded-sm hover:bg-[rgba(255,50,50,0.1)] hover:text-[#ff4444] disabled:opacity-40 transition-colors text-[rgba(200,170,120,0.45)]"
+              className="flex items-center justify-center size-8 rounded-sm hover:bg-[rgba(255,50,50,0.1)] hover:text-[#ff4444] disabled:opacity-40 transition-colors text-[rgba(200,170,120,0.72)]"
               aria-label={t('deleteVideo')}
             >
               {deleteAction ? (
@@ -267,7 +269,7 @@ function BattleRow({
             </button>
           </>
         ) : (
-          <span className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-[rgba(200,170,120,0.4)] cursor-not-allowed">
+          <span className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-[rgba(200,170,120,0.6)] cursor-not-allowed">
             <FileQuestion size={14} /> {t('noVideo')}
           </span>
         )}

@@ -11,9 +11,9 @@ export function InstallStatusPanel({ page }: { page: InstallPage }) {
     <div className="col-span-7 flex flex-col gap-6">
       <div className="p-5 bg-[rgba(18,11,5,0.88)] border border-[rgba(180,130,48,0.13)] rounded-sm shadow-[0_6px_28px_rgba(0,0,0,0.35)] flex flex-col gap-6 h-full">
         <section>
-          <h2 className="cinzel text-xs tracking-widest text-[rgba(220,195,145,0.8)] mb-3 uppercase">
+          <h3 className="cinzel text-xs tracking-widest text-[rgba(220,195,145,0.8)] mb-3 uppercase">
             {t('currentStatusHeading')}
-          </h2>
+          </h3>
           <div className="grid gap-3">
             <InstallStatusCard
               title="The Bazaar"
@@ -35,9 +35,9 @@ export function InstallStatusPanel({ page }: { page: InstallPage }) {
         </section>
 
         <section className="mt-auto">
-          <h2 className="cinzel text-xs tracking-widest text-[rgba(220,195,145,0.8)] mb-3 uppercase">
+          <h3 className="cinzel text-xs tracking-widest text-[rgba(220,195,145,0.8)] mb-3 uppercase">
             {t('gamePathHeading')}
-          </h2>
+          </h3>
           <div className="p-4 bg-[rgba(18,11,5,0.88)] border border-[rgba(180,130,48,0.13)] rounded-sm shadow-[0_6px_28px_rgba(0,0,0,0.35)]">
             <div className="flex items-center gap-3 fira-code text-sm text-[#e8dcc8] mb-4 overflow-hidden">
               <FolderOpen

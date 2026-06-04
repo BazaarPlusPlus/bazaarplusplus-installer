@@ -28,9 +28,9 @@ export function InstallActionsPanel({
     <div className="col-span-5 flex flex-col gap-6">
       <div className="p-5 bg-[rgba(18,11,5,0.88)] border border-[rgba(180,130,48,0.13)] rounded-sm shadow-[0_6px_28px_rgba(0,0,0,0.35)] flex flex-col gap-5 h-full">
         <section className="flex-1 flex flex-col">
-          <h2 className="cinzel text-xs tracking-widest text-[rgba(220,195,145,0.8)] mb-3 uppercase">
+          <h3 className="cinzel text-xs tracking-widest text-[rgba(220,195,145,0.8)] mb-3 uppercase">
             {t('installActionsHeading')}
-          </h2>
+          </h3>
           <div className="flex flex-col gap-5 flex-1">
             <div className="text-center pb-2">
               <PrimaryActionButton
@@ -58,7 +58,7 @@ export function InstallActionsPanel({
             </ul>
 
             {page.state.warnings.length > 0 && (
-              <div className="flex flex-col gap-2">
+              <div className="flex flex-col gap-2" role="status" aria-live="polite">
                 {page.state.warnings.map((warning) => (
                   <p
                     key={warning.code}
@@ -73,7 +73,9 @@ export function InstallActionsPanel({
 
             {(page.error || page.message) && (
               <p
-                className={`m-0 text-xs ${page.error ? 'text-[#d96d6d]' : 'text-[#6dd9a0]'}`}
+                role={page.error ? 'alert' : 'status'}
+                aria-live={page.error ? 'assertive' : 'polite'}
+                className={`m-0 text-xs selectable ${page.error ? 'text-[#d96d6d]' : 'text-[#6dd9a0]'}`}
               >
                 {page.error ?? page.message}
               </p>
@@ -121,7 +123,7 @@ function PrimaryActionButton({
         type="button"
         disabled={!page.state.actions.can_launch || page.action === 'launch'}
         onClick={page.launch}
-        className="w-full py-4 bg-gradient-to-b from-[#d4a040] to-[#9e5c1e] text-[#0b0906] font-bold cinzel tracking-wider rounded-sm shadow-[0_0_15px_rgba(212,160,64,0.4)] hover:brightness-110 disabled:opacity-45 disabled:hover:brightness-100 transition-all flex items-center justify-center gap-2 text-lg"
+        className="w-full py-4 bg-gradient-to-b from-[#d4a040] to-[#9e5c1e] text-[#0b0906] font-bold cinzel tracking-wider rounded-sm shadow-[0_0_15px_rgba(212,160,64,0.4)] hover:brightness-110 active:brightness-95 disabled:opacity-45 disabled:hover:brightness-100 transition-all flex items-center justify-center gap-2 text-lg"
       >
         {page.action === 'launch' ? (
           <Loader2 size={20} className="animate-spin" />
@@ -141,7 +143,7 @@ function PrimaryActionButton({
           !page.state.actions.can_reinstall || page.action === 'install'
         }
         onClick={onOpenInstallModal}
-        className="w-full py-4 bg-gradient-to-b from-[#d24a4a] to-[#8e1e1e] text-[#fdeaea] font-bold cinzel tracking-wider rounded-sm shadow-[0_0_15px_rgba(200,60,60,0.4)] hover:brightness-110 disabled:opacity-45 disabled:hover:brightness-100 transition-all flex items-center justify-center gap-2 text-lg"
+        className="w-full py-4 bg-gradient-to-b from-[#d24a4a] to-[#8e1e1e] text-[#fdeaea] font-bold cinzel tracking-wider rounded-sm shadow-[0_0_15px_rgba(200,60,60,0.4)] hover:brightness-110 active:brightness-95 disabled:opacity-45 disabled:hover:brightness-100 transition-all flex items-center justify-center gap-2 text-lg"
       >
         {page.action === 'install' ? (
           <Loader2 size={20} className="animate-spin" />
@@ -158,7 +160,7 @@ function PrimaryActionButton({
       type="button"
       disabled={!page.state.actions.can_install || page.action === 'install'}
       onClick={onOpenInstallModal}
-      className="w-full py-4 bg-gradient-to-b from-[#d4a040] to-[#9e5c1e] text-[#0b0906] font-bold cinzel tracking-wider rounded-sm shadow-[0_0_15px_rgba(212,160,64,0.4)] hover:brightness-110 disabled:opacity-45 disabled:hover:brightness-100 transition-all flex items-center justify-center gap-2 text-lg"
+      className="w-full py-4 bg-gradient-to-b from-[#d4a040] to-[#9e5c1e] text-[#0b0906] font-bold cinzel tracking-wider rounded-sm shadow-[0_0_15px_rgba(212,160,64,0.4)] hover:brightness-110 active:brightness-95 disabled:opacity-45 disabled:hover:brightness-100 transition-all flex items-center justify-center gap-2 text-lg"
     >
       {page.action === 'install' ? (
         <Loader2 size={20} className="animate-spin" />

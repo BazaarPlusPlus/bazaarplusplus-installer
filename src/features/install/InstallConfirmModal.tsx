@@ -1,5 +1,6 @@
 import { AlertCircle, DownloadCloud, ExternalLink, X } from 'lucide-react';
 import type { useInstallPage } from './useInstallPage';
+import { Dialog } from '../../components/ui/Dialog';
 import { useI18n } from '../../i18n/LocaleProvider';
 
 type InstallPage = ReturnType<typeof useInstallPage>;
@@ -19,19 +20,22 @@ export function InstallConfirmModal({
 }) {
   const { t } = useI18n();
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-[2px]">
-      <div className="bg-[#0b0906] border border-[rgba(200,148,55,0.18)] rounded-[4px] shadow-[0_24px_64px_rgba(0,0,0,0.5)] w-full max-w-md mx-4 relative animate-[fade-up_0.2s_ease-out]">
+    <Dialog onClose={onClose} labelledBy="install-modal-title">
+      <div className="bg-[#0b0906] border border-[rgba(200,148,55,0.18)] rounded-[4px] shadow-[0_24px_64px_rgba(0,0,0,0.5)] w-full max-w-md mx-4 relative">
         <div className="flex justify-between items-center px-5 py-4 border-b border-[rgba(200,148,55,0.15)] bg-[rgba(200,148,55,0.02)]">
           <div className="flex items-center gap-3">
             <DownloadCloud size={18} className="text-[rgba(200,148,55,0.8)]" />
-            <h2 className="cinzel text-[1.1rem] text-[#e8dcc8] m-0 tracking-wider">
+            <h2
+              id="install-modal-title"
+              className="cinzel text-[1.1rem] text-[#e8dcc8] m-0 tracking-wider"
+            >
               {t('installModalTitle')}
             </h2>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="text-[rgba(200,170,120,0.6)] hover:text-[#e8dcc8] transition-colors"
+            className="text-[rgba(200,170,120,0.72)] hover:text-[#e8dcc8] transition-colors"
             aria-label={t('close')}
           >
             <X size={20} />
@@ -73,7 +77,7 @@ export function InstallConfirmModal({
             </div>
           )}
 
-          <label className="flex items-start gap-3 p-3 border border-[rgba(200,148,55,0.18)] rounded-[4px] bg-gradient-to-b from-[rgba(200,148,55,0.055)] to-[rgba(200,148,55,0.015)] cursor-pointer group">
+          <label className="flex items-start gap-3 p-3 border border-[rgba(200,148,55,0.18)] rounded-[4px] bg-gradient-to-b from-[rgba(200,148,55,0.055)] to-[rgba(200,148,55,0.015)] group">
             <input
               type="checkbox"
               className="mt-1"
@@ -97,7 +101,7 @@ export function InstallConfirmModal({
               type="button"
               disabled={!installAcknowledged || page.action === 'install'}
               onClick={onConfirm}
-              className="px-5 py-2 rounded-sm text-sm cinzel font-bold tracking-wider transition-all bg-gradient-to-b from-[#d4a040] to-[#9e5c1e] text-[#0b0906] shadow-[0_0_15px_rgba(212,160,64,0.4)] hover:brightness-110 disabled:opacity-45 disabled:hover:brightness-100"
+              className="px-5 py-2 rounded-sm text-sm cinzel font-bold tracking-wider transition-all bg-gradient-to-b from-[#d4a040] to-[#9e5c1e] text-[#0b0906] shadow-[0_0_15px_rgba(212,160,64,0.4)] hover:brightness-110 active:brightness-95 disabled:opacity-45 disabled:hover:brightness-100"
             >
               {page.action === 'install'
                 ? t('installing')
@@ -106,6 +110,6 @@ export function InstallConfirmModal({
           </div>
         </div>
       </div>
-    </div>
+    </Dialog>
   );
 }

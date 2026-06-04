@@ -7,7 +7,7 @@ import { useI18n } from '../i18n/LocaleProvider';
 export function ShellNavRail() {
   const { t } = useI18n();
   return (
-    <nav className="flex-none w-48 border-r border-[rgba(200,148,55,0.18)] bg-[#0b0906] flex flex-col py-6 z-0 flex">
+    <nav className="flex-none w-48 border-r border-[rgba(200,148,55,0.18)] bg-[#0b0906] flex flex-col py-6 z-0">
       <RailItem to="/" icon={<Download size={18} />} label={t('navInstall')} />
       <RailItem
         to="/history"

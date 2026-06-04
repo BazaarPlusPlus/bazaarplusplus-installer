@@ -1,25 +1,29 @@
 import { X } from 'lucide-react';
 import wechatPaySvg from '../../static/support/wechat-pay.svg';
+import { Dialog } from '../components/ui/Dialog';
 import { useI18n } from '../i18n/LocaleProvider';
 
 export function ShellPaymentModal({ onClose }: { onClose: () => void }) {
   const { t } = useI18n();
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-[2px]">
-      <div className="bg-[#0b0906] border border-[rgba(200,148,55,0.18)] rounded-[4px] shadow-[0_24px_64px_rgba(0,0,0,0.5)] w-full max-w-md mx-4 relative animate-[fade-up_0.2s_ease-out]">
+    <Dialog onClose={onClose} labelledBy="payment-modal-title">
+      <div className="bg-[#0b0906] border border-[rgba(200,148,55,0.18)] rounded-[4px] shadow-[0_24px_64px_rgba(0,0,0,0.5)] w-full max-w-md mx-4 relative">
         <div className="flex justify-between items-center px-5 py-4 border-b border-[rgba(200,148,55,0.15)] bg-[rgba(200,148,55,0.02)]">
           <div>
             <p className="cinzel text-[10px] tracking-[0.2em] text-[rgba(200,148,55,0.5)] uppercase m-0 mb-1">
               BazaarPlusPlus
             </p>
-            <h2 className="cinzel text-[1.1rem] text-[#e8dcc8] m-0">
+            <h2
+              id="payment-modal-title"
+              className="cinzel text-[1.1rem] text-[#e8dcc8] m-0"
+            >
               {t('supportProject')}
             </h2>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="text-[rgba(200,170,120,0.6)] hover:text-[#e8dcc8] transition-colors"
+            className="text-[rgba(200,170,120,0.72)] hover:text-[#e8dcc8] transition-colors"
             aria-label={t('close')}
           >
             <X size={20} />
@@ -64,6 +68,6 @@ export function ShellPaymentModal({ onClose }: { onClose: () => void }) {
           </div>
         </div>
       </div>
-    </div>
+    </Dialog>
   );
 }

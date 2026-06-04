@@ -1,5 +1,5 @@
 import { Outlet } from 'react-router-dom';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   AppBootstrapProvider,
   useAppBootstrap
@@ -21,6 +21,29 @@ function GlobalShellContent() {
   const [showSupport, setShowSupport] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const app = useAppBootstrap();
+
+  // Close the header popovers on Escape or a click outside them — the native
+  // behaviour these controlled dropdowns were missing.
+  useEffect(() => {
+    if (!showBilibili && !showSupport) return;
+    const closeMenus = () => {
+      setShowBilibili(false);
+      setShowSupport(false);
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') closeMenus();
+    };
+    const onPointerDown = (event: PointerEvent) => {
+      const target = event.target as HTMLElement | null;
+      if (!target?.closest('[data-dropdown]')) closeMenus();
+    };
+    window.addEventListener('keydown', onKeyDown);
+    window.addEventListener('pointerdown', onPointerDown);
+    return () => {
+      window.removeEventListener('keydown', onKeyDown);
+      window.removeEventListener('pointerdown', onPointerDown);
+    };
+  }, [showBilibili, showSupport]);
 
   return (
     <div className="flex flex-col h-full bg-[#0b0906] text-[#e8dcc8]">

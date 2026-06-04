@@ -50,7 +50,7 @@ export default function History() {
           {page.loading ? (
             <LoadingPanel label={t('historyLoading')} />
           ) : page.payload.runs.length === 0 ? (
-            <div className="flex items-center justify-center h-48 text-[rgba(200,170,120,0.55)] border border-[rgba(180,130,48,0.12)] bg-[rgba(18,11,5,0.6)]">
+            <div className="flex items-center justify-center h-48 text-[rgba(200,170,120,0.8)] border border-[rgba(180,130,48,0.12)] bg-[rgba(18,11,5,0.6)]">
               {t('noLocalRuns')}
             </div>
           ) : (
@@ -81,7 +81,7 @@ function SummaryCard({
 }) {
   return (
     <div className="p-4 bg-[rgba(18,11,5,0.88)] border border-[rgba(180,130,48,0.13)] rounded-sm shadow-[0_6px_28px_rgba(0,0,0,0.35)] flex flex-col items-center justify-center gap-1">
-      <span className="cinzel text-[10px] tracking-widest text-[rgba(200,170,120,0.5)] uppercase">
+      <span className="cinzel text-[10px] tracking-widest text-[rgba(200,170,120,0.8)] uppercase">
         {label}
       </span>
       <span
@@ -134,7 +134,7 @@ function RunRow({
             <span className="cinzel font-bold text-lg text-[#e8dcc8] truncate">
               {run.hero}
             </span>
-            <span className="fira-code text-[10px] text-[rgba(200,170,120,0.5)] truncate">
+            <span className="fira-code text-[10px] text-[rgba(200,170,120,0.8)] truncate">
               {formatDateTime(run.started_at_utc)}
             </span>
           </div>
@@ -168,7 +168,7 @@ function RunRow({
         type="button"
         disabled={deleting || run.video_count === 0}
         onClick={onDelete}
-        className="flex items-center justify-center size-8 rounded-sm hover:bg-[rgba(255,50,50,0.1)] hover:text-[#ff4444] disabled:opacity-30 disabled:hover:bg-transparent transition-colors text-[rgba(200,170,120,0.4)] border border-transparent hover:border-[rgba(255,50,50,0.2)]"
+        className="flex items-center justify-center size-8 rounded-sm hover:bg-[rgba(255,50,50,0.1)] hover:text-[#ff4444] disabled:opacity-30 disabled:hover:bg-transparent transition-colors text-[rgba(200,170,120,0.72)] border border-transparent hover:border-[rgba(255,50,50,0.2)]"
         aria-label={t('deleteRunVideos')}
       >
         {deleting ? (
@@ -202,7 +202,7 @@ function Metric({
           : 'text-[#e8dcc8]';
   return (
     <div className="flex flex-col gap-1 items-center w-20">
-      <span className="cinzel text-[10px] tracking-widest text-[rgba(200,170,120,0.5)] uppercase">
+      <span className="cinzel text-[10px] tracking-widest text-[rgba(200,170,120,0.8)] uppercase">
         {label}
       </span>
       <span className={`text-sm ${color}`}>{value}</span>

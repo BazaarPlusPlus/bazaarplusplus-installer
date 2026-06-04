@@ -15,7 +15,9 @@
       {
         "title": "BazaarPlusPlus",
         "width": 1000,
-        "height": 720
+        "height": 720,
+        "minWidth": 900,
+        "minHeight": 640
       }
     ],
     "security": {
