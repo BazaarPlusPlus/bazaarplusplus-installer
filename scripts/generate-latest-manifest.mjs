@@ -89,6 +89,9 @@ export function writeLatestManifest({ outputPath, version, tempDir }) {
 }
 
 function main() {
+  // argv[3] (<baseUrl>) is accepted but intentionally unused; build.sh passes it
+  // positionally (build.sh:558), so it stays in the usage string to keep
+  // <tempDir> at position 4.
   const [outputPath, version, , tempDir] = process.argv.slice(2);
 
   if (!outputPath || !version || !tempDir) {

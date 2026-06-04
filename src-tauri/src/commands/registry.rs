@@ -30,7 +30,9 @@ macro_rules! with_commands {
 
 macro_rules! bpp_command_names {
     ($(($mod:path, $name:ident)),* $(,)?) => {
-        /// Mirrors the `with_commands!` list; consumed by tests and `generate:bindings`.
+        /// Mirrors the `with_commands!` list; consumed by the test in this file.
+        /// (`scripts/generate-bindings.mjs` parses this file's `with_commands!`
+        /// source text directly — it does not read this constant.)
         #[allow(dead_code)]
         pub const TAURI_COMMAND_NAMES: &[&str] = &[$(stringify!($name)),*];
     };

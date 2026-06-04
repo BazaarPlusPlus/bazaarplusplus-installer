@@ -42,6 +42,9 @@ pub fn run() {
             });
             Ok(())
         })
+        // While the stream service is running, hide the main window to the tray
+        // on close instead of quitting, so the local overlay HTTP server keeps
+        // serving OBS. The tray menu's quit action is the real exit path.
         .on_window_event(|window, event| {
             if window.label() != "main" {
                 return;

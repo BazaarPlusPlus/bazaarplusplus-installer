@@ -10,9 +10,10 @@ use crate::stream::state::StreamRuntimeState;
 
 use super::{debug_error, debug_log};
 
-/// Stable error-code prefixes that the frontend pattern-matches to render
-/// targeted UI. Adding a new variant requires a matching branch in
-/// `formatRepairError` on the TS side.
+/// Stable error-code prefixes returned as the repair `Err` string when a
+/// BPP-data repair is blocked or partially fails. Kept stable so the frontend
+/// can pattern-match the prefix; the current UI (`useInstallPage.ts`) shows a
+/// generic repair message and does not branch on these yet.
 pub(crate) const REPAIR_ERR_GAME_RUNNING: &str = "bpp_data_reset_blocked_by_game";
 pub(crate) const REPAIR_ERR_PARTIAL_FAILURE: &str = "bpp_data_reset_partial_failure";
 

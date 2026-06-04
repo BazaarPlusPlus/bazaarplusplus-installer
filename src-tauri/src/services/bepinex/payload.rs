@@ -1,4 +1,4 @@
-// src-tauri/src/commands/bepinex/payload.rs
+// src-tauri/src/services/bepinex/payload.rs
 use std::path::{Path, PathBuf};
 use std::thread;
 use std::time::Duration;

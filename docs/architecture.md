@@ -38,7 +38,7 @@ scripts/
 - `src/layouts/GlobalShell.tsx` owns the shared navigation, locale toggle, app bootstrap, and update check entry point.
 - `src/pages/*` should stay focused on rendering and user actions.
 - `src/features/*` owns route loading state, action state, API calls, and pure view-model derivation.
-- `src/api/tauri.ts` is the typed command boundary. When adding or renaming a command, update the command map there and the Rust registration in `src-tauri/src/lib.rs`.
+- `src/api/tauri.ts` is the typed command boundary. When adding or renaming a command, update the command map there and the Rust registration in `src-tauri/src/commands/registry.rs` (the `with_commands!` list).
 - Rust structs with `ts_rs::TS` derive are exported by `scripts/generate-bindings.mjs` into `src/types/generated/`.
 
 ## Backend Boundaries
@@ -47,8 +47,8 @@ scripts/
 - `commands/install.rs`: product-facing install, repair, uninstall, directory selection, and launch actions.
 - `commands/history.rs`: run list/detail, screenshot reveal, and battle-video actions.
 - `commands/stream.rs`: stream session, overlay settings, and stream window actions.
-- `commands/bepinex/`: payload install, repair, uninstall, ZIP handling, and version reads.
-- `commands/detect/`, `commands/steam.rs`, and `commands/vdf.rs`: platform discovery, Steam process handling, and launch option mutation.
+- `services/bepinex/`: payload install, repair, uninstall, ZIP handling, and version reads.
+- `services/detect/`, `services/steam.rs`, and `services/vdf/`: platform discovery, Steam process handling, and launch option mutation.
 - `history/repo.rs`: read-mostly access to the mod-owned SQLite run history schema.
 - `stream/`: local HTTP service lifecycle, overlay/settings routes, image strip generation, stream runtime state, and record reads.
 

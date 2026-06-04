@@ -27,7 +27,7 @@ Platform bundle config lives in:
 - `src-tauri/tauri.windows.conf.json`
 - `src-tauri/tauri.macos.conf.json`
 
-Those files map the platform-specific BepInEx ZIP to the runtime resource path `BepInExSource/BepInEx.zip` and bundle `BppDataVersionPolicy.json`.
+Those files map the platform-specific BepInEx ZIP to the runtime resource path `BepInExSource/BepInEx.zip`.
 
 ## Release Asset Types
 
@@ -130,7 +130,7 @@ Builds the current host platform and then uploads it in one run.
 `npm run prebuild-check` validates:
 
 - version alignment across package, Tauri, Cargo, and Cargo.lock
-- `src-tauri/resources/BppDataVersionPolicy.json`
+- generated TypeScript bindings under `src/types/generated/` are up to date
 - required entries inside each platform BepInEx ZIP, or the target platform ZIP when `TAURI_ENV_PLATFORM` is set
 
 Run `npm run prebuild-check` before release-oriented changes. `./build.sh --prod` runs it automatically.
@@ -257,7 +257,7 @@ Production build should fail when:
 - updater signing key is missing
 - required platform resource ZIP is missing
 - version alignment fails
-- BPP data version policy is invalid
+- generated TypeScript bindings are out of date
 - required BepInEx ZIP entries are missing
 - required Rust target is missing for macOS
 

@@ -65,10 +65,12 @@ pub fn router(
     runtime: StreamRuntimeState,
     overlay_settings: OverlaySettingsStore,
 ) -> Router {
-    // Allow the Tauri WebView (tauri://localhost, http://tauri.localhost, http://localhost:*)
-    // to fetch from this local HTTP server. Without these headers the browser inside the
-    // WebView blocks every cross-origin response, making all badge counts and record lists
-    // return silently-caught zeros.
+    // Allow any origin to fetch from this local loopback HTTP server. The Tauri
+    // WebView and the OBS browser source hit it from platform-dependent origins
+    // (tauri://localhost, http://tauri.localhost, http://localhost:*), so we use
+    // `Any` rather than an allowlist; the server binds to loopback only. Without
+    // CORS the browser inside the WebView blocks every cross-origin response,
+    // making all badge counts and record lists return silently-caught zeros.
     let cors = CorsLayer::new()
         .allow_origin(Any)
         .allow_methods([Method::GET, Method::POST])

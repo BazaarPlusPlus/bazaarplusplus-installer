@@ -9,7 +9,7 @@
 - Match verification to the risk and scope of the change.
 - Docs-only or instruction-only changes do not require `npm run check` or a build.
 - React or TypeScript UI changes should usually run `npm run check`; add targeted unit tests only when they verify real behavior.
-- Changes under `scripts/` should run the smallest relevant `node --test` coverage when one exists; otherwise run the touched script directly when practical.
+- Changes under `scripts/` should run the smallest relevant vitest coverage when one exists (e.g. `npx vitest run scripts/<file>.test.mjs`, or `npm run test:unit`); otherwise run the touched script directly when practical.
 - Changes affecting versioning, bundled resources, Tauri config, or release packaging should run `npm run prebuild-check` before broader validation.
 - Run `./build.sh --prod` only for packaging, platform bundling, or release-oriented changes.
 - Do not add tests whose main value is coverage decoration, mock call sequencing, or asserting exact source text.
