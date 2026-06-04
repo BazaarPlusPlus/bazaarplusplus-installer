@@ -12,7 +12,7 @@ export function InstallStatusCard({
   tone: 'ok' | 'warn';
 }) {
   return (
-    <div className="p-4 bg-[rgba(18,11,5,0.88)] border border-[rgba(180,130,48,0.13)] rounded-sm shadow-[0_6px_28px_rgba(0,0,0,0.35)] flex items-center justify-between gap-4">
+    <div className="min-w-0 p-4 bg-[rgba(18,11,5,0.88)] border border-[rgba(180,130,48,0.13)] rounded-sm shadow-[0_6px_28px_rgba(0,0,0,0.35)] flex items-center justify-between gap-4">
       <div className="min-w-0">
         <h3 className="cinzel font-bold text-[#e8dcc8]">{title}</h3>
         <p
