@@ -1,0 +1,16 @@
+src-tauri/src/services/bepinex/zip_archive.rs
+  h_518331e5a07dc9 69,98-113
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "a30590ee9b0e435767207964bd26a98c16589336",
+  "prompts": {},
+  "humans": {
+    "h_518331e5a07dc9": {
+      "author": "Xinyu YANG <cauyxy@gmail.com>"
+    }
+  },
+  "attestation_metadata": {},
+  "remote_transcripts": {}
+}
