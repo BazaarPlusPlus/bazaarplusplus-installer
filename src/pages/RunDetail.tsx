@@ -10,7 +10,10 @@ import { useNavigate } from 'react-router-dom';
 import { ErrorBanner } from '../components/ui/ErrorBanner';
 import type { HistoryBattleRow } from '../types/backend';
 import { useRunDetailPage } from '../features/history/useRunDetailPage';
-import { formatDateTime } from '../features/history/format';
+import {
+  formatDateTime,
+  formatRunResultLabel
+} from '../features/history/format';
 import { useI18n } from '../i18n/LocaleProvider';
 
 export default function RunDetail() {
@@ -18,6 +21,7 @@ export default function RunDetail() {
   const page = useRunDetailPage();
   const detail = page.detail;
   const { t } = useI18n();
+  const runResult = detail ? formatRunResultLabel(detail.run.result) : null;
 
   return (
     <div className="flex flex-col gap-6 h-full overflow-hidden pb-8 max-w-5xl mx-auto w-full">
@@ -49,8 +53,7 @@ export default function RunDetail() {
                 <h2 className="cinzel-decorative text-2xl font-bold text-[#e8dcc8] m-0 truncate">
                   {detail.run.hero}
                   <span className="text-[rgba(200,170,120,0.8)]">
-                    {' '}
-                    · {detail.run.result.toUpperCase()}
+                    {' '}· {runResult ? t(runResult.key) : '-'}
                   </span>
                 </h2>
                 <div className="flex flex-wrap items-center gap-3 fira-code text-xs text-[rgba(200,170,120,0.8)] selectable">
@@ -113,24 +116,6 @@ export default function RunDetail() {
               />
             </div>
 
-            <div className="w-full h-24 bg-[#000] border border-[rgba(200,148,55,0.2)] rounded-sm flex items-center justify-center relative overflow-hidden group">
-              {page.stripUrl ? (
-                <img
-                  src={page.stripUrl}
-                  alt=""
-                  loading="lazy"
-                  decoding="async"
-                  className="absolute inset-0 w-full h-full object-cover"
-                />
-              ) : (
-                <>
-                  <div className="absolute inset-0 bg-gradient-to-r from-[rgba(20,10,5,0.8)] via-transparent to-[rgba(20,10,5,0.8)] z-10" />
-                  <span className="absolute z-20 text-[rgba(200,170,120,0.8)] flex items-center gap-2 cinzel tracking-widest text-xs uppercase">
-                    <ImageIcon size={16} /> End of Run Screenshot
-                  </span>
-                </>
-              )}
-            </div>
           </div>
 
           <div className="flex-1 flex flex-col bg-[rgba(18,11,5,0.88)] border border-[rgba(180,130,48,0.13)] rounded-sm shadow-[0_6px_28px_rgba(0,0,0,0.35)] overflow-hidden">

@@ -2,7 +2,6 @@ import { useCallback, useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import type { HistoryRunDetail } from '../../types/backend';
 import { toErrorMessage } from '../shared/errors';
-import { ensureStreamSession } from '../shared/streamSessionApi';
 import { useAsyncAction } from '../shared/useAsyncAction';
 import {
   deleteBattleVideo,
@@ -10,12 +9,10 @@ import {
   revealBattleVideo,
   revealRunScreenshot
 } from './historyApi';
-import { optionalStripPreviewUrl } from './stripPreview';
 
 export function useRunDetailPage() {
   const { runId } = useParams<{ runId: string }>();
   const [detail, setDetail] = useState<HistoryRunDetail | null>(null);
-  const [baseUrl, setBaseUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const { action, error, setError, run } = useAsyncAction<string>();
 
@@ -28,11 +25,7 @@ export function useRunDetailPage() {
     setLoading(true);
     setError(null);
     try {
-      const [session, nextDetail] = await Promise.all([
-        ensureStreamSession(),
-        loadHistoryRunDetail(runId)
-      ]);
-      setBaseUrl(session.base_url);
+      const nextDetail = await loadHistoryRunDetail(runId);
       setDetail(nextDetail);
     } catch (caught) {
       setError(toErrorMessage(caught));
@@ -66,12 +59,9 @@ export function useRunDetailPage() {
     [run]
   );
 
-  const stripUrl = optionalStripPreviewUrl(baseUrl, detail?.run.strip_url);
-
   return {
     runId,
     detail,
-    stripUrl,
     loading,
     action,
     error,

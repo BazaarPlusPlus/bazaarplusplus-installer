@@ -63,6 +63,7 @@ pub fn reveal_battle_video(
     require_database_exists(database_path)?;
     let path = load_battle_video_path(database_path, data_dir, battle_id, video_id)?
         .ok_or_else(|| format!("No completed video is available for battle {battle_id}."))?;
+    require_video_file_exists(&path)?;
     reveal_in_file_browser(&path)
 }
 
@@ -127,6 +128,13 @@ fn require_database_exists(database_path: &Path) -> Result<(), String> {
     })
 }
 
+fn require_video_file_exists(path: &Path) -> Result<(), String> {
+    path.try_exists()
+        .map_err(|err| format!("Failed to inspect video file at {}: {err}", path.display()))?
+        .then_some(())
+        .ok_or_else(|| format!("Video file was not found at {}.", path.display()))
+}
+
 #[cfg(target_os = "windows")]
 fn strip_extended_length_prefix(value: &str) -> String {
     if let Some(stripped) = value.strip_prefix(r"\\?\UNC\") {
@@ -135,6 +143,31 @@ fn strip_extended_length_prefix(value: &str) -> String {
         stripped.to_string()
     } else {
         value.to_string()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::require_video_file_exists;
+
+    #[test]
+    fn video_file_exists_accepts_existing_file() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let path = dir.path().join("battle.mp4");
+        std::fs::write(&path, b"video").expect("write video file");
+
+        assert!(require_video_file_exists(&path).is_ok());
+    }
+
+    #[test]
+    fn video_file_exists_returns_clear_error_for_missing_file() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let path = dir.path().join("missing.mp4");
+
+        assert_eq!(
+            require_video_file_exists(&path).unwrap_err(),
+            format!("Video file was not found at {}.", path.display())
+        );
     }
 }
 

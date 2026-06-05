@@ -46,14 +46,6 @@ export async function revealBattleVideo(battleId: string, videoId?: string) {
   await invokeCommand('reveal_battle_video', { battleId, videoId });
 }
 
-export async function deleteRunVideos(runId: string, limit = 50) {
-  if (!hasTauriRuntime()) {
-    return emptyHistoryRunList;
-  }
-
-  return invokeCommand('delete_run_videos', { runId, limit });
-}
-
 export async function deleteBattleVideo(battleId: string, videoId: string) {
   if (!hasTauriRuntime()) {
     return null;
