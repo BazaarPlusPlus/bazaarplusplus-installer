@@ -7,6 +7,7 @@ import {
 import { ShellHeader } from './ShellHeader';
 import { ShellNavRail } from './ShellNavRail';
 import { ShellPaymentModal } from './ShellPaymentModal';
+import { ShellUpdateModal } from './ShellUpdateModal';
 
 export default function GlobalShell() {
   return (
@@ -85,6 +86,13 @@ function GlobalShellContent() {
 
       {showPaymentModal && (
         <ShellPaymentModal onClose={() => setShowPaymentModal(false)} />
+      )}
+      {app.updatePrompt && (
+        <ShellUpdateModal
+          downloadUrl={app.updatePrompt.downloadUrl}
+          version={app.updatePrompt.version}
+          onClose={app.dismissUpdatePrompt}
+        />
       )}
     </div>
   );

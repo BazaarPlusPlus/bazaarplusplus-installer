@@ -16,12 +16,12 @@ describe('messages catalog', () => {
 
 describe('formatMessage', () => {
   it('returns the raw message when no params are given', () => {
-    expect(formatMessage('en', 'updaterCurrent')).toBe('Already up to date');
+    expect(formatMessage('en', 'updateModalConfirm')).toBe('Open Download');
   });
 
   it('interpolates named placeholders', () => {
-    expect(formatMessage('en', 'updaterAvailable', { version: '4.1.0' })).toBe(
-      'Update 4.1.0 available. Open the download page'
+    expect(formatMessage('en', 'updateModalBody', { version: '4.1.0' })).toBe(
+      'BazaarPlusPlus 4.1.0 is available.'
     );
     expect(formatMessage('zh', 'streamWindowOffset', { count: 3 })).toBe(
       '向前补 3 条记录'

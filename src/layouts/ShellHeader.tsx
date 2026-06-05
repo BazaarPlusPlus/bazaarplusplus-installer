@@ -178,7 +178,7 @@ function ShellHeaderActions({
 
       <button
         type="button"
-        onClick={app.checkUpdates}
+        onClick={() => void app.checkUpdates()}
         disabled={app.checkingUpdate}
         className="flex items-center gap-2 px-3 h-8 border border-[rgba(200,148,55,0.24)] rounded-[2px] cinzel text-[10px] tracking-widest uppercase transition-all hover:border-[rgba(200,148,55,0.4)] disabled:opacity-60"
         style={{
@@ -198,25 +198,14 @@ function ShellHeaderActions({
             : t('headerCheckUpdate')}
         </span>
       </button>
-      {app.updateMessage &&
-        (app.updateDownloadUrl ? (
-          <a
-            href={app.updateDownloadUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="max-w-44 truncate text-[10px] text-[rgba(200,170,120,0.85)] underline decoration-[rgba(200,170,120,0.35)] underline-offset-2"
-            title={app.updateMessage}
-          >
-            {app.updateMessage}
-          </a>
-        ) : (
-          <span
-            className="max-w-36 truncate text-[10px] text-[rgba(200,170,120,0.8)]"
-            title={app.updateMessage}
-          >
-            {app.updateMessage}
-          </span>
-        ))}
+      {app.updateMessage && (
+        <span
+          className="max-w-36 truncate text-[10px] text-[rgba(200,170,120,0.8)]"
+          title={app.updateMessage}
+        >
+          {app.updateMessage}
+        </span>
+      )}
 
       <ShellSupportMenu
         bootstrap={bootstrap}
