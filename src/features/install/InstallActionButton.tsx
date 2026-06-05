@@ -23,7 +23,7 @@ export function InstallActionButton({
       type="button"
       disabled={disabled}
       onClick={onClick}
-      className={`px-3 py-2 text-xs border rounded-sm transition-colors flex items-center justify-center gap-2 disabled:opacity-40 ${
+      className={`min-h-9 px-3 py-2 text-xs leading-tight border rounded-sm transition-colors flex items-center justify-center gap-2 text-center disabled:opacity-40 ${
         danger
           ? 'bg-[rgba(160,50,50,0.08)] border-[rgba(190,80,80,0.2)] hover:bg-[rgba(160,50,50,0.14)] text-[rgba(232,190,190,0.9)]'
           : 'bg-[rgba(200,148,55,0.04)] border-[rgba(180,130,48,0.2)] hover:bg-[rgba(200,148,55,0.1)] text-[#e8dcc8]'

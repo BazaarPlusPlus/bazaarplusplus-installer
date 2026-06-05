@@ -34,7 +34,7 @@ export interface TauriCommandMap {
     input: { gamePath: string };
     output: InstallState;
   };
-  repair_mod: {
+  reset_bpp_data: {
     input: { gamePath: string };
     output: InstallState;
   };

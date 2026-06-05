@@ -8,7 +8,7 @@ macro_rules! with_commands {
             (commands::install, get_install_state),
             (commands::install, choose_game_directory),
             (commands::install, install_mod),
-            (commands::install, repair_mod),
+            (commands::install, reset_bpp_data),
             (commands::install, uninstall_mod),
             (commands::install, launch_game),
             (commands::stream, ensure_stream_session),

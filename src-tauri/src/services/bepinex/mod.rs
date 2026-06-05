@@ -10,14 +10,14 @@ use crate::stream::state::StreamRuntimeState;
 
 use super::{debug_error, debug_log};
 
-/// Stable error-code prefixes returned as the repair `Err` string when a
-/// BPP-data repair is blocked or partially fails. Kept stable so the frontend
-/// can pattern-match the prefix; the current UI (`useInstallPage.ts`) shows a
-/// generic repair message and does not branch on these yet.
-pub(crate) const REPAIR_ERR_GAME_RUNNING: &str = "bpp_data_reset_blocked_by_game";
-pub(crate) const REPAIR_ERR_PARTIAL_FAILURE: &str = "bpp_data_reset_partial_failure";
+/// Stable error-code prefixes returned when a BPP-data reset is blocked or
+/// partially fails. Kept stable so the frontend can pattern-match the prefix;
+/// the current UI (`useInstallPage.ts`) shows a generic message and does not
+/// branch on these yet.
+pub(crate) const RESET_BPP_DATA_ERR_GAME_RUNNING: &str = "bpp_data_reset_blocked_by_game";
+pub(crate) const RESET_BPP_DATA_ERR_PARTIAL_FAILURE: &str = "bpp_data_reset_partial_failure";
 
-pub async fn repair_bpp(
+pub async fn reset_bpp_data(
     stream_state: tauri::State<'_, StreamRuntimeState>,
     game_path: String,
 ) -> Result<(), String> {
@@ -26,16 +26,16 @@ pub async fn repair_bpp(
     // Windows refuses to delete it (the headline customer complaint).
     let _ = crate::stream::server::stop(stream_state.inner()).await;
 
-    tauri::async_runtime::spawn_blocking(move || repair_bpp_blocking(Path::new(&game_path)))
+    tauri::async_runtime::spawn_blocking(move || reset_bpp_data_blocking(Path::new(&game_path)))
         .await
-        .map_err(|err| format!("failed to repair BazaarPlusPlus data: {err}"))?
+        .map_err(|err| format!("failed to reset BazaarPlusPlus data: {err}"))?
 }
 
-fn repair_bpp_blocking(game_path: &Path) -> Result<(), String> {
+fn reset_bpp_data_blocking(game_path: &Path) -> Result<(), String> {
     payload::ensure_valid_game_path(game_path)?;
 
     if crate::services::game_process::is_bazaar_running_best_effort() {
-        return Err(REPAIR_ERR_GAME_RUNNING.to_string());
+        return Err(RESET_BPP_DATA_ERR_GAME_RUNNING.to_string());
     }
 
     let report = payload::cleanup_bpp_data_directory(game_path);
@@ -43,7 +43,10 @@ fn repair_bpp_blocking(game_path: &Path) -> Result<(), String> {
         return Err(format_partial_failure(&report.failed));
     }
 
-    debug_log!("Repaired BazaarPlusPlus payload at {}", game_path.display());
+    debug_log!(
+        "Reset BazaarPlusPlus data directory at {}",
+        game_path.display()
+    );
     Ok(())
 }
 
@@ -55,7 +58,7 @@ fn format_partial_failure(paths: &[PathBuf]) -> String {
         .map(|path| path.display().to_string())
         .collect::<Vec<_>>()
         .join("\u{1f}");
-    format!("{REPAIR_ERR_PARTIAL_FAILURE}:{joined}")
+    format!("{RESET_BPP_DATA_ERR_PARTIAL_FAILURE}:{joined}")
 }
 
 pub fn install_bepinex(
@@ -158,37 +161,37 @@ mod tests {
     }
 
     #[test]
-    fn test_repair_bpp_removes_bpp_data_directory() {
+    fn test_reset_bpp_data_removes_bpp_data_directory() {
         let tmp = make_valid_game_dir();
         let data_dir = tmp.path().join(crate::config::BAZAAR_DATA_DIRECTORY);
 
         std::fs::create_dir_all(&data_dir).unwrap();
         std::fs::write(data_dir.join("stale.dll"), b"dll").unwrap();
 
-        repair_bpp_blocking(tmp.path()).unwrap();
+        reset_bpp_data_blocking(tmp.path()).unwrap();
 
         assert!(!data_dir.exists());
     }
 
     #[test]
-    fn test_repair_bpp_is_noop_when_directory_missing() {
+    fn test_reset_bpp_data_is_noop_when_directory_missing() {
         let tmp = make_valid_game_dir();
         let data_dir = tmp.path().join(crate::config::BAZAAR_DATA_DIRECTORY);
         assert!(!data_dir.exists());
 
-        repair_bpp_blocking(tmp.path()).unwrap();
+        reset_bpp_data_blocking(tmp.path()).unwrap();
 
         assert!(!data_dir.exists());
     }
 
     #[test]
-    fn test_repair_bpp_is_idempotent_when_run_twice() {
+    fn test_reset_bpp_data_is_idempotent_when_run_twice() {
         let tmp = make_valid_game_dir();
         let data_dir = tmp.path().join(crate::config::BAZAAR_DATA_DIRECTORY);
         std::fs::create_dir_all(&data_dir).unwrap();
 
-        repair_bpp_blocking(tmp.path()).unwrap();
-        repair_bpp_blocking(tmp.path()).unwrap();
+        reset_bpp_data_blocking(tmp.path()).unwrap();
+        reset_bpp_data_blocking(tmp.path()).unwrap();
 
         assert!(!data_dir.exists());
     }
@@ -200,7 +203,7 @@ mod tests {
             PathBuf::from("C:/Games/The Bazaar/BazaarPlusPlusV4/Identity/observation.json"),
         ]);
 
-        assert!(formatted.starts_with(REPAIR_ERR_PARTIAL_FAILURE));
+        assert!(formatted.starts_with(RESET_BPP_DATA_ERR_PARTIAL_FAILURE));
         assert!(formatted.contains('\u{1f}'));
         assert!(formatted.ends_with("observation.json"));
     }

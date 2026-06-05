@@ -44,10 +44,10 @@ scripts/
 ## Backend Boundaries
 
 - `commands/app.rs`: app bootstrap metadata and external links.
-- `commands/install.rs`: product-facing install, repair, uninstall, directory selection, and launch actions.
+- `commands/install.rs`: product-facing install, data reset, uninstall, directory selection, and launch actions.
 - `commands/history.rs`: run list/detail, screenshot reveal, and battle-video actions.
 - `commands/stream.rs`: stream session, overlay settings, and stream window actions.
-- `services/bepinex/`: payload install, repair, uninstall, ZIP handling, and version reads.
+- `services/bepinex/`: payload install, data reset, uninstall, ZIP handling, and version reads.
 - `services/detect/`, `services/steam.rs`, and `services/vdf/`: platform discovery, Steam process handling, and launch option mutation.
 - `history/repo.rs`: read-mostly access to the mod-owned SQLite run history schema.
 - `stream/`: local HTTP service lifecycle, overlay/settings routes, image strip generation, stream runtime state, and record reads.

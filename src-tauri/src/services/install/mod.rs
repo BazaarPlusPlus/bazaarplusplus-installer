@@ -10,7 +10,7 @@ use std::process::Command;
 use tauri::Manager;
 
 use crate::services::{
-    bepinex::{install_bepinex, repair_bpp, uninstall_bpp},
+    bepinex::{install_bepinex, reset_bpp_data, uninstall_bpp},
     detect::detect_for_install,
     startup::InstallerContextState,
     steam::detect_steam_running,
@@ -53,13 +53,13 @@ pub fn run_install(
     build_install_state(app, state, Some(game_path))
 }
 
-pub async fn run_repair(
+pub async fn run_reset_bpp_data(
     app: tauri::AppHandle,
     install_state: tauri::State<'_, InstallerContextState>,
     stream_state: tauri::State<'_, StreamRuntimeState>,
     game_path: String,
 ) -> Result<InstallState, String> {
-    repair_bpp(stream_state, game_path.clone()).await?;
+    reset_bpp_data(stream_state, game_path.clone()).await?;
     build_install_state(app, install_state, Some(game_path))
 }
 
@@ -147,7 +147,7 @@ fn install_state_from_snapshot(
         actions: InstallActions {
             can_install: can_launch && !installed,
             can_reinstall: can_launch && installed,
-            can_repair: can_launch,
+            can_reset_data: can_launch,
             can_uninstall: can_launch && installed,
             can_launch,
         },

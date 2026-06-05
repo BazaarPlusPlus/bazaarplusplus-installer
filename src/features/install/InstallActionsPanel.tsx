@@ -58,7 +58,11 @@ export function InstallActionsPanel({
             </ul>
 
             {page.state.warnings.length > 0 && (
-              <div className="flex flex-col gap-2" role="status" aria-live="polite">
+              <div
+                className="flex flex-col gap-2"
+                role="status"
+                aria-live="polite"
+              >
                 {page.state.warnings.map((warning) => (
                   <p
                     key={warning.code}
@@ -85,11 +89,11 @@ export function InstallActionsPanel({
 
             <div className="grid grid-cols-2 gap-2 mt-auto pt-2">
               <InstallActionButton
-                disabled={page.busy || !page.state.actions.can_repair}
-                busy={page.action === 'repair'}
-                onClick={page.repair}
+                disabled={page.busy || !page.state.actions.can_reset_data}
+                busy={page.action === 'resetData'}
+                onClick={page.resetData}
                 icon={<Wrench size={14} />}
-                label={t('actionRepair')}
+                label={t('actionResetData')}
               />
               <InstallActionButton
                 disabled={page.busy || !page.state.actions.can_uninstall}

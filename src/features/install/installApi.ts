@@ -25,7 +25,7 @@ export const emptyInstallState: InstallState = {
   actions: {
     can_install: false,
     can_reinstall: false,
-    can_repair: false,
+    can_reset_data: false,
     can_uninstall: false,
     can_launch: false
   },
@@ -52,8 +52,8 @@ export async function installMod(gamePath: string) {
   return invokeCommand('install_mod', { gamePath });
 }
 
-export async function repairMod(gamePath: string) {
-  return invokeCommand('repair_mod', { gamePath });
+export async function resetBppData(gamePath: string) {
+  return invokeCommand('reset_bpp_data', { gamePath });
 }
 
 export async function uninstallMod(gamePath: string) {

@@ -8,7 +8,7 @@ import {
   installMod,
   launchGame,
   loadInstallState,
-  repairMod,
+  resetBppData,
   uninstallMod
 } from './installApi';
 
@@ -16,7 +16,7 @@ type InstallAction =
   | 'load'
   | 'choose'
   | 'install'
-  | 'repair'
+  | 'resetData'
   | 'uninstall'
   | 'launch';
 
@@ -81,14 +81,14 @@ export function useInstallPage() {
     [run, state, t]
   );
 
-  const repair = useCallback(
+  const resetData = useCallback(
     () =>
       run(
-        'repair',
+        'resetData',
         async () => {
           const path = requireGamePath(state, t);
-          setState(await repairMod(path));
-          setMessage(t('repairDone'));
+          setState(await resetBppData(path));
+          setMessage(t('resetDataDone'));
         },
         { onStart: () => setMessage(null) }
       ),
@@ -129,7 +129,7 @@ export function useInstallPage() {
     refresh,
     chooseDirectory,
     install,
-    repair,
+    resetData,
     uninstall,
     launch
   };

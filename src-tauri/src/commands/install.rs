@@ -3,7 +3,9 @@ pub use crate::services::install::*;
 use tauri_plugin_dialog::DialogExt;
 
 use crate::services::{
-    install::{build_install_state, launch_game_via_steam, run_install, run_repair, run_uninstall},
+    install::{
+        build_install_state, launch_game_via_steam, run_install, run_reset_bpp_data, run_uninstall,
+    },
     startup::InstallerContextState,
 };
 use crate::stream::state::StreamRuntimeState;
@@ -42,13 +44,13 @@ pub fn install_mod(
 }
 
 #[tauri::command]
-pub async fn repair_mod(
+pub async fn reset_bpp_data(
     app: tauri::AppHandle,
     install_state: tauri::State<'_, InstallerContextState>,
     stream_state: tauri::State<'_, StreamRuntimeState>,
     game_path: String,
 ) -> Result<InstallState, String> {
-    run_repair(app, install_state, stream_state, game_path).await
+    run_reset_bpp_data(app, install_state, stream_state, game_path).await
 }
 
 #[tauri::command]

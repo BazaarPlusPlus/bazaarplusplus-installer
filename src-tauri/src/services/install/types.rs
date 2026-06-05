@@ -43,7 +43,7 @@ pub struct InstallRuntimeState {
 pub struct InstallActions {
     pub can_install: bool,
     pub can_reinstall: bool,
-    pub can_repair: bool,
+    pub can_reset_data: bool,
     pub can_uninstall: bool,
     pub can_launch: bool,
 }

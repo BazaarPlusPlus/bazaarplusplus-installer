@@ -5,7 +5,7 @@ export const TAURI_COMMAND_NAMES = [
   'get_install_state',
   'choose_game_directory',
   'install_mod',
-  'repair_mod',
+  'reset_bpp_data',
   'uninstall_mod',
   'launch_game',
   'ensure_stream_session',
@@ -29,7 +29,7 @@ export type TauriCommandName =
   | 'get_install_state'
   | 'choose_game_directory'
   | 'install_mod'
-  | 'repair_mod'
+  | 'reset_bpp_data'
   | 'uninstall_mod'
   | 'launch_game'
   | 'ensure_stream_session'
