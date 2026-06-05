@@ -1,6 +1,9 @@
 import { test, expect } from 'vitest';
 
-import { requiredEntriesForPlatform } from './prebuild-check.mjs';
+import {
+  assertMacosLauncherScriptIsSafe,
+  requiredEntriesForPlatform
+} from './prebuild-check.mjs';
 
 test('macOS bundles BazaarPlusPlus SQLite dependencies', () => {
   expect(requiredEntriesForPlatform('macos')).toEqual([
@@ -38,4 +41,39 @@ test('Windows bundles BazaarPlusPlus SQLite dependencies', () => {
     'BepInEx/plugins/System.Text.Encoding.CodePages.dll',
     'BepInEx/plugins/e_sqlite3.dll'
   ]);
+});
+
+test('macOS launcher check accepts safe codesign tempfile handling', () => {
+  const script = [
+    '_entitlements_file="$(mktemp "${TMPDIR:-/tmp}/bepinex_ents.XXXXXX")"',
+    'trap cleanup_entitlements EXIT HUP INT TERM',
+    'codesign --force --deep --sign - --entitlements "$_entitlements_file" "$app_path"'
+  ].join('\n');
+
+  expect(() => assertMacosLauncherScriptIsSafe(script)).not.toThrow();
+});
+
+test('macOS launcher check rejects the broken BSD mktemp template', () => {
+  const script = [
+    '_entitlements_file="$(mktemp /tmp/bepinex_ents.XXXXXX.plist)"',
+    'trap cleanup_entitlements EXIT HUP INT TERM',
+    'codesign --force --deep --sign - --entitlements "$_entitlements_file" "$app_path"'
+  ].join('\n');
+
+  expect(() => assertMacosLauncherScriptIsSafe(script)).toThrow(
+    'mktemp /tmp/bepinex_ents.XXXXXX.plist'
+  );
+});
+
+test('macOS launcher check rejects preemptive signature removal', () => {
+  const script = [
+    '_entitlements_file="$(mktemp "${TMPDIR:-/tmp}/bepinex_ents.XXXXXX")"',
+    'trap cleanup_entitlements EXIT HUP INT TERM',
+    'codesign --remove-signature "$app_path" 2>/dev/null || true',
+    'codesign --force --deep --sign - --entitlements "$_entitlements_file" "$app_path"'
+  ].join('\n');
+
+  expect(() => assertMacosLauncherScriptIsSafe(script)).toThrow(
+    'codesign --remove-signature'
+  );
 });

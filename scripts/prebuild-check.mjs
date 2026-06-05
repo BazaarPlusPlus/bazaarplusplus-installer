@@ -79,6 +79,49 @@ function sourceZipPathForPlatform(rootDir, platform) {
   );
 }
 
+function sourceMacosLauncherPath(rootDir) {
+  return path.join(
+    rootDir,
+    'src-tauri',
+    'resources',
+    'SourceForBuild',
+    'macos',
+    'run_bepinex.sh'
+  );
+}
+
+export function assertMacosLauncherScriptIsSafe(
+  script,
+  label = 'run_bepinex.sh'
+) {
+  const forbiddenSnippets = [
+    'mktemp /tmp/bepinex_ents.XXXXXX.plist',
+    'codesign --remove-signature'
+  ];
+
+  for (const snippet of forbiddenSnippets) {
+    if (script.includes(snippet)) {
+      throw new Error(
+        `${label} contains forbidden launcher snippet: ${snippet}`
+      );
+    }
+  }
+
+  const requiredSnippets = [
+    'mktemp "${TMPDIR:-/tmp}/bepinex_ents.XXXXXX"',
+    'trap cleanup_entitlements EXIT HUP INT TERM',
+    'codesign --force --deep --sign - --entitlements "$_entitlements_file" "$app_path"'
+  ];
+
+  for (const snippet of requiredSnippets) {
+    if (!script.includes(snippet)) {
+      throw new Error(
+        `${label} is missing required launcher snippet: ${snippet}`
+      );
+    }
+  }
+}
+
 function findEndOfCentralDirectory(buffer) {
   for (let offset = buffer.length - 22; offset >= 0; offset -= 1) {
     if (buffer.readUInt32LE(offset) === 0x06054b50) {
@@ -162,7 +205,26 @@ export function readZipEntry(buffer, entryName) {
   return null;
 }
 
-function ensureZipLooksValid(zipPath, platform) {
+function ensureMacosLauncherMatchesSource(rootDir, zipPath, buffer) {
+  const sourcePath = sourceMacosLauncherPath(rootDir);
+  const sourceScript = fs.readFileSync(sourcePath, 'utf8');
+  const zipScript = readZipEntry(buffer, 'run_bepinex.sh');
+
+  if (!zipScript) {
+    throw new Error(`${zipPath} is missing run_bepinex.sh content`);
+  }
+
+  assertMacosLauncherScriptIsSafe(sourceScript, sourcePath);
+  assertMacosLauncherScriptIsSafe(zipScript, `${zipPath}:run_bepinex.sh`);
+
+  if (zipScript !== sourceScript) {
+    throw new Error(
+      `${zipPath}:run_bepinex.sh does not match ${sourcePath}; rebuild the macOS BepInEx zip`
+    );
+  }
+}
+
+function ensureZipLooksValid(rootDir, zipPath, platform) {
   if (!fs.existsSync(zipPath)) {
     throw new Error(`Missing ${platform} zip: ${zipPath}`);
   }
@@ -188,6 +250,10 @@ function ensureZipLooksValid(zipPath, platform) {
   const version = readZipEntry(buffer, 'BazaarPlusPlus.version');
   if (version) {
     console.log(`[${platform}] BazaarPlusPlus.version: ${version.trim()}`);
+  }
+
+  if (platform === 'macos') {
+    ensureMacosLauncherMatchesSource(rootDir, zipPath, buffer);
   }
 }
 
@@ -223,7 +289,11 @@ export function runPrebuildCheck(rootDir, platformEnv) {
   const platforms = resolveTargetPlatforms(platformEnv);
 
   for (const platform of platforms) {
-    ensureZipLooksValid(sourceZipPathForPlatform(rootDir, platform), platform);
+    ensureZipLooksValid(
+      rootDir,
+      sourceZipPathForPlatform(rootDir, platform),
+      platform
+    );
   }
 }
 
