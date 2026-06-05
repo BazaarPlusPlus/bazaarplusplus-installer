@@ -85,6 +85,9 @@ const zh = {
   modNotInstalled: '尚未安装',
   installDone: '安装完成',
   resetDataDone: '本地数据已重置',
+  resetDataBlockedByGame: 'The Bazaar 仍在运行。请先退出游戏，再重置本地数据。',
+  resetDataPartialFailure:
+    '有 {count} 个本地数据项目未能删除。请关闭游戏和直播来源后重试。',
   uninstallDone: '卸载完成',
   selectGameDirFirst: '请先选择 The Bazaar 安装目录。',
 
@@ -101,7 +104,7 @@ const zh = {
 
   // Update check (header)
   updaterPreview: '当前为浏览器预览环境',
-  updaterAvailable: '发现新版本 {version}',
+  updaterAvailable: '发现新版本 {version}，请前往下载页',
   updaterCurrent: '当前已是最新版本',
 
   // History page
@@ -232,6 +235,10 @@ const en: Record<MessageKey, string> = {
   modNotInstalled: 'Not installed yet',
   installDone: 'Install complete',
   resetDataDone: 'Local data reset',
+  resetDataBlockedByGame:
+    'The Bazaar is still running. Quit the game before resetting local data.',
+  resetDataPartialFailure:
+    '{count} local data item(s) could not be deleted. Close the game and stream sources, then try again.',
   uninstallDone: 'Uninstall complete',
   selectGameDirFirst: 'Select The Bazaar install directory first.',
 
@@ -248,7 +255,7 @@ const en: Record<MessageKey, string> = {
   confirmInstall: 'Confirm Install',
 
   updaterPreview: 'Browser preview mode',
-  updaterAvailable: 'Update {version} available',
+  updaterAvailable: 'Update {version} available. Open the download page',
   updaterCurrent: 'Already up to date',
 
   historyLoading: 'Loading runs',

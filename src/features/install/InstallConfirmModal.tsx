@@ -16,7 +16,7 @@ export function InstallConfirmModal({
   installAcknowledged: boolean;
   onAcknowledgedChange: (acknowledged: boolean) => void;
   onClose: () => void;
-  onConfirm: () => void;
+  onConfirm: () => void | Promise<void>;
 }) {
   const { t } = useI18n();
   return (

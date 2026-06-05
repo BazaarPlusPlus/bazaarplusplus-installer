@@ -18,6 +18,41 @@ pub(super) struct PreservedFile {
     contents: Vec<u8>,
 }
 
+pub(super) struct InstallTargetBackup {
+    root: tempfile::TempDir,
+}
+
+impl InstallTargetBackup {
+    fn capture(game_path: &Path) -> Result<Self, String> {
+        let root = tempfile::Builder::new()
+            .prefix("bpp-install-backup-")
+            .tempdir()
+            .map_err(|err| format!("Cannot create install rollback snapshot: {err}"))?;
+
+        for relative_path in payload_root_relative_paths() {
+            let source = game_path.join(relative_path);
+            if source.exists() {
+                copy_path(&source, &root.path().join(relative_path))?;
+            }
+        }
+
+        Ok(Self { root })
+    }
+
+    pub(super) fn restore(self, game_path: &Path) -> Result<(), String> {
+        uninstall_payload(game_path)?;
+
+        for relative_path in payload_root_relative_paths() {
+            let backup_path = self.root.path().join(relative_path);
+            if backup_path.exists() {
+                copy_path(&backup_path, &game_path.join(relative_path))?;
+            }
+        }
+
+        Ok(())
+    }
+}
+
 /// Failure report for a per-file removal pass. `failed` lists the paths the
 /// walker could not delete after retrying. The list is empty on success and on
 /// "nothing to do" (path didn't exist).
@@ -43,6 +78,57 @@ fn remove_path_if_exists(path: &Path) -> Result<(), String> {
     } else {
         std::fs::remove_file(path).map_err(|err| format!("Cannot remove {}: {err}", path.display()))
     }
+}
+
+fn payload_root_relative_paths() -> Vec<&'static str> {
+    let mut paths = vec!["BepInEx"];
+
+    #[cfg(target_os = "macos")]
+    {
+        paths.push("run_bepinex.sh");
+        paths.push("libdoorstop.dylib");
+    }
+
+    #[cfg(target_os = "windows")]
+    {
+        paths.push("doorstop_config.ini");
+        paths.push("winhttp.dll");
+    }
+
+    paths
+}
+
+fn copy_path(source: &Path, destination: &Path) -> Result<(), String> {
+    let metadata = std::fs::symlink_metadata(source)
+        .map_err(|err| format!("Cannot inspect {}: {err}", source.display()))?;
+
+    if metadata.file_type().is_dir() && !metadata.file_type().is_symlink() {
+        std::fs::create_dir_all(destination)
+            .map_err(|err| format!("Cannot create {}: {err}", destination.display()))?;
+        for entry in std::fs::read_dir(source)
+            .map_err(|err| format!("Cannot read {}: {err}", source.display()))?
+        {
+            let entry = entry.map_err(|err| format!("Cannot read {}: {err}", source.display()))?;
+            copy_path(&entry.path(), &destination.join(entry.file_name()))?;
+        }
+        std::fs::set_permissions(destination, metadata.permissions())
+            .map_err(|err| format!("Cannot set permissions on {}: {err}", destination.display()))?;
+        return Ok(());
+    }
+
+    if let Some(parent) = destination.parent() {
+        std::fs::create_dir_all(parent)
+            .map_err(|err| format!("Cannot create {}: {err}", parent.display()))?;
+    }
+    std::fs::copy(source, destination).map_err(|err| {
+        format!(
+            "Cannot copy {} to {}: {err}",
+            source.display(),
+            destination.display()
+        )
+    })?;
+    std::fs::set_permissions(destination, metadata.permissions())
+        .map_err(|err| format!("Cannot set permissions on {}: {err}", destination.display()))
 }
 
 /// Try to delete a single file or empty directory, retrying briefly to absorb
@@ -170,9 +256,19 @@ pub(super) fn ensure_valid_game_path(game_path: &Path) -> Result<(), String> {
     ))
 }
 
-pub(super) fn prepare_install_target(game_path: &Path) -> Result<(), String> {
+pub(super) fn prepare_install_target(game_path: &Path) -> Result<InstallTargetBackup, String> {
     ensure_valid_game_path(game_path)?;
-    uninstall_payload(game_path)
+    let backup = InstallTargetBackup::capture(game_path)?;
+    if let Err(uninstall_err) = uninstall_payload(game_path) {
+        return match backup.restore(game_path) {
+            Ok(()) => Err(uninstall_err),
+            Err(restore_err) => Err(format!(
+                "{uninstall_err}; additionally failed to restore previous payload: {restore_err}"
+            )),
+        };
+    }
+
+    Ok(backup)
 }
 
 pub(super) fn preserve_file_if_exists(
@@ -265,6 +361,51 @@ mod tests {
             assert!(!tmp.path().join("doorstop_config.ini").exists());
             assert!(!tmp.path().join("winhttp.dll").exists());
         }
+    }
+
+    #[test]
+    fn test_install_target_backup_restores_previous_payload_after_partial_install() {
+        let tmp = tempfile::tempdir().unwrap();
+
+        #[cfg(target_os = "macos")]
+        {
+            std::fs::create_dir_all(tmp.path().join("TheBazaar.app")).unwrap();
+            std::fs::write(tmp.path().join("run_bepinex.sh"), b"old script").unwrap();
+            std::fs::write(tmp.path().join("libdoorstop.dylib"), b"old dylib").unwrap();
+        }
+
+        #[cfg(target_os = "windows")]
+        {
+            std::fs::write(tmp.path().join("TheBazaar.exe"), b"exe").unwrap();
+            std::fs::write(tmp.path().join("doorstop_config.ini"), b"old cfg").unwrap();
+            std::fs::write(tmp.path().join("winhttp.dll"), b"old dll").unwrap();
+        }
+
+        std::fs::create_dir_all(tmp.path().join("BepInEx/plugins")).unwrap();
+        std::fs::write(tmp.path().join("BepInEx/plugins/old.dll"), b"old").unwrap();
+
+        let backup = prepare_install_target(tmp.path()).unwrap();
+        std::fs::create_dir_all(tmp.path().join("BepInEx/plugins")).unwrap();
+        std::fs::write(tmp.path().join("BepInEx/plugins/new.dll"), b"new").unwrap();
+        #[cfg(target_os = "macos")]
+        std::fs::write(tmp.path().join("run_bepinex.sh"), b"new script").unwrap();
+        #[cfg(target_os = "windows")]
+        std::fs::write(tmp.path().join("winhttp.dll"), b"new dll").unwrap();
+
+        backup.restore(tmp.path()).unwrap();
+
+        assert!(tmp.path().join("BepInEx/plugins/old.dll").exists());
+        assert!(!tmp.path().join("BepInEx/plugins/new.dll").exists());
+        #[cfg(target_os = "macos")]
+        assert_eq!(
+            std::fs::read(tmp.path().join("run_bepinex.sh")).unwrap(),
+            b"old script"
+        );
+        #[cfg(target_os = "windows")]
+        assert_eq!(
+            std::fs::read(tmp.path().join("winhttp.dll")).unwrap(),
+            b"old dll"
+        );
     }
 
     #[test]

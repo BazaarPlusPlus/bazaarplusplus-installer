@@ -1,3 +1,4 @@
+use std::fs::File;
 use std::io::{Cursor, Read};
 use std::path::Path;
 use tauri::Manager;
@@ -12,11 +13,9 @@ pub(crate) fn read_bundled_bpp_version(app: &tauri::AppHandle) -> Result<Option<
         .resource_dir()
         .map_err(|err| err.to_string())?
         .join(bundled_zip_relative_path());
-    let zip_bytes = std::fs::read(&resource_path)
+    let file = File::open(&resource_path)
         .map_err(|err| format!("Cannot read bundled BepInEx.zip: {err}"))?;
-
-    let reader = Cursor::new(zip_bytes);
-    let mut archive = zip::ZipArchive::new(reader).map_err(|err| err.to_string())?;
+    let mut archive = zip::ZipArchive::new(file).map_err(|err| err.to_string())?;
 
     for index in 0..archive.len() {
         let mut file = archive.by_index(index).map_err(|err| err.to_string())?;

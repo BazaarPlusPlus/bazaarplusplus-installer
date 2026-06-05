@@ -39,6 +39,11 @@ pub fn run() {
         .setup(|app| {
             let handle = app.app_handle();
             build_tray(&handle)?;
+            let startup_handle = handle.clone();
+            tauri::async_runtime::spawn_blocking(move || {
+                let state = startup_handle.state::<InstallerContextState>();
+                let _ = state.get_or_initialize(&startup_handle);
+            });
             let app_handle = handle.clone();
             tauri::async_runtime::spawn(async move {
                 let state = app_handle.state::<crate::stream::state::StreamRuntimeState>();

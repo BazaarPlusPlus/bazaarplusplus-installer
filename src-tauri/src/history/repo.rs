@@ -2,17 +2,15 @@ use std::path::{Path, PathBuf};
 
 use rusqlite::params;
 
-pub use crate::history::dto::{
-    HistoryRunDetail, HistoryRunList, HistorySummary,
-};
+pub use crate::history::dto::{HistoryRunDetail, HistoryRunList, HistorySummary};
 
 use crate::history::dto::HistoryRunDetail as HistoryRunDetailDto;
 use crate::history::files::{remove_video_file, resolve_data_file_path, resolve_screenshot_path};
 use crate::history::mapper::{map_run_to_detail_row, map_run_to_list_row};
 use crate::history::queries::{
-    self, completed_video_count, completed_video_counts, load_battle_rows, load_battle_video_ref,
-    load_run_row, load_run_video_refs, load_summary, list_run_rows, local_player_name,
-    open_connection, table_exists,
+    self, completed_video_count, completed_video_counts, list_run_rows, load_battle_rows,
+    load_battle_video_ref, load_run_row, load_run_video_refs, load_summary, local_player_name,
+    open_connection, open_write_connection, table_exists,
 };
 use crate::history::screenshots::{primary_screenshot, primary_screenshot_ids};
 
@@ -39,7 +37,10 @@ pub fn list_history_runs(database_path: &Path, limit: usize) -> Result<HistoryRu
     let summary = load_summary(&conn)?;
     let effective_limit = i64::try_from(limit.max(1)).map_err(|err| err.to_string())?;
     let rows = list_run_rows(&conn, effective_limit)?;
-    let run_ids = rows.iter().map(|row| row.run_id.clone()).collect::<Vec<_>>();
+    let run_ids = rows
+        .iter()
+        .map(|row| row.run_id.clone())
+        .collect::<Vec<_>>();
     let screenshot_ids = primary_screenshot_ids(&conn, &run_ids)?;
     let video_counts = completed_video_counts(&conn, &run_ids)?;
 
@@ -105,7 +106,10 @@ pub fn load_battle_video_path(
     Ok(row.and_then(|video| resolve_data_file_path(data_dir, &video.relative_path)))
 }
 
-pub fn load_run_id_for_battle(database_path: &Path, battle_id: &str) -> Result<Option<String>, String> {
+pub fn load_run_id_for_battle(
+    database_path: &Path,
+    battle_id: &str,
+) -> Result<Option<String>, String> {
     let conn = open_connection(database_path)?;
     queries::load_run_id_for_battle(&conn, battle_id)
 }
@@ -116,7 +120,7 @@ pub fn delete_battle_video(
     battle_id: &str,
     video_id: &str,
 ) -> Result<bool, String> {
-    let mut conn = open_connection(database_path)?;
+    let mut conn = open_write_connection(database_path)?;
     let Some(video) = load_battle_video_ref(&conn, battle_id, Some(video_id))? else {
         return Ok(false);
     };
@@ -137,7 +141,7 @@ pub fn delete_run_videos(
     data_dir: &Path,
     run_id: &str,
 ) -> Result<usize, String> {
-    let mut conn = open_connection(database_path)?;
+    let mut conn = open_write_connection(database_path)?;
     let videos = load_run_video_refs(&conn, run_id)?;
     for video in &videos {
         remove_video_file(data_dir, &video.relative_path)?;

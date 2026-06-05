@@ -7,8 +7,8 @@ use super::{
         StreamWindowStatus,
     },
 };
-use crate::config::{BAZAAR_DATA_DIRECTORY, DATABASE_FILE_NAME};
-use crate::services::game_path::resolve_game_path;
+use crate::services::game_path::{resolve_game_path_with_database, resolve_game_path_with_source};
+use crate::services::paths;
 use chrono::{Local, SecondsFormat};
 use std::path::PathBuf;
 use tokio::{net::TcpListener, sync::oneshot};
@@ -40,12 +40,20 @@ pub async fn start(
     };
     let urls = service_urls(HOST, PREFERRED_PORT);
     let status_with_start = state.mark_started(current_timestamp());
-    let game_path = resolve_game_path(
-        &app,
-        requested_game_path.map(|path| path.to_string_lossy().into_owned()),
-        None,
-    );
-    let overlay_record_repository = OverlayRecordRepository::new(game_path.clone());
+    let requested_game_path = requested_game_path.map(|path| path.to_string_lossy().into_owned());
+    let game_resolution = resolve_game_path_with_source(&app, requested_game_path.clone(), None);
+    let record_resolution = game_resolution
+        .as_ref()
+        .filter(|resolution| resolution.database_path.is_some())
+        .cloned()
+        .or_else(|| resolve_game_path_with_database(&app, requested_game_path, None));
+    let game_path = game_resolution
+        .as_ref()
+        .map(|resolution| resolution.game_path.clone());
+    let record_game_path = record_resolution
+        .as_ref()
+        .map(|resolution| resolution.game_path.clone());
+    let overlay_record_repository = OverlayRecordRepository::new(record_game_path);
     let db = stream_db_status(game_path.as_ref());
     let window = stream_window_status(
         &overlay_record_repository,
@@ -95,9 +103,7 @@ fn stream_db_status(game_path: Option<&PathBuf>) -> StreamDbStatus {
     let Some(game_path) = game_path else {
         return StreamDbStatus::default();
     };
-    let database_path = game_path
-        .join(BAZAAR_DATA_DIRECTORY)
-        .join(DATABASE_FILE_NAME);
+    let database_path = paths::database_path(game_path);
     StreamDbStatus {
         found: database_path.exists(),
         path: Some(database_path.to_string_lossy().into_owned()),

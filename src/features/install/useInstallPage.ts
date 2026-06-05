@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { InstallState } from '../../types/backend';
 import { useI18n, type Translate } from '../../i18n/LocaleProvider';
+import { parseResetBppDataError, toErrorMessage } from '../shared/errors';
 import { useAsyncAction } from '../shared/useAsyncAction';
 import {
   chooseGameDirectory,
@@ -90,7 +91,10 @@ export function useInstallPage() {
           setState(await resetBppData(path));
           setMessage(t('resetDataDone'));
         },
-        { onStart: () => setMessage(null) }
+        {
+          onStart: () => setMessage(null),
+          errorMessage: (caught) => formatResetBppDataError(caught, t)
+        }
       ),
     [run, state, t]
   );
@@ -140,6 +144,19 @@ function requireGamePath(state: InstallState, t: Translate) {
     throw new Error(t('selectGameDirFirst'));
   }
   return state.selected_game_path;
+}
+
+function formatResetBppDataError(error: unknown, t: Translate) {
+  const resetError = parseResetBppDataError(error);
+  if (resetError?.code === 'game_running') {
+    return t('resetDataBlockedByGame');
+  }
+  if (resetError?.code === 'partial_failure') {
+    return t('resetDataPartialFailure', {
+      count: Math.max(1, resetError.paths.length)
+    });
+  }
+  return toErrorMessage(error);
 }
 
 function createInstallStatus(state: InstallState, t: Translate) {

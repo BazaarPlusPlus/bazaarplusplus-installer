@@ -2,31 +2,15 @@ import { check } from '@tauri-apps/plugin-updater';
 import { invokeCommand } from '../../api/tauri';
 import { hasTauriRuntime } from '../../api/runtime';
 import type { AppBootstrap } from '../../types/backend';
+import bootstrapResource from '../../../src-tauri/resources/app-bootstrap.json';
 
 export const fallbackBootstrap: AppBootstrap = {
-  app_version: '4.0.0',
-  bundled_bpp_version: null,
-  links: {
-    github: 'https://github.com/cauyxy/BazaarPlusPlus',
-    x: 'https://x.com/yxinyu715',
-    bilibili_project: 'https://space.bilibili.com/3546978457750467',
-    bilibili_author: 'https://space.bilibili.com/1564408396',
-    xiaohongshu: '#',
-    kofi: 'https://ko-fi.com/cauyxy',
-    supporter_list: 'https://bazaarplusplus.com/support'
-  },
-  credits: [
-    { name: 'cauyxy', role: 'AUTHOR' },
-    { name: 'Trae', role: 'CO-CREATOR' },
-    { name: 'Codex', role: 'CO-CREATOR' },
-    { name: 'Claude Code', role: 'CO-CREATOR' }
-  ],
-  licenses: [
-    { name: 'BepInEx', license: 'LGPL-2.1', category: 'runtime' },
-    { name: 'React', license: 'MIT', category: 'frontend' },
-    { name: 'Tauri', license: 'MIT', category: 'backend' },
-    { name: 'Tailwind CSS', license: 'MIT', category: 'frontend' }
-  ]
+  ...(bootstrapResource as Pick<
+    AppBootstrap,
+    'links' | 'credits' | 'licenses'
+  >),
+  app_version: __FRONTEND_VERSION__,
+  bundled_bpp_version: null
 };
 
 export async function loadAppBootstrap() {

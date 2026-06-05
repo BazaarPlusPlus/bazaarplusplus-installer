@@ -9,6 +9,13 @@ use crate::stream::{
 };
 
 #[tauri::command]
+pub fn get_stream_status(
+    state: tauri::State<'_, StreamRuntimeState>,
+) -> Result<StreamServiceStatus, String> {
+    Ok(state.snapshot())
+}
+
+#[tauri::command]
 pub async fn ensure_stream_session(
     app: tauri::AppHandle,
     state: tauri::State<'_, StreamRuntimeState>,

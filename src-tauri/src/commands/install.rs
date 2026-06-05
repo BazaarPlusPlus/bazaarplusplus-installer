@@ -35,12 +35,12 @@ pub async fn choose_game_directory(
 }
 
 #[tauri::command]
-pub fn install_mod(
+pub async fn install_mod(
     app: tauri::AppHandle,
     state: tauri::State<'_, InstallerContextState>,
     game_path: String,
 ) -> Result<InstallState, String> {
-    run_install(app, state, game_path)
+    run_install(app, state, game_path).await
 }
 
 #[tauri::command]
@@ -54,12 +54,12 @@ pub async fn reset_bpp_data(
 }
 
 #[tauri::command]
-pub fn uninstall_mod(
+pub async fn uninstall_mod(
     app: tauri::AppHandle,
     state: tauri::State<'_, InstallerContextState>,
     game_path: String,
 ) -> Result<InstallState, String> {
-    run_uninstall(app, state, game_path)
+    run_uninstall(app, state, game_path).await
 }
 
 #[tauri::command]

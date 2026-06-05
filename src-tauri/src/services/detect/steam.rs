@@ -178,25 +178,6 @@ fn get_game_path_from_single_steam_root(steam_path: &Path) -> Option<PathBuf> {
     None
 }
 
-#[cfg(target_os = "windows")]
-fn windows_common_game_candidates() -> Vec<PathBuf> {
-    let mut candidates = Vec::new();
-
-    for drive in 'C'..='Z' {
-        for root in ["Steam", "SteamLibrary"] {
-            candidates.push(PathBuf::from(format!(
-                "{drive}:\\{root}\\steamapps\\common\\The Bazaar"
-            )));
-        }
-    }
-
-    for candidate in crate::config::STEAM_LIBRARY_FALLBACK_CANDIDATES {
-        candidates.push(PathBuf::from(candidate));
-    }
-
-    candidates
-}
-
 fn get_game_path_from_steam_roots<I>(steam_roots: I) -> Option<PathBuf>
 where
     I: IntoIterator<Item = PathBuf>,
@@ -238,11 +219,12 @@ fn get_game_path_from_detected_steam_roots(
 
     #[cfg(target_os = "windows")]
     {
+        let fallback_candidates = crate::services::game_path::fallback_game_candidates();
         crate::services::debug_log!(
             "[detect::steam] probing common Windows candidates count={}",
-            windows_common_game_candidates().len()
+            fallback_candidates.len()
         );
-        for path in windows_common_game_candidates() {
+        for path in fallback_candidates {
             if path.exists() {
                 crate::services::debug_log!(
                     "[detect::steam] hit from common Windows candidate game_path={}",

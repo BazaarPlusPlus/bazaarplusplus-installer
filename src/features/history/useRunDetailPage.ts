@@ -2,8 +2,8 @@ import { useCallback, useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import type { HistoryRunDetail } from '../../types/backend';
 import { toErrorMessage } from '../shared/errors';
+import { ensureStreamSession } from '../shared/streamSessionApi';
 import { useAsyncAction } from '../shared/useAsyncAction';
-import { ensureStreamSession } from '../stream/streamApi';
 import {
   deleteBattleVideo,
   loadHistoryRunDetail,
@@ -52,9 +52,7 @@ export function useRunDetailPage() {
 
   const revealVideo = useCallback(
     (battleId: string, videoId?: string) => {
-      void run(`video:${battleId}`, () =>
-        revealBattleVideo(battleId, videoId)
-      );
+      void run(`video:${battleId}`, () => revealBattleVideo(battleId, videoId));
     },
     [run]
   );

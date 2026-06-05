@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ensureStreamSession } from '../stream/streamApi';
 import type { HistoryRunList, HistoryRunRow } from '../../types/backend';
 import { toErrorMessage } from '../shared/errors';
+import { ensureStreamSession } from '../shared/streamSessionApi';
 import { optionalStripPreviewUrl } from './stripPreview';
 import {
   deleteRunVideos,
@@ -77,4 +77,3 @@ export function useHistoryPage() {
     deleteVideos
   };
 }
-

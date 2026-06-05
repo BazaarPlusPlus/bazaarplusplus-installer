@@ -24,9 +24,11 @@ export default function Install() {
   };
 
   const confirmInstall = async () => {
-    await page.install();
-    setShowInstallModal(false);
-    setInstallAcknowledged(false);
+    const installed = await page.install();
+    if (installed) {
+      setShowInstallModal(false);
+      setInstallAcknowledged(false);
+    }
   };
 
   return (

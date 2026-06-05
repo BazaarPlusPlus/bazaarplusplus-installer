@@ -1,8 +1,6 @@
-use std::{
-    collections::HashMap,
-    path::Path,
-};
+use std::{collections::HashMap, path::Path};
 
+use chrono::{DateTime, SecondsFormat, Utc};
 use rusqlite::{params_from_iter, Connection, OptionalExtension};
 
 use crate::history::queries::{open_connection, sql_placeholders, table_exists};
@@ -87,7 +85,10 @@ pub fn primary_screenshot_ids(
     Ok(selected)
 }
 
-pub fn primary_screenshot(conn: &Connection, run_id: &str) -> Result<Option<ScreenshotRef>, String> {
+pub fn primary_screenshot(
+    conn: &Connection,
+    run_id: &str,
+) -> Result<Option<ScreenshotRef>, String> {
     if !table_exists(conn, "run_screenshots")? {
         return Ok(None);
     }
@@ -149,6 +150,7 @@ pub fn load_latest_overlay_snapshot(
     }
 
     let offset_value = i64::try_from(offset).map_err(|err| err.to_string())?;
+    let from_utc = from.map(normalize_overlay_from_utc);
     let mut stmt = if from.is_some() {
         conn.prepare(
             "
@@ -165,8 +167,8 @@ select
   rs.captured_at_utc
 from run_screenshots rs
 where rs.capture_source = 'end_of_run_auto'
-  and datetime(rs.captured_at_utc) >= datetime(?1)
-order by datetime(rs.captured_at_utc) desc, rs.screenshot_id desc
+  and rs.captured_at_utc >= ?1
+order by rs.captured_at_utc desc, rs.screenshot_id desc
 limit 1 offset ?2
 ",
         )
@@ -186,14 +188,14 @@ select
   rs.captured_at_utc
 from run_screenshots rs
 where rs.capture_source = 'end_of_run_auto'
-order by datetime(rs.captured_at_utc) desc, rs.screenshot_id desc
+order by rs.captured_at_utc desc, rs.screenshot_id desc
 limit 1 offset ?1
 ",
         )
     }
     .map_err(|err| err.to_string())?;
-    let mut rows = if let Some(from) = from {
-        stmt.query((from, offset_value))
+    let mut rows = if let Some(from_utc) = from_utc {
+        stmt.query((from_utc, offset_value))
             .map_err(|err| err.to_string())?
     } else {
         stmt.query([offset_value]).map_err(|err| err.to_string())?
@@ -219,14 +221,15 @@ pub fn load_overlay_snapshot_count(
     }
 
     let count: i64 = if let Some(from) = from {
+        let from_utc = normalize_overlay_from_utc(from);
         conn.query_row(
             "
 select count(*)
 from run_screenshots rs
 where rs.capture_source = 'end_of_run_auto'
-  and datetime(rs.captured_at_utc) >= datetime(?1)
+  and rs.captured_at_utc >= ?1
 ",
-            [from],
+            [from_utc],
             |row| row.get(0),
         )
         .map_err(|err| err.to_string())?
@@ -265,6 +268,7 @@ pub fn load_overlay_snapshot_list(
         return Ok(Vec::new());
     }
     let limit_value = i64::try_from(effective_limit).map_err(|err| err.to_string())?;
+    let from_utc = from.map(normalize_overlay_from_utc);
 
     let mut records = Vec::new();
     let mut stmt = if from.is_some() {
@@ -283,8 +287,8 @@ select
   rs.captured_at_utc
 from run_screenshots rs
 where rs.capture_source = 'end_of_run_auto'
-  and datetime(rs.captured_at_utc) >= datetime(?1)
-order by datetime(rs.captured_at_utc) desc, rs.screenshot_id desc
+  and rs.captured_at_utc >= ?1
+order by rs.captured_at_utc desc, rs.screenshot_id desc
 limit ?2
 ",
         )
@@ -304,14 +308,14 @@ select
   rs.captured_at_utc
 from run_screenshots rs
 where rs.capture_source = 'end_of_run_auto'
-order by datetime(rs.captured_at_utc) desc, rs.screenshot_id desc
+order by rs.captured_at_utc desc, rs.screenshot_id desc
 limit ?1
 ",
         )
     }
     .map_err(|err| err.to_string())?;
-    let mut rows = if let Some(from) = from {
-        stmt.query((from, limit_value))
+    let mut rows = if let Some(from_utc) = from_utc {
+        stmt.query((from_utc, limit_value))
             .map_err(|err| err.to_string())?
     } else {
         stmt.query([limit_value]).map_err(|err| err.to_string())?
@@ -381,11 +385,21 @@ fn map_overlay_snapshot_row(row: &rusqlite::Row<'_>) -> Result<OverlaySnapshotRo
     })
 }
 
+fn normalize_overlay_from_utc(value: &str) -> String {
+    DateTime::parse_from_rfc3339(value.trim())
+        .map(|parsed| {
+            parsed
+                .with_timezone(&Utc)
+                .to_rfc3339_opts(SecondsFormat::Secs, false)
+        })
+        .unwrap_or_else(|_| value.trim().to_string())
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
         load_latest_overlay_snapshot, load_overlay_snapshot_by_id, load_overlay_snapshot_count,
-        load_overlay_snapshot_list,
+        load_overlay_snapshot_list, normalize_overlay_from_utc,
     };
 
     fn create_run_screenshots_table(conn: &rusqlite::Connection) {
@@ -532,11 +546,39 @@ mod tests {
         )
         .unwrap();
 
-        let latest = load_latest_overlay_snapshot(temp.path(), Some("2026-04-10T20:00:00+00:00"), 0)
-            .unwrap()
-            .unwrap();
+        let latest =
+            load_latest_overlay_snapshot(temp.path(), Some("2026-04-10T20:00:00+00:00"), 0)
+                .unwrap()
+                .unwrap();
 
         assert_eq!(latest.id, "snap-after");
+    }
+
+    #[test]
+    fn latest_overlay_record_normalizes_stream_start_time_to_utc() {
+        let temp = tempfile::NamedTempFile::new().unwrap();
+        let conn = rusqlite::Connection::open(temp.path()).unwrap();
+        create_run_screenshots_table(&conn);
+        conn.execute(
+            "insert into run_screenshots (
+                screenshot_id, run_id, capture_source, image_relative_path, captured_at_local, captured_at_utc, hero_name
+             ) values
+             ('snap-before', 'run-1', 'end_of_run_auto', 'before.png', '2026-04-10T19:30:05+00:00', '2026-04-10T19:30:05+00:00', 'Mak'),
+             ('snap-after', 'run-2', 'end_of_run_auto', 'after.png', '2026-04-10T21:30:05+00:00', '2026-04-10T21:30:05+00:00', 'Pygmalien')",
+            [],
+        )
+        .unwrap();
+
+        let latest =
+            load_latest_overlay_snapshot(temp.path(), Some("2026-04-11T04:00:00+08:00"), 0)
+                .unwrap()
+                .unwrap();
+
+        assert_eq!(latest.id, "snap-after");
+        assert_eq!(
+            normalize_overlay_from_utc("2026-04-11T04:00:00+08:00"),
+            "2026-04-10T20:00:00+00:00"
+        );
     }
 
     #[test]

@@ -42,9 +42,7 @@ pub fn resolve_screenshot_path(game_path: &Path, raw_path: &str) -> Option<PathB
         return Some(candidate);
     }
     resolve_data_file_path(
-        &game_path
-            .join(crate::config::BAZAAR_DATA_DIRECTORY)
-            .join(crate::config::SCREENSHOTS_DIRECTORY),
+        &crate::services::paths::screenshots_dir(game_path),
         raw_path,
     )
 }

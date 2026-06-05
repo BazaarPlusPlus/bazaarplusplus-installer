@@ -84,8 +84,8 @@ impl OverlayRecordRepository {
 
 #[cfg(test)]
 mod tests {
-    use super::locator::DATABASE_FILE_NAME;
     use super::OverlayRecordRepository;
+    use crate::config::DATABASE_FILE_NAME;
 
     fn create_run_screenshots_table(conn: &rusqlite::Connection) {
         conn.execute(

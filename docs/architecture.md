@@ -25,6 +25,7 @@ src-tauri/
   src/
     commands/   Tauri command surface grouped by product area
     history/    SQLite-backed run history reads and video actions
+    services/   install, detection, Steam/VDF, game-path, and path helpers
     stream/     local HTTP overlay service, stream state, and record reads
   resources/    bundled payloads and stream overlay assets
 
@@ -38,6 +39,7 @@ scripts/
 - `src/layouts/GlobalShell.tsx` owns the shared navigation, locale toggle, app bootstrap, and update check entry point.
 - `src/pages/*` should stay focused on rendering and user actions.
 - `src/features/*` owns route loading state, action state, API calls, and pure view-model derivation.
+- `src/features/shared/*` owns cross-feature helpers such as async action state, error parsing, and stream session effects.
 - `src/api/tauri.ts` is the typed command boundary. When adding or renaming a command, update the command map there and the Rust registration in `src-tauri/src/commands/registry.rs` (the `with_commands!` list).
 - Rust structs with `ts_rs::TS` derive are exported by `scripts/generate-bindings.mjs` into `src/types/generated/`.
 
@@ -48,7 +50,7 @@ scripts/
 - `commands/history.rs`: run list/detail, screenshot reveal, and battle-video actions.
 - `commands/stream.rs`: stream session, overlay settings, and stream window actions.
 - `services/bepinex/`: payload install, data reset, uninstall, ZIP handling, and version reads.
-- `services/detect/`, `services/steam.rs`, and `services/vdf/`: platform discovery, Steam process handling, and launch option mutation.
+- `services/detect/`, `services/game_path.rs`, `services/paths.rs`, `services/steam.rs`, and `services/vdf/`: platform discovery, game/data path ownership, Steam process handling, and launch option mutation.
 - `history/repo.rs`: read-mostly access to the mod-owned SQLite run history schema.
 - `stream/`: local HTTP service lifecycle, overlay/settings routes, image strip generation, stream runtime state, and record reads.
 
@@ -61,7 +63,7 @@ scripts/
 ## Verification
 
 - Frontend or TypeScript changes should run `npm run check`.
-- Script changes should run the smallest relevant `node --test` coverage when available.
+- Script changes should run the smallest relevant Vitest coverage when available, for example `npx vitest run scripts/<file>.test.mjs`; when no test seam exists, run the touched script directly if practical.
 - Tauri command, generated binding, stream, history, or install backend changes should run `npm run test:rust` and `npm run test:unit` as applicable.
 - Packaging, bundled resource, versioning, or Tauri config changes should run `npm run prebuild-check`.
 - Release-oriented changes should run `./build.sh --prod`.

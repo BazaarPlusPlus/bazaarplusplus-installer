@@ -1,10 +1,6 @@
-use std::{
-    collections::HashMap,
-    path::Path,
-    time::Duration,
-};
+use std::{collections::HashMap, path::Path, time::Duration};
 
-use rusqlite::{params, params_from_iter, Connection, OptionalExtension};
+use rusqlite::{params, params_from_iter, Connection, OpenFlags, OptionalExtension};
 
 use crate::history::dto::{HistoryBattleRow, HistorySummary};
 use crate::history::mapper::map_battle_row;
@@ -31,7 +27,16 @@ pub struct VideoRef {
 }
 
 pub fn open_connection(database_path: &Path) -> Result<Connection, String> {
-    let conn = Connection::open(database_path).map_err(|err| err.to_string())?;
+    let conn = Connection::open_with_flags(database_path, OpenFlags::SQLITE_OPEN_READ_ONLY)
+        .map_err(|err| err.to_string())?;
+    conn.busy_timeout(Duration::from_secs(2))
+        .map_err(|err| err.to_string())?;
+    Ok(conn)
+}
+
+pub fn open_write_connection(database_path: &Path) -> Result<Connection, String> {
+    let conn = Connection::open_with_flags(database_path, OpenFlags::SQLITE_OPEN_READ_WRITE)
+        .map_err(|err| err.to_string())?;
     conn.busy_timeout(Duration::from_secs(2))
         .map_err(|err| err.to_string())?;
     Ok(conn)
@@ -383,7 +388,10 @@ pub fn load_run_video_refs(conn: &Connection, run_id: &str) -> Result<Vec<VideoR
         .map_err(|err| err.to_string())
 }
 
-pub fn load_run_id_for_battle(conn: &Connection, battle_id: &str) -> Result<Option<String>, String> {
+pub fn load_run_id_for_battle(
+    conn: &Connection,
+    battle_id: &str,
+) -> Result<Option<String>, String> {
     if !table_exists(conn, "battles")? {
         return Ok(None);
     }
@@ -395,4 +403,18 @@ pub fn load_run_id_for_battle(conn: &Connection, battle_id: &str) -> Result<Opti
     )
     .optional()
     .map_err(|err| err.to_string())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::open_connection;
+
+    #[test]
+    fn open_connection_does_not_create_missing_database() {
+        let temp_dir = tempfile::tempdir().unwrap();
+        let database_path = temp_dir.path().join("missing.db");
+
+        assert!(open_connection(&database_path).is_err());
+        assert!(!database_path.exists());
+    }
 }

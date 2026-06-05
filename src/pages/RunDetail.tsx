@@ -118,6 +118,8 @@ export default function RunDetail() {
                 <img
                   src={page.stripUrl}
                   alt=""
+                  loading="lazy"
+                  decoding="async"
                   className="absolute inset-0 w-full h-full object-cover"
                 />
               ) : (

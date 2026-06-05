@@ -5,6 +5,7 @@ pub mod game_process;
 pub mod history;
 pub mod install;
 pub mod path;
+pub mod paths;
 pub mod startup;
 pub mod steam;
 pub mod stream_window;

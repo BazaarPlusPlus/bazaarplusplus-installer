@@ -1,14 +1,14 @@
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
-use crate::config::{BAZAAR_DATA_DIRECTORY, DATABASE_FILE_NAME};
 use crate::history::{
     delete_battle_video as delete_battle_video_in_repo,
     delete_run_videos as delete_run_videos_in_repo, get_history_run_detail as get_detail_from_repo,
     list_history_runs as list_runs_from_repo, load_battle_video_path, load_run_id_for_battle,
     load_run_screenshot_path, HistoryRunDetail, HistoryRunList, HistorySummary,
 };
-use crate::services::game_path::resolve_game_path;
+use crate::services::game_path::resolve_game_path_with_database;
+use crate::services::paths;
 
 pub struct HistoryPaths {
     pub game_path: PathBuf,
@@ -21,8 +21,8 @@ pub fn resolve_history_paths(
     session_game_path: Option<PathBuf>,
     game_path: Option<String>,
 ) -> Option<HistoryPaths> {
-    let game_path = resolve_game_path(app, game_path, session_game_path)?;
-    Some(history_paths_for_game_path(game_path))
+    let resolution = resolve_game_path_with_database(app, game_path, session_game_path)?;
+    Some(history_paths_for_game_path(resolution.game_path))
 }
 
 pub fn require_history_paths(
@@ -48,6 +48,7 @@ pub fn reveal_run_screenshot(
     game_path: &Path,
     run_id: &str,
 ) -> Result<(), String> {
+    require_database_exists(database_path)?;
     let path = load_run_screenshot_path(database_path, game_path, run_id)?
         .ok_or_else(|| format!("No screenshot is available for run {run_id}."))?;
     reveal_in_file_browser(&path)
@@ -59,6 +60,7 @@ pub fn reveal_battle_video(
     battle_id: &str,
     video_id: Option<&str>,
 ) -> Result<(), String> {
+    require_database_exists(database_path)?;
     let path = load_battle_video_path(database_path, data_dir, battle_id, video_id)?
         .ok_or_else(|| format!("No completed video is available for battle {battle_id}."))?;
     reveal_in_file_browser(&path)
@@ -70,6 +72,7 @@ pub fn delete_battle_video(
     battle_id: &str,
     video_id: &str,
 ) -> Result<HistoryRunDetail, String> {
+    require_database_exists(database_path)?;
     let run_id = load_run_id_for_battle(database_path, battle_id)?
         .ok_or_else(|| format!("Battle {battle_id} was not found."))?;
     let deleted = delete_battle_video_in_repo(database_path, data_dir, battle_id, video_id)?;
@@ -88,6 +91,7 @@ pub fn delete_run_videos(
     run_id: &str,
     limit: usize,
 ) -> Result<HistoryRunList, String> {
+    require_database_exists(database_path)?;
     delete_run_videos_in_repo(database_path, data_dir, run_id)?;
     list_runs(database_path, limit)
 }
@@ -105,13 +109,22 @@ pub fn empty_history_list() -> HistoryRunList {
 }
 
 fn history_paths_for_game_path(game_path: PathBuf) -> HistoryPaths {
-    let data_dir = game_path.join(BAZAAR_DATA_DIRECTORY);
-    let database_path = data_dir.join(DATABASE_FILE_NAME);
+    let data_dir = paths::bpp_data_dir(&game_path);
+    let database_path = paths::database_path(&game_path);
     HistoryPaths {
         game_path,
         data_dir,
         database_path,
     }
+}
+
+fn require_database_exists(database_path: &Path) -> Result<(), String> {
+    database_path.exists().then_some(()).ok_or_else(|| {
+        format!(
+            "History database was not found at {}.",
+            database_path.display()
+        )
+    })
 }
 
 #[cfg(target_os = "windows")]

@@ -11,6 +11,7 @@ import {
   applyCropCode,
   defaultCropSettings,
   ensureStreamSession,
+  getStreamStatus,
   idleStreamStatus,
   loadCropSettings,
   openExternal,
@@ -61,6 +62,28 @@ export function useStreamPage() {
   useEffect(() => {
     void refresh();
   }, [refresh]);
+
+  useEffect(() => {
+    let mounted = true;
+    const interval = window.setInterval(() => {
+      void getStreamStatus()
+        .then((nextStatus) => {
+          if (mounted) {
+            setStatus(nextStatus);
+          }
+        })
+        .catch((caught) => {
+          if (mounted) {
+            setError(toErrorMessage(caught));
+          }
+        });
+    }, 2000);
+
+    return () => {
+      mounted = false;
+      window.clearInterval(interval);
+    };
+  }, [setError]);
 
   const restart = useCallback(
     () =>

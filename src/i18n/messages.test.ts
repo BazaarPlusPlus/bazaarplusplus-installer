@@ -21,7 +21,7 @@ describe('formatMessage', () => {
 
   it('interpolates named placeholders', () => {
     expect(formatMessage('en', 'updaterAvailable', { version: '4.1.0' })).toBe(
-      'Update 4.1.0 available'
+      'Update 4.1.0 available. Open the download page'
     );
     expect(formatMessage('zh', 'streamWindowOffset', { count: 3 })).toBe(
       '向前补 3 条记录'

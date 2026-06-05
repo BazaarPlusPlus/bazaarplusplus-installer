@@ -14,6 +14,8 @@ import type {
 import type { TauriCommandName } from '../types/generated/tauri-command-names';
 
 export interface TauriCommandMap {
+  // Input object keys mirror Rust command parameters after Tauri's snake_case to
+  // camelCase conversion, for example `game_path` -> `gamePath`.
   get_app_bootstrap: {
     input: undefined;
     output: AppBootstrap;
@@ -45,6 +47,10 @@ export interface TauriCommandMap {
   launch_game: {
     input: { gamePath?: string };
     output: FileActionResult;
+  };
+  get_stream_status: {
+    input: undefined;
+    output: StreamServiceStatus;
   };
   ensure_stream_session: {
     input: { gamePath?: string };

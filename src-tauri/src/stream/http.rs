@@ -17,7 +17,7 @@ use std::{
     path::{Path as FsPath, PathBuf},
     time::UNIX_EPOCH,
 };
-use tower_http::cors::{Any, CorsLayer};
+use tower_http::cors::{AllowOrigin, CorsLayer};
 
 const OVERLAY_HTML: &str = include_str!("../../resources/stream/overlay.html");
 const OVERLAY_CSS: &str = include_str!("../../resources/stream/overlay.css");
@@ -65,16 +65,12 @@ pub fn router(
     runtime: StreamRuntimeState,
     overlay_settings: OverlaySettingsStore,
 ) -> Router {
-    // Allow any origin to fetch from this local loopback HTTP server. The Tauri
-    // WebView and the OBS browser source hit it from platform-dependent origins
-    // (tauri://localhost, http://tauri.localhost, http://localhost:*), so we use
-    // `Any` rather than an allowlist; the server binds to loopback only. Without
-    // CORS the browser inside the WebView blocks every cross-origin response,
-    // making all badge counts and record lists return silently-caught zeros.
     let cors = CorsLayer::new()
-        .allow_origin(Any)
+        .allow_origin(AllowOrigin::predicate(|origin, _| {
+            is_allowed_cors_origin(origin)
+        }))
         .allow_methods([Method::GET, Method::POST])
-        .allow_headers(Any);
+        .allow_headers([header::CONTENT_TYPE]);
 
     Router::new()
         .route("/overlay", get(overlay_page))
@@ -98,6 +94,19 @@ pub fn router(
             runtime,
             overlay_settings,
         })
+}
+
+fn is_allowed_cors_origin(origin: &HeaderValue) -> bool {
+    matches!(
+        origin.to_str().ok(),
+        Some(
+            "tauri://localhost"
+                | "http://tauri.localhost"
+                | "https://tauri.localhost"
+                | "http://localhost:14207"
+                | "http://127.0.0.1:14207"
+        )
+    )
 }
 
 #[cfg(any(debug_assertions, test))]
@@ -221,17 +230,21 @@ async fn record_strip_image(
         Err(message) => return (StatusCode::BAD_REQUEST, message).into_response(),
     };
 
-    let (path, bytes) = match app_state.overlay_records.load_image(&record_id) {
+    let path = match app_state.overlay_records.load_image_path(&record_id) {
         Ok(Some(value)) => value,
         Ok(None) => return StatusCode::NOT_FOUND.into_response(),
         Err(message) => return (StatusCode::INTERNAL_SERVER_ERROR, message).into_response(),
     };
 
     let strip_result = if query.preview.unwrap_or(false) {
-        run_strip_image_task(move || crop_strip_image(&bytes, crop)).await
+        run_strip_image_task(move || {
+            let bytes = std::fs::read(&path)
+                .map_err(|err| format!("Failed to read overlay source image: {err}"))?;
+            crop_strip_image(&bytes, crop)
+        })
+        .await
     } else {
-        run_strip_image_task(move || load_or_create_strip_cache(&record_id, &path, &bytes, crop))
-            .await
+        run_strip_image_task(move || load_or_create_strip_cache(&record_id, &path, crop)).await
     };
     let strip_bytes = match strip_result {
         Ok(bytes) => bytes,
@@ -296,11 +309,7 @@ fn detect_content_type(path: &FsPath) -> &'static str {
 }
 
 fn overlay_cache_directory() -> PathBuf {
-    let base = dirs::cache_dir()
-        .or_else(dirs::config_dir)
-        .or_else(dirs::data_local_dir)
-        .unwrap_or_else(std::env::temp_dir);
-    base.join("BazaarPlusPlusV4").join("stream-overlay-cache")
+    crate::services::paths::overlay_cache_dir()
 }
 
 fn sanitized_cache_name(value: &str) -> String {
@@ -347,7 +356,6 @@ fn crop_cache_path(
 fn load_or_create_strip_cache(
     record_id: &str,
     source_path: &FsPath,
-    source_bytes: &[u8],
     crop: OverlayCropSettings,
 ) -> Result<Vec<u8>, String> {
     let cache_path = crop_cache_path(record_id, source_path, crop)?;
@@ -360,7 +368,13 @@ fn load_or_create_strip_cache(
         });
     }
 
-    let bytes = crop_strip_image(source_bytes, crop)?;
+    let source_bytes = std::fs::read(source_path).map_err(|err| {
+        format!(
+            "Failed to read overlay source image from {}: {err}",
+            source_path.display()
+        )
+    })?;
+    let bytes = crop_strip_image(&source_bytes, crop)?;
 
     if let Some(parent) = cache_path.parent() {
         std::fs::create_dir_all(parent).map_err(|err| {
@@ -498,8 +512,12 @@ async fn badge_asset(Path((category, file_name)): Path<(String, String)>) -> Res
 
 #[cfg(test)]
 mod tests {
-    use super::{crop_dynamic_image, overlay_asset_path};
+    use super::{
+        crop_cache_path, crop_dynamic_image, is_allowed_cors_origin, load_or_create_strip_cache,
+        overlay_asset_path,
+    };
     use crate::stream::overlay_settings::OverlayCropSettings;
+    use axum::http::HeaderValue;
     use image::{DynamicImage, GenericImageView, RgbaImage};
 
     #[test]
@@ -507,6 +525,31 @@ mod tests {
         let path = overlay_asset_path("overlay.js");
 
         assert!(path.ends_with("resources/stream/overlay.js"));
+    }
+
+    #[test]
+    fn cors_origin_policy_allows_only_tauri_and_repo_dev_origins() {
+        for allowed in [
+            "tauri://localhost",
+            "http://tauri.localhost",
+            "https://tauri.localhost",
+            "http://localhost:14207",
+            "http://127.0.0.1:14207",
+        ] {
+            let origin = HeaderValue::from_static(allowed);
+            assert!(
+                is_allowed_cors_origin(&origin),
+                "{allowed} should be allowed"
+            );
+        }
+
+        for denied in ["https://example.com", "http://localhost:3000", "null"] {
+            let origin = HeaderValue::from_static(denied);
+            assert!(
+                !is_allowed_cors_origin(&origin),
+                "{denied} should be denied"
+            );
+        }
     }
 
     #[test]
@@ -522,5 +565,20 @@ mod tests {
         let cropped = crop_dynamic_image(image, crop).unwrap();
 
         assert_eq!(cropped.dimensions(), (500, 150));
+    }
+
+    #[test]
+    fn strip_cache_hit_does_not_decode_source_image() {
+        let temp_dir = tempfile::tempdir().unwrap();
+        let source_path = temp_dir.path().join("source.png");
+        let crop = OverlayCropSettings::default();
+        std::fs::write(&source_path, b"not an image").unwrap();
+        let cache_path = crop_cache_path("shot-1", &source_path, crop).unwrap();
+        std::fs::create_dir_all(cache_path.parent().unwrap()).unwrap();
+        std::fs::write(&cache_path, b"cached strip").unwrap();
+
+        let bytes = load_or_create_strip_cache("shot-1", &source_path, crop).unwrap();
+
+        assert_eq!(bytes, b"cached strip");
     }
 }

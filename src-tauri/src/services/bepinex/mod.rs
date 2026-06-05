@@ -12,8 +12,7 @@ use super::{debug_error, debug_log};
 
 /// Stable error-code prefixes returned when a BPP-data reset is blocked or
 /// partially fails. Kept stable so the frontend can pattern-match the prefix;
-/// the current UI (`useInstallPage.ts`) shows a generic message and does not
-/// branch on these yet.
+/// the current UI (`useInstallPage.ts`) maps these to localized messages.
 pub(crate) const RESET_BPP_DATA_ERR_GAME_RUNNING: &str = "bpp_data_reset_blocked_by_game";
 pub(crate) const RESET_BPP_DATA_ERR_PARTIAL_FAILURE: &str = "bpp_data_reset_partial_failure";
 
@@ -73,7 +72,7 @@ pub fn install_bepinex(
     let _ = &steam_path;
     #[cfg(target_os = "macos")]
     crate::services::steam::prepare_steam_for_launch_option_update(Path::new(&steam_path), true)?;
-    payload::prepare_install_target(game_path)?;
+    let install_backup = payload::prepare_install_target(game_path)?;
 
     let install_result = (|| -> Result<(), String> {
         debug_log!("Reading bundled BepInEx.zip...");
@@ -92,6 +91,13 @@ pub fn install_bepinex(
         let _extracted = zip_archive::extract_zip(&zip_bytes, game_path)?;
         debug_log!("Extracted {} files.", _extracted.len());
 
+        #[cfg(target_os = "macos")]
+        {
+            let script_path = game_path.join("run_bepinex.sh");
+            crate::services::vdf::ensure_launcher_executable(&script_path)?;
+            debug_log!("Marked {} as executable.", script_path.display());
+        }
+
         Ok(())
     })();
 
@@ -100,13 +106,23 @@ pub fn install_bepinex(
         .map(|preserved| payload::restore_preserved_file(game_path, preserved))
         .transpose();
 
-    match (install_result, restore_result) {
+    let final_result = match (install_result, restore_result) {
         (Ok(()), Ok(_)) => Ok(()),
         (Err(install_err), Ok(_)) => Err(install_err),
         (Ok(()), Err(restore_err)) => Err(restore_err),
         (Err(install_err), Err(restore_err)) => Err(format!(
             "{install_err}; additionally failed to restore preserved config: {restore_err}"
         )),
+    };
+
+    match final_result {
+        Ok(()) => Ok(()),
+        Err(err) => match install_backup.restore(game_path) {
+            Ok(()) => Err(err),
+            Err(rollback_err) => Err(format!(
+                "{err}; additionally failed to restore previous payload: {rollback_err}"
+            )),
+        },
     }
 }
 

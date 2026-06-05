@@ -11,6 +11,7 @@ macro_rules! with_commands {
             (commands::install, reset_bpp_data),
             (commands::install, uninstall_mod),
             (commands::install, launch_game),
+            (commands::stream, get_stream_status),
             (commands::stream, ensure_stream_session),
             (commands::stream, restart_stream_session),
             (commands::stream, set_stream_window),
@@ -79,7 +80,11 @@ mod tests {
                 }
                 let line = line.trim().trim_end_matches(',').trim_end_matches(')');
                 let name = line.split(',').last()?.trim();
-                if name.is_empty() || !name.chars().all(|ch| ch.is_ascii_alphanumeric() || ch == '_') {
+                if name.is_empty()
+                    || !name
+                        .chars()
+                        .all(|ch| ch.is_ascii_alphanumeric() || ch == '_')
+                {
                     return None;
                 }
                 Some(name.to_string())
@@ -97,6 +102,6 @@ mod tests {
             .collect::<Vec<_>>();
 
         assert_eq!(parsed, names);
-        assert_eq!(names.len(), 21);
+        assert_eq!(names.len(), 22);
     }
 }

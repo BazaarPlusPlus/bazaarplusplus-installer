@@ -272,7 +272,7 @@ Upload should fail when:
 
 - `build.sh`: dev, production build, upload, and `latest.json` orchestration
 - `scripts/version-sync.mjs`: align package, Tauri, Cargo, and Cargo.lock versions
-- `scripts/prebuild-check.mjs`: validate versions, BPP data policy, and platform ZIP contents
+- `scripts/prebuild-check.mjs`: validate version alignment, generated TypeScript bindings, and platform ZIP contents
 - `scripts/generate-platform-manifest.mjs`: create one platform updater fragment
 - `scripts/generate-latest-manifest.mjs`: combine uploaded fragments into `latest.json`
 

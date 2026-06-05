@@ -3,7 +3,10 @@ use std::path::{Path, PathBuf};
 use crate::services::{debug_error, debug_log};
 use serde::Serialize;
 
-use super::parse::{clear_launch_options, inject_launch_options, verify_launch_options_in_content, THE_BAZAAR_APP_ID};
+use super::parse::{
+    clear_launch_options, inject_launch_options, verify_launch_options_in_content,
+    THE_BAZAAR_APP_ID,
+};
 
 #[derive(Debug, Serialize)]
 pub struct LaunchOptionsPatchResult {
@@ -232,13 +235,6 @@ pub fn patch_launch_options(
     }
 
     crate::services::steam::prepare_steam_for_launch_option_update(steam_path, true)?;
-
-    #[cfg(target_os = "macos")]
-    {
-        let script_path = game_path.join("run_bepinex.sh");
-        ensure_launcher_executable(&script_path)?;
-        debug_log!("Marked {} as executable.", script_path.display());
-    }
 
     debug_log!("Locating localconfig.vdf files...");
     let updated = patch_localconfigs(steam_path, &args).map_err(|err| {

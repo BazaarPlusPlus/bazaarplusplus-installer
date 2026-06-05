@@ -6,7 +6,7 @@
   "permissions": [
     "core:default",
     "opener:default",
-    "updater:default",
+    "updater:allow-check",
     {
       "identifier": "opener:allow-open-url",
       "allow": [

@@ -32,7 +32,7 @@ pub fn build_install_state(
     Ok(install_state_from_snapshot(snapshot, steam_running))
 }
 
-pub fn run_install(
+pub async fn run_install(
     app: tauri::AppHandle,
     state: tauri::State<'_, InstallerContextState>,
     game_path: String,
@@ -43,10 +43,22 @@ pub fn run_install(
         .clone()
         .ok_or_else(|| "Steam path is not configured.".to_string())?;
 
-    install_bepinex(app.clone(), steam_path.clone(), game_path.clone())?;
-    if before.steam_launch_options_supported {
-        let _ = patch_launch_options(app.clone(), steam_path, game_path.clone())?;
-    }
+    let app_for_task = app.clone();
+    let game_path_for_task = game_path.clone();
+    let patch_launch_options_supported = before.steam_launch_options_supported;
+    tauri::async_runtime::spawn_blocking(move || {
+        install_bepinex(
+            app_for_task.clone(),
+            steam_path.clone(),
+            game_path_for_task.clone(),
+        )?;
+        if patch_launch_options_supported {
+            let _ = patch_launch_options(app_for_task, steam_path, game_path_for_task)?;
+        }
+        Ok::<(), String>(())
+    })
+    .await
+    .map_err(|err| format!("failed to run install task: {err}"))??;
 
     let app_for_state = app.clone();
     let state = app_for_state.state::<InstallerContextState>();
@@ -63,17 +75,20 @@ pub async fn run_reset_bpp_data(
     build_install_state(app, install_state, Some(game_path))
 }
 
-pub fn run_uninstall(
+pub async fn run_uninstall(
     app: tauri::AppHandle,
     state: tauri::State<'_, InstallerContextState>,
     game_path: String,
 ) -> Result<InstallState, String> {
     let before = detect_for_install(app.clone(), state, Some(game_path.clone()))?;
-    uninstall_bpp(
-        app.clone(),
-        before.steam_path.clone().unwrap_or_default(),
-        game_path.clone(),
-    )?;
+    let app_for_task = app.clone();
+    let steam_path = before.steam_path.clone().unwrap_or_default();
+    let game_path_for_task = game_path.clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        uninstall_bpp(app_for_task, steam_path, game_path_for_task)
+    })
+    .await
+    .map_err(|err| format!("failed to run uninstall task: {err}"))??;
 
     let app_for_state = app.clone();
     let state = app_for_state.state::<InstallerContextState>();

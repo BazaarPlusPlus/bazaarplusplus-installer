@@ -12,6 +12,9 @@ export function useAppBootstrapState() {
   const { t } = useI18n();
   const [bootstrap, setBootstrap] = useState<AppBootstrap>(fallbackBootstrap);
   const [updateMessage, setUpdateMessage] = useState<string | null>(null);
+  const [updateDownloadUrl, setUpdateDownloadUrl] = useState<string | null>(
+    null
+  );
   const [checkingUpdate, setCheckingUpdate] = useState(false);
 
   useEffect(() => {
@@ -20,7 +23,11 @@ export function useAppBootstrapState() {
       .then((payload) => {
         if (mounted) setBootstrap(payload);
       })
-      .catch(() => {
+      .catch((error) => {
+        console.error(
+          'Failed to load app bootstrap from Tauri runtime.',
+          error
+        );
         if (mounted) setBootstrap(fallbackBootstrap);
       });
     return () => {
@@ -39,16 +46,23 @@ export function useAppBootstrapState() {
             ? t('updaterAvailable', { version: result.version })
             : t('updaterCurrent')
       );
+      setUpdateDownloadUrl(
+        result.status === 'available'
+          ? `${bootstrap.links.github}/releases/latest`
+          : null
+      );
     } catch (error) {
       setUpdateMessage(toErrorMessage(error));
+      setUpdateDownloadUrl(null);
     } finally {
       setCheckingUpdate(false);
     }
-  }, [t]);
+  }, [bootstrap.links.github, t]);
 
   return {
     bootstrap,
     updateMessage,
+    updateDownloadUrl,
     checkingUpdate,
     checkUpdates
   };
