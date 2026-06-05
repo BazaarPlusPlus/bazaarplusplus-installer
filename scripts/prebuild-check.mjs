@@ -21,7 +21,12 @@ const managedPluginDependencies = [
   'BepInEx/plugins/Microsoft.Data.Sqlite.dll',
   'BepInEx/plugins/SQLitePCLRaw.batteries_v2.dll',
   'BepInEx/plugins/SQLitePCLRaw.core.dll',
-  'BepInEx/plugins/SQLitePCLRaw.provider.e_sqlite3.dll'
+  'BepInEx/plugins/SQLitePCLRaw.provider.e_sqlite3.dll',
+  'BepInEx/plugins/SixLabors.ImageSharp.dll',
+  'BepInEx/plugins/System.Buffers.dll',
+  'BepInEx/plugins/System.Memory.dll',
+  'BepInEx/plugins/System.Numerics.Vectors.dll',
+  'BepInEx/plugins/System.Text.Encoding.CodePages.dll'
 ];
 
 export function resolveTargetPlatforms(platformEnv) {

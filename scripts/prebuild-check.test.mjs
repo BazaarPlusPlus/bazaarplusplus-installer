@@ -12,6 +12,11 @@ test('macOS bundles BazaarPlusPlus SQLite dependencies', () => {
     'BepInEx/plugins/SQLitePCLRaw.batteries_v2.dll',
     'BepInEx/plugins/SQLitePCLRaw.core.dll',
     'BepInEx/plugins/SQLitePCLRaw.provider.e_sqlite3.dll',
+    'BepInEx/plugins/SixLabors.ImageSharp.dll',
+    'BepInEx/plugins/System.Buffers.dll',
+    'BepInEx/plugins/System.Memory.dll',
+    'BepInEx/plugins/System.Numerics.Vectors.dll',
+    'BepInEx/plugins/System.Text.Encoding.CodePages.dll',
     'BepInEx/plugins/libe_sqlite3.dylib'
   ]);
 });
@@ -26,6 +31,11 @@ test('Windows bundles BazaarPlusPlus SQLite dependencies', () => {
     'BepInEx/plugins/SQLitePCLRaw.batteries_v2.dll',
     'BepInEx/plugins/SQLitePCLRaw.core.dll',
     'BepInEx/plugins/SQLitePCLRaw.provider.e_sqlite3.dll',
+    'BepInEx/plugins/SixLabors.ImageSharp.dll',
+    'BepInEx/plugins/System.Buffers.dll',
+    'BepInEx/plugins/System.Memory.dll',
+    'BepInEx/plugins/System.Numerics.Vectors.dll',
+    'BepInEx/plugins/System.Text.Encoding.CodePages.dll',
     'BepInEx/plugins/e_sqlite3.dll'
   ]);
 });
