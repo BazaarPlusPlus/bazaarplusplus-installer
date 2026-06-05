@@ -97,13 +97,13 @@ pub fn load_run_screenshot_path(
 
 pub fn load_battle_video_path(
     database_path: &Path,
-    data_dir: &Path,
+    video_dir: &Path,
     battle_id: &str,
     video_id: Option<&str>,
 ) -> Result<Option<PathBuf>, String> {
     let conn = open_connection(database_path)?;
     let row = load_battle_video_ref(&conn, battle_id, video_id)?;
-    Ok(row.and_then(|video| resolve_data_file_path(data_dir, &video.relative_path)))
+    Ok(row.and_then(|video| resolve_data_file_path(video_dir, &video.relative_path)))
 }
 
 pub fn load_run_id_for_battle(
@@ -116,7 +116,7 @@ pub fn load_run_id_for_battle(
 
 pub fn delete_battle_video(
     database_path: &Path,
-    data_dir: &Path,
+    video_dir: &Path,
     battle_id: &str,
     video_id: &str,
 ) -> Result<bool, String> {
@@ -124,7 +124,7 @@ pub fn delete_battle_video(
     let Some(video) = load_battle_video_ref(&conn, battle_id, Some(video_id))? else {
         return Ok(false);
     };
-    remove_video_file(data_dir, &video.relative_path)?;
+    remove_video_file(video_dir, &video.relative_path)?;
     let transaction = conn.transaction().map_err(|err| err.to_string())?;
     let deleted = transaction
         .execute(
@@ -138,13 +138,13 @@ pub fn delete_battle_video(
 
 pub fn delete_run_videos(
     database_path: &Path,
-    data_dir: &Path,
+    video_dir: &Path,
     run_id: &str,
 ) -> Result<usize, String> {
     let mut conn = open_write_connection(database_path)?;
     let videos = load_run_video_refs(&conn, run_id)?;
     for video in &videos {
-        remove_video_file(data_dir, &video.relative_path)?;
+        remove_video_file(video_dir, &video.relative_path)?;
     }
     let transaction = conn.transaction().map_err(|err| err.to_string())?;
     for video in &videos {
@@ -297,10 +297,11 @@ mod tests {
     fn run_detail_maps_local_battles_latest_completed_video_and_deletes_video_rows() {
         let temp_dir = tempfile::tempdir().unwrap();
         let data_dir = temp_dir.path().join("BazaarPlusPlusV4");
-        let videos_dir = data_dir.join("Videos");
-        std::fs::create_dir_all(&videos_dir).unwrap();
-        std::fs::write(videos_dir.join("new.mp4"), b"new-video").unwrap();
-        std::fs::write(videos_dir.join("old.mp4"), b"old-video").unwrap();
+        let video_dir = data_dir.join("CombatReplayVideos");
+        let dated_videos_dir = video_dir.join("2026-05-20");
+        std::fs::create_dir_all(&dated_videos_dir).unwrap();
+        std::fs::write(dated_videos_dir.join("new.mp4"), b"new-video").unwrap();
+        std::fs::write(dated_videos_dir.join("old.mp4"), b"old-video").unwrap();
 
         let database_path = data_dir.join("bazaarplusplus.db");
         let conn = rusqlite::Connection::open(&database_path).unwrap();
@@ -340,11 +341,11 @@ mod tests {
                 video_id, battle_id, video_relative_path, started_at_utc,
                 duration_ms, file_size_bytes, status
             ) values
-                ('video-old', 'battle-1', 'Videos/old.mp4', '2026-05-20T10:31:00Z',
+                ('video-old', 'battle-1', '2026-05-20/old.mp4', '2026-05-20T10:31:00Z',
                  1000, 2000, 'COMPLETED'),
-                ('video-new', 'battle-1', 'Videos/new.mp4', '2026-05-20T10:32:00Z',
+                ('video-new', 'battle-1', '2026-05-20/new.mp4', '2026-05-20T10:32:00Z',
                  1200, 2200, 'COMPLETED'),
-                ('video-failed', 'battle-2', 'Videos/failed.mp4', '2026-05-20T10:11:00Z',
+                ('video-failed', 'battle-2', '2026-05-20/failed.mp4', '2026-05-20T10:11:00Z',
                  null, null, 'FAILED');
             ",
         )
@@ -374,8 +375,8 @@ mod tests {
         assert_eq!(detail.battles[1].result, "loss");
         assert_eq!(detail.battles[1].video, None);
 
-        assert!(delete_battle_video(&database_path, &data_dir, "battle-1", "video-new").unwrap());
-        assert!(!videos_dir.join("new.mp4").exists());
+        assert!(delete_battle_video(&database_path, &video_dir, "battle-1", "video-new").unwrap());
+        assert!(!dated_videos_dir.join("new.mp4").exists());
 
         let detail = get_history_run_detail(&database_path, "run-win")
             .unwrap()
@@ -389,10 +390,10 @@ mod tests {
         );
 
         assert_eq!(
-            delete_run_videos(&database_path, &data_dir, "run-win").unwrap(),
+            delete_run_videos(&database_path, &video_dir, "run-win").unwrap(),
             1
         );
-        assert!(!videos_dir.join("old.mp4").exists());
+        assert!(!dated_videos_dir.join("old.mp4").exists());
         let detail = get_history_run_detail(&database_path, "run-win")
             .unwrap()
             .unwrap();

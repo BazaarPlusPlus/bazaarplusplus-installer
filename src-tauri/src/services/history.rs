@@ -12,7 +12,7 @@ use crate::services::paths;
 
 pub struct HistoryPaths {
     pub game_path: PathBuf,
-    pub data_dir: PathBuf,
+    pub combat_replay_videos_dir: PathBuf,
     pub database_path: PathBuf,
 }
 
@@ -56,12 +56,12 @@ pub fn reveal_run_screenshot(
 
 pub fn reveal_battle_video(
     database_path: &Path,
-    data_dir: &Path,
+    video_dir: &Path,
     battle_id: &str,
     video_id: Option<&str>,
 ) -> Result<(), String> {
     require_database_exists(database_path)?;
-    let path = load_battle_video_path(database_path, data_dir, battle_id, video_id)?
+    let path = load_battle_video_path(database_path, video_dir, battle_id, video_id)?
         .ok_or_else(|| format!("No completed video is available for battle {battle_id}."))?;
     require_video_file_exists(&path)?;
     reveal_in_file_browser(&path)
@@ -69,14 +69,14 @@ pub fn reveal_battle_video(
 
 pub fn delete_battle_video(
     database_path: &Path,
-    data_dir: &Path,
+    video_dir: &Path,
     battle_id: &str,
     video_id: &str,
 ) -> Result<HistoryRunDetail, String> {
     require_database_exists(database_path)?;
     let run_id = load_run_id_for_battle(database_path, battle_id)?
         .ok_or_else(|| format!("Battle {battle_id} was not found."))?;
-    let deleted = delete_battle_video_in_repo(database_path, data_dir, battle_id, video_id)?;
+    let deleted = delete_battle_video_in_repo(database_path, video_dir, battle_id, video_id)?;
     if !deleted {
         return Err(format!(
             "Video {video_id} was not found for battle {battle_id}."
@@ -88,12 +88,12 @@ pub fn delete_battle_video(
 
 pub fn delete_run_videos(
     database_path: &Path,
-    data_dir: &Path,
+    video_dir: &Path,
     run_id: &str,
     limit: usize,
 ) -> Result<HistoryRunList, String> {
     require_database_exists(database_path)?;
-    delete_run_videos_in_repo(database_path, data_dir, run_id)?;
+    delete_run_videos_in_repo(database_path, video_dir, run_id)?;
     list_runs(database_path, limit)
 }
 
@@ -110,11 +110,11 @@ pub fn empty_history_list() -> HistoryRunList {
 }
 
 fn history_paths_for_game_path(game_path: PathBuf) -> HistoryPaths {
-    let data_dir = paths::bpp_data_dir(&game_path);
+    let combat_replay_videos_dir = paths::combat_replay_videos_dir(&game_path);
     let database_path = paths::database_path(&game_path);
     HistoryPaths {
         game_path,
-        data_dir,
+        combat_replay_videos_dir,
         database_path,
     }
 }
@@ -148,7 +148,25 @@ fn strip_extended_length_prefix(value: &str) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::require_video_file_exists;
+    use super::{history_paths_for_game_path, require_video_file_exists};
+
+    #[test]
+    fn history_paths_use_combat_replay_videos_as_video_root() {
+        let game_path = std::path::PathBuf::from("/tmp/The Bazaar");
+
+        let paths = history_paths_for_game_path(game_path.clone());
+
+        assert_eq!(
+            paths.combat_replay_videos_dir,
+            game_path
+                .join("BazaarPlusPlusV4")
+                .join("CombatReplayVideos")
+        );
+        assert_eq!(
+            paths.database_path,
+            game_path.join("BazaarPlusPlusV4").join("bazaarplusplus.db")
+        );
+    }
 
     #[test]
     fn video_file_exists_accepts_existing_file() {

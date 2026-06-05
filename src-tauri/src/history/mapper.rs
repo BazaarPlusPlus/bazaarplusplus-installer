@@ -26,7 +26,9 @@ fn build_run_shared_fields(
     screenshot_id: Option<String>,
     video_count: i64,
 ) -> RunSharedFields {
-    let strip_url = screenshot_id.as_ref().map(|id| strip_url_for_screenshot(id));
+    let strip_url = screenshot_id
+        .as_ref()
+        .map(|id| strip_url_for_screenshot(id));
     RunSharedFields {
         result: derive_run_result(&row.status, row.victories),
         run_id: row.run_id,

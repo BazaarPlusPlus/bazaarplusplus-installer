@@ -15,11 +15,7 @@ pub fn list_history_runs(
     limit: Option<usize>,
 ) -> Result<crate::history::HistoryRunList, String> {
     let Some(paths) =
-        crate::services::history::resolve_history_paths(
-            &app,
-            state.get_game_path(),
-            game_path,
-        )
+        crate::services::history::resolve_history_paths(&app, state.get_game_path(), game_path)
     else {
         return Ok(empty_history_list());
     };
@@ -60,7 +56,7 @@ pub fn reveal_battle_video(
     let paths = require_history_paths(&app, state.get_game_path(), game_path)?;
     reveal_battle_video_file(
         &paths.database_path,
-        &paths.data_dir,
+        &paths.combat_replay_videos_dir,
         &battle_id,
         video_id.as_deref(),
     )
@@ -75,7 +71,12 @@ pub fn delete_battle_video(
     video_id: String,
 ) -> Result<HistoryRunDetail, String> {
     let paths = require_history_paths(&app, state.get_game_path(), game_path)?;
-    delete_battle_video_service(&paths.database_path, &paths.data_dir, &battle_id, &video_id)
+    delete_battle_video_service(
+        &paths.database_path,
+        &paths.combat_replay_videos_dir,
+        &battle_id,
+        &video_id,
+    )
 }
 
 #[tauri::command]
@@ -89,7 +90,7 @@ pub fn delete_run_videos(
     let paths = require_history_paths(&app, state.get_game_path(), game_path)?;
     delete_run_videos_service(
         &paths.database_path,
-        &paths.data_dir,
+        &paths.combat_replay_videos_dir,
         &run_id,
         limit.unwrap_or(50).clamp(1, 200),
     )

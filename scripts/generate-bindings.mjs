@@ -1,5 +1,11 @@
 import { execFileSync } from 'node:child_process';
-import { mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  mkdirSync,
+  readFileSync,
+  readdirSync,
+  rmSync,
+  writeFileSync
+} from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -13,7 +19,9 @@ function parseTauriCommandNames(projectRoot) {
   const listMarker = '$macro! {';
   const listStart = productionSource.indexOf(listMarker);
   if (listStart === -1) {
-    throw new Error('Could not find with_commands command list in commands/registry.rs');
+    throw new Error(
+      'Could not find with_commands command list in commands/registry.rs'
+    );
   }
   const bodyContentStart = listStart + listMarker.length;
   const listEnd = productionSource.indexOf('\n        }', bodyContentStart);
@@ -29,7 +37,10 @@ function parseTauriCommandNames(projectRoot) {
 }
 
 function writeTauriCommandNames(projectRoot, commandNames) {
-  const outPath = path.join(projectRoot, 'src/types/generated/tauri-command-names.ts');
+  const outPath = path.join(
+    projectRoot,
+    'src/types/generated/tauri-command-names.ts'
+  );
   const union = commandNames.map((name) => `  | '${name}'`).join('\n');
   writeFileSync(
     outPath,

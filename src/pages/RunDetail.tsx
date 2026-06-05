@@ -53,7 +53,8 @@ export default function RunDetail() {
                 <h2 className="cinzel-decorative text-2xl font-bold text-[#e8dcc8] m-0 truncate">
                   {detail.run.hero}
                   <span className="text-[rgba(200,170,120,0.8)]">
-                    {' '}· {runResult ? t(runResult.key) : '-'}
+                    {' '}
+                    · {runResult ? t(runResult.key) : '-'}
                   </span>
                 </h2>
                 <div className="flex flex-wrap items-center gap-3 fira-code text-xs text-[rgba(200,170,120,0.8)] selectable">
@@ -115,7 +116,6 @@ export default function RunDetail() {
                 }
               />
             </div>
-
           </div>
 
           <div className="flex-1 flex flex-col bg-[rgba(18,11,5,0.88)] border border-[rgba(180,130,48,0.13)] rounded-sm shadow-[0_6px_28px_rgba(0,0,0,0.35)] overflow-hidden">

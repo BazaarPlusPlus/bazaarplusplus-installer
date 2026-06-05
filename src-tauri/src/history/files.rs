@@ -1,7 +1,7 @@
 use std::path::{Path, PathBuf};
 
-pub fn remove_video_file(data_dir: &Path, relative_path: &str) -> Result<(), String> {
-    let Some(path) = resolve_data_file_path(data_dir, relative_path) else {
+pub fn remove_video_file(root_dir: &Path, relative_path: &str) -> Result<(), String> {
+    let Some(path) = resolve_data_file_path(root_dir, relative_path) else {
         return Ok(());
     };
     match std::fs::remove_file(&path) {
@@ -11,7 +11,7 @@ pub fn remove_video_file(data_dir: &Path, relative_path: &str) -> Result<(), Str
     }
 }
 
-pub fn resolve_data_file_path(data_dir: &Path, raw_path: &str) -> Option<PathBuf> {
+pub fn resolve_data_file_path(root_dir: &Path, raw_path: &str) -> Option<PathBuf> {
     let raw_path = raw_path.trim();
     if raw_path.is_empty() {
         return None;
@@ -29,7 +29,7 @@ pub fn resolve_data_file_path(data_dir: &Path, raw_path: &str) -> Option<PathBuf
             normalized.push(trimmed);
         }
     }
-    Some(data_dir.join(normalized))
+    Some(root_dir.join(normalized))
 }
 
 pub fn resolve_screenshot_path(game_path: &Path, raw_path: &str) -> Option<PathBuf> {
