@@ -2,6 +2,7 @@ import { test, expect } from 'vitest';
 
 import {
   assertMacosLauncherScriptIsSafe,
+  npmExecFileInvocation,
   requiredEntriesForPlatform
 } from './prebuild-check.mjs';
 
@@ -76,4 +77,15 @@ test('macOS launcher check rejects preemptive signature removal', () => {
   expect(() => assertMacosLauncherScriptIsSafe(script)).toThrow(
     'codesign --remove-signature'
   );
+});
+
+test('prebuild check invokes npm through cmd on Windows', () => {
+  expect(
+    npmExecFileInvocation(['run', 'generate:bindings'], 'win32', {
+      ComSpec: 'C:\\Windows\\System32\\cmd.exe'
+    })
+  ).toEqual({
+    command: 'C:\\Windows\\System32\\cmd.exe',
+    args: ['/d', '/s', '/c', 'npm', 'run', 'generate:bindings']
+  });
 });

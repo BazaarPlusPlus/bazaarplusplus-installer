@@ -259,9 +259,24 @@ function ensureZipLooksValid(rootDir, zipPath, platform) {
 
 const generatedTypesDir = 'src/types/generated';
 
+export function npmExecFileInvocation(
+  args,
+  platform = process.platform,
+  env = process.env
+) {
+  if (platform === 'win32') {
+    const command = env.ComSpec?.trim() || 'cmd.exe';
+    return { command, args: ['/d', '/s', '/c', 'npm', ...args] };
+  }
+
+  return { command: 'npm', args };
+}
+
 export function assertBindingsUpToDate(rootDir) {
   console.log('Checking TypeScript bindings...');
-  execFileSync('npm', ['run', 'generate:bindings'], {
+  const npmInvocation = npmExecFileInvocation(['run', 'generate:bindings']);
+
+  execFileSync(npmInvocation.command, npmInvocation.args, {
     cwd: rootDir,
     stdio: 'inherit'
   });
