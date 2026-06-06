@@ -5,6 +5,8 @@
 > **设计日期**:2026-06-06
 > **取证原则**:所有代码结论以代码为准，逐条标注 `文件:行号`;框架行为以 Tauri 2 官方文档为准
 > **方法**:`superpowers:brainstorming` 协作澄清 → 本设计 → `superpowers:writing-plans` 出实施计划
+>
+> **✅ 已实现（历史记录）**:本设计已在 `6eb729c`（应用内下载/安装/重启）与 `ec7689f`（头部更新结果提示）落地。§13 任务分解里的 `[ ]` 复选框仅为设计时状态，T1–T8 均已完成（T9 真机验证属外部手动步骤）。§4「现状链路盘点」与附录 A 是**实施前**的取证快照——其中描述的旧代码（跳 GitHub 的 `ShellUpdateModal`、`aboutApi` 丢弃 `Update` 句柄、仅 `updater:allow-check` 的能力等）均已不存在。当前权威以 `docs/architecture.md`、`docs/updater-release-plan.md` 与代码为准。
 
 ---
 
@@ -258,7 +260,7 @@ tauri-plugin-process = "2"   # +(与 tauri-plugin-updater 同主版本)
   - `restart` → 调用 `relaunch`。
   - 属真实行为验证,非覆盖装饰(符合仓库规则)。
 - **`messages.test.ts`**:改掉引用旧 key 的断言;parity 测试保留。
-- **`npm run check`**:无 ts-rs 绑定变化(不动 Rust DTO);svelte-check/tsc 过。
+- **`npm run check`**:无 ts-rs 绑定变化(不动 Rust DTO);`tsc --noEmit` 过。
 - **`cargo test`**:process 插件注册编译通过。
 - **`npm run prebuild-check`**:暴露 Rust 警告(见记忆 `verify-rust-warnings-prebuild-check`)+ 校验 Tauri 配置/能力。
 - **最终判据(真机)**:Windows + macOS,用 staging 的 bumped `latest.json` 跑通 check → 展示 notes → 下载(进度)→ 安装 → 重启。**核心收益必须真机验证**,`./build.sh --prod` 仅打包、不作冒烟。

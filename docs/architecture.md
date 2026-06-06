@@ -15,7 +15,9 @@ This document describes the current repository structure.
 ```text
 src/
   api/          typed frontend helpers for Tauri invoke and local HTTP URLs
+  components/   shared UI primitives
   features/     route state, API wrappers, and view models grouped by product area
+  i18n/         locale provider and message catalogue
   layouts/      shared app shell
   pages/        React route components
   styles/       global styles
@@ -36,7 +38,7 @@ scripts/
 ## Frontend Boundaries
 
 - `src/App.tsx` owns routing.
-- `src/layouts/GlobalShell.tsx` owns the shared navigation, locale toggle, app bootstrap, and update check entry point.
+- `src/layouts/GlobalShell.tsx` composes the app shell: it wraps the bootstrap and updater providers, mounts the shared header and nav rail, and gates the update and payment modals.
 - `src/pages/*` should stay focused on rendering and user actions.
 - `src/features/*` owns route loading state, action state, API calls, and pure view-model derivation.
 - `src/features/shared/*` owns cross-feature helpers such as async action state, error parsing, and stream session effects.

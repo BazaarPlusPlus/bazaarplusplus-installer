@@ -5,7 +5,7 @@ Date: 2026-05-31
 > **⚠️ 历史设计记录（2026-05-31，早于 2026-06-01 的 SvelteKit→React 重写）。** 保留作为设计依据（design rationale）；**当前实现的权威描述见 [`docs/architecture.md`](../../architecture.md)**。已知与 shipped React 实现的分叉：
 >
 > - 安装事实列表：本文档列 4 项（`Installed`/`Bundled`/`.NET`/`Steam`），实际 UI 仅渲染 2 项（`BazaarPlusPlus`、`.NET Runtime`）— `src/features/install/InstallActionsPanel.tsx:46-58`
-> - 安装维护动作：本文档为 `重新安装/修复/更多`，实际为 `修复/卸载`（重装是主按钮的一种状态）— `src/features/install/InstallActionsPanel.tsx:84-100`
+> - 安装维护动作：本文档为 `重新安装/修复/更多`，实际为 `重置本地数据/卸载`（重装是主按钮的一种状态）— `src/features/install/InstallActionsPanel.tsx:84-100`
 > - 战绩顶部第三张卡：本文档为 `Last Run`，实际为 `Win Rate` — `src/pages/History.tsx:42-44`
 > - 关于页：本文档列 `数据来源（BazaarDB）` 段，实际未实现 — `src/pages/About.tsx`
 > - 文档内部矛盾：Run-Detail 示例标题用 `Run CLIII`，但 History 规则禁止此类合成标签；实现遵循 History 规则（`{hero} · {RESULT}`）— `src/pages/RunDetail.tsx:53-57`

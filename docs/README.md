@@ -6,7 +6,7 @@ This directory contains the current project documents. Deleted historical design
 
 Read these in this order when you need the current truth:
 
-- [architecture.md](architecture.md): current code layout, feature boundaries, and known maintenance hotspots
+- [architecture.md](architecture.md): current code layout, feature boundaries, and data boundaries
 - [updater-release-plan.md](updater-release-plan.md): current release and updater workflow
 - [native-feel-review.md](native-feel-review.md): point-in-time native-feel/UX review of the frontend (stamped to `master` @ `2d05f9e`, 2026-06-05); a dated assessment, not perpetual truth — re-verify line citations before acting
 
