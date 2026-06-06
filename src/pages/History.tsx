@@ -99,7 +99,7 @@ function RunRow({
   return (
     <Link
       to={detailPath}
-      className="group flex items-center p-3 bg-[rgba(18,11,5,0.88)] border border-[rgba(180,130,48,0.13)] rounded-sm hover:border-[rgba(200,148,55,0.4)] hover:bg-[rgba(200,148,55,0.04)] transition-all gap-6 shadow-[0_4px_12px_rgba(0,0,0,0.2)] min-w-0 no-underline text-inherit"
+      className="group grid grid-cols-[14rem_minmax(0,1fr)_9rem_6.5rem_5rem_5.5rem] items-center gap-6 p-3 bg-[rgba(18,11,5,0.88)] border border-[rgba(180,130,48,0.13)] rounded-sm hover:border-[rgba(200,148,55,0.4)] hover:bg-[rgba(200,148,55,0.04)] transition-all shadow-[0_4px_12px_rgba(0,0,0,0.2)] no-underline text-inherit"
     >
       <div className="w-56 aspect-[2000/470] shrink-0 bg-[#000] border border-[rgba(200,148,55,0.2)] rounded-sm flex items-center justify-center text-[rgba(200,170,120,0.3)] group-hover:border-[rgba(200,148,55,0.5)] transition-colors overflow-hidden relative">
         {previewUrl ? (
@@ -118,62 +118,75 @@ function RunRow({
         )}
       </div>
 
-      <div className="flex-1 flex items-center justify-between min-w-0">
-        <div className="flex flex-col gap-1 w-36 min-w-0">
-          <span className="cinzel font-bold text-lg text-[#e8dcc8] truncate">
-            {run.hero}
-          </span>
-          <span className="fira-code text-[10px] text-[rgba(200,170,120,0.8)] truncate">
-            {formatDateTime(run.started_at_utc)}
-          </span>
-        </div>
-
-        <div className="grid grid-cols-4 gap-6 shrink-0">
-          <Metric label="Result" value={t(result.key)} tone={result.tone} />
-          <Metric
-            label="Day"
-            value={run.final_day ? `Day ${run.final_day}` : '-'}
-          />
-          <Metric label="Rank" value={run.final_player_rank ?? '-'} gold />
-          <Metric
-            label="Rating"
-            value={
-              run.final_player_rating === null
-                ? '-'
-                : String(run.final_player_rating)
-            }
-          />
-        </div>
+      <div className="flex flex-col gap-1 min-w-0">
+        <span className="cinzel font-bold text-lg text-[#e8dcc8] truncate">
+          {run.hero}
+        </span>
+        <span className="fira-code text-[10px] text-[rgba(200,170,120,0.8)] truncate">
+          {formatDateTime(run.started_at_utc)}
+        </span>
       </div>
+
+      <span
+        className={`cinzel font-bold text-lg whitespace-nowrap ${toneColorClass(
+          result.tone
+        )}`}
+      >
+        {t(result.key)}
+      </span>
+
+      <Metric
+        label={t('runMetricProgress')}
+        value={`${run.victories ?? 0} / ${run.final_day ?? '-'}`}
+        fira
+      />
+      <Metric
+        label={t('runStatRank')}
+        value={run.final_player_rank ?? '-'}
+        gold
+      />
+      <Metric
+        label={t('runStatRating')}
+        value={
+          run.final_player_rating === null
+            ? '-'
+            : String(run.final_player_rating)
+        }
+        fira
+      />
     </Link>
   );
+}
+
+function toneColorClass(tone: 'ok' | 'bad' | undefined): string {
+  if (tone === 'ok') return 'text-[#6dd9a0]';
+  if (tone === 'bad') return 'text-[#d96d6d]';
+  return 'text-[rgba(200,170,120,0.8)]';
 }
 
 function Metric({
   label,
   value,
-  tone,
-  gold = false
+  gold = false,
+  fira = false
 }: {
   label: string;
   value: string;
-  tone?: 'ok' | 'bad';
   gold?: boolean;
+  fira?: boolean;
 }) {
-  const color =
-    tone === 'ok'
-      ? 'text-[#6dd9a0]'
-      : tone === 'bad'
-        ? 'text-[#d96d6d]'
-        : gold
-          ? 'text-[#e8c87a]'
-          : 'text-[#e8dcc8]';
   return (
-    <div className="flex flex-col gap-1 items-center w-20">
+    <div className="flex flex-col gap-1 items-end text-right">
       <span className="cinzel text-[10px] tracking-widest text-[rgba(200,170,120,0.8)] uppercase">
         {label}
       </span>
-      <span className={`text-sm ${color}`}>{value}</span>
+      <span
+        className={`text-sm ${fira ? 'fira-code' : 'cinzel'} ${
+          gold ? 'text-[#e8c87a]' : 'text-[#e8dcc8]'
+        }`}
+      >
+        {value}
+      </span>
     </div>
   );
 }

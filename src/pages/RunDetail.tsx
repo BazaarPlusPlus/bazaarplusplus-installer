@@ -11,10 +11,25 @@ import { ErrorBanner } from '../components/ui/ErrorBanner';
 import type { HistoryBattleRow } from '../types/backend';
 import { useRunDetailPage } from '../features/history/useRunDetailPage';
 import {
+  formatBattleResult,
   formatDateTime,
   formatRunResultLabel
 } from '../features/history/format';
 import { useI18n } from '../i18n/LocaleProvider';
+
+// Shared 7-track grid for the battle table header + rows so columns align and
+// the action column is a fixed 5rem (no reflow when the hover-only delete
+// button appears). Day · Result · OppHero · OppPlayer · Rank · Rating · Video.
+const BATTLE_GRID =
+  'grid grid-cols-[3.5rem_4.5rem_minmax(0,1fr)_minmax(0,1fr)_5rem_5rem_5rem] gap-4';
+
+// One tone language for run verdict AND battle result. Neutral (undefined) is
+// muted-gold, NEVER red.
+function toneColorClass(tone: 'ok' | 'bad' | undefined): string {
+  if (tone === 'ok') return 'text-[#6dd9a0]';
+  if (tone === 'bad') return 'text-[#d96d6d]';
+  return 'text-[rgba(200,170,120,0.8)]';
+}
 
 export default function RunDetail() {
   const navigate = useNavigate();
@@ -52,7 +67,7 @@ export default function RunDetail() {
               <div className="flex flex-col gap-1 min-w-0">
                 <h2 className="cinzel-decorative text-2xl font-bold text-[#e8dcc8] m-0 truncate">
                   {detail.run.hero}
-                  <span className="text-[rgba(200,170,120,0.8)]">
+                  <span className={toneColorClass(runResult?.tone)}>
                     {' '}
                     · {runResult ? t(runResult.key) : '-'}
                   </span>
@@ -67,13 +82,7 @@ export default function RunDetail() {
                     {formatDateTime(detail.run.ended_at_utc)}
                   </span>
                   <span>•</span>
-                  <span
-                    className={
-                      detail.run.result === 'win'
-                        ? 'text-[#6dd9a0]'
-                        : 'text-[#d96d6d]'
-                    }
-                  >
+                  <span className="text-[rgba(200,170,120,0.8)]">
                     {detail.run.status}
                   </span>
                 </div>
@@ -99,7 +108,7 @@ export default function RunDetail() {
               <StatBlock
                 label={t('statFinalDay')}
                 value={
-                  detail.run.final_day ? `Day ${detail.run.final_day}` : '-'
+                  detail.run.final_day ? String(detail.run.final_day) : '-'
                 }
               />
               <StatBlock
@@ -120,8 +129,10 @@ export default function RunDetail() {
 
           <div className="flex-1 flex flex-col bg-[rgba(18,11,5,0.88)] border border-[rgba(180,130,48,0.13)] rounded-sm shadow-[0_6px_28px_rgba(0,0,0,0.35)] overflow-hidden">
             <div className="flex-1 overflow-auto custom-scrollbar">
-              <div className="min-w-[720px]">
-                <div className="grid grid-cols-7 gap-4 px-6 py-3 border-b border-[rgba(200,148,55,0.15)] bg-[rgba(200,148,55,0.02)] cinzel text-[10px] tracking-widest text-[rgba(200,170,120,0.8)] uppercase">
+              <div className="min-w-[640px]">
+                <div
+                  className={`${BATTLE_GRID} px-6 py-3 border-b border-[rgba(200,148,55,0.15)] bg-[rgba(200,148,55,0.02)] cinzel text-[10px] tracking-widest text-[rgba(200,170,120,0.8)] uppercase`}
+                >
                   <div>Day</div>
                   <div>Result</div>
                   <div>Opponent Hero</div>
@@ -184,12 +195,14 @@ function BattleRow({
   page: ReturnType<typeof useRunDetailPage>;
 }) {
   const { t } = useI18n();
-  const isWin = battle.result === 'win';
+  const battleResult = formatBattleResult(battle.result);
   const videoAction = page.action === `video:${battle.battle_id}`;
   const deleteAction = page.action === `delete:${battle.battle_id}`;
 
   return (
-    <div className="grid grid-cols-7 gap-4 px-6 py-4 border-b border-[rgba(200,148,55,0.05)] items-center relative group hover:bg-[rgba(200,148,55,0.03)] transition-colors">
+    <div
+      className={`${BATTLE_GRID} px-6 py-4 border-b border-[rgba(200,148,55,0.05)] items-center relative group hover:bg-[rgba(200,148,55,0.03)] transition-colors`}
+    >
       <div
         aria-hidden="true"
         className="absolute inset-0 overflow-hidden pointer-events-none opacity-[0.02] flex items-center justify-center"
@@ -200,27 +213,27 @@ function BattleRow({
       </div>
 
       <div className="fira-code text-sm text-[rgba(228,216,191,0.8)] relative z-10">
-        {battle.day ? `Day ${battle.day}` : '-'}
+        {battle.day === null ? '-' : String(battle.day)}
       </div>
       <div
-        className={`cinzel font-bold text-xs relative z-10 ${isWin ? 'text-[#6dd9a0]' : 'text-[#d96d6d]'}`}
+        className={`cinzel font-bold text-sm tracking-wider relative z-10 ${toneColorClass(battleResult.tone)}`}
       >
-        {battle.result.toUpperCase()}
+        {t(battleResult.key)}
       </div>
-      <div className="text-sm text-[#e8dcc8] relative z-10">
+      <div className="cinzel text-sm text-[#e8dcc8] relative z-10 min-w-0 truncate">
         {battle.opponent_hero ?? '-'}
       </div>
-      <div className="fira-code text-sm text-[rgba(200,170,120,0.8)] relative z-10">
+      <div className="fira-code text-sm text-[rgba(200,170,120,0.8)] relative z-10 min-w-0 truncate">
         {battle.opponent_name ?? '-'}
       </div>
-      <div className="text-sm text-[#e8c87a] relative z-10">
+      <div className="cinzel text-sm text-[#e8c87a] relative z-10">
         {battle.opponent_rank ?? '-'}
       </div>
       <div className="fira-code text-sm text-[rgba(228,216,191,0.8)] relative z-10">
         {battle.opponent_rating === null ? '-' : battle.opponent_rating}
       </div>
 
-      <div className="flex justify-end gap-2 relative z-10">
+      <div className="flex items-center justify-end gap-1.5 relative z-10">
         {battle.video ? (
           <>
             <button
@@ -229,14 +242,15 @@ function BattleRow({
               onClick={() =>
                 page.revealVideo(battle.battle_id, battle.video?.video_id)
               }
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-[rgba(200,148,55,0.06)] border border-[rgba(180,130,48,0.2)] rounded-sm hover:bg-[rgba(200,148,55,0.12)] disabled:opacity-40 transition-colors text-xs text-[#e8dcc8]"
+              title={t('openVideoLocation')}
+              aria-label={t('openVideoLocation')}
+              className="flex items-center justify-center size-8 rounded-sm bg-[rgba(200,148,55,0.06)] border border-[rgba(180,130,48,0.2)] hover:bg-[rgba(200,148,55,0.12)] disabled:opacity-40 transition-colors text-[#e8dcc8]"
             >
               {videoAction ? (
                 <Loader2 size={14} className="animate-spin" />
               ) : (
                 <Video size={14} />
               )}
-              {t('openVideoLocation')}
             </button>
             <button
               type="button"
@@ -245,8 +259,9 @@ function BattleRow({
                 battle.video &&
                 page.deleteVideo(battle.battle_id, battle.video.video_id)
               }
-              className="flex items-center justify-center size-8 rounded-sm hover:bg-[rgba(255,50,50,0.1)] hover:text-[#ff4444] disabled:opacity-40 transition-colors text-[rgba(200,170,120,0.72)]"
+              title={t('deleteVideo')}
               aria-label={t('deleteVideo')}
+              className="flex items-center justify-center size-8 rounded-sm text-[rgba(200,170,120,0.72)] hover:text-[#ff4444] hover:bg-[rgba(255,68,68,0.1)] opacity-0 group-hover:opacity-100 focus-visible:opacity-100 disabled:opacity-40 transition-all"
             >
               {deleteAction ? (
                 <Loader2 size={14} className="animate-spin" />
@@ -256,8 +271,12 @@ function BattleRow({
             </button>
           </>
         ) : (
-          <span className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-[rgba(200,170,120,0.6)] cursor-not-allowed">
-            <FileQuestion size={14} /> {t('noVideo')}
+          <span
+            title={t('noVideo')}
+            aria-label={t('noVideo')}
+            className="flex items-center justify-center size-8 text-[rgba(200,170,120,0.6)]"
+          >
+            <FileQuestion size={14} />
           </span>
         )}
       </div>

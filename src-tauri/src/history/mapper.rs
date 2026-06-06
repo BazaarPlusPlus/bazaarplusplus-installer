@@ -63,9 +63,13 @@ pub fn derive_run_result(status: &str, victories: Option<i64>) -> String {
 }
 
 pub fn map_battle_result(result: Option<&str>) -> String {
-    match result {
-        Some("Win" | "Won") => "win".to_string(),
-        Some("Loss" | "Lost") => "loss".to_string(),
+    // LOCAL battles persist lowercase "win"/"loss" or NULL; GHOST rows use
+    // capitalized "Won"/"Lost". Normalize case (and trim) so every source
+    // resolves, and map NULL/empty/unrecognized to "unknown" — a neutral
+    // marker the frontend renders muted, never as a defeat.
+    match result.map(str::trim).map(str::to_ascii_lowercase).as_deref() {
+        Some("win" | "won") => "win".to_string(),
+        Some("loss" | "lost") => "loss".to_string(),
         _ => "unknown".to_string(),
     }
 }
@@ -155,5 +159,31 @@ pub fn map_battle_row(
             file_size_bytes,
             duration_ms,
         }),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::map_battle_result;
+
+    #[test]
+    fn map_battle_result_resolves_known_outcomes_case_insensitively() {
+        // Lowercase is what LOCAL (PvP) battles actually persist.
+        assert_eq!(map_battle_result(Some("win")), "win");
+        assert_eq!(map_battle_result(Some("loss")), "loss");
+        // Capitalized GHOST-style values (with stray whitespace) still resolve.
+        assert_eq!(map_battle_result(Some("Win")), "win");
+        assert_eq!(map_battle_result(Some("Won")), "win");
+        assert_eq!(map_battle_result(Some(" Lost ")), "loss");
+    }
+
+    #[test]
+    fn map_battle_result_maps_null_and_unrecognized_to_neutral() {
+        // NULL is a legitimate draw/unresolved state, not a defeat.
+        assert_eq!(map_battle_result(None), "unknown");
+        // Empty / whitespace-only / garbage all collapse to the neutral marker.
+        assert_eq!(map_battle_result(Some("")), "unknown");
+        assert_eq!(map_battle_result(Some("   ")), "unknown");
+        assert_eq!(map_battle_result(Some("draw")), "unknown");
     }
 }

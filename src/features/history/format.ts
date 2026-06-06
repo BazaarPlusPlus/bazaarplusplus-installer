@@ -24,8 +24,22 @@ export function formatRunResultLabel(result: string): {
     case 'loss':
       return { key: 'runResultDefeat', tone: 'bad' };
     case 'abandoned':
-      return { key: 'runResultAbandoned', tone: 'bad' };
+      return { key: 'runResultAbandoned', tone: undefined };
     default:
       return { key: 'runResultActive', tone: undefined };
+  }
+}
+
+export function formatBattleResult(result: string): {
+  key: MessageKey;
+  tone: 'ok' | 'bad' | undefined;
+} {
+  switch (result) {
+    case 'win':
+      return { key: 'battleResultWin', tone: 'ok' };
+    case 'loss':
+      return { key: 'battleResultLoss', tone: 'bad' };
+    default:
+      return { key: 'battleResultNeutral', tone: undefined };
   }
 }
