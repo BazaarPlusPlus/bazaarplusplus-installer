@@ -103,8 +103,9 @@ const zh = {
   confirmInstall: '确认安装',
 
   // Update check (header)
-  updaterPreview: '当前为浏览器预览环境',
-  updaterCurrent: '已是最新版本',
+  updaterPreview: '浏览器预览',
+  updaterCurrent: '已是最新',
+  headerCheckFailed: '检查失败',
   updateModalKicker: '应用更新',
   updateModalTitle: '发现新版本',
   updateModalBody: 'BazaarPlusPlus {version} 已可用。',
@@ -271,8 +272,9 @@ const en: Record<MessageKey, string> = {
   installing: 'Installing...',
   confirmInstall: 'Confirm Install',
 
-  updaterPreview: 'Browser preview mode',
-  updaterCurrent: 'Already up to date',
+  updaterPreview: 'Preview mode',
+  updaterCurrent: 'Up to date',
+  headerCheckFailed: 'Check failed',
   updateModalKicker: 'App Update',
   updateModalTitle: 'Update Available',
   updateModalBody: 'BazaarPlusPlus {version} is available.',

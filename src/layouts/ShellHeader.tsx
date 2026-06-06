@@ -1,6 +1,9 @@
 import {
+  AlertCircle,
+  Check,
   Coffee,
   Download,
+  Eye,
   Globe,
   Heart,
   MonitorPlay,
@@ -167,17 +170,29 @@ function ShellHeaderActions({
   const { t, toggle } = useI18n();
   const updater = useUpdater();
   const checking = updater.phase === 'checking';
-  // Inline check feedback next to the button: "already up to date", the dev
-  // preview notice, or a failed manual check. Install errors render in the
-  // update modal instead.
-  const checkFeedback =
-    updater.phase === 'current'
-      ? t('updaterCurrent')
-      : updater.phase === 'preview'
-        ? t('updaterPreview')
-        : updater.phase === 'error' && updater.errorSource === 'check'
-          ? updater.error
-          : null;
+
+  // The check button folds its own result in: "检查中" → a brief result flash
+  // ("已是最新" / "浏览器预览" / "检查失败"), then auto-reverts once useUpdater
+  // clears the result phase on a timer. Install errors render in the modal.
+  let checkIcon = Download;
+  let checkLabel = t('headerCheckUpdate');
+  let checkTitle: string | undefined;
+  let checkErrorTone = false;
+  if (checking) {
+    checkLabel = t('headerCheckingUpdate');
+  } else if (updater.phase === 'current') {
+    checkIcon = Check;
+    checkLabel = t('updaterCurrent');
+  } else if (updater.phase === 'preview') {
+    checkIcon = Eye;
+    checkLabel = t('updaterPreview');
+  } else if (updater.phase === 'error' && updater.errorSource === 'check') {
+    checkIcon = AlertCircle;
+    checkLabel = t('headerCheckFailed');
+    checkTitle = updater.error ?? undefined;
+    checkErrorTone = true;
+  }
+  const CheckIcon = checkIcon;
 
   return (
     <div className="flex items-center gap-3 z-10 justify-end mr-6">
@@ -192,27 +207,20 @@ function ShellHeaderActions({
         type="button"
         onClick={updater.checkNow}
         disabled={checking}
+        title={checkTitle}
         className="flex items-center gap-2 px-3 h-8 border border-[rgba(200,148,55,0.24)] rounded-[2px] cinzel text-[10px] tracking-widest uppercase transition-all hover:border-[rgba(200,148,55,0.4)] disabled:opacity-60"
         style={{
           background:
             'linear-gradient(180deg, rgba(200,148,55,0.12), rgba(200,148,55,0.06))',
-          color: 'rgba(228,216,191,0.82)',
+          color: checkErrorTone
+            ? 'rgba(224,150,130,0.92)'
+            : 'rgba(228,216,191,0.82)',
           boxShadow: '0 0 0 1px rgba(255,198,98,0.08) inset'
         }}
       >
-        <Download size={14} className={checking ? 'animate-pulse' : ''} />
-        <span className="inline">
-          {checking ? t('headerCheckingUpdate') : t('headerCheckUpdate')}
-        </span>
+        <CheckIcon size={14} className={checking ? 'animate-pulse' : ''} />
+        <span className="inline">{checkLabel}</span>
       </button>
-      {checkFeedback && (
-        <span
-          className="max-w-36 truncate text-[10px] text-[rgba(200,170,120,0.8)]"
-          title={checkFeedback}
-        >
-          {checkFeedback}
-        </span>
-      )}
 
       <ShellSupportMenu
         bootstrap={bootstrap}

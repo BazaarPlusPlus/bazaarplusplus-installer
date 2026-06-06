@@ -28,6 +28,20 @@ export function useUpdaterState(): UpdaterController {
     void machine.checkNow({ silent: true });
   }, [machine]);
 
+  // Manual check results (up to date / preview / check failed) are shown inside
+  // the header button; auto-clear them after a moment so the button reverts to
+  // its idle label instead of displaying a stale result indefinitely.
+  const { phase, errorSource } = snapshot;
+  useEffect(() => {
+    const isHeaderResult =
+      phase === 'current' ||
+      phase === 'preview' ||
+      (phase === 'error' && errorSource === 'check');
+    if (!isHeaderResult) return;
+    const timer = window.setTimeout(() => machine.dismiss(), 3000);
+    return () => window.clearTimeout(timer);
+  }, [phase, errorSource, machine]);
+
   return {
     ...snapshot,
     checkNow: () => void machine.checkNow(),
