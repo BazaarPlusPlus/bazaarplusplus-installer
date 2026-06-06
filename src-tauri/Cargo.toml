@@ -27,12 +27,12 @@ serde_json = "1"
 base64 = "0.22"
 dirs = "6"
 keyvalues-parser = "0.2"
-reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "json"] }
-zip = { version = "6.0.0", default-features = false, features = ["deflate"] }
+reqwest = { version = "0.13", default-features = false, features = ["rustls", "json"] }
+zip = { version = "8", default-features = false, features = ["deflate"] }
 axum = { version = "0.8", features = ["multipart"] }
 tower-http = { version = "0.6", features = ["cors"] }
 tokio = { version = "1", features = ["rt-multi-thread", "macros", "sync", "net"] }
-rusqlite = { version = "0.32", features = ["bundled"] }
+rusqlite = { version = "0.40", features = ["bundled"] }
 chrono = { version = "0.4", features = ["clock", "serde"] }
 image = { version = "0.25", default-features = false, features = ["jpeg", "png", "webp"] }
 include_dir = "0.7"
@@ -41,7 +41,9 @@ sha2 = "0.10"
 tempfile = "3"
 
 [target.'cfg(windows)'.dependencies]
-winreg = "0.52"
+# Aligned with the `winreg` version `embed-resource` (a tauri-build
+# build-dependency) already pulls in, to avoid a duplicate major version.
+winreg = "0.55"
 # Aligned with the `windows` version Tauri already pulls in transitively
 # (see Cargo.lock) to avoid a duplicate major version.
 windows = { version = "0.61", features = [
