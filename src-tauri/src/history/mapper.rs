@@ -67,7 +67,11 @@ pub fn map_battle_result(result: Option<&str>) -> String {
     // capitalized "Won"/"Lost". Normalize case (and trim) so every source
     // resolves, and map NULL/empty/unrecognized to "unknown" — a neutral
     // marker the frontend renders muted, never as a defeat.
-    match result.map(str::trim).map(str::to_ascii_lowercase).as_deref() {
+    match result
+        .map(str::trim)
+        .map(str::to_ascii_lowercase)
+        .as_deref()
+    {
         Some("win" | "won") => "win".to_string(),
         Some("loss" | "lost") => "loss".to_string(),
         _ => "unknown".to_string(),
