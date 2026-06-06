@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { listen } from '@tauri-apps/api/event';
+import { hasTauriRuntime } from '../../api/runtime';
 import type { InstallState } from '../../types/backend';
 import { useI18n, type Translate } from '../../i18n/LocaleProvider';
 import { parseResetBppDataError, toErrorMessage } from '../shared/errors';
@@ -56,6 +58,20 @@ export function useInstallPage() {
       { onStart: () => setMessage(null) }
     );
   }, [run]);
+
+  // The backend warms up installer context in the background and emits
+  // `startup-ready` when done. On slow first launches (Windows) the initial
+  // load above can race ahead of warm-up; refresh once the signal arrives so
+  // the first screen converges to fully-detected state without user action.
+  useEffect(() => {
+    if (!hasTauriRuntime()) return;
+    const unlisten = listen('startup-ready', () => {
+      void refresh();
+    });
+    return () => {
+      void unlisten.then((stop) => stop());
+    };
+  }, [refresh]);
 
   const chooseDirectory = useCallback(
     () =>

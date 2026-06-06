@@ -1,10 +1,9 @@
 use crate::services::debug_log;
-use serde::Serialize;
 use std::path::Path;
 use std::process::Command;
 use std::time::Duration;
 
-#[cfg_attr(not(any(target_os = "windows", test)), allow(dead_code))]
+#[cfg(target_os = "windows")]
 const STEAM_PROCESS_NAME: &str = "steam.exe";
 #[cfg(any(target_os = "macos", target_os = "windows"))]
 const STEAM_EXIT_WAIT_ATTEMPTS: usize = 60;
@@ -13,11 +12,6 @@ const STEAM_EXIT_WAIT_INTERVAL: Duration = Duration::from_millis(500);
 
 pub fn supports_launch_option_updates(steam_path: &Path) -> bool {
     steam_path.join("userdata").is_dir()
-}
-
-#[derive(Debug, Serialize)]
-pub struct SteamRunningInfo {
-    pub running: bool,
 }
 
 fn steam_running_from_pgrep(
@@ -40,13 +34,6 @@ fn steam_running_from_pgrep(
             }
         }
     }
-}
-
-#[cfg_attr(not(any(target_os = "windows", test)), allow(dead_code))]
-fn tasklist_output_indicates_steam_running(stdout: &[u8]) -> bool {
-    let output = String::from_utf8_lossy(stdout);
-
-    output.lines().any(|line| line.contains(STEAM_PROCESS_NAME))
 }
 
 fn ensure_process_stopped_with<IsRunning, RequestQuit, Sleep>(
@@ -92,44 +79,7 @@ fn is_steam_running() -> Result<bool, String> {
 
 #[cfg(target_os = "windows")]
 fn is_steam_running() -> Result<bool, String> {
-    let output = Command::new("tasklist")
-        .args([
-            "/FI",
-            &format!("IMAGENAME eq {STEAM_PROCESS_NAME}"),
-            "/FO",
-            "CSV",
-            "/NH",
-        ])
-        .output()
-        .map_err(|err| format!("Failed to inspect Steam process state: {err}"))?;
-
-    if output.status.success() {
-        return Ok(tasklist_output_indicates_steam_running(&output.stdout));
-    }
-
-    let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
-    if stderr.is_empty() {
-        Err("Failed to inspect Steam process state.".to_string())
-    } else {
-        Err(format!("Failed to inspect Steam process state: {stderr}"))
-    }
-}
-
-pub fn detect_steam_running() -> Result<SteamRunningInfo, String> {
-    #[cfg(target_os = "macos")]
-    {
-        return is_steam_running().map(|running| SteamRunningInfo { running });
-    }
-
-    #[cfg(target_os = "windows")]
-    {
-        return is_steam_running().map(|running| SteamRunningInfo { running });
-    }
-
-    #[cfg(not(any(target_os = "macos", target_os = "windows")))]
-    {
-        Ok(SteamRunningInfo { running: false })
-    }
+    crate::services::process_snapshot::process_is_running(STEAM_PROCESS_NAME)
 }
 
 #[cfg(target_os = "macos")]
@@ -219,10 +169,7 @@ pub fn prepare_steam_for_launch_option_update(
 
 #[cfg(test)]
 mod tests {
-    use super::{
-        ensure_process_stopped_with, steam_running_from_pgrep,
-        tasklist_output_indicates_steam_running,
-    };
+    use super::{ensure_process_stopped_with, steam_running_from_pgrep};
     use std::time::Duration;
 
     #[test]
@@ -241,20 +188,6 @@ mod tests {
         let running = steam_running_from_pgrep(Some(0), stdout, b"").unwrap();
 
         assert!(!running);
-    }
-
-    #[test]
-    fn test_tasklist_output_indicates_steam_running_detects_steam_process() {
-        let stdout = b"\"steam.exe\",\"15432\",\"Console\",\"1\",\"512,340 K\"\r\n";
-
-        assert!(tasklist_output_indicates_steam_running(stdout));
-    }
-
-    #[test]
-    fn test_tasklist_output_indicates_steam_running_returns_false_when_missing() {
-        let stdout = b"INFO: No tasks are running which match the specified criteria.\r\n";
-
-        assert!(!tasklist_output_indicates_steam_running(stdout));
     }
 
     #[test]

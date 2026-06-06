@@ -5,7 +5,6 @@ use serde::Serialize;
 pub struct InstallState {
     pub selected_game_path: Option<String>,
     pub steam_path: Option<String>,
-    pub steam_running: bool,
     pub steam_launch_options_supported: bool,
     pub game: InstallGameState,
     pub mod_state: InstallModState,

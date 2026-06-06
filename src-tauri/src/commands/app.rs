@@ -52,7 +52,7 @@ pub struct AppLicense {
     pub category: String,
 }
 
-#[tauri::command]
+#[tauri::command(async)]
 pub fn get_app_bootstrap(
     app: AppHandle,
     state: tauri::State<'_, InstallerContextState>,

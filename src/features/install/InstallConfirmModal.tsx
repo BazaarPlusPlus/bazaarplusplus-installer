@@ -65,17 +65,15 @@ export function InstallConfirmModal({
             </div>
           </div>
 
-          {page.state.steam_running && (
-            <div className="flex items-start gap-3 p-4 border border-[rgba(232,190,120,0.24)] rounded-[4px] bg-[rgba(200,148,55,0.08)] text-[rgba(232,220,194,0.82)]">
-              <AlertCircle
-                size={16}
-                className="mt-0.5 shrink-0 text-[rgba(232,190,120,0.9)]"
-              />
-              <p className="m-0 text-[13px] leading-relaxed">
-                {t('installSteamWarning')}
-              </p>
-            </div>
-          )}
+          <div className="flex items-start gap-3 p-4 border border-[rgba(232,190,120,0.24)] rounded-[4px] bg-[rgba(200,148,55,0.08)] text-[rgba(232,220,194,0.82)]">
+            <AlertCircle
+              size={16}
+              className="mt-0.5 shrink-0 text-[rgba(232,190,120,0.9)]"
+            />
+            <p className="m-0 text-[13px] leading-relaxed">
+              {t('installSteamNotice')}
+            </p>
+          </div>
 
           <label className="flex items-start gap-3 p-3 border border-[rgba(200,148,55,0.18)] rounded-[4px] bg-gradient-to-b from-[rgba(200,148,55,0.055)] to-[rgba(200,148,55,0.015)] group">
             <input

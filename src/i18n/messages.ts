@@ -96,8 +96,8 @@ const zh = {
   tutorialKicker: '使用教程',
   installModalBody: '安装会写入 BazaarPlusPlus 与 BepInEx 组件。',
   viewTutorial: '查看教程',
-  installSteamWarning:
-    'Steam 正在运行。安装器不会自动关闭 Steam；请先手动退出 Steam，再继续安装以确保启动项写入生效。',
+  installSteamNotice:
+    '安装前请先关闭 Steam，以确保启动项正确写入；如果 Steam 正在运行，请手动退出后再继续。',
   installAcknowledge: '我确认安装插件存在风险，并愿意自行承担相关责任',
   installing: '安装中...',
   confirmInstall: '确认安装',
@@ -250,8 +250,8 @@ const en: Record<MessageKey, string> = {
   installModalBody:
     'Installation writes the BazaarPlusPlus and BepInEx components.',
   viewTutorial: 'View tutorial',
-  installSteamWarning:
-    'Steam is running. The installer will not close Steam automatically; quit Steam manually before continuing so the launch options are written correctly.',
+  installSteamNotice:
+    'Please close Steam before installing so the launch options are written correctly. If Steam is running, quit it manually before continuing.',
   installAcknowledge:
     'I understand installing the plugin carries risk and accept responsibility for it.',
   installing: 'Installing...',

@@ -387,6 +387,7 @@ dependencies = [
  "tokio",
  "tower-http",
  "ts-rs",
+ "windows",
  "winreg 0.52.0",
  "zip 6.0.0",
 ]

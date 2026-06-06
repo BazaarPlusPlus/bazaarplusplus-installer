@@ -5,7 +5,6 @@ import type { InstallState } from '../../types/backend';
 export const emptyInstallState: InstallState = {
   selected_game_path: null,
   steam_path: null,
-  steam_running: false,
   steam_launch_options_supported: false,
   game: {
     found: false,

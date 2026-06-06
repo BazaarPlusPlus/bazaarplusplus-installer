@@ -13,7 +13,6 @@ use crate::services::{
     bepinex::{install_bepinex, reset_bpp_data, uninstall_bpp},
     detect::detect_for_install,
     startup::InstallerContextState,
-    steam::detect_steam_running,
     vdf::patch_launch_options,
 };
 use crate::stream::state::StreamRuntimeState;
@@ -26,10 +25,7 @@ pub fn build_install_state(
     game_path: Option<String>,
 ) -> Result<InstallState, String> {
     let snapshot = detect_for_install(app, state, game_path)?;
-    let steam_running = detect_steam_running()
-        .map(|info| info.running)
-        .unwrap_or(false);
-    Ok(install_state_from_snapshot(snapshot, steam_running))
+    Ok(install_state_from_snapshot(snapshot))
 }
 
 pub async fn run_install(
@@ -101,7 +97,6 @@ pub fn launch_game_via_steam() -> Result<(), String> {
 
 fn install_state_from_snapshot(
     env: crate::services::detect::InstallEnvironmentSnapshot,
-    steam_running: bool,
 ) -> InstallState {
     let selected_game_path = env.game_path.clone();
     let game_found = selected_game_path.is_some();
@@ -113,13 +108,6 @@ fn install_state_from_snapshot(
     };
     let can_launch = game_found && env.game_path_valid;
     let mut warnings = Vec::new();
-    if steam_running {
-        warnings.push(InstallWarning {
-            code: "steam_running".to_string(),
-            message: "Steam 正在运行；安装器不会自动关闭 Steam，请手动退出后再继续安装。"
-                .to_string(),
-        });
-    }
     if !game_found || !env.game_path_valid {
         warnings.push(InstallWarning {
             code: "game_missing".to_string(),
@@ -142,7 +130,6 @@ fn install_state_from_snapshot(
     InstallState {
         selected_game_path,
         steam_path: env.steam_path,
-        steam_running,
         steam_launch_options_supported: env.steam_launch_options_supported,
         game: InstallGameState {
             found: game_found,

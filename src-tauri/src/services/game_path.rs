@@ -136,7 +136,13 @@ pub(crate) fn fallback_game_candidates() -> Vec<PathBuf> {
 
     #[cfg(target_os = "windows")]
     {
-        for drive in 'C'..='Z' {
+        use windows::Win32::Storage::FileSystem::GetLogicalDrives;
+
+        // Only probe drive letters that actually exist. The previous
+        // unconditional C..=Z scan issued ~48 `stat`s, and probing a
+        // disconnected/removable drive can stall for seconds on Windows.
+        let present = present_drive_letters(unsafe { GetLogicalDrives() });
+        for drive in present.into_iter().filter(|letter| *letter >= 'C') {
             for root in ["Steam", "SteamLibrary"] {
                 push_unique(
                     &mut candidates,
@@ -156,5 +162,39 @@ pub(crate) fn fallback_game_candidates() -> Vec<PathBuf> {
 fn push_unique(paths: &mut Vec<PathBuf>, path: PathBuf) {
     if !paths.iter().any(|existing| existing == &path) {
         paths.push(path);
+    }
+}
+
+/// Parse the bitmask returned by `GetLogicalDrives` (bit 0 = `A:`, ...,
+/// bit 25 = `Z:`) into the drive letters that currently exist. Kept pure so
+/// the bit math is unit-testable without the Win32 call.
+#[cfg_attr(not(any(target_os = "windows", test)), allow(dead_code))]
+fn present_drive_letters(bitmask: u32) -> Vec<char> {
+    ('A'..='Z')
+        .enumerate()
+        .filter(|(index, _)| bitmask & (1 << index) != 0)
+        .map(|(_, letter)| letter)
+        .collect()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::present_drive_letters;
+
+    #[test]
+    fn present_drive_letters_parses_c_and_d() {
+        // bit2 (C:) + bit3 (D:)
+        assert_eq!(present_drive_letters(0b1100), vec!['C', 'D']);
+    }
+
+    #[test]
+    fn present_drive_letters_is_empty_when_no_bits_set() {
+        assert!(present_drive_letters(0).is_empty());
+    }
+
+    #[test]
+    fn present_drive_letters_parses_a_and_z_extremes() {
+        // bit0 (A:) + bit25 (Z:) guards the enumerate/shift bounds.
+        assert_eq!(present_drive_letters(0b1 | (1 << 25)), vec!['A', 'Z']);
     }
 }

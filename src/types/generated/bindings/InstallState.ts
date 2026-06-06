@@ -5,4 +5,4 @@ import type { InstallModState } from "./InstallModState";
 import type { InstallRuntimeState } from "./InstallRuntimeState";
 import type { InstallWarning } from "./InstallWarning";
 
-export type InstallState = { selected_game_path: string | null, steam_path: string | null, steam_running: boolean, steam_launch_options_supported: boolean, game: InstallGameState, mod_state: InstallModState, runtime: InstallRuntimeState, actions: InstallActions, warnings: Array<InstallWarning>, };
+export type InstallState = { selected_game_path: string | null, steam_path: string | null, steam_launch_options_supported: boolean, game: InstallGameState, mod_state: InstallModState, runtime: InstallRuntimeState, actions: InstallActions, warnings: Array<InstallWarning>, };

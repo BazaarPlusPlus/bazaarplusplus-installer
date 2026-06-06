@@ -41,6 +41,13 @@ tempfile = "3"
 
 [target.'cfg(windows)'.dependencies]
 winreg = "0.52"
+# Aligned with the `windows` version Tauri already pulls in transitively
+# (see Cargo.lock) to avoid a duplicate major version.
+windows = { version = "0.61", features = [
+    "Win32_Foundation",
+    "Win32_Storage_FileSystem",
+    "Win32_System_Diagnostics_ToolHelp",
+] }
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
 tauri-plugin-updater = "2"

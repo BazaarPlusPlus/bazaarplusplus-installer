@@ -5,7 +5,7 @@ mod services;
 mod stream;
 mod tray;
 
-use tauri::{Manager, WindowEvent};
+use tauri::{Emitter, Manager, WindowEvent};
 
 use services::startup::InstallerContextState;
 use tray::{build_tray, TrayMenuState};
@@ -43,6 +43,7 @@ pub fn run() {
             tauri::async_runtime::spawn_blocking(move || {
                 let state = startup_handle.state::<InstallerContextState>();
                 let _ = state.get_or_initialize(&startup_handle);
+                let _ = startup_handle.emit("startup-ready", ());
             });
             let app_handle = handle.clone();
             tauri::async_runtime::spawn(async move {

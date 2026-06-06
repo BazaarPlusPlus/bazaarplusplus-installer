@@ -10,7 +10,7 @@ use crate::services::{
 };
 use crate::stream::state::StreamRuntimeState;
 
-#[tauri::command]
+#[tauri::command(async)]
 pub fn get_install_state(
     app: tauri::AppHandle,
     state: tauri::State<'_, InstallerContextState>,
