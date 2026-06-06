@@ -104,11 +104,19 @@ const zh = {
 
   // Update check (header)
   updaterPreview: '当前为浏览器预览环境',
+  updaterCurrent: '已是最新版本',
   updateModalKicker: '应用更新',
   updateModalTitle: '发现新版本',
   updateModalBody: 'BazaarPlusPlus {version} 已可用。',
   updateModalLater: '稍后',
-  updateModalConfirm: '前往下载',
+  updateInstall: '下载并安装',
+  updateNotesLabel: '更新内容',
+  updateDownloading: '正在下载…',
+  updateInstalling: '正在安装…',
+  updateReady: '更新完成，重启后生效',
+  updateRestartNow: '立即重启',
+  updateError: '自动更新失败',
+  updateRetry: '重试',
 
   // History page
   historyLoading: '读取战绩中',
@@ -258,11 +266,19 @@ const en: Record<MessageKey, string> = {
   confirmInstall: 'Confirm Install',
 
   updaterPreview: 'Browser preview mode',
+  updaterCurrent: 'Already up to date',
   updateModalKicker: 'App Update',
   updateModalTitle: 'Update Available',
   updateModalBody: 'BazaarPlusPlus {version} is available.',
   updateModalLater: 'Later',
-  updateModalConfirm: 'Open Download',
+  updateInstall: 'Download & Install',
+  updateNotesLabel: "What's new",
+  updateDownloading: 'Downloading…',
+  updateInstalling: 'Installing…',
+  updateReady: 'Update ready — restart to apply',
+  updateRestartNow: 'Restart Now',
+  updateError: 'Update failed',
+  updateRetry: 'Retry',
 
   historyLoading: 'Loading runs',
   noLocalRuns: 'No local runs yet',

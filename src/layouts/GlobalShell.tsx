@@ -4,6 +4,8 @@ import {
   AppBootstrapProvider,
   useAppBootstrap
 } from '../features/about/AppBootstrapProvider';
+import { UpdaterProvider, useUpdater } from '../features/about/UpdaterProvider';
+import { isUpdateModalPhase } from '../features/about/updater';
 import { ShellHeader } from './ShellHeader';
 import { ShellNavRail } from './ShellNavRail';
 import { ShellPaymentModal } from './ShellPaymentModal';
@@ -12,7 +14,9 @@ import { ShellUpdateModal } from './ShellUpdateModal';
 export default function GlobalShell() {
   return (
     <AppBootstrapProvider>
-      <GlobalShellContent />
+      <UpdaterProvider>
+        <GlobalShellContent />
+      </UpdaterProvider>
     </AppBootstrapProvider>
   );
 }
@@ -22,6 +26,7 @@ function GlobalShellContent() {
   const [showSupport, setShowSupport] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const app = useAppBootstrap();
+  const updater = useUpdater();
 
   // Close the header popovers on Escape or a click outside them — the native
   // behaviour these controlled dropdowns were missing.
@@ -87,13 +92,7 @@ function GlobalShellContent() {
       {showPaymentModal && (
         <ShellPaymentModal onClose={() => setShowPaymentModal(false)} />
       )}
-      {app.updatePrompt && (
-        <ShellUpdateModal
-          downloadUrl={app.updatePrompt.downloadUrl}
-          version={app.updatePrompt.version}
-          onClose={app.dismissUpdatePrompt}
-        />
-      )}
+      {isUpdateModalPhase(updater) && <ShellUpdateModal updater={updater} />}
     </div>
   );
 }

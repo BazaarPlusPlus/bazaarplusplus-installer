@@ -16,7 +16,7 @@ describe('messages catalog', () => {
 
 describe('formatMessage', () => {
   it('returns the raw message when no params are given', () => {
-    expect(formatMessage('en', 'updateModalConfirm')).toBe('Open Download');
+    expect(formatMessage('en', 'updateInstall')).toBe('Download & Install');
   });
 
   it('interpolates named placeholders', () => {

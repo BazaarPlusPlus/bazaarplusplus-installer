@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import type { CSSProperties, ReactNode } from 'react';
 import type { AppBootstrapController } from '../features/about/useAppBootstrap';
+import { useUpdater } from '../features/about/UpdaterProvider';
 import { useI18n } from '../i18n/LocaleProvider';
 import douyinPng from '../../static/support/douyin.png';
 import xiaohongshuSvg from '../../static/support/xiaohongshu.svg';
@@ -49,7 +50,6 @@ export function ShellHeader({
       <ShellHeaderCorners />
       <ShellBrand />
       <ShellHeaderActions
-        app={app}
         bootstrap={bootstrap}
         showBilibili={showBilibili}
         onToggleBilibili={onToggleBilibili}
@@ -144,7 +144,6 @@ function ShellBrand() {
 }
 
 type ShellHeaderActionsProps = {
-  app: AppBootstrapController;
   bootstrap: AppBootstrapController['bootstrap'];
   showBilibili: boolean;
   onToggleBilibili: () => void;
@@ -156,7 +155,6 @@ type ShellHeaderActionsProps = {
 };
 
 function ShellHeaderActions({
-  app,
   bootstrap,
   showBilibili,
   onToggleBilibili,
@@ -167,6 +165,20 @@ function ShellHeaderActions({
   onCloseSupport
 }: ShellHeaderActionsProps) {
   const { t, toggle } = useI18n();
+  const updater = useUpdater();
+  const checking = updater.phase === 'checking';
+  // Inline check feedback next to the button: "already up to date", the dev
+  // preview notice, or a failed manual check. Install errors render in the
+  // update modal instead.
+  const checkFeedback =
+    updater.phase === 'current'
+      ? t('updaterCurrent')
+      : updater.phase === 'preview'
+        ? t('updaterPreview')
+        : updater.phase === 'error' && updater.errorSource === 'check'
+          ? updater.error
+          : null;
+
   return (
     <div className="flex items-center gap-3 z-10 justify-end mr-6">
       <ShellSocialLinks
@@ -178,8 +190,8 @@ function ShellHeaderActions({
 
       <button
         type="button"
-        onClick={() => void app.checkUpdates()}
-        disabled={app.checkingUpdate}
+        onClick={updater.checkNow}
+        disabled={checking}
         className="flex items-center gap-2 px-3 h-8 border border-[rgba(200,148,55,0.24)] rounded-[2px] cinzel text-[10px] tracking-widest uppercase transition-all hover:border-[rgba(200,148,55,0.4)] disabled:opacity-60"
         style={{
           background:
@@ -188,22 +200,17 @@ function ShellHeaderActions({
           boxShadow: '0 0 0 1px rgba(255,198,98,0.08) inset'
         }}
       >
-        <Download
-          size={14}
-          className={app.checkingUpdate ? 'animate-pulse' : ''}
-        />
+        <Download size={14} className={checking ? 'animate-pulse' : ''} />
         <span className="inline">
-          {app.checkingUpdate
-            ? t('headerCheckingUpdate')
-            : t('headerCheckUpdate')}
+          {checking ? t('headerCheckingUpdate') : t('headerCheckUpdate')}
         </span>
       </button>
-      {app.updateMessage && (
+      {checkFeedback && (
         <span
           className="max-w-36 truncate text-[10px] text-[rgba(200,170,120,0.8)]"
-          title={app.updateMessage}
+          title={checkFeedback}
         >
-          {app.updateMessage}
+          {checkFeedback}
         </span>
       )}
 

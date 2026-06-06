@@ -1,4 +1,3 @@
-import { check } from '@tauri-apps/plugin-updater';
 import { invokeCommand } from '../../api/tauri';
 import { hasTauriRuntime } from '../../api/runtime';
 import type { AppBootstrap } from '../../types/backend';
@@ -19,20 +18,4 @@ export async function loadAppBootstrap() {
   }
 
   return invokeCommand('get_app_bootstrap');
-}
-
-export type UpdateCheckResult =
-  | { status: 'preview' }
-  | { status: 'available'; version: string }
-  | { status: 'current' };
-
-export async function checkForUpdate(): Promise<UpdateCheckResult> {
-  if (!hasTauriRuntime()) {
-    return { status: 'preview' };
-  }
-
-  const update = await check();
-  return update
-    ? { status: 'available', version: update.version }
-    : { status: 'current' };
 }
