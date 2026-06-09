@@ -206,6 +206,42 @@ mod imp {
         Ok(stub)
     }
 
+    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+    pub(super) enum RealBinarySource {
+        CurrentExe,
+        ExistingOrig,
+    }
+
+    /// Decide which file holds the real Unity binary so [`install_trampoline`]
+    /// preserves exactly it as `.orig`. A live `<exe>` that links Unity always
+    /// wins — this covers a fresh install AND a Steam update/Verify that wrote a
+    /// NEW real binary at `<exe>` on top of a STALE `<exe>.orig` from a prior
+    /// trampoline (where re-running Repair must keep the fresh binary, never
+    /// re-stub over it and exec the stale one). Only when `<exe>` is not the real
+    /// binary do we fall back to an existing, genuinely-real `.orig`; anything
+    /// else is corrupt and only Steam can re-supply the binary.
+    pub(super) fn classify_real_binary(
+        exe_is_real: bool,
+        orig_exists: bool,
+        orig_is_real: bool,
+    ) -> Result<RealBinarySource, String> {
+        if exe_is_real {
+            Ok(RealBinarySource::CurrentExe)
+        } else if orig_exists && orig_is_real {
+            Ok(RealBinarySource::ExistingOrig)
+        } else if orig_exists {
+            Err(
+                "The game binary backup (.orig) exists but is not the real Unity binary. Run Steam \"Verify integrity of game files\" and reinstall."
+                    .to_string(),
+            )
+        } else {
+            Err(
+                "The game's main executable is not the real Unity binary and no backup exists. Run Steam \"Verify integrity of game files\"."
+                    .to_string(),
+            )
+        }
+    }
+
     /// Mechanical filesystem swap (no signing, no Unity check — callers guard
     /// first): preserve the real binary as `.orig` once, then drop the stub in
     /// its place. Idempotent — never clobbers an existing `.orig`.
@@ -354,6 +390,10 @@ mod imp {
                     .to_string(),
             );
         }
+        // Best-effort guard. Currently a no-op on macOS (is_bazaar_running_best_effort
+        // returns false there); real protection comes from the orchestrator closing
+        // Steam first, which takes down a Steam-launched Bazaar. Kept so a future
+        // macOS process probe activates it automatically.
         if crate::services::game_process::is_bazaar_running_best_effort() {
             return Err(
                 "The Bazaar is running. Close the game before installing BazaarPlusPlus."
@@ -373,23 +413,29 @@ mod imp {
             return Ok(());
         }
 
-        // Step 2: recover partial state / guard the rename.
-        if layout.orig_path.exists() {
-            // A prior interrupted run preserved the real binary. Only trust it if
-            // it is genuinely the Unity bootstrap; otherwise the bundle is corrupt.
-            if !links_unity(&layout.orig_path) {
-                return Err(format!(
-                    "{} exists but is not the real game binary. Run Steam \"Verify integrity of game files\" and reinstall.",
-                    layout.orig_path.display()
-                ));
+        // Step 2: identify the real Unity binary and preserve exactly it as
+        // `.orig`. Critically, a Steam update/Verify can leave a FRESH real binary
+        // at <exe> on top of a STALE <exe>.orig; we keep the fresh one and discard
+        // the stale backup, never the reverse (which would re-stub over the updated
+        // binary and silently exec the old one).
+        let exe_is_real = links_unity(&layout.exe_path);
+        let orig_exists = layout.orig_path.exists();
+        let orig_is_real = orig_exists && links_unity(&layout.orig_path);
+        match classify_real_binary(exe_is_real, orig_exists, orig_is_real)? {
+            RealBinarySource::CurrentExe => {
+                // <exe> is the real binary (fresh install, or Steam-updated over a
+                // stale backup). Drop any stale `.orig` so the swap renames the
+                // CURRENT binary into `.orig` instead of clobbering it.
+                if orig_exists {
+                    std::fs::remove_file(&layout.orig_path).map_err(|err| {
+                        format!("Cannot remove stale {}: {err}", layout.orig_path.display())
+                    })?;
+                }
             }
-        } else if !links_unity(&layout.exe_path) {
-            // No .orig yet: the current main executable MUST be the real Unity
-            // binary before we rename it. Refuse to rename a stray stub.
-            return Err(format!(
-                "{} is not the real game binary and no backup exists. Run Steam \"Verify integrity of game files\".",
-                layout.exe_path.display()
-            ));
+            RealBinarySource::ExistingOrig => {
+                // <exe> is our stub / a partial copy; the real binary is already
+                // safely preserved as `.orig` (recover a prior interrupted run).
+            }
         }
 
         // Steps 3-7 with rollback on any failure.
@@ -405,7 +451,13 @@ mod imp {
         match result {
             Ok(()) => Ok(()),
             Err(err) => match restore_vanilla_layout(&layout) {
-                Ok(()) => Err(err),
+                Ok(()) => {
+                    // Re-seal so a rollback that runs after sign/seal still leaves a
+                    // self-consistent (codesign --verify-clean) vanilla bundle.
+                    // Best-effort: codesign was proven available at step 0.
+                    let _ = seal_bundle(&layout.app_path);
+                    Err(err)
+                }
                 Err(_) if layout.exe_path.exists() => Err(err),
                 Err(restore_err) => Err(format!(
                     "{err}; additionally could not restore the original game binary: {restore_err}. Run Steam \"Verify integrity of game files\" to repair the bundle."
@@ -476,7 +528,8 @@ pub(crate) fn uninstall_trampoline(_game_path: &Path) -> Result<(), String> {
 #[cfg(target_os = "macos")]
 mod tests {
     use super::imp::{
-        bundle_paths, is_trampolined, restore_vanilla_layout, swap_in_stub, TRAMPOLINE_ENTITLEMENTS,
+        bundle_paths, classify_real_binary, is_trampolined, restore_vanilla_layout, swap_in_stub,
+        RealBinarySource, TRAMPOLINE_ENTITLEMENTS,
     };
     use super::*;
 
@@ -514,6 +567,28 @@ mod tests {
         let tmp = make_bundle(b"real");
         // No `.orig` -> not trampolined; short-circuits before any otool call.
         assert!(!is_trampolined(tmp.path()).unwrap());
+    }
+
+    #[test]
+    fn test_classify_real_binary_prefers_live_exe_over_stale_orig() {
+        // Fresh install: exe is real, no backup.
+        assert_eq!(
+            classify_real_binary(true, false, false).unwrap(),
+            RealBinarySource::CurrentExe
+        );
+        // Steam-updated binary at <exe> on top of a STALE real .orig — keep <exe>.
+        assert_eq!(
+            classify_real_binary(true, true, true).unwrap(),
+            RealBinarySource::CurrentExe
+        );
+        // Interrupted prior run: exe is the stub, .orig is the preserved real binary.
+        assert_eq!(
+            classify_real_binary(false, true, true).unwrap(),
+            RealBinarySource::ExistingOrig
+        );
+        // Corrupt: neither side is the real binary.
+        assert!(classify_real_binary(false, true, false).is_err());
+        assert!(classify_real_binary(false, false, false).is_err());
     }
 
     #[test]
@@ -587,5 +662,13 @@ mod tests {
             );
             assert!(script.contains(key), "run_bepinex.sh missing {key}");
         }
+        // Also assert COUNT parity so a 4th capability added to only one side is
+        // caught (containment alone would miss it).
+        let needle = "com.apple.security.cs.";
+        assert_eq!(
+            TRAMPOLINE_ENTITLEMENTS.matches(needle).count(),
+            script.matches(needle).count(),
+            "trampoline entitlements and run_bepinex.sh have a different number of capability keys"
+        );
     }
 }

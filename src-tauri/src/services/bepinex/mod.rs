@@ -142,11 +142,14 @@ pub fn uninstall_bpp(
     #[cfg(target_os = "macos")]
     crate::services::steam::prepare_steam_for_launch_option_update(Path::new(&_steam_path), false)?;
 
-    // Restore the vanilla bundle BEFORE removing siblings. If this fails, abort so
-    // we never strand a stubbed bundle whose `.orig` we then can't recover.
-    if trampoline::is_trampolined(game_path).unwrap_or(false) {
-        trampoline::uninstall_trampoline(game_path)?;
-    }
+    // Restore the vanilla bundle BEFORE removing siblings. Call uninstall_trampoline
+    // UNCONDITIONALLY (not gated on is_trampolined): it self-classifies — a no-op
+    // when already vanilla, a restore when a `.orig` exists, and a hard error in the
+    // broken stub-without-backup state. A prior `if is_trampolined().unwrap_or(false)`
+    // gate hid both that documented error (is_trampolined returns false the moment
+    // `.orig` is gone) and any plutil read failure. If this fails, abort so we never
+    // strand a stubbed bundle whose `.orig` we then can't recover. No-op off macOS.
+    trampoline::uninstall_trampoline(game_path)?;
 
     payload::uninstall_payload(game_path)?;
     trampoline::remove_launch_mode_marker(game_path)?;

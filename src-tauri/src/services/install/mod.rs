@@ -65,10 +65,14 @@ pub async fn run_install(
                 game_path_for_task.clone(),
             )?;
             bepinex::install_trampoline(&app_for_task, game)?;
+            // Persist the desired mode AS SOON AS the bundle is trampolined, before
+            // the Steam step below — otherwise a clear-launch-options failure would
+            // leave a trampolined bundle with no marker, which a later detect would
+            // mislabel as `trampoline_reverted` on macOS <= 26.
+            bepinex::write_launch_mode_marker(game, LaunchMode::Trampoline)?;
             // LaunchOptions are driven by the MODE: trampoline => cleared (the
             // empty/vanilla launch the stub needs).
             clear_launch_options_for_steam(steam)?;
-            bepinex::write_launch_mode_marker(game, LaunchMode::Trampoline)?;
         } else {
             // Prefix mode. Close Steam ONLY to un-apply a previous trampoline (mode
             // switch); a plain <= 26 prefix install keeps today's behavior exactly

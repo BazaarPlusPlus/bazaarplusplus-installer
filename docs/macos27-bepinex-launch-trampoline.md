@@ -315,7 +315,7 @@ remove siblings / clear options). `uninstall_bpp` already closes Steam (`prepare
 
 | Case | Handling |
 | --- | --- |
-| Game running during install | `install_trampoline` step 0 aborts (reuse `game_process::is_bazaar_running_best_effort`). |
+| Game running during install | `install_trampoline` step 0 calls `game_process::is_bazaar_running_best_effort`, which is **best-effort and currently a no-op on macOS** (returns `false`; a reliable macOS probe is not wired because `pgrep -f` self-matches concurrent invocations). Real protection comes from the orchestrator closing Steam first (`prepare_steam_for_launch_option_update(steam, false)`), which takes down a Steam-launched Bazaar; re-signing/renaming a still-running Mach-O via its open inode is benign. |
 | `codesign` unavailable | Hard error before any rename (never leave a modified-unsigned bundle). |
 | Re-install / already trampolined | Idempotent: step 1 detects `is_trampolined` and returns Ok. |
 | Steam "Verify integrity" / game update reverted the swap | Detection surfaces `trampoline_reverted` (desired-from-marker vs applied) → Repair re-applies. Expected in trampoline mode (either trigger). |
