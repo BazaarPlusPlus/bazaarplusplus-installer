@@ -39,10 +39,8 @@ pub async fn run_install(
     compat_opt_in: bool,
 ) -> Result<InstallState, String> {
     let before = detect_for_install(app.clone(), state, Some(game_path.clone()))?;
-    let steam_path = before
-        .steam_path
-        .clone()
-        .ok_or_else(|| "Steam path is not configured.".to_string())?;
+    let steam_path = before.steam_path.clone().unwrap_or_default();
+    let has_steam_path = !steam_path.trim().is_empty();
 
     // Version-forced on macOS 27+, or <= 26 opt-in. Always false off macOS.
     let wants_trampoline = use_trampoline(compat_opt_in);
@@ -58,7 +56,9 @@ pub async fn run_install(
         if wants_trampoline {
             // Trampoline mode MUTATES the .app and needs a reliable localconfig
             // clear -> Steam MUST be closed.
-            prepare_steam_for_launch_option_update(steam, false)?;
+            if has_steam_path {
+                prepare_steam_for_launch_option_update(steam, false)?;
+            }
             install_bepinex(
                 app_for_task.clone(),
                 steam_path.clone(),
@@ -72,12 +72,14 @@ pub async fn run_install(
             bepinex::write_launch_mode_marker(game, LaunchMode::Trampoline)?;
             // LaunchOptions are driven by the MODE: trampoline => cleared (the
             // empty/vanilla launch the stub needs).
-            clear_launch_options_for_steam(steam)?;
+            if has_steam_path {
+                clear_launch_options_for_steam(steam)?;
+            }
         } else {
             // Prefix mode. Close Steam ONLY to un-apply a previous trampoline (mode
             // switch); a plain <= 26 prefix install keeps today's behavior exactly
             // (Steam stays up; patch_launch_options does its own prepare(.., true)).
-            if was_trampolined {
+            if was_trampolined && has_steam_path {
                 prepare_steam_for_launch_option_update(steam, false)?;
             }
             install_bepinex(
@@ -88,7 +90,7 @@ pub async fn run_install(
             if was_trampolined {
                 bepinex::uninstall_trampoline(game)?;
             }
-            if patch_launch_options_supported {
+            if patch_launch_options_supported && has_steam_path {
                 let _ = patch_launch_options(
                     app_for_task,
                     steam_path.clone(),
@@ -139,6 +141,13 @@ pub async fn run_uninstall(
 
 pub fn launch_game_via_steam() -> Result<(), String> {
     open_url(STEAM_BAZAAR_URL)
+}
+
+pub fn launch_game_via_tempo(
+    app: tauri::AppHandle,
+    game_path: Option<String>,
+) -> Result<(), String> {
+    crate::services::tempo::launch_game_via_tempo(app, game_path, None)
 }
 
 fn install_state_from_snapshot(

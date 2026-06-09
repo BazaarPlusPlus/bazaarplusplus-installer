@@ -7,6 +7,7 @@ pub(crate) use game::is_valid_game_path;
 pub(crate) use steam::detect_installation_paths;
 
 use crate::services::path::normalize_requested_game_path;
+use crate::services::game_path::fallback_game_candidates;
 use crate::services::startup::InstallerContextState;
 use game::{is_bepinex_installed, read_installed_bpp_version};
 use serde::{Deserialize, Serialize};
@@ -59,7 +60,12 @@ pub fn detect_for_install(
     let steam_path = startup.steam_path.clone();
     let game_path = requested_game_path
         .clone()
-        .or_else(|| startup.game_path.clone());
+        .or_else(|| startup.game_path.clone())
+        .or_else(|| {
+            fallback_game_candidates()
+                .into_iter()
+                .find(|path| is_valid_game_path(path))
+        });
     let game_path_valid = game_path
         .as_ref()
         .map(|path| is_valid_game_path(path))

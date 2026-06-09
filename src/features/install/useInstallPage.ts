@@ -73,6 +73,19 @@ export function useInstallPage() {
     };
   }, [refresh]);
 
+  useEffect(() => {
+    if (!hasTauriRuntime()) return;
+    const unlisten = listen<{ phase: string; message: string }>(
+      'tempo-launch-status',
+      (event) => {
+        setMessage(event.payload.message);
+      }
+    );
+    return () => {
+      void unlisten.then((stop) => stop());
+    };
+  }, []);
+
   const chooseDirectory = useCallback(
     () =>
       run('choose', async () => {

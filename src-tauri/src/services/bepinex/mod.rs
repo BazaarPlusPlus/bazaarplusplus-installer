@@ -76,7 +76,9 @@ pub fn install_bepinex(
     #[cfg(not(target_os = "macos"))]
     let _ = &steam_path;
     #[cfg(target_os = "macos")]
-    crate::services::steam::prepare_steam_for_launch_option_update(Path::new(&steam_path), true)?;
+    if !steam_path.trim().is_empty() {
+        crate::services::steam::prepare_steam_for_launch_option_update(Path::new(&steam_path), true)?;
+    }
     let install_backup = payload::prepare_install_target(game_path)?;
 
     let install_result = (|| -> Result<(), String> {
@@ -140,7 +142,9 @@ pub fn uninstall_bpp(
     payload::ensure_valid_game_path(game_path)?;
 
     #[cfg(target_os = "macos")]
-    crate::services::steam::prepare_steam_for_launch_option_update(Path::new(&_steam_path), false)?;
+    if !_steam_path.trim().is_empty() {
+        crate::services::steam::prepare_steam_for_launch_option_update(Path::new(&_steam_path), false)?;
+    }
 
     // Restore the vanilla bundle BEFORE removing siblings. Call uninstall_trampoline
     // UNCONDITIONALLY (not gated on is_trampolined): it self-classifies — a no-op
@@ -156,7 +160,9 @@ pub fn uninstall_bpp(
 
     #[cfg(target_os = "macos")]
     {
-        crate::services::vdf::clear_launch_options_for_steam(Path::new(&_steam_path))?;
+        if !_steam_path.trim().is_empty() {
+            crate::services::vdf::clear_launch_options_for_steam(Path::new(&_steam_path))?;
+        }
     }
 
     debug_log!(
