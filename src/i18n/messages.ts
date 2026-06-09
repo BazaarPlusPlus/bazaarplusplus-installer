@@ -99,6 +99,11 @@ const zh = {
   installSteamNotice:
     '安装前请先关闭 Steam，以确保启动项正确写入；如果 Steam 正在运行，请手动退出后再继续。',
   installAcknowledge: '我确认安装插件存在风险，并愿意自行承担相关责任',
+  compatModeLabel: '兼容模式（实验性）',
+  compatModeDescription:
+    '改为从游戏内部注入，不再依赖 Steam 启动脚本。更稳健，但会清空当前启动项；如遇游戏校验/更新还原，需要在此重新安装修复。仅在默认方式无法启动时开启。',
+  compatModeForcedNotice:
+    'macOS 27 及以上必须使用兼容模式：新版 Steam 不再支持启动脚本，已自动开启且无法关闭。',
   installing: '安装中...',
   confirmInstall: '确认安装',
 
@@ -269,6 +274,11 @@ const en: Record<MessageKey, string> = {
     'Please close Steam before installing so the launch options are written correctly. If Steam is running, quit it manually before continuing.',
   installAcknowledge:
     'I understand installing the plugin carries risk and accept responsibility for it.',
+  compatModeLabel: 'Compatibility mode (experimental)',
+  compatModeDescription:
+    'Inject from inside the game instead of relying on the Steam launch script. More robust, but it clears your current launch options; if a game verify/update reverts it, reinstall here to repair. Enable only if the default launch fails.',
+  compatModeForcedNotice:
+    'Required on macOS 27+: the new Steam client no longer supports the launch script, so this is enabled automatically and cannot be turned off.',
   installing: 'Installing...',
   confirmInstall: 'Confirm Install',
 

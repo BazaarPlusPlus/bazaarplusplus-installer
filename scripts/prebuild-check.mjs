@@ -257,6 +257,34 @@ function ensureZipLooksValid(rootDir, zipPath, platform) {
   }
 }
 
+export function macosTrampolineStubPath(rootDir) {
+  return path.join(
+    rootDir,
+    'src-tauri',
+    'resources',
+    'Trampoline',
+    'macos',
+    'bpp_launcher'
+  );
+}
+
+export function assertMacosTrampolineStub(rootDir) {
+  const stubPath = macosTrampolineStubPath(rootDir);
+  if (!fs.existsSync(stubPath)) {
+    throw new Error(
+      `Missing compiled macOS trampoline stub: ${stubPath}. ` +
+        'Run build.sh (which compiles it from SourceForBuild/macos/bpp_launcher.c) before bundling.'
+    );
+  }
+
+  const description = execFileSync('file', [stubPath], { encoding: 'utf8' });
+  if (!/Mach-O 64-bit executable arm64/.test(description)) {
+    throw new Error(
+      `macOS trampoline stub is not arm64 Mach-O (${stubPath}): ${description.trim()}`
+    );
+  }
+}
+
 const generatedTypesDir = 'src/types/generated';
 
 export function npmExecFileInvocation(
@@ -309,6 +337,12 @@ export function runPrebuildCheck(rootDir, platformEnv) {
       sourceZipPathForPlatform(rootDir, platform),
       platform
     );
+  }
+
+  // The compiled arm64 stub is only produced on (and needed by) a macOS build
+  // host. Skip the check when cross-validating the macOS target from elsewhere.
+  if (process.platform === 'darwin' && platforms.includes('macos')) {
+    assertMacosTrampolineStub(rootDir);
   }
 }
 

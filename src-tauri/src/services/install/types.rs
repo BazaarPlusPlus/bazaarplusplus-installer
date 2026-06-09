@@ -9,8 +9,23 @@ pub struct InstallState {
     pub game: InstallGameState,
     pub mod_state: InstallModState,
     pub runtime: InstallRuntimeState,
+    pub compat: InstallCompatState,
     pub actions: InstallActions,
     pub warnings: Vec<InstallWarning>,
+}
+
+/// macOS launch-mode (兼容模式 / trampoline) state surfaced to the UI.
+#[derive(Clone, Debug, Serialize, ts_rs::TS)]
+#[ts(export)]
+pub struct InstallCompatState {
+    /// Show the opt-in "兼容模式" checkbox (macOS <= 26 only).
+    pub mode_available: bool,
+    /// macOS 27+: trampoline forced — render the checkbox checked and locked.
+    pub forced: bool,
+    /// The desired launch mode (checkbox default): forced, or the persisted marker.
+    pub desired: bool,
+    /// Whether the bundle currently has the trampoline applied.
+    pub applied: bool,
 }
 
 #[derive(Clone, Debug, Serialize, ts_rs::TS)]

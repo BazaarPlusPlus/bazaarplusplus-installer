@@ -33,7 +33,7 @@ export interface TauriCommandMap {
     output: GameDirectorySelection;
   };
   install_mod: {
-    input: { gamePath: string };
+    input: { gamePath: string; compatOptIn: boolean };
     output: InstallState;
   };
   reset_bpp_data: {

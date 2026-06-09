@@ -1,6 +1,11 @@
 mod payload;
+mod trampoline;
 mod zip_archive;
 
+pub(crate) use trampoline::{
+    install_trampoline, is_trampolined, read_launch_mode_marker, uninstall_trampoline,
+    write_launch_mode_marker, LaunchMode,
+};
 pub(crate) use zip_archive::read_bundled_bpp_version;
 
 use std::path::{Path, PathBuf};
@@ -137,7 +142,14 @@ pub fn uninstall_bpp(
     #[cfg(target_os = "macos")]
     crate::services::steam::prepare_steam_for_launch_option_update(Path::new(&_steam_path), false)?;
 
+    // Restore the vanilla bundle BEFORE removing siblings. If this fails, abort so
+    // we never strand a stubbed bundle whose `.orig` we then can't recover.
+    if trampoline::is_trampolined(game_path).unwrap_or(false) {
+        trampoline::uninstall_trampoline(game_path)?;
+    }
+
     payload::uninstall_payload(game_path)?;
+    trampoline::remove_launch_mode_marker(game_path)?;
 
     #[cfg(target_os = "macos")]
     {

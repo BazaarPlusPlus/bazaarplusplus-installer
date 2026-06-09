@@ -21,6 +21,12 @@ export const emptyInstallState: InstallState = {
     dotnet_version: null,
     dotnet_ok: false
   },
+  compat: {
+    mode_available: false,
+    forced: false,
+    desired: false,
+    applied: false
+  },
   actions: {
     can_install: false,
     can_reinstall: false,
@@ -47,8 +53,8 @@ export async function chooseGameDirectory() {
   return invokeCommand('choose_game_directory');
 }
 
-export async function installMod(gamePath: string) {
-  return invokeCommand('install_mod', { gamePath });
+export async function installMod(gamePath: string, compatOptIn: boolean) {
+  return invokeCommand('install_mod', { gamePath, compatOptIn });
 }
 
 export async function resetBppData(gamePath: string) {

@@ -14,6 +14,7 @@ export type { HistoryRunList } from './bindings/HistoryRunList';
 export type { HistoryRunRow } from './bindings/HistoryRunRow';
 export type { HistorySummary } from './bindings/HistorySummary';
 export type { InstallActions } from './bindings/InstallActions';
+export type { InstallCompatState } from './bindings/InstallCompatState';
 export type { InstallGameState } from './bindings/InstallGameState';
 export type { InstallModState } from './bindings/InstallModState';
 export type { InstallRuntimeState } from './bindings/InstallRuntimeState';

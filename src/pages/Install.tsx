@@ -11,6 +11,7 @@ export default function Install() {
   const page = useInstallPage();
   const [showInstallModal, setShowInstallModal] = useState(false);
   const [installAcknowledged, setInstallAcknowledged] = useState(false);
+  const [compatOptIn, setCompatOptIn] = useState(false);
   const primaryMode: 'install' | 'reinstall' | 'launch' = !page.state.mod_state
     .installed
     ? 'install'
@@ -21,10 +22,13 @@ export default function Install() {
   const openInstallModal = () => {
     setShowInstallModal(true);
     setInstallAcknowledged(false);
+    // Seed the checkbox from the current desired mode: forced (checked + locked) on
+    // macOS 27+, the persisted choice on <= 26, off elsewhere.
+    setCompatOptIn(page.state.compat.desired);
   };
 
   const confirmInstall = async () => {
-    const installed = await page.install();
+    const installed = await page.install(compatOptIn);
     if (installed) {
       setShowInstallModal(false);
       setInstallAcknowledged(false);
@@ -47,6 +51,9 @@ export default function Install() {
           page={page}
           installAcknowledged={installAcknowledged}
           onAcknowledgedChange={setInstallAcknowledged}
+          compat={page.state.compat}
+          compatOptIn={compatOptIn}
+          onCompatOptInChange={setCompatOptIn}
           onClose={() => setShowInstallModal(false)}
           onConfirm={confirmInstall}
         />

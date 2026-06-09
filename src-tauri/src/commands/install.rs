@@ -39,8 +39,9 @@ pub async fn install_mod(
     app: tauri::AppHandle,
     state: tauri::State<'_, InstallerContextState>,
     game_path: String,
+    compat_opt_in: bool,
 ) -> Result<InstallState, String> {
-    run_install(app, state, game_path).await
+    run_install(app, state, game_path, compat_opt_in).await
 }
 
 #[tauri::command]

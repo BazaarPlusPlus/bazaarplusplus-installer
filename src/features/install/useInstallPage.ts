@@ -85,12 +85,12 @@ export function useInstallPage() {
   );
 
   const install = useCallback(
-    () =>
+    (compatOptIn: boolean) =>
       run(
         'install',
         async () => {
           const path = requireGamePath(state, t);
-          setState(await installMod(path));
+          setState(await installMod(path, compatOptIn));
           setMessage(t('installDone'));
         },
         { onStart: () => setMessage(null) }

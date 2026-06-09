@@ -1,7 +1,12 @@
+import { mkdtempSync, mkdirSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
 import { test, expect } from 'vitest';
 
 import {
   assertMacosLauncherScriptIsSafe,
+  assertMacosTrampolineStub,
+  macosTrampolineStubPath,
   npmExecFileInvocation,
   requiredEntriesForPlatform
 } from './prebuild-check.mjs';
@@ -88,4 +93,19 @@ test('prebuild check invokes npm through cmd on Windows', () => {
     command: 'C:\\Windows\\System32\\cmd.exe',
     args: ['/d', '/s', '/c', 'npm', 'run', 'generate:bindings']
   });
+});
+
+test('trampoline stub check fails loudly when the compiled stub is missing', () => {
+  const root = mkdtempSync(path.join(tmpdir(), 'bpp-stub-'));
+  expect(() => assertMacosTrampolineStub(root)).toThrow(
+    'Missing compiled macOS trampoline stub'
+  );
+});
+
+test('trampoline stub check rejects a non-Mach-O stub', () => {
+  const root = mkdtempSync(path.join(tmpdir(), 'bpp-stub-'));
+  const stubPath = macosTrampolineStubPath(root);
+  mkdirSync(path.dirname(stubPath), { recursive: true });
+  writeFileSync(stubPath, 'not a mach-o binary');
+  expect(() => assertMacosTrampolineStub(root)).toThrow('not arm64 Mach-O');
 });

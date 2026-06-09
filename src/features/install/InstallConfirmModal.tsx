@@ -1,5 +1,6 @@
 import { AlertCircle, DownloadCloud, ExternalLink, X } from 'lucide-react';
 import type { useInstallPage } from './useInstallPage';
+import type { InstallCompatState } from '../../types/backend';
 import { Dialog } from '../../components/ui/Dialog';
 import { useI18n } from '../../i18n/LocaleProvider';
 
@@ -9,16 +10,23 @@ export function InstallConfirmModal({
   page,
   installAcknowledged,
   onAcknowledgedChange,
+  compat,
+  compatOptIn,
+  onCompatOptInChange,
   onClose,
   onConfirm
 }: {
   page: InstallPage;
   installAcknowledged: boolean;
   onAcknowledgedChange: (acknowledged: boolean) => void;
+  compat: InstallCompatState;
+  compatOptIn: boolean;
+  onCompatOptInChange: (value: boolean) => void;
   onClose: () => void;
   onConfirm: () => void | Promise<void>;
 }) {
   const { t } = useI18n();
+  const showCompatToggle = compat.mode_available || compat.forced;
   return (
     <Dialog onClose={onClose} labelledBy="install-modal-title">
       <div className="bg-[#0b0906] border border-[rgba(200,148,55,0.18)] rounded-[4px] shadow-[0_24px_64px_rgba(0,0,0,0.5)] w-full max-w-md mx-4 relative">
@@ -74,6 +82,28 @@ export function InstallConfirmModal({
               {t('installSteamNotice')}
             </p>
           </div>
+
+          {showCompatToggle && (
+            <label className="flex items-start gap-3 p-3 border border-[rgba(200,148,55,0.18)] rounded-[4px] bg-gradient-to-b from-[rgba(200,148,55,0.055)] to-[rgba(200,148,55,0.015)] group">
+              <input
+                type="checkbox"
+                className="mt-1"
+                checked={compat.forced ? true : compatOptIn}
+                disabled={compat.forced}
+                onChange={(event) => onCompatOptInChange(event.target.checked)}
+              />
+              <span className="flex flex-col gap-1 text-[13px] leading-relaxed text-[rgba(232,220,194,0.78)]">
+                <span className="cinzel text-[rgba(232,200,130,0.9)]">
+                  {t('compatModeLabel')}
+                </span>
+                <span className="text-[rgba(200,170,120,0.72)]">
+                  {compat.forced
+                    ? t('compatModeForcedNotice')
+                    : t('compatModeDescription')}
+                </span>
+              </span>
+            </label>
+          )}
 
           <label className="flex items-start gap-3 p-3 border border-[rgba(200,148,55,0.18)] rounded-[4px] bg-gradient-to-b from-[rgba(200,148,55,0.055)] to-[rgba(200,148,55,0.015)] group">
             <input

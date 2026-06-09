@@ -67,6 +67,10 @@ BazaarPlusPlus.Localization.dll
 /src-tauri/resources/SourceForBuild/*/BepInEx/plugins/ffmpeg.exe
 /src-tauri/resources/SourceForBuild/*/BepInEx/plugins/ffmpeg-LICENSE.txt
 
+# macOS launch trampoline stub is compiled arm64 at build time from the committed
+# SourceForBuild/macos/bpp_launcher.c. Never commit the compiled binary.
+/src-tauri/resources/Trampoline/
+
 signing-secrets
 scripts/supporters-import-state.json
 static/support/supporter-pending-review.json
