@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { listen } from '@tauri-apps/api/event';
 import { hasTauriRuntime } from '../../api/runtime';
 import type { InstallState } from '../../types/backend';
+import type { MessageKey } from '../../i18n/messages';
 import { useI18n, type Translate } from '../../i18n/LocaleProvider';
 import { parseResetBppDataError, toErrorMessage } from '../shared/errors';
 import { useAsyncAction } from '../shared/useAsyncAction';
@@ -31,6 +32,20 @@ export function useInstallPage() {
   );
   const [message, setMessage] = useState<string | null>(null);
   const { action, error, run, busy } = useAsyncAction<InstallAction>();
+
+  const tempoPhaseMessages: Partial<Record<string, MessageKey>> = useMemo(
+    () => ({
+      prepare: 'tempoLaunchPrepare',
+      backup: 'tempoLaunchBackup',
+      launcher: 'tempoLaunchLauncher',
+      capture: 'tempoLaunchCapture',
+      restore: 'tempoLaunchRestore',
+      launch: 'tempoLaunchLaunching',
+      done: 'tempoLaunchDone',
+      error: 'tempoLaunchFailed'
+    }),
+    []
+  );
 
   const refresh = useCallback(
     async (gamePath = selectedPath) => {
@@ -78,13 +93,14 @@ export function useInstallPage() {
     const unlisten = listen<{ phase: string; message: string }>(
       'tempo-launch-status',
       (event) => {
-        setMessage(event.payload.message);
+        const key = tempoPhaseMessages[event.payload.phase];
+        if (key) setMessage(t(key));
       }
     );
     return () => {
       void unlisten.then((stop) => stop());
     };
-  }, []);
+  }, [t, tempoPhaseMessages]);
 
   const chooseDirectory = useCallback(
     () =>
@@ -144,10 +160,14 @@ export function useInstallPage() {
 
   const launch = useCallback(
     () =>
-      run('launch', async () => {
-        await launchGame(state.selected_game_path ?? undefined);
-      }),
-    [run, state.selected_game_path]
+      run(
+        'launch',
+        async () => {
+          await launchGame(state.selected_game_path ?? undefined);
+        },
+        { errorMessage: (caught) => formatTempoLaunchError(caught, t) }
+      ),
+    [run, state.selected_game_path, t]
   );
 
   const status = useMemo(() => createInstallStatus(state, t), [state, t]);
@@ -186,6 +206,23 @@ function formatResetBppDataError(error: unknown, t: Translate) {
     });
   }
   return toErrorMessage(error);
+}
+
+function formatTempoLaunchError(error: unknown, t: Translate) {
+  const message = toErrorMessage(error);
+  if (message.includes('tempo_launch_already_in_progress')) {
+    return t('tempoLaunchInProgress');
+  }
+  if (message.includes('tempo_game_already_running')) {
+    return t('tempoGameAlreadyRunning');
+  }
+  if (message.includes('tempo_launcher_not_found')) {
+    return t('tempoLauncherNotFound');
+  }
+  if (message.includes('tempo_capture_timeout')) {
+    return t('tempoCaptureTimeout');
+  }
+  return message;
 }
 
 function createInstallStatus(state: InstallState, t: Translate) {
