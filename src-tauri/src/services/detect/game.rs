@@ -1,6 +1,6 @@
 use std::path::Path;
 
-pub(super) fn is_bepinex_installed(game_path: &Path) -> bool {
+pub(crate) fn is_bepinex_installed(game_path: &Path) -> bool {
     if !game_path
         .join("BepInEx/core/BepInEx.Preloader.dll")
         .exists()

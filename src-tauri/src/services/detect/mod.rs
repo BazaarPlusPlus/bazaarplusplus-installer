@@ -3,13 +3,13 @@ mod game;
 mod steam;
 
 pub(crate) use dotnet::detect_dotnet as dotnet_detect_for_startup;
-pub(crate) use game::is_valid_game_path;
+pub(crate) use game::{is_bepinex_installed, is_valid_game_path};
 pub(crate) use steam::detect_installation_paths;
 
 use crate::services::path::normalize_requested_game_path;
 use crate::services::game_path::fallback_game_candidates;
 use crate::services::startup::InstallerContextState;
-use game::{is_bepinex_installed, read_installed_bpp_version};
+use game::read_installed_bpp_version;
 use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, State};
 

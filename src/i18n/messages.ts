@@ -103,6 +103,7 @@ const zh = {
   tempoGameAlreadyRunning: 'The Bazaar 已在运行，请先关闭游戏再启动。',
   tempoLauncherNotFound: '未找到 Tempo Launcher，请先安装 Tempo Launcher。',
   tempoCaptureTimeout: '等待 Tempo 启动游戏超时，请在 Tempo 窗口中点击 PLAY 后重试。',
+  tempoInstallNeedsRepair: '检测到游戏文件被还原，请先点击"重新安装"修复后再启动。',
 
   // Install confirmation modal
   installModalTitle: '安装 BazaarPlusPlus',
@@ -293,6 +294,8 @@ const en: Record<MessageKey, string> = {
   tempoLauncherNotFound: 'Tempo Launcher was not found. Install Tempo Launcher first.',
   tempoCaptureTimeout:
     'Timed out waiting for Tempo to start the game. Click PLAY in Tempo, then try again.',
+  tempoInstallNeedsRepair:
+    'Game files were reverted. Click Reinstall to repair before launching.',
 
   installModalTitle: 'Install BazaarPlusPlus',
   tutorialKicker: 'Tutorial',

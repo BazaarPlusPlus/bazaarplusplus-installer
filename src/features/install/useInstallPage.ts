@@ -222,6 +222,9 @@ function formatTempoLaunchError(error: unknown, t: Translate) {
   if (message.includes('tempo_capture_timeout')) {
     return t('tempoCaptureTimeout');
   }
+  if (message.includes('tempo_install_needs_repair')) {
+    return t('tempoInstallNeedsRepair');
+  }
   return message;
 }
 

@@ -90,6 +90,18 @@ pub fn launch_game_via_tempo(
 
     #[cfg(target_os = "macos")]
     {
+        let installed = crate::services::detect::is_bepinex_installed(&game_dir);
+        let desired = crate::services::macos_version::trampoline_forced()
+            || crate::services::bepinex::read_launch_mode_marker(&game_dir)
+                == Some(crate::services::bepinex::LaunchMode::Trampoline);
+        let applied = crate::services::bepinex::is_trampolined(&game_dir).unwrap_or(false);
+        if installed && desired != applied {
+            return Err("tempo_install_needs_repair".to_string());
+        }
+    }
+
+    #[cfg(target_os = "macos")]
+    {
         if crate::services::bepinex::is_trampolined(&game_dir).unwrap_or(false) {
             emit_status(
                 &app,
