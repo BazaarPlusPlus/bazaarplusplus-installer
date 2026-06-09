@@ -518,7 +518,7 @@ fn wait_for_process_exit(pid: u32, game_exe: &Path, timeout: Duration) -> Result
 
 #[cfg(target_os = "windows")]
 fn list_game_processes(game_exe: &Path) -> Result<Vec<GameProcess>, String> {
-    let output = Command::new("powershell")
+    let output = quiet_command("powershell")
         .args([
             "-NoProfile",
             "-ExecutionPolicy",
@@ -632,10 +632,19 @@ fn first_executable_token(command_line: &str) -> String {
         .to_string()
 }
 
+#[cfg(target_os = "windows")]
+fn quiet_command(program: &str) -> Command {
+    let mut command = Command::new(program);
+    use std::os::windows::process::CommandExt;
+    const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+    command.creation_flags(CREATE_NO_WINDOW);
+    command
+}
+
 fn terminate_process(pid: u32) -> Result<(), String> {
     #[cfg(target_os = "windows")]
     {
-        let _ = Command::new("taskkill")
+        let _ = quiet_command("taskkill")
             .args(["/PID", &pid.to_string(), "/T"])
             .output();
         return Ok(());
@@ -657,7 +666,7 @@ fn terminate_process(pid: u32) -> Result<(), String> {
 fn force_terminate_process(pid: u32) -> Result<(), String> {
     #[cfg(target_os = "windows")]
     {
-        let output = Command::new("taskkill")
+        let output = quiet_command("taskkill")
             .args(["/PID", &pid.to_string(), "/T", "/F"])
             .output()
             .map_err(|err| format!("failed to force kill game process {pid}: {err}"))?;
