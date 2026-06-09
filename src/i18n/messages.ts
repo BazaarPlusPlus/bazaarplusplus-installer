@@ -93,17 +93,22 @@ const zh = {
   tempoLaunchHint: '将通过 Tempo Launcher 启动：弹出 Tempo 窗口后请点击 PLAY。',
   tempoLaunchPrepare: '正在准备 Tempo 原生启动…',
   tempoLaunchBackup: '正在备份并临时移除模组文件…',
-  tempoLaunchLauncher: 'Tempo Launcher 已启动，请在 Tempo 窗口中点击 PLAY 继续。',
+  tempoLaunchLauncher:
+    'Tempo Launcher 已启动，请在 Tempo 窗口中点击 PLAY 继续。',
   tempoLaunchCapture: '已捕获游戏会话，正在切换到模组版本…',
   tempoLaunchRestore: '正在恢复模组文件…',
   tempoLaunchLaunching: '正在以模组模式启动游戏…',
   tempoLaunchDone: '游戏正在启动。',
   tempoLaunchFailed: 'Tempo 启动失败，模组文件已恢复。',
+  tempoCancelLaunch: '取消启动',
+  tempoLaunchCancelled: '已取消启动，模组文件已恢复。',
   tempoLaunchInProgress: '已有一次启动正在进行中。',
   tempoGameAlreadyRunning: 'The Bazaar 已在运行，请先关闭游戏再启动。',
   tempoLauncherNotFound: '未找到 Tempo Launcher，请先安装 Tempo Launcher。',
-  tempoCaptureTimeout: '等待 Tempo 启动游戏超时，请在 Tempo 窗口中点击 PLAY 后重试。',
-  tempoInstallNeedsRepair: '检测到游戏文件被还原，请先点击"重新安装"修复后再启动。',
+  tempoCaptureTimeout:
+    '等待 Tempo 启动游戏超时，请在 Tempo 窗口中点击 PLAY 后重试。',
+  tempoInstallNeedsRepair:
+    '检测到游戏文件被还原，请先点击"重新安装"修复后再启动。',
 
   // Install confirmation modal
   installModalTitle: '安装 BazaarPlusPlus',
@@ -282,16 +287,21 @@ const en: Record<MessageKey, string> = {
     'Launching goes through Tempo Launcher: click PLAY in the Tempo window when it appears.',
   tempoLaunchPrepare: 'Preparing native Tempo launch…',
   tempoLaunchBackup: 'Backing up and temporarily removing mod files…',
-  tempoLaunchLauncher: 'Tempo Launcher started. Click PLAY in Tempo to continue.',
-  tempoLaunchCapture: 'Captured the game session, switching to the modded build…',
+  tempoLaunchLauncher:
+    'Tempo Launcher started. Click PLAY in Tempo to continue.',
+  tempoLaunchCapture:
+    'Captured the game session, switching to the modded build…',
   tempoLaunchRestore: 'Restoring mod files…',
   tempoLaunchLaunching: 'Launching the modded game…',
   tempoLaunchDone: 'The Bazaar is starting.',
   tempoLaunchFailed: 'Tempo launch failed. Mod files were restored.',
+  tempoCancelLaunch: 'Cancel launch',
+  tempoLaunchCancelled: 'Launch cancelled. Mod files were restored.',
   tempoLaunchInProgress: 'A launch is already in progress.',
   tempoGameAlreadyRunning:
     'The Bazaar is already running. Close it before launching.',
-  tempoLauncherNotFound: 'Tempo Launcher was not found. Install Tempo Launcher first.',
+  tempoLauncherNotFound:
+    'Tempo Launcher was not found. Install Tempo Launcher first.',
   tempoCaptureTimeout:
     'Timed out waiting for Tempo to start the game. Click PLAY in Tempo, then try again.',
   tempoInstallNeedsRepair:

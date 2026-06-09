@@ -73,3 +73,11 @@ export async function launchGame(gamePath?: string) {
 
   return invokeCommand('launch_game', { gamePath });
 }
+
+export async function cancelTempoLaunch() {
+  if (!hasTauriRuntime()) {
+    return { ok: true };
+  }
+
+  return invokeCommand('cancel_tempo_launch');
+}

@@ -72,3 +72,9 @@ pub fn launch_game(
     launch_game_auto(app, state, game_path)?;
     Ok(FileActionResult { ok: true })
 }
+
+#[tauri::command]
+pub fn cancel_tempo_launch() -> Result<FileActionResult, String> {
+    crate::services::tempo::request_cancel();
+    Ok(FileActionResult { ok: true })
+}

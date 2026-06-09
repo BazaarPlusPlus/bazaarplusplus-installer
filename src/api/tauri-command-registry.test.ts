@@ -27,6 +27,7 @@ const COMMAND_INPUT_FIELDS = {
   reset_bpp_data: ['gamePath'],
   uninstall_mod: ['gamePath'],
   launch_game: ['gamePath'],
+  cancel_tempo_launch: [],
   get_stream_status: [],
   ensure_stream_session: ['gamePath'],
   restart_stream_session: ['gamePath'],

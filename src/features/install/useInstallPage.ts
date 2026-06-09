@@ -7,6 +7,7 @@ import { useI18n, type Translate } from '../../i18n/LocaleProvider';
 import { parseResetBppDataError, toErrorMessage } from '../shared/errors';
 import { useAsyncAction } from '../shared/useAsyncAction';
 import {
+  cancelTempoLaunch,
   chooseGameDirectory,
   emptyInstallState,
   installMod,
@@ -170,6 +171,10 @@ export function useInstallPage() {
     [run, state.selected_game_path, t]
   );
 
+  const cancelLaunch = useCallback(() => {
+    void cancelTempoLaunch().catch(() => undefined);
+  }, []);
+
   const status = useMemo(() => createInstallStatus(state, t), [state, t]);
 
   return {
@@ -184,7 +189,8 @@ export function useInstallPage() {
     install,
     resetData,
     uninstall,
-    launch
+    launch,
+    cancelLaunch
   };
 }
 
@@ -224,6 +230,9 @@ function formatTempoLaunchError(error: unknown, t: Translate) {
   }
   if (message.includes('tempo_install_needs_repair')) {
     return t('tempoInstallNeedsRepair');
+  }
+  if (message.includes('tempo_launch_cancelled')) {
+    return t('tempoLaunchCancelled');
   }
   return message;
 }

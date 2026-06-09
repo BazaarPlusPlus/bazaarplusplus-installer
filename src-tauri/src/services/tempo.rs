@@ -16,6 +16,7 @@ const POLL_INTERVAL: Duration = Duration::from_millis(500);
 const PROCESS_CLOSE_TIMEOUT: Duration = Duration::from_secs(10);
 
 static LAUNCH_IN_FLIGHT: AtomicBool = AtomicBool::new(false);
+static CANCEL_REQUESTED: AtomicBool = AtomicBool::new(false);
 
 struct InFlightGuard;
 
@@ -23,6 +24,14 @@ impl Drop for InFlightGuard {
     fn drop(&mut self) {
         LAUNCH_IN_FLIGHT.store(false, Ordering::SeqCst);
     }
+}
+
+pub(crate) fn request_cancel() {
+    CANCEL_REQUESTED.store(true, Ordering::SeqCst);
+}
+
+fn cancel_requested() -> bool {
+    CANCEL_REQUESTED.load(Ordering::SeqCst)
 }
 
 #[derive(Clone, Debug, Serialize)]
@@ -70,6 +79,7 @@ pub fn launch_game_via_tempo(
         return Err("tempo_launch_already_in_progress".to_string());
     }
     let _in_flight = InFlightGuard;
+    CANCEL_REQUESTED.store(false, Ordering::SeqCst);
 
     emit_status(&app, "prepare", "Preparing native Tempo Launcher flow.");
 
@@ -508,6 +518,9 @@ fn start_launcher(target: &LauncherTarget) -> Result<(), String> {
 fn wait_for_game_process(game_exe: &Path, timeout: Duration) -> Result<GameProcess, String> {
     let started_at = Instant::now();
     while started_at.elapsed() < timeout {
+        if cancel_requested() {
+            return Err("tempo_launch_cancelled".to_string());
+        }
         let processes = list_game_processes(game_exe)?;
         if let Some(process) = processes.into_iter().next() {
             return Ok(process);
@@ -520,6 +533,9 @@ fn wait_for_game_process(game_exe: &Path, timeout: Duration) -> Result<GameProce
 fn wait_for_process_exit(pid: u32, game_exe: &Path, timeout: Duration) -> Result<(), String> {
     let started_at = Instant::now();
     while started_at.elapsed() < timeout {
+        if cancel_requested() {
+            return Err("tempo_launch_cancelled".to_string());
+        }
         if !list_game_processes(game_exe)?.iter().any(|process| process.pid == pid) {
             return Ok(());
         }

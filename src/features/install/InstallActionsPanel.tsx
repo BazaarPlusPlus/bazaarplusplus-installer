@@ -5,7 +5,8 @@ import {
   Play,
   RefreshCw,
   Trash2,
-  Wrench
+  Wrench,
+  XCircle
 } from 'lucide-react';
 import type { useInstallPage } from './useInstallPage';
 import { InstallActionButton } from './InstallActionButton';
@@ -141,6 +142,15 @@ function PrimaryActionButton({
           <p className="m-0 text-xs text-[rgba(232,190,120,0.78)]">
             {t('tempoLaunchHint')}
           </p>
+        )}
+        {page.action === 'launch' && page.state.launch_flow === 'tempo' && (
+          <InstallActionButton
+            icon={<XCircle size={14} />}
+            label={t('tempoCancelLaunch')}
+            onClick={page.cancelLaunch}
+            className="w-full"
+            danger
+          />
         )}
       </div>
     );
