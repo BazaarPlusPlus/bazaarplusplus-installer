@@ -1,4 +1,6 @@
 use serde::Serialize;
+#[cfg(target_os = "windows")]
+use serde_json::Value;
 #[cfg(target_os = "macos")]
 use std::ffi::OsStr;
 use std::fs;
@@ -615,11 +617,7 @@ fn normalize_for_compare(path: &Path) -> String {
         .to_ascii_lowercase()
 }
 
-#[cfg(not(target_os = "windows"))]
-fn normalize_for_compare(path: &Path) -> String {
-    path.to_string_lossy().trim_matches('"').to_string()
-}
-
+#[cfg(target_os = "windows")]
 fn first_executable_token(command_line: &str) -> String {
     let trimmed = command_line.trim_start();
     if let Some(rest) = trimmed.strip_prefix('"') {
@@ -754,6 +752,10 @@ fn extract_args_after_executable(command_line: &str, executable_path: &Path) -> 
         return split_command_line(rest);
     }
 
+    if let Some(rest) = strip_executable_by_suffix(trimmed, executable_path) {
+        return split_command_line(rest);
+    }
+
     let mut parts = split_command_line(trimmed);
     if !parts.is_empty() {
         parts.remove(0);
@@ -769,6 +771,35 @@ fn strip_quoted_executable<'a>(command_line: &'a str, executable: &str) -> Optio
         Some(&rest[end + 1..])
     } else {
         None
+    }
+}
+
+/// Anchor on a suffix that uniquely terminates the executable path inside a
+/// possibly unquoted command line. macOS `ps` joins argv with spaces, so the
+/// full path spelling may differ while the app executable suffix stays stable.
+fn strip_executable_by_suffix<'a>(command_line: &'a str, game_exe: &Path) -> Option<&'a str> {
+    let anchor = executable_anchor(game_exe)?;
+    let lowered = command_line.to_ascii_lowercase();
+    let needle = anchor.to_ascii_lowercase();
+    let start = lowered.find(&needle)?;
+    let rest = &command_line[start + needle.len()..];
+    match rest.chars().next() {
+        None => Some(rest),
+        Some('"') => Some(&rest[1..]),
+        Some(ch) if ch.is_whitespace() => Some(rest),
+        _ => None,
+    }
+}
+
+fn executable_anchor(game_exe: &Path) -> Option<String> {
+    let file_name = game_exe.file_name()?.to_string_lossy().into_owned();
+    #[cfg(target_os = "macos")]
+    {
+        Some(format!(".app/Contents/MacOS/{file_name}"))
+    }
+    #[cfg(not(target_os = "macos"))]
+    {
+        Some(file_name)
     }
 }
 
@@ -833,6 +864,32 @@ mod tests {
             exe,
         );
         assert_eq!(args, vec!["--token", "abc", "--user", "x y"]);
+    }
+
+    #[cfg(target_os = "macos")]
+    #[test]
+    fn parses_macos_unquoted_spaced_path_exact_match() {
+        let exe = Path::new(
+            "/Users/a/Library/Application Support/Tempo Launcher - Beta/game/buildx64/TheBazaar.app/Contents/MacOS/TheBazaar",
+        );
+        let args = extract_args_after_executable(
+            "/Users/a/Library/Application Support/Tempo Launcher - Beta/game/buildx64/TheBazaar.app/Contents/MacOS/TheBazaar --token abc --user xy",
+            exe,
+        );
+        assert_eq!(args, vec!["--token", "abc", "--user", "xy"]);
+    }
+
+    #[cfg(target_os = "macos")]
+    #[test]
+    fn parses_macos_path_spelling_mismatch_via_suffix_anchor() {
+        let exe = Path::new(
+            "/Users/a/Library/Application Support/Tempo Launcher - Beta/game/buildx64/TheBazaar.app/Contents/MacOS/TheBazaar",
+        );
+        let args = extract_args_after_executable(
+            "/private/tmp/some copy/TheBazaar.app/Contents/MacOS/TheBazaar --token abc",
+            exe,
+        );
+        assert_eq!(args, vec!["--token", "abc"]);
     }
 
     #[test]
