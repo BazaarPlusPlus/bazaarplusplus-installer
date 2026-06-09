@@ -57,12 +57,12 @@ impl InstallTargetBackup {
 /// walker could not delete after retrying. The list is empty on success and on
 /// "nothing to do" (path didn't exist).
 #[derive(Debug, Default)]
-pub(super) struct RemovalReport {
-    pub(super) failed: Vec<PathBuf>,
+pub(crate) struct RemovalReport {
+    pub(crate) failed: Vec<PathBuf>,
 }
 
 impl RemovalReport {
-    pub(super) fn is_empty(&self) -> bool {
+    pub(crate) fn is_empty(&self) -> bool {
         self.failed.is_empty()
     }
 }
@@ -162,7 +162,7 @@ fn try_remove_with_retry(path: &Path, is_dir: bool) -> bool {
 /// collects every path it could not remove. Unlike `remove_dir_all`, this does
 /// not abort on the first sharing violation, so a single locked sqlite handle
 /// won't leave the rest of `BazaarPlusPlusV4/` half-deleted.
-pub(super) fn remove_dir_with_retry(root: &Path) -> RemovalReport {
+pub(crate) fn remove_dir_with_retry(root: &Path) -> RemovalReport {
     let mut report = RemovalReport::default();
 
     if !root.exists() {

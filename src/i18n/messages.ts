@@ -100,6 +100,8 @@ const zh = {
   tempoLaunchLaunching: '正在以模组模式启动游戏…',
   tempoLaunchDone: '游戏正在启动。',
   tempoLaunchFailed: 'Tempo 启动失败，模组文件已恢复。',
+  tempoRestoreFailed:
+    'Tempo 启动失败，且模组文件恢复未完成。请查看日志后再重试。',
   tempoCancelLaunch: '取消启动',
   tempoLaunchCancelled: '已取消启动，模组文件已恢复。',
   tempoLaunchInProgress: '已有一次启动正在进行中。',
@@ -295,6 +297,8 @@ const en: Record<MessageKey, string> = {
   tempoLaunchLaunching: 'Launching the modded game…',
   tempoLaunchDone: 'The Bazaar is starting.',
   tempoLaunchFailed: 'Tempo launch failed. Mod files were restored.',
+  tempoRestoreFailed:
+    'Tempo launch failed while restoring mod files. Check the app logs before retrying.',
   tempoCancelLaunch: 'Cancel launch',
   tempoLaunchCancelled: 'Launch cancelled. Mod files were restored.',
   tempoLaunchInProgress: 'A launch is already in progress.',

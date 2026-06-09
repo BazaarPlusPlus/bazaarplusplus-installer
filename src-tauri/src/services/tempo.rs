@@ -1,4 +1,4 @@
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 #[cfg(target_os = "windows")]
 use serde_json::Value;
 #[cfg(target_os = "macos")]
@@ -6,17 +6,28 @@ use std::ffi::OsStr;
 use std::fs;
 use std::path::{Component, Path, PathBuf};
 use std::process::{Command, Stdio};
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::thread;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 use tauri::Emitter;
 
+use crate::services::bepinex::remove_dir_with_retry;
+
 const CAPTURE_TIMEOUT: Duration = Duration::from_secs(180);
 const POLL_INTERVAL: Duration = Duration::from_millis(500);
 const PROCESS_CLOSE_TIMEOUT: Duration = Duration::from_secs(10);
+const BACKUP_PARENT_DIR: &str = "bppinstaller-tempo-backup";
+const BACKUP_MANIFEST_FILE: &str = "manifest.json";
 
 static LAUNCH_IN_FLIGHT: AtomicBool = AtomicBool::new(false);
 static CANCEL_REQUESTED: AtomicBool = AtomicBool::new(false);
+static BACKUP_SEQUENCE: AtomicU64 = AtomicU64::new(0);
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum ProcessMatchMode {
+    AnyGame,
+    ExactExecutable,
+}
 
 struct InFlightGuard;
 
@@ -32,6 +43,35 @@ pub(crate) fn request_cancel() {
 
 fn cancel_requested() -> bool {
     CANCEL_REQUESTED.load(Ordering::SeqCst)
+}
+
+pub(crate) fn recover_orphaned_backups_best_effort() {
+    let parent = std::env::temp_dir().join(BACKUP_PARENT_DIR);
+    let Ok(entries) = fs::read_dir(&parent) else {
+        return;
+    };
+    let current_process_prefix = format!("{}-", std::process::id());
+
+    for entry in entries.flatten() {
+        let root = entry.path();
+        if !root.is_dir() {
+            continue;
+        }
+        if LAUNCH_IN_FLIGHT.load(Ordering::SeqCst)
+            && entry
+                .file_name()
+                .to_string_lossy()
+                .starts_with(&current_process_prefix)
+        {
+            continue;
+        }
+        if let Err(err) = recover_backup_root(&root) {
+            crate::services::debug_error!(
+                "Failed to recover orphaned Tempo backup {}: {err}",
+                root.display()
+            );
+        }
+    }
 }
 
 #[derive(Clone, Debug, Serialize)]
@@ -54,10 +94,15 @@ enum LauncherTarget {
     AppBundle(PathBuf),
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 struct BackupEntry {
     original: PathBuf,
     backup: PathBuf,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+struct BackupManifest {
+    entries: Vec<BackupEntry>,
 }
 
 #[derive(Debug)]
@@ -87,7 +132,7 @@ pub fn launch_game_via_tempo(
     let launcher = resolve_launcher_target(requested_launcher_path.as_deref(), &game_dir)?;
     let game_exe = game_executable_path(&game_dir)?;
 
-    let existing = list_game_processes(&game_exe)?;
+    let existing = list_game_processes(&game_exe, ProcessMatchMode::AnyGame)?;
     if !existing.is_empty() {
         return Err(format!(
             "tempo_game_already_running: {} process(es) matched",
@@ -110,6 +155,8 @@ pub fn launch_game_via_tempo(
         }
     }
 
+    let mut backup = BackupSession::new()?;
+
     #[cfg(target_os = "macos")]
     {
         if crate::services::bepinex::is_trampolined(&game_dir).unwrap_or(false) {
@@ -123,7 +170,6 @@ pub fn launch_game_via_tempo(
         }
     }
 
-    let mut backup = BackupSession::new()?;
     let result = (|| -> Result<(), String> {
         emit_status(&app, "backup", "Backing up and removing mod payload.");
         let removal_items = removal_items();
@@ -158,25 +204,34 @@ pub fn launch_game_via_tempo(
             }
         }
 
-        emit_status(&app, "launch", "Launching modded game with captured Tempo arguments.");
+        emit_status(
+            &app,
+            "launch",
+            "Launching modded game with captured Tempo arguments.",
+        );
         #[cfg(target_os = "macos")]
         launch_modded_game(&game_dir, &args, trampoline_temporarily_removed)?;
 
         #[cfg(not(target_os = "macos"))]
         launch_modded_game(&game_dir, &args)?;
 
-        emit_status(&app, "done", "The Bazaar launched through native Tempo flow.");
+        emit_status(
+            &app,
+            "done",
+            "The Bazaar launched through native Tempo flow.",
+        );
         Ok(())
     })();
 
     if let Err(err) = result {
-        let _ = backup.restore();
+        let restore_error = backup.restore().err();
         #[cfg(target_os = "macos")]
         {
             if trampoline_temporarily_removed {
                 let _ = crate::services::bepinex::install_trampoline(&app, &game_dir);
             }
         }
+        let err = restore_error.map_or(err.clone(), |restore_err| format!("{err}; {restore_err}"));
         emit_status(&app, "error", err.clone());
         return Err(err);
     }
@@ -211,11 +266,16 @@ fn resolve_game_dir(requested_game_path: Option<String>) -> Result<PathBuf, Stri
     crate::services::game_path::fallback_game_candidates()
         .into_iter()
         .find(|path| is_valid_game_dir(path))
-        .ok_or_else(|| "Could not locate The Bazaar game directory. Select the directory manually first.".to_string())
+        .ok_or_else(|| {
+            "Could not locate The Bazaar game directory. Select the directory manually first."
+                .to_string()
+        })
 }
 
 fn is_valid_game_dir(path: &Path) -> bool {
-    game_executable_path(path).map(|exe| exe.exists()).unwrap_or(false)
+    game_executable_path(path)
+        .map(|exe| exe.exists())
+        .unwrap_or(false)
 }
 
 fn game_executable_path(game_dir: &Path) -> Result<PathBuf, String> {
@@ -247,10 +307,7 @@ fn resolve_launcher_target(
         if let Some(target) = launcher_target_from_path(&path) {
             return Ok(target);
         }
-        return Err(format!(
-            "Invalid Tempo Launcher path: {}",
-            path.display()
-        ));
+        return Err(format!("Invalid Tempo Launcher path: {}", path.display()));
     }
 
     for candidate in launcher_candidates(game_dir) {
@@ -270,7 +327,11 @@ fn launcher_target_from_path(path: &Path) -> Option<LauncherTarget> {
     #[cfg(target_os = "windows")]
     {
         if path.is_dir() {
-            for name in ["Tempo Launcher.exe", "Tempo Launcher - Beta.exe", "launcher.exe"] {
+            for name in [
+                "Tempo Launcher.exe",
+                "Tempo Launcher - Beta.exe",
+                "launcher.exe",
+            ] {
                 let candidate = path.join(name);
                 if candidate.is_file() {
                     return Some(LauncherTarget::Executable(candidate));
@@ -321,13 +382,19 @@ fn launcher_candidates(game_dir: &Path) -> Vec<PathBuf> {
 
     #[cfg(target_os = "macos")]
     {
-        push_unique(&mut candidates, PathBuf::from("/Applications/Tempo Launcher.app"));
+        push_unique(
+            &mut candidates,
+            PathBuf::from("/Applications/Tempo Launcher.app"),
+        );
         push_unique(
             &mut candidates,
             PathBuf::from("/Applications/Tempo Launcher - Beta.app"),
         );
         if let Some(home) = dirs::home_dir() {
-            push_unique(&mut candidates, home.join("Applications/Tempo Launcher.app"));
+            push_unique(
+                &mut candidates,
+                home.join("Applications/Tempo Launcher.app"),
+            );
             push_unique(
                 &mut candidates,
                 home.join("Applications/Tempo Launcher - Beta.app"),
@@ -362,9 +429,10 @@ impl BackupSession {
             .duration_since(UNIX_EPOCH)
             .map_err(|err| format!("system clock error: {err}"))?
             .as_millis();
+        let sequence = BACKUP_SEQUENCE.fetch_add(1, Ordering::SeqCst);
         let root = std::env::temp_dir()
-            .join("bppinstaller-tempo-backup")
-            .join(format!("{}-{stamp}", std::process::id()));
+            .join(BACKUP_PARENT_DIR)
+            .join(format!("{}-{stamp}-{sequence}", std::process::id()));
         fs::create_dir_all(&root)
             .map_err(|err| format!("failed to create backup folder {}: {err}", root.display()))?;
         Ok(Self {
@@ -376,6 +444,9 @@ impl BackupSession {
 
     fn backup_and_remove(&mut self, game_dir: &Path, items: &[String]) -> Result<(), String> {
         for item in items {
+            if cancel_requested() {
+                return Err("tempo_launch_cancelled".to_string());
+            }
             let rel = safe_relative_item(item)?;
             let original = game_dir.join(&rel);
             if !original.exists() {
@@ -389,10 +460,29 @@ impl BackupSession {
                 })?;
             }
             copy_path(&original, &backup)?;
-            remove_path(&original)?;
             self.entries.push(BackupEntry { original, backup });
+            let entry = self
+                .entries
+                .last()
+                .ok_or_else(|| "failed to track Tempo backup entry".to_string())?;
+            self.write_manifest()?;
+            remove_path(&entry.original)?;
         }
         Ok(())
+    }
+
+    fn write_manifest(&self) -> Result<(), String> {
+        let manifest = BackupManifest {
+            entries: self.entries.clone(),
+        };
+        let bytes = serde_json::to_vec_pretty(&manifest)
+            .map_err(|err| format!("failed to encode Tempo backup manifest: {err}"))?;
+        fs::write(self.root.join(BACKUP_MANIFEST_FILE), bytes).map_err(|err| {
+            format!(
+                "failed to write Tempo backup manifest {}: {err}",
+                self.root.join(BACKUP_MANIFEST_FILE).display()
+            )
+        })
     }
 
     fn restore(&mut self) -> Result<(), String> {
@@ -424,9 +514,38 @@ impl BackupSession {
             let _ = fs::remove_dir_all(&self.root);
             Ok(())
         } else {
-            Err(format!("failed to restore mod payload: {}", failures.join("; ")))
+            Err(format!(
+                "tempo_restore_failed: failed to restore mod payload from {}: {}",
+                self.root.display(),
+                failures.join("; ")
+            ))
         }
     }
+}
+
+fn recover_backup_root(root: &Path) -> Result<(), String> {
+    let manifest_path = root.join(BACKUP_MANIFEST_FILE);
+    if !manifest_path.exists() {
+        return Ok(());
+    }
+    let bytes = fs::read(&manifest_path).map_err(|err| {
+        format!(
+            "failed to read Tempo backup manifest {}: {err}",
+            manifest_path.display()
+        )
+    })?;
+    let manifest: BackupManifest = serde_json::from_slice(&bytes).map_err(|err| {
+        format!(
+            "failed to parse Tempo backup manifest {}: {err}",
+            manifest_path.display()
+        )
+    })?;
+    let mut session = BackupSession {
+        root: root.to_path_buf(),
+        entries: manifest.entries,
+        restored: false,
+    };
+    session.restore()
 }
 
 impl Drop for BackupSession {
@@ -434,7 +553,9 @@ impl Drop for BackupSession {
         if !self.restored && !self.entries.is_empty() {
             let _ = self.restore();
         }
-        let _ = fs::remove_dir_all(&self.root);
+        if self.restored || self.entries.is_empty() {
+            let _ = fs::remove_dir_all(&self.root);
+        }
     }
 }
 
@@ -447,7 +568,10 @@ fn safe_relative_item(item: &str) -> Result<PathBuf, String> {
     if rel.is_absolute() {
         return Err(format!("mod item must be relative: {trimmed}"));
     }
-    if rel.components().any(|component| matches!(component, Component::ParentDir)) {
+    if rel
+        .components()
+        .any(|component| matches!(component, Component::ParentDir))
+    {
         return Err(format!("mod item cannot contain '..': {trimmed}"));
     }
     Ok(rel)
@@ -456,7 +580,10 @@ fn safe_relative_item(item: &str) -> Result<PathBuf, String> {
 fn copy_path(from: &Path, to: &Path) -> Result<(), String> {
     let metadata = fs::symlink_metadata(from)
         .map_err(|err| format!("failed to stat {}: {err}", from.display()))?;
-    if metadata.is_dir() {
+    if metadata.file_type().is_symlink() {
+        return Err(format!("cannot back up symlink {}", from.display()));
+    }
+    if metadata.file_type().is_dir() {
         fs::create_dir_all(to)
             .map_err(|err| format!("failed to create directory {}: {err}", to.display()))?;
         for child in fs::read_dir(from)
@@ -482,9 +609,28 @@ fn copy_path(from: &Path, to: &Path) -> Result<(), String> {
 }
 
 fn remove_path(path: &Path) -> Result<(), String> {
-    if path.is_dir() {
-        fs::remove_dir_all(path)
-            .map_err(|err| format!("failed to remove directory {}: {err}", path.display()))
+    let metadata = match fs::symlink_metadata(path) {
+        Ok(metadata) => metadata,
+        Err(err) if err.kind() == std::io::ErrorKind::NotFound => return Ok(()),
+        Err(err) => return Err(format!("failed to stat {}: {err}", path.display())),
+    };
+
+    if metadata.file_type().is_dir() && !metadata.file_type().is_symlink() {
+        let report = remove_dir_with_retry(path);
+        if report.is_empty() {
+            Ok(())
+        } else {
+            Err(format!(
+                "failed to remove directory {}: {}",
+                path.display(),
+                report
+                    .failed
+                    .iter()
+                    .map(|path| path.display().to_string())
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            ))
+        }
     } else {
         fs::remove_file(path)
             .map_err(|err| format!("failed to remove file {}: {err}", path.display()))
@@ -499,7 +645,9 @@ fn start_launcher(target: &LauncherTarget) -> Result<(), String> {
                 .stdout(Stdio::null())
                 .stderr(Stdio::null())
                 .spawn()
-                .map_err(|err| format!("failed to start Tempo Launcher {}: {err}", path.display()))?;
+                .map_err(|err| {
+                    format!("failed to start Tempo Launcher {}: {err}", path.display())
+                })?;
         }
         #[cfg(target_os = "macos")]
         LauncherTarget::AppBundle(path) => {
@@ -509,7 +657,9 @@ fn start_launcher(target: &LauncherTarget) -> Result<(), String> {
                 .stdout(Stdio::null())
                 .stderr(Stdio::null())
                 .spawn()
-                .map_err(|err| format!("failed to open Tempo Launcher {}: {err}", path.display()))?;
+                .map_err(|err| {
+                    format!("failed to open Tempo Launcher {}: {err}", path.display())
+                })?;
         }
     }
     Ok(())
@@ -521,7 +671,7 @@ fn wait_for_game_process(game_exe: &Path, timeout: Duration) -> Result<GameProce
         if cancel_requested() {
             return Err("tempo_launch_cancelled".to_string());
         }
-        let processes = list_game_processes(game_exe)?;
+        let processes = list_game_processes(game_exe, ProcessMatchMode::ExactExecutable)?;
         if let Some(process) = processes.into_iter().next() {
             return Ok(process);
         }
@@ -536,7 +686,10 @@ fn wait_for_process_exit(pid: u32, game_exe: &Path, timeout: Duration) -> Result
         if cancel_requested() {
             return Err("tempo_launch_cancelled".to_string());
         }
-        if !list_game_processes(game_exe)?.iter().any(|process| process.pid == pid) {
+        if !list_game_processes(game_exe, ProcessMatchMode::ExactExecutable)?
+            .iter()
+            .any(|process| process.pid == pid)
+        {
             return Ok(());
         }
         thread::sleep(POLL_INTERVAL);
@@ -545,7 +698,10 @@ fn wait_for_process_exit(pid: u32, game_exe: &Path, timeout: Duration) -> Result
 }
 
 #[cfg(target_os = "windows")]
-fn list_game_processes(game_exe: &Path) -> Result<Vec<GameProcess>, String> {
+fn list_game_processes(
+    game_exe: &Path,
+    mode: ProcessMatchMode,
+) -> Result<Vec<GameProcess>, String> {
     let output = quiet_command("powershell")
         .args([
             "-NoProfile",
@@ -570,7 +726,7 @@ fn list_game_processes(game_exe: &Path) -> Result<Vec<GameProcess>, String> {
     }
 
     let value: Value = serde_json::from_str(&stdout)
-        .map_err(|err| format!("failed to parse PowerShell process JSON: {err}; raw={stdout}"))?;
+        .map_err(|err| format!("failed to parse PowerShell process JSON: {err}"))?;
     let records = match value {
         Value::Array(values) => values,
         Value::Object(_) => vec![value],
@@ -587,13 +743,16 @@ fn list_game_processes(game_exe: &Path) -> Result<Vec<GameProcess>, String> {
             .and_then(Value::as_str)
             .unwrap_or("")
             .to_string();
-        if pid == 0 || command_line.trim().is_empty() {
+        if pid == 0 {
             continue;
         }
-        let normalized = normalize_for_compare(Path::new(&first_executable_token(&command_line)));
-        if command_line.to_ascii_lowercase().contains("thebazaar.exe")
-            || (!expected.is_empty() && normalized == expected)
-        {
+        if command_line.trim().is_empty() {
+            if mode == ProcessMatchMode::AnyGame {
+                processes.push(GameProcess { pid, command_line });
+            }
+            continue;
+        }
+        if process_command_line_matches(&command_line, &expected, mode) {
             processes.push(GameProcess { pid, command_line });
         }
     }
@@ -601,7 +760,10 @@ fn list_game_processes(game_exe: &Path) -> Result<Vec<GameProcess>, String> {
 }
 
 #[cfg(target_os = "macos")]
-fn list_game_processes(game_exe: &Path) -> Result<Vec<GameProcess>, String> {
+fn list_game_processes(
+    game_exe: &Path,
+    mode: ProcessMatchMode,
+) -> Result<Vec<GameProcess>, String> {
     let output = Command::new("pgrep")
         .args(["-f", "TheBazaar"])
         .output()
@@ -625,7 +787,7 @@ fn list_game_processes(game_exe: &Path) -> Result<Vec<GameProcess>, String> {
             continue;
         }
         let command_line = String::from_utf8_lossy(&ps.stdout).trim().to_string();
-        if command_line.contains(&expected) || command_line.contains("TheBazaar.app") {
+        if process_command_line_matches(&command_line, &expected, mode) {
             processes.push(GameProcess { pid, command_line });
         }
     }
@@ -633,7 +795,10 @@ fn list_game_processes(game_exe: &Path) -> Result<Vec<GameProcess>, String> {
 }
 
 #[cfg(not(any(target_os = "windows", target_os = "macos")))]
-fn list_game_processes(_game_exe: &Path) -> Result<Vec<GameProcess>, String> {
+fn list_game_processes(
+    _game_exe: &Path,
+    _mode: ProcessMatchMode,
+) -> Result<Vec<GameProcess>, String> {
     Ok(Vec::new())
 }
 
@@ -661,6 +826,39 @@ fn first_executable_token(command_line: &str) -> String {
 }
 
 #[cfg(target_os = "windows")]
+fn process_command_line_matches(
+    command_line: &str,
+    expected: &str,
+    mode: ProcessMatchMode,
+) -> bool {
+    let normalized = normalize_for_compare(Path::new(&first_executable_token(command_line)));
+    match mode {
+        ProcessMatchMode::AnyGame => {
+            command_line.to_ascii_lowercase().contains("thebazaar.exe")
+                || (!expected.is_empty() && normalized == expected)
+        }
+        ProcessMatchMode::ExactExecutable => !expected.is_empty() && normalized == expected,
+    }
+}
+
+#[cfg(target_os = "macos")]
+fn process_command_line_matches(
+    command_line: &str,
+    expected: &str,
+    mode: ProcessMatchMode,
+) -> bool {
+    match mode {
+        ProcessMatchMode::AnyGame => {
+            command_line.contains("TheBazaar.app")
+                || (!expected.is_empty() && command_line.contains(expected))
+        }
+        ProcessMatchMode::ExactExecutable => {
+            !expected.is_empty() && command_line.contains(expected)
+        }
+    }
+}
+
+#[cfg(target_os = "windows")]
 fn quiet_command(program: &str) -> Command {
     let mut command = Command::new(program);
     use std::os::windows::process::CommandExt;
@@ -680,7 +878,9 @@ fn terminate_process(pid: u32) -> Result<(), String> {
 
     #[cfg(target_os = "macos")]
     {
-        let _ = Command::new("kill").args(["-TERM", &pid.to_string()]).output();
+        let _ = Command::new("kill")
+            .args(["-TERM", &pid.to_string()])
+            .output();
         return Ok(());
     }
 
@@ -699,9 +899,14 @@ fn force_terminate_process(pid: u32) -> Result<(), String> {
             .output()
             .map_err(|err| format!("failed to force kill game process {pid}: {err}"))?;
         if !output.status.success() {
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            let stdout = String::from_utf8_lossy(&output.stdout);
+            if is_missing_process_error(&stderr) || is_missing_process_error(&stdout) {
+                return Ok(());
+            }
             return Err(format!(
                 "failed to force kill game process {pid}: {}",
-                String::from_utf8_lossy(&output.stderr)
+                stderr
             ));
         }
         return Ok(());
@@ -714,9 +919,13 @@ fn force_terminate_process(pid: u32) -> Result<(), String> {
             .output()
             .map_err(|err| format!("failed to force kill game process {pid}: {err}"))?;
         if !output.status.success() {
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            if is_missing_process_error(&stderr) {
+                return Ok(());
+            }
             return Err(format!(
                 "failed to force kill game process {pid}: {}",
-                String::from_utf8_lossy(&output.stderr)
+                stderr
             ));
         }
         return Ok(());
@@ -729,8 +938,20 @@ fn force_terminate_process(pid: u32) -> Result<(), String> {
     }
 }
 
+fn is_missing_process_error(output: &str) -> bool {
+    let output = output.to_ascii_lowercase();
+    output.contains("not found")
+        || output.contains("no such process")
+        || output.contains("no running instance")
+        || output.contains("not running")
+}
+
 #[cfg(target_os = "macos")]
-fn launch_modded_game(game_dir: &Path, args: &[String], trampoline_applied: bool) -> Result<(), String> {
+fn launch_modded_game(
+    game_dir: &Path,
+    args: &[String],
+    trampoline_applied: bool,
+) -> Result<(), String> {
     let script = game_dir.join("run_bepinex.sh");
     let mut command = if !trampoline_applied && script.exists() {
         if is_executable_best_effort(&script) {
@@ -804,7 +1025,10 @@ fn strip_quoted_executable<'a>(command_line: &'a str, executable: &str) -> Optio
     let rest = command_line.strip_prefix('"')?;
     let end = rest.find('"')?;
     let quoted = &rest[..end];
-    if paths_equal_str(quoted, executable) || quoted.ends_with("TheBazaar.exe") || quoted.ends_with("/TheBazaar") {
+    if paths_equal_str(quoted, executable)
+        || quoted.ends_with("TheBazaar.exe")
+        || quoted.ends_with("/TheBazaar")
+    {
         Some(&rest[end + 1..])
     } else {
         None
@@ -849,7 +1073,8 @@ fn starts_with_path(command_line: &str, executable: &str) -> bool {
 
 #[cfg(target_os = "windows")]
 fn paths_equal_str(left: &str, right: &str) -> bool {
-    left.replace('/', "\\").eq_ignore_ascii_case(&right.replace('/', "\\"))
+    left.replace('/', "\\")
+        .eq_ignore_ascii_case(&right.replace('/', "\\"))
 }
 
 #[cfg(not(target_os = "windows"))]
@@ -932,5 +1157,75 @@ mod tests {
     #[test]
     fn rejects_parent_dir_mod_item() {
         assert!(safe_relative_item("../BepInEx").is_err());
+    }
+
+    #[test]
+    fn backup_session_restores_removed_payload() {
+        let game = tempfile::tempdir().unwrap();
+        let payload = game.path().join("BepInEx/config");
+        fs::create_dir_all(&payload).unwrap();
+        fs::write(payload.join("BazaarPlusPlus.cfg"), b"config").unwrap();
+
+        let mut backup = BackupSession::new().unwrap();
+        backup
+            .backup_and_remove(game.path(), &["BepInEx".to_string()])
+            .unwrap();
+
+        assert!(!game.path().join("BepInEx").exists());
+        backup.restore().unwrap();
+        assert_eq!(
+            fs::read(game.path().join("BepInEx/config/BazaarPlusPlus.cfg")).unwrap(),
+            b"config"
+        );
+        assert!(!backup.root.exists());
+    }
+
+    #[test]
+    fn orphaned_backup_manifest_restores_payload() {
+        let game = tempfile::tempdir().unwrap();
+        let payload = game.path().join("BepInEx/config");
+        fs::create_dir_all(&payload).unwrap();
+        fs::write(payload.join("BazaarPlusPlus.cfg"), b"config").unwrap();
+
+        let mut backup = BackupSession::new().unwrap();
+        backup
+            .backup_and_remove(game.path(), &["BepInEx".to_string()])
+            .unwrap();
+        let root = backup.root.clone();
+        std::mem::forget(backup);
+
+        recover_backup_root(&root).unwrap();
+
+        assert_eq!(
+            fs::read(game.path().join("BepInEx/config/BazaarPlusPlus.cfg")).unwrap(),
+            b"config"
+        );
+        assert!(!root.exists());
+    }
+
+    #[cfg(target_os = "macos")]
+    #[test]
+    fn exact_process_match_rejects_other_bazaar_app_bundle() {
+        let expected = "/Users/me/Games/TheBazaar.app/Contents/MacOS/TheBazaar";
+        let other = "/Applications/TheBazaar.app/Contents/MacOS/TheBazaar --token abc";
+
+        assert!(process_command_line_matches(
+            other,
+            expected,
+            ProcessMatchMode::AnyGame
+        ));
+        assert!(!process_command_line_matches(
+            other,
+            expected,
+            ProcessMatchMode::ExactExecutable
+        ));
+    }
+
+    #[test]
+    fn missing_process_errors_are_treated_as_already_exited() {
+        assert!(is_missing_process_error("kill: 123: No such process"));
+        assert!(is_missing_process_error(
+            "ERROR: The process \"123\" not found."
+        ));
     }
 }

@@ -28,6 +28,7 @@ pub fn build_install_state(
     state: tauri::State<'_, InstallerContextState>,
     game_path: Option<String>,
 ) -> Result<InstallState, String> {
+    crate::services::tempo::recover_orphaned_backups_best_effort();
     let snapshot = detect_for_install(app, state, game_path)?;
     Ok(install_state_from_snapshot(snapshot))
 }
@@ -39,8 +40,18 @@ pub async fn run_install(
     compat_opt_in: bool,
 ) -> Result<InstallState, String> {
     let before = detect_for_install(app.clone(), state, Some(game_path.clone()))?;
-    let steam_path = before.steam_path.clone().unwrap_or_default();
-    let has_steam_path = !steam_path.trim().is_empty();
+    let detected_game_path = before
+        .game_path
+        .as_deref()
+        .filter(|path| !path.trim().is_empty())
+        .or(Some(game_path.as_str()));
+    let launch_flow = resolve_launch_flow(before.steam_path.as_deref(), detected_game_path);
+    let steam_path = if launch_flow == LaunchFlow::Steam {
+        before.steam_path.clone().unwrap_or_default()
+    } else {
+        String::new()
+    };
+    let has_steam_path = launch_flow == LaunchFlow::Steam && !steam_path.trim().is_empty();
 
     // Version-forced on macOS 27+, or <= 26 opt-in. Always false off macOS.
     let wants_trampoline = use_trampoline(compat_opt_in);
@@ -126,7 +137,17 @@ pub async fn run_uninstall(
 ) -> Result<InstallState, String> {
     let before = detect_for_install(app.clone(), state, Some(game_path.clone()))?;
     let app_for_task = app.clone();
-    let steam_path = before.steam_path.clone().unwrap_or_default();
+    let detected_game_path = before
+        .game_path
+        .as_deref()
+        .filter(|path| !path.trim().is_empty())
+        .or(Some(game_path.as_str()));
+    let launch_flow = resolve_launch_flow(before.steam_path.as_deref(), detected_game_path);
+    let steam_path = if launch_flow == LaunchFlow::Steam {
+        before.steam_path.clone().unwrap_or_default()
+    } else {
+        String::new()
+    };
     let game_path_for_task = game_path.clone();
     tauri::async_runtime::spawn_blocking(move || {
         uninstall_bpp(app_for_task, steam_path, game_path_for_task)
