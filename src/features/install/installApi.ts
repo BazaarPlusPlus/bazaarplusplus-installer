@@ -6,6 +6,7 @@ export const emptyInstallState: InstallState = {
   selected_game_path: null,
   steam_path: null,
   steam_launch_options_supported: false,
+  launch_flow: 'steam',
   game: {
     found: false,
     path_valid: false,

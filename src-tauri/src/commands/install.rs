@@ -4,7 +4,7 @@ use tauri_plugin_dialog::DialogExt;
 
 use crate::services::{
     install::{
-        build_install_state, launch_game_via_tempo, run_install, run_reset_bpp_data, run_uninstall,
+        build_install_state, launch_game_auto, run_install, run_reset_bpp_data, run_uninstall,
     },
     startup::InstallerContextState,
 };
@@ -63,11 +63,12 @@ pub async fn uninstall_mod(
     run_uninstall(app, state, game_path).await
 }
 
-#[tauri::command]
+#[tauri::command(async)]
 pub fn launch_game(
     app: tauri::AppHandle,
+    state: tauri::State<'_, InstallerContextState>,
     game_path: Option<String>,
 ) -> Result<FileActionResult, String> {
-    launch_game_via_tempo(app, game_path)?;
+    launch_game_auto(app, state, game_path)?;
     Ok(FileActionResult { ok: true })
 }

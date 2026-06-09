@@ -143,11 +143,46 @@ pub fn launch_game_via_steam() -> Result<(), String> {
     open_url(STEAM_BAZAAR_URL)
 }
 
-pub fn launch_game_via_tempo(
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum LaunchFlow {
+    Steam,
+    TempoNative,
+}
+
+/// Steam flow only when BOTH a Steam client is detected AND the resolved game
+/// dir is a Steam copy (has a `steamapps` path component). Everything else,
+/// including a Tempo-native copy on a machine that also has Steam, uses the
+/// Tempo capture flow so files are never removed from one copy while Tempo
+/// validates another.
+pub(crate) fn resolve_launch_flow(
+    steam_path: Option<&str>,
+    game_path: Option<&str>,
+) -> LaunchFlow {
+    let under_steamapps = game_path.map(path_contains_steamapps).unwrap_or(false);
+    if steam_path.is_some() && under_steamapps {
+        LaunchFlow::Steam
+    } else {
+        LaunchFlow::TempoNative
+    }
+}
+
+fn path_contains_steamapps(path: &str) -> bool {
+    path.split(['/', '\\'])
+        .any(|component| component.eq_ignore_ascii_case("steamapps"))
+}
+
+pub fn launch_game_auto(
     app: tauri::AppHandle,
+    state: tauri::State<'_, InstallerContextState>,
     game_path: Option<String>,
 ) -> Result<(), String> {
-    crate::services::tempo::launch_game_via_tempo(app, game_path, None)
+    let snapshot = detect_for_install(app.clone(), state, game_path)?;
+    match resolve_launch_flow(snapshot.steam_path.as_deref(), snapshot.game_path.as_deref()) {
+        LaunchFlow::Steam => launch_game_via_steam(),
+        LaunchFlow::TempoNative => {
+            crate::services::tempo::launch_game_via_tempo(app, snapshot.game_path.clone(), None)
+        }
+    }
 }
 
 fn install_state_from_snapshot(
@@ -171,6 +206,11 @@ fn install_state_from_snapshot(
     let version_matches = plugin_version_matches && trampoline_consistent;
     let needs_trampoline_repair = installed && !trampoline_consistent;
     let can_launch = game_found && env.game_path_valid;
+    let launch_flow = match resolve_launch_flow(env.steam_path.as_deref(), env.game_path.as_deref())
+    {
+        LaunchFlow::Steam => "steam".to_string(),
+        LaunchFlow::TempoNative => "tempo".to_string(),
+    };
     let mut warnings = Vec::new();
     if !game_found || !env.game_path_valid {
         warnings.push(InstallWarning {
@@ -184,7 +224,7 @@ fn install_state_from_snapshot(
             message: "未检测到可用的 .NET 运行时。".to_string(),
         });
     }
-    if !env.steam_launch_options_supported {
+    if launch_flow == "steam" && !env.steam_launch_options_supported {
         warnings.push(InstallWarning {
             code: "launch_options_unsupported".to_string(),
             message: "当前平台或 Steam 目录不支持自动写入启动项。".to_string(),
@@ -202,6 +242,7 @@ fn install_state_from_snapshot(
         selected_game_path,
         steam_path: env.steam_path,
         steam_launch_options_supported: env.steam_launch_options_supported,
+        launch_flow,
         game: InstallGameState {
             found: game_found,
             path_valid: env.game_path_valid,
@@ -260,5 +301,50 @@ fn open_url(url: &str) -> Result<(), String> {
             .spawn()
             .map_err(|err| format!("failed to open URL: {err}"))?;
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{path_contains_steamapps, resolve_launch_flow, LaunchFlow};
+
+    #[test]
+    fn steam_flow_when_steam_present_and_game_under_steamapps() {
+        assert_eq!(
+            resolve_launch_flow(
+                Some("/Users/a/Library/Application Support/Steam"),
+                Some("/Users/a/Library/Application Support/Steam/steamapps/common/The Bazaar"),
+            ),
+            LaunchFlow::Steam
+        );
+    }
+
+    #[test]
+    fn tempo_flow_for_tempo_native_game_dir_even_with_steam_installed() {
+        assert_eq!(
+            resolve_launch_flow(
+                Some("C:\\Program Files (x86)\\Steam"),
+                Some("C:\\Users\\a\\AppData\\Roaming\\Tempo Launcher - Beta\\game\\buildx64"),
+            ),
+            LaunchFlow::TempoNative
+        );
+    }
+
+    #[test]
+    fn tempo_flow_when_steam_missing() {
+        assert_eq!(
+            resolve_launch_flow(None, Some("/anything/steamapps/common/The Bazaar")),
+            LaunchFlow::TempoNative
+        );
+    }
+
+    #[test]
+    fn steamapps_component_match_is_case_insensitive_and_component_exact() {
+        assert!(path_contains_steamapps(
+            "D:\\SteamLibrary\\SteamApps\\common\\The Bazaar"
+        ));
+        assert!(!path_contains_steamapps(
+            "/Users/a/my-steamapps-notes/game"
+        ));
     }
 }
