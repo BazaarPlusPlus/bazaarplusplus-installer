@@ -21,7 +21,7 @@ use tauri::AppHandle;
 /// Game-dir sibling (OUTSIDE the `.app`) recording the chosen launch mode, so the
 /// installer still knows the desired mode after a Steam "Verify integrity" / game
 /// update reverts the bundle. Removed on uninstall.
-const MARKER_FILE: &str = ".bpp-launch-mode";
+pub(crate) const MARKER_FILE: &str = ".bpp-launch-mode";
 
 /// Which launch mechanism an install applied. Persisted in [`MARKER_FILE`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

@@ -1,9 +1,10 @@
 use serde::Serialize;
-use serde_json::Value;
+#[cfg(target_os = "macos")]
 use std::ffi::OsStr;
 use std::fs;
 use std::path::{Component, Path, PathBuf};
 use std::process::{Command, Stdio};
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 use tauri::Emitter;
@@ -11,6 +12,16 @@ use tauri::Emitter;
 const CAPTURE_TIMEOUT: Duration = Duration::from_secs(180);
 const POLL_INTERVAL: Duration = Duration::from_millis(500);
 const PROCESS_CLOSE_TIMEOUT: Duration = Duration::from_secs(10);
+
+static LAUNCH_IN_FLIGHT: AtomicBool = AtomicBool::new(false);
+
+struct InFlightGuard;
+
+impl Drop for InFlightGuard {
+    fn drop(&mut self) {
+        LAUNCH_IN_FLIGHT.store(false, Ordering::SeqCst);
+    }
+}
 
 #[derive(Clone, Debug, Serialize)]
 #[serde(rename_all = "snake_case")]
@@ -50,6 +61,14 @@ pub fn launch_game_via_tempo(
     requested_game_path: Option<String>,
     requested_launcher_path: Option<String>,
 ) -> Result<(), String> {
+    if LAUNCH_IN_FLIGHT
+        .compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst)
+        .is_err()
+    {
+        return Err("tempo_launch_already_in_progress".to_string());
+    }
+    let _in_flight = InFlightGuard;
+
     emit_status(&app, "prepare", "Preparing native Tempo Launcher flow.");
 
     let game_dir = resolve_game_dir(requested_game_path)?;
@@ -58,7 +77,10 @@ pub fn launch_game_via_tempo(
 
     let existing = list_game_processes(&game_exe)?;
     if !existing.is_empty() {
-        return Err("The Bazaar is already running. Close it before launching through Tempo.".to_string());
+        return Err(format!(
+            "tempo_game_already_running: {} process(es) matched",
+            existing.len()
+        ));
     }
 
     #[cfg(target_os = "macos")]
@@ -80,7 +102,8 @@ pub fn launch_game_via_tempo(
     let mut backup = BackupSession::new()?;
     let result = (|| -> Result<(), String> {
         emit_status(&app, "backup", "Backing up and removing mod payload.");
-        backup.backup_and_remove(&game_dir, default_mod_items())?;
+        let removal_items = removal_items();
+        backup.backup_and_remove(&game_dir, &removal_items)?;
 
         emit_status(
             &app,
@@ -130,6 +153,7 @@ pub fn launch_game_via_tempo(
                 let _ = crate::services::bepinex::install_trampoline(&app, &game_dir);
             }
         }
+        emit_status(&app, "error", err.clone());
         return Err(err);
     }
 
@@ -211,7 +235,7 @@ fn resolve_launcher_target(
         }
     }
 
-    Err("Could not locate Tempo Launcher. Install Tempo Launcher or pass a launcher path from the UI.".to_string())
+    Err("tempo_launcher_not_found".to_string())
 }
 
 fn launcher_target_from_path(path: &Path) -> Option<LauncherTarget> {
@@ -296,27 +320,16 @@ fn push_unique(paths: &mut Vec<PathBuf>, path: PathBuf) {
     }
 }
 
-fn default_mod_items() -> &'static [&'static str] {
-    #[cfg(target_os = "windows")]
-    {
-        return &["BepInEx", "BazaarPlusPlus", "doorstop_config.ini", "winhttp.dll"];
-    }
-
-    #[cfg(target_os = "macos")]
-    {
-        return &[
-            "BepInEx",
-            "BazaarPlusPlus",
-            "doorstop_config.ini",
-            "run_bepinex.sh",
-            "libdoorstop.dylib",
-        ];
-    }
-
-    #[cfg(not(any(target_os = "windows", target_os = "macos")))]
-    {
-        &["BepInEx", "BazaarPlusPlus", "doorstop_config.ini"]
-    }
+/// Everything the installer puts at the game root, plus the macOS launch-mode
+/// marker. Keep the large BazaarPlusPlusV4 data dir in place unless validation
+/// proves Tempo rejects unknown directories.
+fn removal_items() -> Vec<String> {
+    let mut items: Vec<String> = crate::services::bepinex::payload_root_relative_paths()
+        .into_iter()
+        .map(str::to_string)
+        .collect();
+    items.push(crate::services::bepinex::MARKER_FILE.to_string());
+    items
 }
 
 impl BackupSession {
@@ -337,7 +350,7 @@ impl BackupSession {
         })
     }
 
-    fn backup_and_remove(&mut self, game_dir: &Path, items: &[&str]) -> Result<(), String> {
+    fn backup_and_remove(&mut self, game_dir: &Path, items: &[String]) -> Result<(), String> {
         for item in items {
             let rel = safe_relative_item(item)?;
             let original = game_dir.join(&rel);
@@ -467,7 +480,6 @@ fn start_launcher(target: &LauncherTarget) -> Result<(), String> {
         #[cfg(target_os = "macos")]
         LauncherTarget::AppBundle(path) => {
             Command::new("open")
-                .args(["-n"])
                 .arg(path)
                 .stdin(Stdio::null())
                 .stdout(Stdio::null())
@@ -488,7 +500,7 @@ fn wait_for_game_process(game_exe: &Path, timeout: Duration) -> Result<GameProce
         }
         thread::sleep(POLL_INTERVAL);
     }
-    Err("Timed out waiting for Tempo Launcher to start The Bazaar. Click PLAY in Tempo, then try again if the timeout expired.".to_string())
+    Err("tempo_capture_timeout".to_string())
 }
 
 fn wait_for_process_exit(pid: u32, game_exe: &Path, timeout: Duration) -> Result<(), String> {

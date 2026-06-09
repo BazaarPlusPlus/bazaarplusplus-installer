@@ -80,7 +80,7 @@ fn remove_path_if_exists(path: &Path) -> Result<(), String> {
     }
 }
 
-fn payload_root_relative_paths() -> Vec<&'static str> {
+pub(crate) fn payload_root_relative_paths() -> Vec<&'static str> {
     let mut paths = vec!["BepInEx"];
 
     #[cfg(target_os = "macos")]

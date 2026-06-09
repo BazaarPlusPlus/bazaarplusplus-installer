@@ -2,9 +2,10 @@ mod payload;
 mod trampoline;
 mod zip_archive;
 
+pub(crate) use payload::payload_root_relative_paths;
 pub(crate) use trampoline::{
     install_trampoline, is_trampolined, read_launch_mode_marker, uninstall_trampoline,
-    write_launch_mode_marker, LaunchMode,
+    write_launch_mode_marker, LaunchMode, MARKER_FILE,
 };
 pub(crate) use zip_archive::read_bundled_bpp_version;
 
