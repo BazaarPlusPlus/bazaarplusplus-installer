@@ -8,6 +8,7 @@ export const TAURI_COMMAND_NAMES = [
   'reset_bpp_data',
   'uninstall_mod',
   'launch_game',
+  'cancel_tempo_launch',
   'get_stream_status',
   'ensure_stream_session',
   'restart_stream_session',
@@ -33,6 +34,7 @@ export type TauriCommandName =
   | 'reset_bpp_data'
   | 'uninstall_mod'
   | 'launch_game'
+  | 'cancel_tempo_launch'
   | 'get_stream_status'
   | 'ensure_stream_session'
   | 'restart_stream_session'

@@ -5,7 +5,8 @@ import {
   Play,
   RefreshCw,
   Trash2,
-  Wrench
+  Wrench,
+  XCircle
 } from 'lucide-react';
 import type { useInstallPage } from './useInstallPage';
 import { InstallActionButton } from './InstallActionButton';
@@ -123,19 +124,35 @@ function PrimaryActionButton({
   const { t } = useI18n();
   if (primaryMode === 'launch') {
     return (
-      <button
-        type="button"
-        disabled={!page.state.actions.can_launch || page.action === 'launch'}
-        onClick={page.launch}
-        className="w-full py-4 bg-gradient-to-b from-[#d4a040] to-[#9e5c1e] text-[#0b0906] font-bold cinzel tracking-wider rounded-sm shadow-[0_0_15px_rgba(212,160,64,0.4)] hover:brightness-110 active:brightness-95 disabled:opacity-45 disabled:hover:brightness-100 transition-all flex items-center justify-center gap-2 text-lg"
-      >
-        {page.action === 'launch' ? (
-          <Loader2 size={20} className="animate-spin" />
-        ) : (
-          <Play size={20} fill="currentColor" />
+      <div className="flex flex-col gap-2">
+        <button
+          type="button"
+          disabled={!page.state.actions.can_launch || page.action === 'launch'}
+          onClick={page.launch}
+          className="w-full py-4 bg-gradient-to-b from-[#d4a040] to-[#9e5c1e] text-[#0b0906] font-bold cinzel tracking-wider rounded-sm shadow-[0_0_15px_rgba(212,160,64,0.4)] hover:brightness-110 active:brightness-95 disabled:opacity-45 disabled:hover:brightness-100 transition-all flex items-center justify-center gap-2 text-lg"
+        >
+          {page.action === 'launch' ? (
+            <Loader2 size={20} className="animate-spin" />
+          ) : (
+            <Play size={20} fill="currentColor" />
+          )}
+          {t('launchGame')}
+        </button>
+        {page.state.launch_flow === 'tempo' && (
+          <p className="m-0 text-xs text-[rgba(232,190,120,0.78)]">
+            {t('tempoLaunchHint')}
+          </p>
         )}
-        {t('launchGame')}
-      </button>
+        {page.action === 'launch' && page.state.launch_flow === 'tempo' && (
+          <InstallActionButton
+            icon={<XCircle size={14} />}
+            label={t('tempoCancelLaunch')}
+            onClick={page.cancelLaunch}
+            className="w-full"
+            danger
+          />
+        )}
+      </div>
     );
   }
 

@@ -48,6 +48,10 @@ export interface TauriCommandMap {
     input: { gamePath?: string };
     output: FileActionResult;
   };
+  cancel_tempo_launch: {
+    input: undefined;
+    output: FileActionResult;
+  };
   get_stream_status: {
     input: undefined;
     output: StreamServiceStatus;

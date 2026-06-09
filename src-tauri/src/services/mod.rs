@@ -11,6 +11,7 @@ pub mod process_snapshot;
 pub mod startup;
 pub mod steam;
 pub mod stream_window;
+pub mod tempo;
 pub mod vdf;
 
 macro_rules! debug_log {
