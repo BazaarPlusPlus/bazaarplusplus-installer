@@ -1,3 +1,9 @@
+---
+status: superseded
+topic: documentation-index
+archived: 2026-06-11
+superseded-by: docs/INDEX.md
+---
 # Documentation
 
 This directory contains the current project documents. Deleted historical design records should not be treated as project truth.

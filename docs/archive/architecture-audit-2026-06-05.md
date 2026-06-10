@@ -1,3 +1,9 @@
+---
+status: implemented
+topic: architecture-audit
+archived: 2026-06-11
+superseded-by: docs/truth/overview.md
+---
 # bazaarplusplus-installer 架构改进方案
 
 > 日期：2026-06-05

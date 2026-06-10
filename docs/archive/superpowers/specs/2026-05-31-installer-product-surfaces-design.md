@@ -1,3 +1,9 @@
+---
+status: implemented
+topic: product-surfaces
+archived: 2026-06-11
+superseded-by: docs/truth/frontend.md
+---
 # Installer Product Surface Design
 
 Date: 2026-05-31

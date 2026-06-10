@@ -1,3 +1,9 @@
+---
+status: implemented
+topic: tempo-native-launch
+archived: 2026-06-11
+superseded-by: docs/truth/launch-modes.md
+---
 # Tempo 原生启动流程集成实施计划
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
