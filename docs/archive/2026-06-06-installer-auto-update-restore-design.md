@@ -1,3 +1,9 @@
+---
+status: implemented
+topic: in-app-updater
+archived: 2026-06-11
+superseded-by: docs/truth/updater-release.md
+---
 # 安装器自动更新接回:设计方案
 
 > **范围**:`bazaarplusplus-installer`（React 19 + Tailwind v4 前端 / Rust + Tauri 2 后端）

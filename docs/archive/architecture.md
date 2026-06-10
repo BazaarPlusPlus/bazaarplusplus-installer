@@ -1,3 +1,9 @@
+---
+status: superseded
+topic: architecture
+archived: 2026-06-11
+superseded-by: docs/truth/architecture.md
+---
 # Architecture
 
 This document describes the current repository structure.

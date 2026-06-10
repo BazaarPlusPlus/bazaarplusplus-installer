@@ -1,3 +1,9 @@
+---
+status: implemented
+topic: macos-launch-trampoline
+archived: 2026-06-11
+superseded-by: docs/truth/launch-modes.md
+---
 # macOS 27+ BepInEx launch via in-bundle Mach-O trampoline — implementation plan
 
 Status: **PLAN — mechanism PROVEN on macOS 27 + Steam (2026-06-09); awaiting confirmation to implement**

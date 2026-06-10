@@ -2,7 +2,7 @@ mod types;
 
 pub use types::{
     FileActionResult, GameDirectorySelection, InstallActions, InstallCompatState, InstallGameState,
-    InstallModState, InstallRuntimeState, InstallState, InstallWarning,
+    InstallModState, InstallRuntimeState, InstallState, InstallWarning, ResetBppDataResult,
 };
 
 use std::process::Command;
@@ -125,9 +125,13 @@ pub async fn run_reset_bpp_data(
     install_state: tauri::State<'_, InstallerContextState>,
     stream_state: tauri::State<'_, StreamRuntimeState>,
     game_path: String,
-) -> Result<InstallState, String> {
-    reset_bpp_data(stream_state, game_path.clone()).await?;
-    build_install_state(app, install_state, Some(game_path))
+) -> Result<ResetBppDataResult, String> {
+    let removed_data = reset_bpp_data(stream_state, game_path.clone()).await?;
+    let state = build_install_state(app, install_state, Some(game_path))?;
+    Ok(ResetBppDataResult {
+        state,
+        removed_data,
+    })
 }
 
 pub async fn run_uninstall(
@@ -227,6 +231,7 @@ fn install_state_from_snapshot(
     let version_matches = plugin_version_matches && trampoline_consistent;
     let needs_trampoline_repair = installed && !trampoline_consistent;
     let can_launch = game_found && env.game_path_valid;
+    let has_resettable_data = has_resettable_bpp_data(env.game_path.as_deref());
     let launch_flow = match resolve_launch_flow(env.steam_path.as_deref(), env.game_path.as_deref())
     {
         LaunchFlow::Steam => "steam".to_string(),
@@ -288,12 +293,20 @@ fn install_state_from_snapshot(
         actions: InstallActions {
             can_install: can_launch && !installed,
             can_reinstall: can_launch && installed,
-            can_reset_data: can_launch,
+            can_reset_data: can_launch && has_resettable_data,
             can_uninstall: can_launch && installed,
             can_launch,
         },
+        has_resettable_data,
         warnings,
     }
+}
+
+fn has_resettable_bpp_data(game_path: Option<&str>) -> bool {
+    game_path
+        .map(Path::new)
+        .map(|path| crate::services::paths::bpp_data_dir(path).exists())
+        .unwrap_or(false)
 }
 
 fn open_url(url: &str) -> Result<(), String> {
@@ -327,7 +340,9 @@ fn open_url(url: &str) -> Result<(), String> {
 
 #[cfg(test)]
 mod tests {
-    use super::{path_contains_steamapps, resolve_launch_flow, LaunchFlow};
+    use super::{
+        has_resettable_bpp_data, path_contains_steamapps, resolve_launch_flow, LaunchFlow,
+    };
 
     #[test]
     fn steam_flow_when_steam_present_and_game_under_steamapps() {
@@ -357,6 +372,24 @@ mod tests {
             resolve_launch_flow(None, Some("/anything/steamapps/common/The Bazaar")),
             LaunchFlow::TempoNative
         );
+    }
+
+    #[test]
+    fn test_has_resettable_bpp_data_detects_existing_data_directory() {
+        let tmp = tempfile::tempdir().unwrap();
+        std::fs::create_dir_all(tmp.path().join(crate::config::BAZAAR_DATA_DIRECTORY)).unwrap();
+        let path = tmp.path().to_string_lossy().into_owned();
+
+        assert!(has_resettable_bpp_data(Some(path.as_str())));
+    }
+
+    #[test]
+    fn test_has_resettable_bpp_data_is_false_when_missing() {
+        let tmp = tempfile::tempdir().unwrap();
+        let path = tmp.path().to_string_lossy().into_owned();
+
+        assert!(!has_resettable_bpp_data(Some(path.as_str())));
+        assert!(!has_resettable_bpp_data(None));
     }
 
     #[test]

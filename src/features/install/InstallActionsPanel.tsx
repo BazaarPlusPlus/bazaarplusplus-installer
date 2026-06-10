@@ -1,16 +1,17 @@
 import {
   AlertCircle,
+  AlertTriangle,
   DownloadCloud,
   Loader2,
   Play,
   RefreshCw,
   Trash2,
-  Wrench,
   XCircle
 } from 'lucide-react';
 import type { useInstallPage } from './useInstallPage';
 import { InstallActionButton } from './InstallActionButton';
 import { InstallFactItem } from './InstallFactItem';
+import { ResetDataFailureDetails } from './ResetDataFailureDetails';
 import { useI18n } from '../../i18n/LocaleProvider';
 
 type InstallPage = ReturnType<typeof useInstallPage>;
@@ -18,11 +19,13 @@ type InstallPage = ReturnType<typeof useInstallPage>;
 export function InstallActionsPanel({
   page,
   primaryMode,
-  onOpenInstallModal
+  onOpenInstallModal,
+  onOpenResetDataModal
 }: {
   page: InstallPage;
   primaryMode: 'install' | 'reinstall' | 'launch';
   onOpenInstallModal: () => void;
+  onOpenResetDataModal: () => void;
 }) {
   const { t } = useI18n();
   return (
@@ -85,6 +88,9 @@ export function InstallActionsPanel({
                 {page.error ?? page.message}
               </p>
             )}
+            {page.resetDataFailurePaths.length > 0 && (
+              <ResetDataFailureDetails paths={page.resetDataFailurePaths} />
+            )}
 
             <div className="h-px bg-gradient-to-r from-transparent via-[rgba(200,148,55,0.3)] to-transparent" />
 
@@ -92,9 +98,14 @@ export function InstallActionsPanel({
               <InstallActionButton
                 disabled={page.busy || !page.state.actions.can_reset_data}
                 busy={page.action === 'resetData'}
-                onClick={page.resetData}
-                icon={<Wrench size={14} />}
-                label={t('actionResetData')}
+                onClick={onOpenResetDataModal}
+                icon={<AlertTriangle size={14} />}
+                label={
+                  page.state.game.path_valid && !page.state.has_resettable_data
+                    ? t('actionNoResettableData')
+                    : t('actionResetData')
+                }
+                danger
               />
               <InstallActionButton
                 disabled={page.busy || !page.state.actions.can_uninstall}

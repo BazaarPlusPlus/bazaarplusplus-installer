@@ -1,3 +1,9 @@
+---
+status: implemented
+topic: frontend-native-feel
+archived: 2026-06-11
+superseded-by: docs/truth/frontend.md
+---
 # Native-Feel 前端评审报告
 
 > **范围**：`bazaarplusplus-installer` 前端（React 19 + Tailwind v4 + react-router 7 + Tauri 2，约 4,300 行）

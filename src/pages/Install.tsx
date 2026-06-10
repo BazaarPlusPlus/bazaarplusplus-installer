@@ -3,6 +3,7 @@ import { PageShell } from '../components/ui/PageShell';
 import { InstallActionsPanel } from '../features/install/InstallActionsPanel';
 import { InstallConfirmModal } from '../features/install/InstallConfirmModal';
 import { InstallStatusPanel } from '../features/install/InstallStatusPanel';
+import { ResetDataConfirmModal } from '../features/install/ResetDataConfirmModal';
 import { useInstallPage } from '../features/install/useInstallPage';
 import { useI18n } from '../i18n/LocaleProvider';
 
@@ -10,7 +11,9 @@ export default function Install() {
   const { t } = useI18n();
   const page = useInstallPage();
   const [showInstallModal, setShowInstallModal] = useState(false);
+  const [showResetDataModal, setShowResetDataModal] = useState(false);
   const [installAcknowledged, setInstallAcknowledged] = useState(false);
+  const [resetDataAcknowledged, setResetDataAcknowledged] = useState(false);
   const [compatOptIn, setCompatOptIn] = useState(false);
   const primaryMode: 'install' | 'reinstall' | 'launch' = !page.state.mod_state
     .installed
@@ -35,6 +38,17 @@ export default function Install() {
     }
   };
 
+  const openResetDataModal = () => {
+    setShowResetDataModal(true);
+    setResetDataAcknowledged(false);
+  };
+
+  const confirmResetData = async () => {
+    await page.resetData();
+    setShowResetDataModal(false);
+    setResetDataAcknowledged(false);
+  };
+
   return (
     <PageShell eyebrow="Install" title={t('installTitle')}>
       <div className="grid grid-cols-12 gap-8 w-full">
@@ -43,6 +57,7 @@ export default function Install() {
           page={page}
           primaryMode={primaryMode}
           onOpenInstallModal={openInstallModal}
+          onOpenResetDataModal={openResetDataModal}
         />
       </div>
 
@@ -56,6 +71,16 @@ export default function Install() {
           onCompatOptInChange={setCompatOptIn}
           onClose={() => setShowInstallModal(false)}
           onConfirm={confirmInstall}
+        />
+      )}
+
+      {showResetDataModal && (
+        <ResetDataConfirmModal
+          page={page}
+          acknowledged={resetDataAcknowledged}
+          onAcknowledgedChange={setResetDataAcknowledged}
+          onClose={() => setShowResetDataModal(false)}
+          onConfirm={confirmResetData}
         />
       )}
     </PageShell>

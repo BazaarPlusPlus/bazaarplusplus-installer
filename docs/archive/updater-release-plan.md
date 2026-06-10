@@ -1,3 +1,9 @@
+---
+status: superseded
+topic: updater-release
+archived: 2026-06-11
+superseded-by: docs/truth/updater-release.md
+---
 # Updater Build And Release Workflow
 
 This document describes the release flow implemented in this repository for installer bundles, Tauri updater artifacts, and the public `latest.json` manifest.

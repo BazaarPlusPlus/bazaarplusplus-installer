@@ -12,7 +12,15 @@ pub struct InstallState {
     pub runtime: InstallRuntimeState,
     pub compat: InstallCompatState,
     pub actions: InstallActions,
+    pub has_resettable_data: bool,
     pub warnings: Vec<InstallWarning>,
+}
+
+#[derive(Clone, Debug, Serialize, ts_rs::TS)]
+#[ts(export)]
+pub struct ResetBppDataResult {
+    pub state: InstallState,
+    pub removed_data: bool,
 }
 
 /// macOS launch-mode (兼容模式 / trampoline) state surfaced to the UI.

@@ -20,6 +20,7 @@ export type { InstallModState } from './bindings/InstallModState';
 export type { InstallRuntimeState } from './bindings/InstallRuntimeState';
 export type { InstallState } from './bindings/InstallState';
 export type { InstallWarning } from './bindings/InstallWarning';
+export type { ResetBppDataResult } from './bindings/ResetBppDataResult';
 export type { StreamDbStatus } from './bindings/StreamDbStatus';
 export type { StreamOverlayCropSettings } from './bindings/StreamOverlayCropSettings';
 export type { StreamOverlayCropSettingsPayload } from './bindings/StreamOverlayCropSettingsPayload';

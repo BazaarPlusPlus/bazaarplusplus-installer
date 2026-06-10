@@ -54,9 +54,10 @@ Artifacts are written under `src-tauri/target/release/` on Windows and
 
 ## Documentation
 
-- Current architecture and maintenance notes live in `docs/architecture.md`
-- The documentation index lives in `docs/README.md`
+- Start with `docs/INDEX.md`.
+- Current code-verified documentation lives in `docs/truth/`.
+- Historical specs, audits, and plans live in `docs/archive/` and are not current truth.
 
-## Known Limitation
+## Known Verification Gaps
 
-- On macOS, the current blocker is BepInEx not loading correctly, so the installer is not considered working there yet.
+- Platform smoke gaps are tracked in `docs/plans/manual-validation.md`.

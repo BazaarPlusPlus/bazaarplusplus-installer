@@ -72,6 +72,7 @@ const zh = {
   actionInstall: '安装',
   actionReinstall: '重新安装',
   actionResetData: '重置本地数据',
+  actionNoResettableData: '暂无本地数据',
   actionUninstall: '卸载',
   launchGame: '启动游戏',
   installed: '已安装',
@@ -84,10 +85,22 @@ const zh = {
   modNeedsReinstall: '需要重新安装',
   modNotInstalled: '尚未安装',
   installDone: '安装完成',
-  resetDataDone: '本地数据已重置',
+  resetDataConfirmTitle: '重置本地数据',
+  resetDataConfirmBody:
+    '这会删除 The Bazaar 安装目录中 BazaarPlusPlusV4 下的本地数据库、截图和战斗回放视频。',
+  resetDataConfirmKeepsInstall:
+    '不会卸载 The Bazaar，也不会卸载 BazaarPlusPlus 模组。',
+  resetDataConfirmGameClosed: '请先退出 The Bazaar，避免数据文件仍被占用。',
+  resetDataConfirmAcknowledge: '我知道这些本地数据会被删除。',
+  resetDataConfirmAction: '删除本地数据',
+  resetDataDone: '本地数据已删除',
+  resetDataNothingToDelete: '未找到可重置的本地数据',
   resetDataBlockedByGame: 'The Bazaar 仍在运行。请先退出游戏，再重置本地数据。',
   resetDataPartialFailure:
     '有 {count} 个本地数据项目未能删除。请关闭游戏和直播来源后重试。',
+  resetDataFailureDetails: '查看未删除项目',
+  resetDataFailureCopy: '复制诊断信息',
+  resetDataFailureCopied: '已复制',
   uninstallDone: '卸载完成',
   selectGameDirFirst: '请先选择 The Bazaar 安装目录。',
   tempoLaunchHint: '将通过 Tempo Launcher 启动：弹出 Tempo 窗口后请点击 PLAY。',
@@ -266,6 +279,7 @@ const en: Record<MessageKey, string> = {
   actionInstall: 'Install',
   actionReinstall: 'Reinstall',
   actionResetData: 'Reset Local Data',
+  actionNoResettableData: 'No Local Data',
   actionUninstall: 'Uninstall',
   launchGame: 'Launch Game',
   installed: 'Installed',
@@ -278,11 +292,25 @@ const en: Record<MessageKey, string> = {
   modNeedsReinstall: 'Reinstall required',
   modNotInstalled: 'Not installed yet',
   installDone: 'Install complete',
-  resetDataDone: 'Local data reset',
+  resetDataConfirmTitle: 'Reset Local Data',
+  resetDataConfirmBody:
+    'This deletes the local database, screenshots, and combat replay videos under BazaarPlusPlusV4 in The Bazaar install directory.',
+  resetDataConfirmKeepsInstall:
+    'This does not uninstall The Bazaar or the BazaarPlusPlus mod.',
+  resetDataConfirmGameClosed:
+    'Quit The Bazaar first so data files are not held open.',
+  resetDataConfirmAcknowledge:
+    'I understand this local data will be deleted.',
+  resetDataConfirmAction: 'Delete Local Data',
+  resetDataDone: 'Local data deleted',
+  resetDataNothingToDelete: 'No resettable local data found',
   resetDataBlockedByGame:
     'The Bazaar is still running. Quit the game before resetting local data.',
   resetDataPartialFailure:
     '{count} local data item(s) could not be deleted. Close the game and stream sources, then try again.',
+  resetDataFailureDetails: 'Show undeleted items',
+  resetDataFailureCopy: 'Copy Diagnostics',
+  resetDataFailureCopied: 'Copied',
   uninstallDone: 'Uninstall complete',
   selectGameDirFirst: 'Select The Bazaar install directory first.',
   tempoLaunchHint:
