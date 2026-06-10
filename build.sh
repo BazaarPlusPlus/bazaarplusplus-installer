@@ -36,6 +36,7 @@ WINDOWS_CONFIG="$SCRIPT_DIR/src-tauri/tauri.windows.conf.json"
 MACOS_CONFIG="$SCRIPT_DIR/src-tauri/tauri.macos.conf.json"
 WINDOWS_ZIP="$SCRIPT_DIR/src-tauri/resources/BepInExSource/windows/BepInEx.zip"
 MACOS_ZIP="$SCRIPT_DIR/src-tauri/resources/BepInExSource/macos/BepInEx.zip"
+MACOS_TRAMPOLINE_STUB="$SCRIPT_DIR/src-tauri/resources/Trampoline/macos/bpp_launcher"
 SIGNING_SECRETS_DIR="$SCRIPT_DIR/signing-secrets"
 SIGNING_KEY_PATH="$SIGNING_SECRETS_DIR/tauri-updater.key"
 SIGNING_KEY_PASSWORD_PATH="$SIGNING_SECRETS_DIR/tauri-updater.password"
@@ -403,6 +404,26 @@ is_macho_file() {
     file "$file_path" | grep -q 'Mach-O'
 }
 
+macos_resource_relative_path() {
+    local resource_path="$1"
+    local resource_root="$SCRIPT_DIR/src-tauri/resources/"
+
+    if [[ "$resource_path" == "$resource_root"* ]]; then
+        printf '%s' "${resource_path#$resource_root}"
+    else
+        printf '%s' "$resource_path"
+    fi
+}
+
+sign_macos_resource_binary() {
+    local binary_path="$1"
+    local relative_path="$2"
+
+    invoke_step "Signing macOS resource binary $relative_path" \
+        codesign --force --options runtime --timestamp \
+        --sign "$APPLE_SIGNING_IDENTITY" "$binary_path"
+}
+
 # Pre-signs Mach-O binaries that live inside bundled resource zips. Tauri treats
 # zips as opaque resource data, so its outer .app signing never reaches these.
 # Notarization and runtime library validation reject unsigned nested code.
@@ -417,10 +438,25 @@ sign_macos_resource_binaries() {
         fi
 
         relative_path="${binary_path#$payload_dir/}"
-        invoke_step "Signing macOS resource binary $relative_path" \
-            codesign --force --options runtime --timestamp \
-            --sign "$APPLE_SIGNING_IDENTITY" "$binary_path"
+        sign_macos_resource_binary "$binary_path" "$relative_path"
     done < <(find "$payload_dir" -type f -print0)
+}
+
+prepare_signed_macos_resource_binary() {
+    local resource_binary="$1"
+    local relative_path=""
+
+    assert_command file "Install file first."
+    assert_command codesign "Install Xcode command line tools first."
+    assert_file "$resource_binary" "macOS resource binary"
+
+    if ! is_macho_file "$resource_binary"; then
+        echo "Error: macOS resource binary is not Mach-O: $resource_binary" >&2
+        exit 1
+    fi
+
+    relative_path="$(macos_resource_relative_path "$resource_binary")"
+    sign_macos_resource_binary "$resource_binary" "$relative_path"
 }
 
 create_zip_from_directory() {
@@ -624,6 +660,13 @@ build_prod() {
 
     if [ "$platform" = "macos" ]; then
         if run_checked prepare_signed_macos_resource_zip "$resource_zip"; then
+            :
+        else
+            step_status="$?"
+            exit "$step_status"
+        fi
+
+        if run_checked prepare_signed_macos_resource_binary "$MACOS_TRAMPOLINE_STUB"; then
             :
         else
             step_status="$?"

@@ -105,6 +105,9 @@ test('macOS production build targets arm64 artifacts', () => {
     prepare_signed_macos_resource_zip() {
       printf 'Preparing signed macos resource zip|%s\\n' "$*"
     }
+    prepare_signed_macos_resource_binary() {
+      printf 'Preparing signed macos resource binary|%s\\n' "$*"
+    }
     invoke_step() {
       local label="$1"
       shift
@@ -118,6 +121,9 @@ test('macOS production build targets arm64 artifacts', () => {
   );
   expect(output).toMatch(
     /Preparing signed macos resource zip\|.*src-tauri\/resources\/BepInExSource\/macos\/BepInEx\.zip/
+  );
+  expect(output).toMatch(
+    /Preparing signed macos resource binary\|.*src-tauri\/resources\/Trampoline\/macos\/bpp_launcher/
   );
   expect(output).toMatch(
     /Bundling macos installer\|npm run tauri bundle -- --bundles app,dmg --config .*src-tauri\/tauri\.macos\.conf\.json --target aarch64-apple-darwin/
@@ -145,6 +151,7 @@ test('macOS production build removes the entire bundle directory before rebundli
       source ./build.sh
       assert_file() { :; }
       prepare_signed_macos_resource_zip() { :; }
+      prepare_signed_macos_resource_binary() { :; }
       invoke_step() {
         local label="$1"
         shift
@@ -241,6 +248,38 @@ test('macOS resource signing applies Developer ID timestamp only to Mach-O files
   expect(output).toContain('libdoorstop.dylib');
   expect(output).toContain('BepInEx/plugins/libe_sqlite3.dylib');
   expect(output).not.toContain('readme.txt');
+});
+
+test('macOS loose resource signing applies Developer ID timestamp to trampoline stub', () => {
+  const output = runShell(`
+    set -euo pipefail
+    source ./build.sh
+    payload="$(mktemp -d)"
+    trap 'rm -rf "$payload"' EXIT
+    stub="$payload/bpp_launcher"
+    touch "$stub"
+    APPLE_SIGNING_IDENTITY='Developer ID Application: Example Builder (TEAMID1234)'
+    export APPLE_SIGNING_IDENTITY
+    file() {
+      printf '%s: Mach-O 64-bit executable arm64\\n' "$1"
+    }
+    codesign() {
+      printf 'codesign|%s\\n' "$*"
+    }
+    invoke_step() {
+      local label="$1"
+      shift
+      printf '%s|%s\\n' "$label" "$*"
+      "$@"
+    }
+    prepare_signed_macos_resource_binary "$stub"
+  `);
+
+  expect(output).toContain('Signing macOS resource binary');
+  expect(output).toContain(
+    'codesign|--force --options runtime --timestamp --sign Developer ID Application: Example Builder (TEAMID1234)'
+  );
+  expect(output).toContain('bpp_launcher');
 });
 
 test('macOS Developer ID env loads from signing-secrets files', () => {
