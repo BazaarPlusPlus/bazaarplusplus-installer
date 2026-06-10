@@ -25,10 +25,7 @@ export function ResetDataConfirmModal({
       <div className="bg-[#0b0906] border border-[rgba(190,80,80,0.24)] rounded-[4px] shadow-[0_24px_64px_rgba(0,0,0,0.5)] w-full max-w-md mx-4 relative">
         <div className="flex justify-between items-center px-5 py-4 border-b border-[rgba(190,80,80,0.18)] bg-[rgba(160,50,50,0.06)]">
           <div className="flex items-center gap-3">
-            <AlertTriangle
-              size={18}
-              className="text-[rgba(232,120,120,0.9)]"
-            />
+            <AlertTriangle size={18} className="text-[rgba(232,120,120,0.9)]" />
             <h2
               id="reset-data-modal-title"
               className="cinzel text-[1.1rem] text-[#f0d8d8] m-0 tracking-wider"

@@ -299,8 +299,7 @@ const en: Record<MessageKey, string> = {
     'This does not uninstall The Bazaar or the BazaarPlusPlus mod.',
   resetDataConfirmGameClosed:
     'Quit The Bazaar first so data files are not held open.',
-  resetDataConfirmAcknowledge:
-    'I understand this local data will be deleted.',
+  resetDataConfirmAcknowledge: 'I understand this local data will be deleted.',
   resetDataConfirmAction: 'Delete Local Data',
   resetDataDone: 'Local data deleted',
   resetDataNothingToDelete: 'No resettable local data found',

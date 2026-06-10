@@ -80,7 +80,10 @@ pub fn install_bepinex(
     let _ = &steam_path;
     #[cfg(target_os = "macos")]
     if !steam_path.trim().is_empty() {
-        crate::services::steam::prepare_steam_for_launch_option_update(Path::new(&steam_path), true)?;
+        crate::services::steam::prepare_steam_for_launch_option_update(
+            Path::new(&steam_path),
+            true,
+        )?;
     }
     let install_backup = payload::prepare_install_target(game_path)?;
 
@@ -146,7 +149,10 @@ pub fn uninstall_bpp(
 
     #[cfg(target_os = "macos")]
     if !_steam_path.trim().is_empty() {
-        crate::services::steam::prepare_steam_for_launch_option_update(Path::new(&_steam_path), false)?;
+        crate::services::steam::prepare_steam_for_launch_option_update(
+            Path::new(&_steam_path),
+            false,
+        )?;
     }
 
     // Restore the vanilla bundle BEFORE removing siblings. Call uninstall_trampoline

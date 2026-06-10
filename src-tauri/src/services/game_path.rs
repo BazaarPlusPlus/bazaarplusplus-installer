@@ -151,7 +151,9 @@ pub(crate) fn fallback_game_candidates() -> Vec<PathBuf> {
             if let Some(base) = std::env::var_os(var_name).map(PathBuf::from) {
                 push_unique(
                     &mut candidates,
-                    base.join("Tempo Launcher - Beta").join("game").join("buildx64"),
+                    base.join("Tempo Launcher - Beta")
+                        .join("game")
+                        .join("buildx64"),
                 );
             }
         }
