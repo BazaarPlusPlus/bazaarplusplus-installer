@@ -50,7 +50,7 @@ pub async fn reset_bpp_data(
     install_state: tauri::State<'_, InstallerContextState>,
     stream_state: tauri::State<'_, StreamRuntimeState>,
     game_path: String,
-) -> Result<InstallState, String> {
+) -> Result<ResetBppDataResult, String> {
     run_reset_bpp_data(app, install_state, stream_state, game_path).await
 }
 

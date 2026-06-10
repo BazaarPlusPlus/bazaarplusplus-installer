@@ -25,7 +25,7 @@ pub(crate) const RESET_BPP_DATA_ERR_PARTIAL_FAILURE: &str = "bpp_data_reset_part
 pub async fn reset_bpp_data(
     stream_state: tauri::State<'_, StreamRuntimeState>,
     game_path: String,
-) -> Result<(), String> {
+) -> Result<bool, String> {
     // Drop our own SQLite connections before touching the data directory.
     // Without this, OBS overlay polling keeps `bazaarplusplus.db` open and
     // Windows refuses to delete it (the headline customer complaint).
@@ -36,13 +36,15 @@ pub async fn reset_bpp_data(
         .map_err(|err| format!("failed to reset BazaarPlusPlus data: {err}"))?
 }
 
-fn reset_bpp_data_blocking(game_path: &Path) -> Result<(), String> {
+fn reset_bpp_data_blocking(game_path: &Path) -> Result<bool, String> {
     payload::ensure_valid_game_path(game_path)?;
 
     if crate::services::game_process::is_bazaar_running_best_effort() {
         return Err(RESET_BPP_DATA_ERR_GAME_RUNNING.to_string());
     }
 
+    let data_dir = crate::services::paths::bpp_data_dir(game_path);
+    let had_resettable_data = data_dir.exists();
     let report = payload::cleanup_bpp_data_directory(game_path);
     if !report.is_empty() {
         return Err(format_partial_failure(&report.failed));
@@ -52,7 +54,7 @@ fn reset_bpp_data_blocking(game_path: &Path) -> Result<(), String> {
         "Reset BazaarPlusPlus data directory at {}",
         game_path.display()
     );
-    Ok(())
+    Ok(had_resettable_data)
 }
 
 fn format_partial_failure(paths: &[PathBuf]) -> String {
@@ -206,8 +208,9 @@ mod tests {
         std::fs::create_dir_all(&data_dir).unwrap();
         std::fs::write(data_dir.join("stale.dll"), b"dll").unwrap();
 
-        reset_bpp_data_blocking(tmp.path()).unwrap();
+        let removed_data = reset_bpp_data_blocking(tmp.path()).unwrap();
 
+        assert!(removed_data);
         assert!(!data_dir.exists());
     }
 
@@ -217,8 +220,9 @@ mod tests {
         let data_dir = tmp.path().join(crate::config::BAZAAR_DATA_DIRECTORY);
         assert!(!data_dir.exists());
 
-        reset_bpp_data_blocking(tmp.path()).unwrap();
+        let removed_data = reset_bpp_data_blocking(tmp.path()).unwrap();
 
+        assert!(!removed_data);
         assert!(!data_dir.exists());
     }
 
@@ -228,9 +232,11 @@ mod tests {
         let data_dir = tmp.path().join(crate::config::BAZAAR_DATA_DIRECTORY);
         std::fs::create_dir_all(&data_dir).unwrap();
 
-        reset_bpp_data_blocking(tmp.path()).unwrap();
-        reset_bpp_data_blocking(tmp.path()).unwrap();
+        let removed_data = reset_bpp_data_blocking(tmp.path()).unwrap();
+        let removed_data_again = reset_bpp_data_blocking(tmp.path()).unwrap();
 
+        assert!(removed_data);
+        assert!(!removed_data_again);
         assert!(!data_dir.exists());
     }
 

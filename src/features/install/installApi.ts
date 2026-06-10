@@ -35,6 +35,7 @@ export const emptyInstallState: InstallState = {
     can_uninstall: false,
     can_launch: false
   },
+  has_resettable_data: false,
   warnings: []
 };
 

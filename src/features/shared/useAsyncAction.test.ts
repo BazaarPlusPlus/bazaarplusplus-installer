@@ -86,5 +86,10 @@ describe('parseResetBppDataError', () => {
       code: 'partial_failure',
       paths: ['/tmp/a', '/tmp/b']
     });
+
+    expect(parseResetBppDataError('bpp_data_reset_partial_failure:')).toEqual({
+      code: 'partial_failure',
+      paths: []
+    });
   });
 });

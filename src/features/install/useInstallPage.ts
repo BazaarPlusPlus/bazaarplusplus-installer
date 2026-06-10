@@ -67,6 +67,9 @@ export function useInstallPage() {
     undefined
   );
   const [message, setMessage] = useState<string | null>(null);
+  const [resetDataFailurePaths, setResetDataFailurePaths] = useState<string[]>(
+    []
+  );
   const { action, error, run, busy } = useAsyncAction<InstallAction>();
   const tempoLaunchBusy = useSyncExternalStore(
     subscribeTempoLaunch,
@@ -178,13 +181,29 @@ export function useInstallPage() {
       run(
         'resetData',
         async () => {
+          if (!state.has_resettable_data) {
+            setResetDataFailurePaths([]);
+            setMessage(t('resetDataNothingToDelete'));
+            return;
+          }
+
           const path = requireGamePath(state, t);
-          setState(await resetBppData(path));
-          setMessage(t('resetDataDone'));
+          const result = await resetBppData(path);
+          setState(result.state);
+          setResetDataFailurePaths([]);
+          setMessage(
+            result.removed_data
+              ? t('resetDataDone')
+              : t('resetDataNothingToDelete')
+          );
         },
         {
-          onStart: () => setMessage(null),
-          errorMessage: (caught) => formatResetBppDataError(caught, t)
+          onStart: () => {
+            setMessage(null);
+            setResetDataFailurePaths([]);
+          },
+          errorMessage: (caught) =>
+            formatResetBppDataError(caught, t, setResetDataFailurePaths)
         }
       ),
     [run, state, t]
@@ -242,6 +261,7 @@ export function useInstallPage() {
     busy: effectiveBusy,
     error,
     message,
+    resetDataFailurePaths,
     refresh,
     chooseDirectory,
     install,
@@ -259,16 +279,23 @@ function requireGamePath(state: InstallState, t: Translate) {
   return state.selected_game_path;
 }
 
-function formatResetBppDataError(error: unknown, t: Translate) {
+function formatResetBppDataError(
+  error: unknown,
+  t: Translate,
+  setFailurePaths: (paths: string[]) => void
+) {
   const resetError = parseResetBppDataError(error);
   if (resetError?.code === 'game_running') {
+    setFailurePaths([]);
     return t('resetDataBlockedByGame');
   }
   if (resetError?.code === 'partial_failure') {
+    setFailurePaths(resetError.paths);
     return t('resetDataPartialFailure', {
       count: Math.max(1, resetError.paths.length)
     });
   }
+  setFailurePaths([]);
   return toErrorMessage(error);
 }
 

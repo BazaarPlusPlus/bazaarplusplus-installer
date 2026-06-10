@@ -7,6 +7,7 @@ import type {
   HistoryRunDetail,
   HistoryRunList,
   InstallState,
+  ResetBppDataResult,
   StreamOverlayCropSettingsPayload,
   StreamOverlayDisplayMode,
   StreamServiceStatus
@@ -38,7 +39,7 @@ export interface TauriCommandMap {
   };
   reset_bpp_data: {
     input: { gamePath: string };
-    output: InstallState;
+    output: ResetBppDataResult;
   };
   uninstall_mod: {
     input: { gamePath: string };
