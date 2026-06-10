@@ -18,10 +18,6 @@ export const emptyInstallState: InstallState = {
     bundled_version: null,
     version_matches: false
   },
-  runtime: {
-    dotnet_version: null,
-    dotnet_ok: false
-  },
   compat: {
     mode_available: false,
     forced: false,

@@ -17,7 +17,6 @@ export type { InstallActions } from './bindings/InstallActions';
 export type { InstallCompatState } from './bindings/InstallCompatState';
 export type { InstallGameState } from './bindings/InstallGameState';
 export type { InstallModState } from './bindings/InstallModState';
-export type { InstallRuntimeState } from './bindings/InstallRuntimeState';
 export type { InstallState } from './bindings/InstallState';
 export type { InstallWarning } from './bindings/InstallWarning';
 export type { ResetBppDataResult } from './bindings/ResetBppDataResult';

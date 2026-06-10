@@ -9,7 +9,6 @@ pub struct InstallState {
     pub launch_flow: String,
     pub game: InstallGameState,
     pub mod_state: InstallModState,
-    pub runtime: InstallRuntimeState,
     pub compat: InstallCompatState,
     pub actions: InstallActions,
     pub has_resettable_data: bool,
@@ -52,13 +51,6 @@ pub struct InstallModState {
     pub installed_version: Option<String>,
     pub bundled_version: Option<String>,
     pub version_matches: bool,
-}
-
-#[derive(Clone, Debug, Serialize, ts_rs::TS)]
-#[ts(export)]
-pub struct InstallRuntimeState {
-    pub dotnet_version: Option<String>,
-    pub dotnet_ok: bool,
 }
 
 #[derive(Clone, Debug, Serialize, ts_rs::TS)]

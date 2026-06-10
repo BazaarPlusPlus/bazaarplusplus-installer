@@ -3,7 +3,6 @@ import type { InstallActions } from "./InstallActions";
 import type { InstallCompatState } from "./InstallCompatState";
 import type { InstallGameState } from "./InstallGameState";
 import type { InstallModState } from "./InstallModState";
-import type { InstallRuntimeState } from "./InstallRuntimeState";
 import type { InstallWarning } from "./InstallWarning";
 
-export type InstallState = { selected_game_path: string | null, steam_path: string | null, steam_launch_options_supported: boolean, launch_flow: string, game: InstallGameState, mod_state: InstallModState, runtime: InstallRuntimeState, compat: InstallCompatState, actions: InstallActions, has_resettable_data: boolean, warnings: Array<InstallWarning>, };
+export type InstallState = { selected_game_path: string | null, steam_path: string | null, steam_launch_options_supported: boolean, launch_flow: string, game: InstallGameState, mod_state: InstallModState, compat: InstallCompatState, actions: InstallActions, has_resettable_data: boolean, warnings: Array<InstallWarning>, };

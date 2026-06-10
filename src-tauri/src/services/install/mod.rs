@@ -2,7 +2,7 @@ mod types;
 
 pub use types::{
     FileActionResult, GameDirectorySelection, InstallActions, InstallCompatState, InstallGameState,
-    InstallModState, InstallRuntimeState, InstallState, InstallWarning, ResetBppDataResult,
+    InstallModState, InstallState, InstallWarning, ResetBppDataResult,
 };
 
 use std::process::Command;
@@ -179,10 +179,7 @@ pub enum LaunchFlow {
 /// including a Tempo-native copy on a machine that also has Steam, uses the
 /// Tempo capture flow so files are never removed from one copy while Tempo
 /// validates another.
-pub(crate) fn resolve_launch_flow(
-    steam_path: Option<&str>,
-    game_path: Option<&str>,
-) -> LaunchFlow {
+pub(crate) fn resolve_launch_flow(steam_path: Option<&str>, game_path: Option<&str>) -> LaunchFlow {
     let under_steamapps = game_path.map(path_contains_steamapps).unwrap_or(false);
     if steam_path.is_some() && under_steamapps {
         LaunchFlow::Steam
@@ -202,7 +199,10 @@ pub fn launch_game_auto(
     game_path: Option<String>,
 ) -> Result<(), String> {
     let snapshot = detect_for_install(app.clone(), state, game_path)?;
-    match resolve_launch_flow(snapshot.steam_path.as_deref(), snapshot.game_path.as_deref()) {
+    match resolve_launch_flow(
+        snapshot.steam_path.as_deref(),
+        snapshot.game_path.as_deref(),
+    ) {
         LaunchFlow::Steam => launch_game_via_steam(),
         LaunchFlow::TempoNative => {
             crate::services::tempo::launch_game_via_tempo(app, snapshot.game_path.clone(), None)
@@ -244,12 +244,6 @@ fn install_state_from_snapshot(
             message: "未找到有效的 The Bazaar 安装目录。".to_string(),
         });
     }
-    if !env.dotnet_ok {
-        warnings.push(InstallWarning {
-            code: "dotnet_missing".to_string(),
-            message: "未检测到可用的 .NET 运行时。".to_string(),
-        });
-    }
     if launch_flow == "steam" && !env.steam_launch_options_supported {
         warnings.push(InstallWarning {
             code: "launch_options_unsupported".to_string(),
@@ -279,10 +273,6 @@ fn install_state_from_snapshot(
             installed_version: env.bpp_version,
             bundled_version: env.bundled_bpp_version,
             version_matches,
-        },
-        runtime: InstallRuntimeState {
-            dotnet_version: env.dotnet_version,
-            dotnet_ok: env.dotnet_ok,
         },
         compat: InstallCompatState {
             mode_available: env.compat_mode_available,
@@ -397,8 +387,6 @@ mod tests {
         assert!(path_contains_steamapps(
             "D:\\SteamLibrary\\SteamApps\\common\\The Bazaar"
         ));
-        assert!(!path_contains_steamapps(
-            "/Users/a/my-steamapps-notes/game"
-        ));
+        assert!(!path_contains_steamapps("/Users/a/my-steamapps-notes/game"));
     }
 }

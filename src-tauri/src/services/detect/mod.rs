@@ -1,13 +1,11 @@
-mod dotnet;
 mod game;
 mod steam;
 
-pub(crate) use dotnet::detect_dotnet as dotnet_detect_for_startup;
 pub(crate) use game::{is_bepinex_installed, is_valid_game_path};
 pub(crate) use steam::detect_installation_paths;
 
-use crate::services::path::normalize_requested_game_path;
 use crate::services::game_path::fallback_game_candidates;
+use crate::services::path::normalize_requested_game_path;
 use crate::services::startup::InstallerContextState;
 use game::read_installed_bpp_version;
 use serde::{Deserialize, Serialize};
@@ -19,8 +17,6 @@ pub(crate) struct InstallEnvironmentSnapshot {
     pub steam_launch_options_supported: bool,
     pub game_path: Option<String>,
     pub game_path_valid: bool,
-    pub dotnet_version: Option<String>,
-    pub dotnet_ok: bool,
     pub bepinex_installed: bool,
     pub bpp_version: Option<String>,
     pub bundled_bpp_version: Option<String>,
@@ -37,12 +33,6 @@ pub(crate) struct InstallEnvironmentSnapshot {
     pub trampoline_applied: bool,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct DotnetInfo {
-    pub dotnet_version: Option<String>,
-    pub dotnet_ok: bool,
-}
-
 pub fn detect_for_install(
     app: AppHandle,
     state: State<'_, InstallerContextState>,
@@ -53,7 +43,7 @@ pub fn detect_for_install(
         game_path
     );
     // Read cached startup context. On first call this lazily initializes:
-    // reads the bundled payload, probes .NET, and resolves Steam/game paths.
+    // reads the bundled payload and resolves Steam/game paths.
     let startup = state.get_or_initialize(&app);
 
     let requested_game_path = normalize_requested_game_path(game_path);
@@ -108,8 +98,6 @@ pub fn detect_for_install(
         steam_launch_options_supported,
         game_path: game_path.map(|path| path.to_string_lossy().into_owned()),
         game_path_valid,
-        dotnet_version: startup.dotnet.dotnet_version.clone(),
-        dotnet_ok: startup.dotnet.dotnet_ok,
         bepinex_installed,
         bpp_version,
         bundled_bpp_version: startup.bundled_bpp_version.clone(),

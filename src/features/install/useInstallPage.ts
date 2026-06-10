@@ -344,9 +344,6 @@ function createInstallStatus(state: InstallState, t: Translate) {
       state.mod_state.installed_version ??
       state.mod_state.bundled_version ??
       '-',
-    dotnet: state.runtime.dotnet_ok
-      ? (state.runtime.dotnet_version ?? t('ready'))
-      : t('missing'),
     steam: state.steam_path ? 'Steam' : '-'
   };
 }

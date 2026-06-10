@@ -1,14 +1,14 @@
 ---
 status: truth
 topic: architecture
-last-verified: 7b18f73d4718d3e1406de9f526d1fbba09ac567f
+last-verified: df2a1aff04d29bed00f16d369d7558755e31a556
 ---
 
 # Architecture
 
 ## App Shape
 
-- `package.json` defines the desktop app package as `bppinstaller` version `4.1.0` and exposes the development, build, test, type-check, and Tauri scripts in `package.json:2-21`.
+- `package.json` defines the desktop app package as `bppinstaller` version `4.1.9` and exposes the development, build, test, type-check, and Tauri scripts in `package.json:2-21`.
 - The frontend is built by Vite from `src/`; the Tauri config invokes `npm run dev` for development and `npm run prebuild-check && npm run build` before bundle creation in `src-tauri/tauri.conf.json:6-11`.
 - The main desktop shell is Rust/Tauri. It registers native plugins and shared state in `src-tauri/src/lib.rs:18-39`, then registers command handlers and runs the generated Tauri context in `src-tauri/src/lib.rs:72-74`.
 - The main window is configured as a 1000 x 720 window with 900 x 640 minimum dimensions in `src-tauri/tauri.conf.json:13-21`.
@@ -21,7 +21,7 @@ last-verified: 7b18f73d4718d3e1406de9f526d1fbba09ac567f
 
 ## Feature Boundaries
 
-- Install state is produced by Rust detection and serialized through `InstallState`; the contract includes selected paths, launch flow, game/mod/runtime state, macOS compatibility state, action gates, resettable-data status, and warnings in `src-tauri/src/services/install/types.rs:3-17`.
+- Install state is produced by Rust detection and serialized through `InstallState`; the contract includes selected paths, launch flow, game/mod state, macOS compatibility state, action gates, resettable-data status, and warnings in `src-tauri/src/services/install/types.rs:3-16`.
 - Install, reset, uninstall, and launch orchestration are owned by `src-tauri/src/services/install/mod.rs`; the install service selects Steam or Tempo launch flow, applies prefix or trampoline launch mode, and rebuilds state after mutations in `src-tauri/src/services/install/mod.rs:36-120`.
 - History reads use SQLite read-only connections by default in `src-tauri/src/history/queries.rs:29-35`; the separate write connection is used only where mutation is needed in `src-tauri/src/history/queries.rs:37-43`.
 - The stream service is a local Axum HTTP service bound to `127.0.0.1:17654`, creates overlay repositories and settings stores, and exposes overlay/settings URLs in `src-tauri/src/stream/server.rs:16-99`.

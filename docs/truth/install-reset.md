@@ -1,16 +1,16 @@
 ---
 status: truth
 topic: install-reset
-last-verified: 7b18f73d4718d3e1406de9f526d1fbba09ac567f
+last-verified: df2a1aff04d29bed00f16d369d7558755e31a556
 ---
 
 # Install And Reset
 
 ## Install State Contract
 
-- `InstallState` is the frontend/backend contract for the install page. It includes selected paths, Steam launch-option support, `launch_flow`, game/mod/runtime state, compatibility state, action gates, `has_resettable_data`, and warnings in `src-tauri/src/services/install/types.rs:3-17`.
+- `InstallState` is the frontend/backend contract for the install page. It includes selected paths, Steam launch-option support, `launch_flow`, game/mod state, compatibility state, action gates, `has_resettable_data`, and warnings in `src-tauri/src/services/install/types.rs:3-16`.
 - Reset returns a typed `ResetBppDataResult` containing the refreshed state and a `removed_data` boolean in `src-tauri/src/services/install/types.rs:19-24`.
-- Backend state derives `launch_flow`, `has_resettable_data`, action gates, and warnings in `src-tauri/src/services/install/mod.rs:213-303`.
+- Backend state derives `launch_flow`, `has_resettable_data`, action gates, and warnings in `src-tauri/src/services/install/mod.rs:230-292`.
 
 ## Install And Uninstall
 

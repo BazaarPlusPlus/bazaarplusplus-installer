@@ -55,10 +55,6 @@ export function InstallActionsPanel({
                     : t('notInstalled')
                 }
               />
-              <InstallFactItem
-                label=".NET Runtime"
-                value={page.status.dotnet}
-              />
             </ul>
 
             {page.state.warnings.length > 0 && (
