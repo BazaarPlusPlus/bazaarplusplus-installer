@@ -6,6 +6,7 @@
 /dist/
 /package/
 /coverage/
+/tmp/
 /.vite/
 *.tsbuildinfo
 vite.config.js.timestamp-*
