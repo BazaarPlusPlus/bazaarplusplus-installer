@@ -183,12 +183,14 @@ mod imp {
             && String::from_utf8_lossy(&output.stdout).contains("UnityPlayer.dylib")
     }
 
+    pub(super) fn command_available(command: &str, args: &[&str]) -> bool {
+        Command::new(command).args(args).output().is_ok()
+    }
+
     fn codesign_available() -> bool {
-        Command::new("codesign")
-            .arg("--version")
-            .output()
-            .map(|output| output.status.success())
-            .unwrap_or(false)
+        // macOS `codesign` does not support `--version`; availability only means
+        // the executable can be spawned. Real signing errors are reported later.
+        command_available("codesign", &["-h"])
     }
 
     fn stub_resource_path(app: &AppHandle) -> Result<PathBuf, String> {
@@ -528,8 +530,8 @@ pub(crate) fn uninstall_trampoline(_game_path: &Path) -> Result<(), String> {
 #[cfg(target_os = "macos")]
 mod tests {
     use super::imp::{
-        bundle_paths, classify_real_binary, is_trampolined, restore_vanilla_layout, swap_in_stub,
-        RealBinarySource, TRAMPOLINE_ENTITLEMENTS,
+        bundle_paths, classify_real_binary, command_available, is_trampolined,
+        restore_vanilla_layout, swap_in_stub, RealBinarySource, TRAMPOLINE_ENTITLEMENTS,
     };
     use super::*;
 
@@ -589,6 +591,15 @@ mod tests {
         // Corrupt: neither side is the real binary.
         assert!(classify_real_binary(false, true, false).is_err());
         assert!(classify_real_binary(false, false, false).is_err());
+    }
+
+    #[test]
+    fn test_command_available_only_requires_spawn_success() {
+        assert!(command_available("/bin/sh", &["-c", "exit 7"]));
+        assert!(!command_available(
+            "/definitely/not/a/bpp-installer-command",
+            &[]
+        ));
     }
 
     #[test]
