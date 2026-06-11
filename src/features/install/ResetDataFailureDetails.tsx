@@ -1,10 +1,12 @@
-import { Clipboard, ListX } from 'lucide-react';
+import { ChevronRight, Clipboard, ListX } from 'lucide-react';
 import { useState } from 'react';
 import { useI18n } from '../../i18n/LocaleProvider';
 
 export function ResetDataFailureDetails({ paths }: { paths: string[] }) {
   const { t } = useI18n();
-  const [copied, setCopied] = useState(false);
+  const [copyState, setCopyState] = useState<'idle' | 'copied' | 'failed'>(
+    'idle'
+  );
 
   if (paths.length === 0) return null;
 
@@ -15,17 +17,29 @@ export function ResetDataFailureDetails({ paths }: { paths: string[] }) {
 
   const copyDiagnostics = () => {
     const write = navigator.clipboard?.writeText(diagnosticText);
+    if (!write) {
+      setCopyState('failed');
+      window.setTimeout(() => setCopyState('idle'), 2400);
+      return;
+    }
     void write
-      ?.then(() => {
-        setCopied(true);
-        window.setTimeout(() => setCopied(false), 1600);
+      .then(() => {
+        setCopyState('copied');
+        window.setTimeout(() => setCopyState('idle'), 1600);
       })
-      .catch(() => undefined);
+      .catch(() => {
+        setCopyState('failed');
+        window.setTimeout(() => setCopyState('idle'), 2400);
+      });
   };
 
   return (
-    <details className="selectable rounded-sm border border-[rgba(190,80,80,0.2)] bg-[rgba(160,50,50,0.06)] px-3 py-2 text-xs text-[rgba(245,220,220,0.86)]">
-      <summary className="cursor-default flex items-center gap-2">
+    <details className="group selectable rounded-sm border border-[rgba(190,80,80,0.2)] bg-[rgba(160,50,50,0.06)] px-3 py-2 text-xs text-[rgba(245,220,220,0.86)]">
+      <summary className="cursor-pointer flex items-center gap-2 list-none">
+        <ChevronRight
+          size={14}
+          className="shrink-0 transition-transform group-open:rotate-90"
+        />
         <ListX size={14} />
         {t('resetDataFailureDetails')}
       </summary>
@@ -43,7 +57,11 @@ export function ResetDataFailureDetails({ paths }: { paths: string[] }) {
           className="self-start inline-flex items-center gap-2 rounded-sm border border-[rgba(190,80,80,0.24)] bg-[rgba(160,50,50,0.08)] px-3 py-1.5 text-[rgba(245,220,220,0.9)] hover:bg-[rgba(160,50,50,0.14)] transition-colors"
         >
           <Clipboard size={13} />
-          {copied ? t('resetDataFailureCopied') : t('resetDataFailureCopy')}
+          {copyState === 'copied'
+            ? t('resetDataFailureCopied')
+            : copyState === 'failed'
+              ? t('resetDataFailureCopyFailed')
+              : t('resetDataFailureCopy')}
         </button>
       </div>
     </details>

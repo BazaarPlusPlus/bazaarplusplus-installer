@@ -6,6 +6,7 @@ import {
   Trash2,
   Video
 } from 'lucide-react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ErrorBanner } from '../components/ui/ErrorBanner';
 import type { HistoryBattleRow } from '../types/backend';
@@ -13,8 +14,10 @@ import { useRunDetailPage } from '../features/history/useRunDetailPage';
 import {
   formatBattleResult,
   formatDateTime,
-  formatRunResultLabel
+  formatRunResultLabel,
+  formatRunStatusKey
 } from '../features/history/format';
+import { DeleteVideoConfirmModal } from '../features/history/DeleteVideoConfirmModal';
 import { useI18n } from '../i18n/LocaleProvider';
 
 // Shared 7-track grid for the battle table header + rows so columns align and
@@ -37,6 +40,21 @@ export default function RunDetail() {
   const detail = page.detail;
   const { t } = useI18n();
   const runResult = detail ? formatRunResultLabel(detail.run.result) : null;
+  const [pendingDelete, setPendingDelete] = useState<{
+    battleId: string;
+    videoId: string;
+  } | null>(null);
+
+  const confirmDelete = async () => {
+    if (!pendingDelete) return;
+    const deleted = await page.deleteVideo(
+      pendingDelete.battleId,
+      pendingDelete.videoId
+    );
+    if (deleted) {
+      setPendingDelete(null);
+    }
+  };
 
   return (
     <div className="flex flex-col gap-6 h-full overflow-hidden pb-8 max-w-5xl mx-auto w-full">
@@ -73,7 +91,9 @@ export default function RunDetail() {
                   </span>
                 </h2>
                 <div className="flex flex-wrap items-center gap-3 fira-code text-xs text-[rgba(200,170,120,0.8)] selectable">
-                  <span>Player {detail.run.player_name ?? '-'}</span>
+                  <span>
+                    {t('runDetailPlayer')} {detail.run.player_name ?? '-'}
+                  </span>
                   <span>•</span>
                   <span>{detail.run.game_mode}</span>
                   <span>•</span>
@@ -83,7 +103,7 @@ export default function RunDetail() {
                   </span>
                   <span>•</span>
                   <span className="text-[rgba(200,170,120,0.8)]">
-                    {detail.run.status}
+                    {t(formatRunStatusKey(detail.run.status))}
                   </span>
                 </div>
               </div>
@@ -133,13 +153,13 @@ export default function RunDetail() {
                 <div
                   className={`${BATTLE_GRID} px-6 py-3 border-b border-[rgba(200,148,55,0.15)] bg-[rgba(200,148,55,0.02)] cinzel text-[10px] tracking-widest text-[rgba(200,170,120,0.8)] uppercase`}
                 >
-                  <div>Day</div>
-                  <div>Result</div>
-                  <div>Opponent Hero</div>
-                  <div>Opponent Player</div>
-                  <div>Rank</div>
-                  <div>Rating</div>
-                  <div className="text-right">Video</div>
+                  <div>{t('battleColDay')}</div>
+                  <div>{t('battleColResult')}</div>
+                  <div>{t('battleColOpponentHero')}</div>
+                  <div>{t('battleColOpponentPlayer')}</div>
+                  <div>{t('battleColRank')}</div>
+                  <div>{t('battleColRating')}</div>
+                  <div className="text-right">{t('battleColVideo')}</div>
                 </div>
 
                 {detail.battles.length === 0 ? (
@@ -152,6 +172,9 @@ export default function RunDetail() {
                       key={battle.battle_id}
                       battle={battle}
                       page={page}
+                      onRequestDelete={(battleId, videoId) =>
+                        setPendingDelete({ battleId, videoId })
+                      }
                     />
                   ))
                 )}
@@ -159,6 +182,14 @@ export default function RunDetail() {
             </div>
           </div>
         </>
+      )}
+
+      {pendingDelete && (
+        <DeleteVideoConfirmModal
+          busy={page.action === `delete:${pendingDelete.battleId}`}
+          onClose={() => setPendingDelete(null)}
+          onConfirm={confirmDelete}
+        />
       )}
     </div>
   );
@@ -189,10 +220,12 @@ function StatBlock({
 
 function BattleRow({
   battle,
-  page
+  page,
+  onRequestDelete
 }: {
   battle: HistoryBattleRow;
   page: ReturnType<typeof useRunDetailPage>;
+  onRequestDelete: (battleId: string, videoId: string) => void;
 }) {
   const { t } = useI18n();
   const battleResult = formatBattleResult(battle.result);
@@ -257,7 +290,7 @@ function BattleRow({
               disabled={deleteAction}
               onClick={() =>
                 battle.video &&
-                page.deleteVideo(battle.battle_id, battle.video.video_id)
+                onRequestDelete(battle.battle_id, battle.video.video_id)
               }
               title={t('deleteVideo')}
               aria-label={t('deleteVideo')}

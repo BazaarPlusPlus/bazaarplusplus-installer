@@ -11,7 +11,7 @@ export function PageHeader({
 }) {
   return (
     <div className="flex flex-col gap-1 shrink-0">
-      <p className="cinzel text-[10px] tracking-widest text-[rgba(200,148,55,0.52)] uppercase">
+      <p className="cinzel text-[10px] tracking-widest text-[rgba(200,148,55,0.75)] uppercase">
         {eyebrow}
       </p>
       {action ? (

@@ -2,6 +2,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
   useSyncExternalStore
 } from 'react';
@@ -67,10 +68,34 @@ export function useInstallPage() {
     undefined
   );
   const [message, setMessage] = useState<string | null>(null);
+  const flashTimer = useRef<number | null>(null);
   const [resetDataFailurePaths, setResetDataFailurePaths] = useState<string[]>(
     []
   );
   const { action, error, run, busy } = useAsyncAction<InstallAction>();
+
+  // Discrete success confirmations (install/uninstall/reset done) should not
+  // linger forever. Tempo launch *progress* messages are set via plain
+  // setMessage and intentionally persist until the flow ends.
+  const flashMessage = useCallback((next: string) => {
+    if (flashTimer.current !== null) {
+      window.clearTimeout(flashTimer.current);
+    }
+    setMessage(next);
+    flashTimer.current = window.setTimeout(() => {
+      setMessage(null);
+      flashTimer.current = null;
+    }, 4000);
+  }, []);
+
+  useEffect(
+    () => () => {
+      if (flashTimer.current !== null) {
+        window.clearTimeout(flashTimer.current);
+      }
+    },
+    []
+  );
   const tempoLaunchBusy = useSyncExternalStore(
     subscribeTempoLaunch,
     getTempoLaunchSnapshot,
@@ -169,11 +194,11 @@ export function useInstallPage() {
         async () => {
           const path = requireGamePath(state, t);
           setState(await installMod(path, compatOptIn));
-          setMessage(t('installDone'));
+          flashMessage(t('installDone'));
         },
         { onStart: () => setMessage(null) }
       ),
-    [run, state, t]
+    [flashMessage, run, state, t]
   );
 
   const resetData = useCallback(
@@ -183,7 +208,7 @@ export function useInstallPage() {
         async () => {
           if (!state.has_resettable_data) {
             setResetDataFailurePaths([]);
-            setMessage(t('resetDataNothingToDelete'));
+            flashMessage(t('resetDataNothingToDelete'));
             return;
           }
 
@@ -191,7 +216,7 @@ export function useInstallPage() {
           const result = await resetBppData(path);
           setState(result.state);
           setResetDataFailurePaths([]);
-          setMessage(
+          flashMessage(
             result.removed_data
               ? t('resetDataDone')
               : t('resetDataNothingToDelete')
@@ -206,7 +231,7 @@ export function useInstallPage() {
             formatResetBppDataError(caught, t, setResetDataFailurePaths)
         }
       ),
-    [run, state, t]
+    [flashMessage, run, state, t]
   );
 
   const uninstall = useCallback(
@@ -216,11 +241,11 @@ export function useInstallPage() {
         async () => {
           const path = requireGamePath(state, t);
           setState(await uninstallMod(path));
-          setMessage(t('uninstallDone'));
+          flashMessage(t('uninstallDone'));
         },
         { onStart: () => setMessage(null) }
       ),
-    [run, state, t]
+    [flashMessage, run, state, t]
   );
 
   const launch = useCallback(

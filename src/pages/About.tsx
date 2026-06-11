@@ -20,14 +20,14 @@ export default function About() {
               </h3>
               <div className="flex items-center gap-3 selectable">
                 <span className="cinzel text-[10px] tracking-widest text-[rgba(200,170,120,0.8)] uppercase">
-                  App
+                  {t('aboutAppLabel')}
                 </span>
                 <span className="px-2 py-0.5 bg-[rgba(80,180,120,0.15)] text-[#6dd9a0] border border-[rgba(80,180,120,0.25)] rounded-sm text-[10px] fira-code">
                   v{bootstrap.app_version}
                 </span>
                 <div className="w-px h-3 bg-gradient-to-b from-transparent via-[rgba(200,170,120,0.45)] to-transparent" />
                 <span className="cinzel text-[10px] tracking-widest text-[rgba(200,170,120,0.8)] uppercase">
-                  BPP
+                  {t('aboutBppLabel')}
                 </span>
                 <span className="text-[10px] text-[rgba(200,170,120,0.8)] fira-code">
                   {bootstrap.bundled_bpp_version ?? '-'}
@@ -48,7 +48,7 @@ export default function About() {
           <div className="h-px bg-gradient-to-r from-transparent via-[rgba(200,148,55,0.3)] to-transparent my-2" />
 
           <div className="flex flex-col gap-3">
-            <h4 className="cinzel text-[10px] tracking-widest text-[rgba(200,148,55,0.55)] uppercase m-0">
+            <h4 className="cinzel text-[10px] tracking-widest text-[rgba(200,148,55,0.75)] uppercase m-0">
               {t('aboutCredits')}
             </h4>
             <ul className="flex flex-col gap-1 m-0 p-0 list-none">

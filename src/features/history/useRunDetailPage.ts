@@ -51,11 +51,10 @@ export function useRunDetailPage() {
   );
 
   const deleteVideo = useCallback(
-    (battleId: string, videoId: string) => {
-      void run(`delete:${battleId}`, async () => {
+    (battleId: string, videoId: string) =>
+      run(`delete:${battleId}`, async () => {
         setDetail(await deleteBattleVideo(battleId, videoId));
-      });
-    },
+      }),
     [run]
   );
 

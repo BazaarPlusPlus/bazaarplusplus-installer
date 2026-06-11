@@ -43,3 +43,14 @@ export function formatBattleResult(result: string): {
       return { key: 'battleResultNeutral', tone: undefined };
   }
 }
+
+export function formatRunStatusKey(status: string): MessageKey {
+  switch (status) {
+    case 'completed':
+      return 'runStatusCompleted';
+    case 'abandoned':
+      return 'runStatusAbandoned';
+    default:
+      return 'runStatusActive';
+  }
+}

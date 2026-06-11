@@ -1,4 +1,4 @@
-import { Image as ImageIcon, RefreshCw } from 'lucide-react';
+import { ChevronRight, Image as ImageIcon, RefreshCw } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { ErrorBanner } from '../components/ui/ErrorBanner';
 import { LoadingPanel } from '../components/ui/LoadingPanel';
@@ -33,9 +33,18 @@ export default function History() {
     >
       <div className="flex flex-col gap-6 flex-1 min-h-0 w-full">
         <div className="grid grid-cols-3 gap-4 shrink-0">
-          <SummaryCard label="Runs" value={page.summary.runs} />
-          <SummaryCard label="Videos" value={page.summary.videos} />
-          <SummaryCard label="Win Rate" value={page.summary.winRate} />
+          <SummaryCard
+            label={t('historySummaryRuns')}
+            value={page.summary.runs}
+          />
+          <SummaryCard
+            label={t('historySummaryVideos')}
+            value={page.summary.videos}
+          />
+          <SummaryCard
+            label={t('historySummaryWinRate')}
+            value={page.summary.winRate}
+          />
         </div>
 
         {page.error && <ErrorBanner message={page.error} />}
@@ -99,7 +108,7 @@ function RunRow({
   return (
     <Link
       to={detailPath}
-      className="group grid grid-cols-[14rem_minmax(0,1fr)_9rem_6.5rem_5rem_5.5rem] items-center gap-6 p-3 bg-[rgba(18,11,5,0.88)] border border-[rgba(180,130,48,0.13)] rounded-sm hover:border-[rgba(200,148,55,0.4)] hover:bg-[rgba(200,148,55,0.04)] transition-all shadow-[0_4px_12px_rgba(0,0,0,0.2)] no-underline text-inherit"
+      className="group grid grid-cols-[14rem_minmax(0,1fr)_9rem_6.5rem_5rem_5.5rem_auto] items-center gap-6 p-3 bg-[rgba(18,11,5,0.88)] border border-[rgba(180,130,48,0.13)] rounded-sm hover:border-[rgba(200,148,55,0.4)] hover:bg-[rgba(200,148,55,0.04)] transition-all shadow-[0_4px_12px_rgba(0,0,0,0.2)] no-underline text-inherit"
     >
       <div className="w-56 aspect-[2000/470] shrink-0 bg-[#000] border border-[rgba(200,148,55,0.2)] rounded-sm flex items-center justify-center text-[rgba(200,170,120,0.3)] group-hover:border-[rgba(200,148,55,0.5)] transition-colors overflow-hidden relative">
         {previewUrl ? (
@@ -154,6 +163,13 @@ function RunRow({
         }
         fira
       />
+
+      <div className="flex items-center gap-1 text-[rgba(200,170,120,0.55)] group-hover:text-[#e8c87a] transition-colors whitespace-nowrap">
+        <span className="cinzel text-[10px] tracking-widest uppercase">
+          {t('viewDetail')}
+        </span>
+        <ChevronRight size={14} />
+      </div>
     </Link>
   );
 }

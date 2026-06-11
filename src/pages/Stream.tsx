@@ -27,6 +27,7 @@ export default function Stream() {
   const { t } = useI18n();
   const page = useStreamPage();
   const { status, cropSettings, dbPath, viewModel } = page;
+  const feedbackIsError = Boolean(page.error || page.messageTone === 'error');
   const dbLabel = dbPath.found ? t('dbConnected') : t('dbMissing');
   const statusLabel = t(
     viewModel.state === 'error'
@@ -113,7 +114,7 @@ export default function Stream() {
               id="stream-obs-url-label"
               className="cinzel text-[10px] tracking-widest text-[rgba(220,195,145,0.8)] uppercase"
             >
-              OBS URL
+              {t('streamObsUrlLabel')}
             </span>
             <div className="flex gap-2">
               <div
@@ -134,10 +135,10 @@ export default function Stream() {
             </div>
             {(page.message || page.error) && (
               <p
-                role={page.error ? 'alert' : 'status'}
-                aria-live={page.error ? 'assertive' : 'polite'}
+                role={feedbackIsError ? 'alert' : 'status'}
+                aria-live={feedbackIsError ? 'assertive' : 'polite'}
                 className={`m-0 text-xs ${
-                  page.error
+                  feedbackIsError
                     ? 'text-[#d96d6d]'
                     : 'text-[rgba(109,217,160,0.86)]'
                 }`}
@@ -188,14 +189,14 @@ export default function Stream() {
             </div>
 
             <div className="grid grid-cols-4 gap-4 mt-2 pt-4 border-t border-[rgba(200,148,55,0.1)]">
-              <InfoMetric label="Host" value={status.host} />
+              <InfoMetric label={t('streamInfoHost')} value={status.host} />
               <InfoMetric
-                label="Port"
+                label={t('streamInfoPort')}
                 value={status.port ? String(status.port) : '-'}
               />
-              <InfoMetric label="DB" value={dbLabel} />
+              <InfoMetric label={t('streamInfoDb')} value={dbLabel} />
               <InfoMetric
-                label="Window"
+                label={t('streamInfoWindow')}
                 value={String(status.active_window_offset)}
               />
             </div>

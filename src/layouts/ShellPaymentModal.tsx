@@ -43,7 +43,7 @@ export function ShellPaymentModal({ onClose }: { onClose: () => void }) {
             <div className="aspect-square p-[0.8rem] rounded-[3px] bg-gradient-to-br from-[rgba(255,248,231,0.98)] to-[rgba(245,238,220,0.98)] shadow-[inset_0_0_0_1px_rgba(95,65,19,0.08),0_10px_24px_rgba(0,0,0,0.22)] relative overflow-hidden">
               <img
                 src={wechatPaySvg}
-                alt="WePay QR Code"
+                alt={t('wechatPay')}
                 className="w-full h-full object-contain rounded-[2px]"
               />
             </div>

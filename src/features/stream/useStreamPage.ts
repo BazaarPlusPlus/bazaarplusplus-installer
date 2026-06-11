@@ -7,6 +7,7 @@ import type {
 import { useI18n } from '../../i18n/LocaleProvider';
 import { toErrorMessage } from '../shared/errors';
 import { useAsyncAction } from '../shared/useAsyncAction';
+import { useTransientMessage } from '../shared/useTransientMessage';
 import {
   applyCropCode,
   defaultCropSettings,
@@ -38,12 +39,31 @@ export function useStreamPage() {
     useState<StreamOverlayCropSettingsPayload>(defaultCropSettings);
   const [cropCode, setCropCode] = useState(defaultCropSettings.code);
   const [loading, setLoading] = useState(true);
-  const [message, setMessage] = useState<string | null>(null);
-  const { action, error, setError, run } = useAsyncAction<StreamAction>();
+  const [message, setMessage] = useTransientMessage();
+  const [messageTone, setMessageTone] = useState<'success' | 'error'>(
+    'success'
+  );
+  const [pollError, setPollError] = useState<string | null>(null);
+  const {
+    action,
+    error: actionError,
+    setError: setActionError,
+    run
+  } = useAsyncAction<StreamAction>();
+  const error = actionError ?? pollError;
+
+  const flashMessage = useCallback(
+    (next: string, tone: 'success' | 'error' = 'success') => {
+      setMessageTone(tone);
+      setMessage(next);
+    },
+    [setMessage]
+  );
 
   const refresh = useCallback(async () => {
     setLoading(true);
-    setError(null);
+    setActionError(null);
+    setPollError(null);
     try {
       const [nextStatus, nextCropSettings] = await Promise.all([
         ensureStreamSession(),
@@ -53,11 +73,11 @@ export function useStreamPage() {
       setCropSettings(nextCropSettings);
       setCropCode(nextCropSettings.code);
     } catch (caught) {
-      setError(toErrorMessage(caught));
+      setActionError(toErrorMessage(caught));
     } finally {
       setLoading(false);
     }
-  }, [setError]);
+  }, [setActionError]);
 
   useEffect(() => {
     void refresh();
@@ -65,16 +85,24 @@ export function useStreamPage() {
 
   useEffect(() => {
     let mounted = true;
+    // Tolerate transient polling blips: only surface an error after several
+    // consecutive failures so a single dropped poll doesn't flash the overlay
+    // into an error state and disable its controls.
+    let consecutiveFailures = 0;
+    const failureThreshold = 3;
     const interval = window.setInterval(() => {
       void getStreamStatus()
         .then((nextStatus) => {
-          if (mounted) {
-            setStatus(nextStatus);
-          }
+          if (!mounted) return;
+          consecutiveFailures = 0;
+          setPollError(null);
+          setStatus(nextStatus);
         })
         .catch((caught) => {
-          if (mounted) {
-            setError(toErrorMessage(caught));
+          if (!mounted) return;
+          consecutiveFailures += 1;
+          if (consecutiveFailures >= failureThreshold) {
+            setPollError(toErrorMessage(caught));
           }
         });
     }, 2000);
@@ -83,7 +111,7 @@ export function useStreamPage() {
       mounted = false;
       window.clearInterval(interval);
     };
-  }, [setError]);
+  }, []);
 
   const restart = useCallback(
     () =>
@@ -99,12 +127,16 @@ export function useStreamPage() {
         'copy',
         async () => {
           if (!status.overlay_url) return;
-          await navigator.clipboard.writeText(status.overlay_url);
-          setMessage(t('streamCopied'));
+          try {
+            await navigator.clipboard.writeText(status.overlay_url);
+            flashMessage(t('streamCopied'));
+          } catch {
+            flashMessage(t('streamCopyFailed'), 'error');
+          }
         },
         { onStart: () => setMessage(null) }
       ),
-    [run, status.overlay_url, t]
+    [flashMessage, run, setMessage, status.overlay_url, t]
   );
 
   const openOverlay = useCallback(
@@ -143,11 +175,11 @@ export function useStreamPage() {
           const payload = await applyCropCode(cropCode.trim());
           setCropSettings(payload);
           setCropCode(payload.code);
-          setMessage(t('streamCropSaved'));
+          flashMessage(t('streamCropSaved'));
         },
         { onStart: () => setMessage(null) }
       ),
-    [cropCode, run, t]
+    [cropCode, flashMessage, run, setMessage, t]
   );
 
   const resetCropCode = useCallback(
@@ -158,11 +190,11 @@ export function useStreamPage() {
           const payload = await resetCropSettings();
           setCropSettings(payload);
           setCropCode(payload.code);
-          setMessage(t('streamCropReset'));
+          flashMessage(t('streamCropReset'));
         },
         { onStart: () => setMessage(null) }
       ),
-    [run, t]
+    [flashMessage, run, setMessage, t]
   );
 
   const moveWindow = useCallback(
@@ -188,6 +220,7 @@ export function useStreamPage() {
     action,
     error,
     message,
+    messageTone,
     setCropCode,
     restart,
     copyObsUrl,
