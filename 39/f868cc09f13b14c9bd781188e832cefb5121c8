@@ -1,0 +1,21 @@
+package.json
+  s_246554a1062422::t_3e5e9599d6660f 3
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "39f868cc09f13b14c9bd781188e832cefb5121c8",
+  "prompts": {},
+  "sessions": {
+    "s_246554a1062422": {
+      "agent_id": {
+        "tool": "trae-cue",
+        "id": "ai_tab-icr-5a2f6962-82b0-4c8e-b900-decefd9cb4dd",
+        "model": "default"
+      },
+      "human_author": "Xinyu YANG <cauyxy@gmail.com>"
+    }
+  },
+  "attestation_metadata": {},
+  "remote_transcripts": {}
+}
