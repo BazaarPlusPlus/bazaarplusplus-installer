@@ -1,0 +1,23 @@
+docs/truth/install-reset.md
+  s_d2e93b8e8896a5::t_96709929765b20 4,17,20-23
+docs/truth/launch-modes.md
+  s_d2e93b8e8896a5::t_3f607b49ea3168 4,30
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "d383fab86030eab8e21a02233905c24efee9b2d0",
+  "prompts": {},
+  "sessions": {
+    "s_d2e93b8e8896a5": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f2277-d3e3-7130-82fc-dfaf1cff7428",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Xinyu YANG <cauyxy@gmail.com>"
+    }
+  },
+  "attestation_metadata": {},
+  "remote_transcripts": {}
+}
