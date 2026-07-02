@@ -1,7 +1,7 @@
 ---
 status: truth
 topic: launch-modes
-last-verified: 7b18f73d4718d3e1406de9f526d1fbba09ac567f
+last-verified: 077a0b87aafce8c46c57283ce60d02c024fad789
 ---
 
 # Launch Modes
@@ -27,5 +27,5 @@ last-verified: 7b18f73d4718d3e1406de9f526d1fbba09ac567f
 - `InstallCompatState` exposes whether compatibility mode is available, forced, desired, and applied in `src-tauri/src/services/install/types.rs:26-38`.
 - The trampoline implementation persists the chosen launch mode in `.bpp-launch-mode` next to the game directory in `src-tauri/src/services/bepinex/trampoline.rs:21-33` and `src-tauri/src/services/bepinex/trampoline.rs:56-80`.
 - Trampoline install renames the real Unity executable to `.orig`, swaps in a build-time stub, disables the prefix launcher, signs the real binary, seals the app bundle, verifies it, and rolls back on failure in `src-tauri/src/services/bepinex/trampoline.rs:384-467`.
-- Trampoline uninstall restores `.orig`, re-seals the bundle, treats already-vanilla bundles as no-op, and errors if the backup is missing while the stub remains in `src-tauri/src/services/bepinex/trampoline.rs:469-494`.
+- Trampoline uninstall restores `.orig`, re-seals the bundle, treats already-vanilla bundles as no-op, and errors if the backup is missing while the stub remains in `src-tauri/src/services/bepinex/trampoline.rs:471-495`; callers skip this entirely when third-party plugins remain, so `uninstall_bpp` only restores the vanilla bundle when BPP is the last installed plugin in `src-tauri/src/services/bepinex/mod.rs:163-175`.
 - Non-macOS trampoline APIs are explicit no-ops or `false` in `src-tauri/src/services/bepinex/trampoline.rs:512-525`.
