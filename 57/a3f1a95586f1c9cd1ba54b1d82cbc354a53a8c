@@ -1,0 +1,25 @@
+src-tauri/src/history/cleanup.rs
+  s_962ab2a4909f27::t_4131bf4bb2b98c 179,194-197,359-360,497,501-503,507
+  s_962ab2a4909f27::t_ca6a9ead0e2366 891-915,918-953
+  s_962ab2a4909f27::t_53a864d6dcfe93 504-506
+  s_962ab2a4909f27::t_6045488ee7cb4b 954-974,977-997
+  s_962ab2a4909f27::t_641087c58dcb02 65,127,188-190,269,320-358,361-364,500
+  s_962ab2a4909f27::t_fb97cc17368351 125-126,916-917,975-976
+  s_962ab2a4909f27::t_e81fc5d62fcf0e 365
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.9",
+  "base_commit_sha": "57a3f1a95586f1c9cd1ba54b1d82cbc354a53a8c",
+  "prompts": {},
+  "sessions": {
+    "s_962ab2a4909f27": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f244a-25f3-7543-8f4a-3f8234115943",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Xinyu YANG <cauyxy@gmail.com>"
+    }
+  }
+}
