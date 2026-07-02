@@ -4,7 +4,7 @@ use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 
 use crate::history::files::resolve_cleanup_file_path;
-use crate::history::queries::{open_cleanup_connection, open_connection, table_exists, VideoRef};
+use crate::history::queries::{open_cleanup_connection, open_connection, table_exists};
 
 /// Wire strings are a stable contract with the frontend preset buttons.
 #[derive(Clone, Copy, Debug, PartialEq, serde::Serialize, serde::Deserialize, ts_rs::TS)]
@@ -236,10 +236,18 @@ pub fn execute_screenshot_cleanup(
 }
 
 #[allow(dead_code)]
+#[derive(Clone, Debug, PartialEq)]
+pub struct RunDataVideoCleanupItem {
+    pub video_id: String,
+    pub relative_path: String,
+    delete_video_file: bool,
+}
+
+#[allow(dead_code)]
 pub struct RunDataCleanupItem {
     pub run_id: String,
     pub battle_ids: Vec<String>,
-    pub videos: Vec<VideoRef>,
+    pub videos: Vec<RunDataVideoCleanupItem>,
     pub screenshots: Vec<ScreenshotCleanupItem>,
 }
 
@@ -328,6 +336,8 @@ pub fn plan_run_data_cleanup(
         has_screenshots_table,
         &run_ids,
     )?;
+    let remaining_video_paths =
+        remaining_video_relative_paths_after_run_cleanup(&conn, has_battles_table, &run_ids)?;
 
     let screenshots_dir = crate::services::paths::screenshots_dir(game_path);
     let videos_dir = crate::services::paths::combat_replay_videos_dir(game_path);
@@ -335,25 +345,25 @@ pub fn plan_run_data_cleanup(
 
     let mut items = Vec::new();
     let mut screenshot_items_for_estimate = Vec::new();
+    let mut video_items_for_estimate = Vec::new();
     let mut estimated_bytes = 0i64;
     for run_id in run_ids {
         let battle_ids = run_battle_ids(&conn, has_battles_table, &run_id)?;
-        let videos = run_video_refs(&conn, has_battles_table, &run_id)?;
+        let videos = mark_video_file_deletions(
+            run_video_refs(&conn, has_battles_table, &run_id)?,
+            &remaining_video_paths,
+        );
         let screenshots = mark_screenshot_file_deletions(
             run_screenshot_items(&conn, has_screenshots_table, &run_id)?,
             &remaining_screenshot_paths,
         );
 
-        for video in &videos {
-            if let Some(path) = resolve_cleanup_file_path(&videos_dir, &video.relative_path) {
-                estimated_bytes += file_size(&path);
-            }
-        }
         for battle_id in &battle_ids {
             if let Some(path) = replay_payload_path(&replays_dir, battle_id) {
                 estimated_bytes += file_size(&path);
             }
         }
+        video_items_for_estimate.extend(videos.iter().cloned());
         screenshot_items_for_estimate.extend(screenshots.iter().cloned());
 
         items.push(RunDataCleanupItem {
@@ -364,6 +374,7 @@ pub fn plan_run_data_cleanup(
         });
     }
 
+    estimated_bytes += estimate_video_bytes(&videos_dir, &video_items_for_estimate);
     estimated_bytes += estimate_screenshot_bytes(&screenshots_dir, &screenshot_items_for_estimate);
 
     Ok(RunDataCleanupPlan {
@@ -408,9 +419,13 @@ pub fn execute_run_data_cleanup(
 
     if !plan.items.is_empty() {
         let mut conn = open_cleanup_connection(database_path)?;
+        validate_run_cleanup_cascade_fks(&conn)?;
         for chunk in plan.items.chunks(RUN_CLEANUP_CHUNK_SIZE) {
             for item in chunk {
                 for video in &item.videos {
+                    if !video.delete_video_file {
+                        continue;
+                    }
                     let Some(path) = resolve_cleanup_file_path(&videos_dir, &video.relative_path)
                     else {
                         continue;
@@ -626,7 +641,7 @@ fn run_video_refs(
     conn: &Connection,
     has_battles_table: bool,
     run_id: &str,
-) -> Result<Vec<VideoRef>, String> {
+) -> Result<Vec<RunDataVideoCleanupItem>, String> {
     if !has_battles_table || !table_exists(conn, "combat_replay_videos")? {
         return Ok(Vec::new());
     }
@@ -642,9 +657,10 @@ fn run_video_refs(
         .map_err(|err| err.to_string())?;
     let rows = stmt
         .query_map([run_id], |row| {
-            Ok(VideoRef {
+            Ok(RunDataVideoCleanupItem {
                 video_id: row.get(0)?,
                 relative_path: row.get(1)?,
+                delete_video_file: false,
             })
         })
         .map_err(|err| err.to_string())?;
@@ -715,6 +731,52 @@ fn remaining_screenshot_relative_paths_after_run_cleanup(
             continue;
         }
         let normalized = normalize_relative_path(&image_relative_path);
+        if !normalized.is_empty() {
+            paths.insert(normalized);
+        }
+    }
+    Ok(paths)
+}
+
+fn remaining_video_relative_paths_after_run_cleanup(
+    conn: &Connection,
+    has_battles_table: bool,
+    planned_run_ids: &[String],
+) -> Result<HashSet<String>, String> {
+    if !has_battles_table
+        || planned_run_ids.is_empty()
+        || !table_exists(conn, "combat_replay_videos")?
+    {
+        return Ok(HashSet::new());
+    }
+
+    let planned_run_ids = planned_run_ids
+        .iter()
+        .map(String::as_str)
+        .collect::<HashSet<_>>();
+    let mut stmt = conn
+        .prepare(
+            "select b.run_id, v.video_relative_path
+             from combat_replay_videos v
+             left join battles b on b.battle_id = v.battle_id",
+        )
+        .map_err(|err| err.to_string())?;
+    let rows = stmt
+        .query_map([], |row| {
+            Ok((row.get::<_, Option<String>>(0)?, row.get::<_, String>(1)?))
+        })
+        .map_err(|err| err.to_string())?;
+
+    let mut paths = HashSet::new();
+    for row in rows {
+        let (run_id, video_relative_path) = row.map_err(|err| err.to_string())?;
+        if run_id
+            .as_deref()
+            .is_some_and(|run_id| planned_run_ids.contains(run_id))
+        {
+            continue;
+        }
+        let normalized = normalize_relative_path(&video_relative_path);
         if !normalized.is_empty() {
             paths.insert(normalized);
         }
@@ -859,6 +921,21 @@ fn remaining_screenshot_relative_paths_after_cleanup(
     Ok(paths)
 }
 
+fn mark_video_file_deletions(
+    items: Vec<RunDataVideoCleanupItem>,
+    remaining_referenced_paths: &HashSet<String>,
+) -> Vec<RunDataVideoCleanupItem> {
+    items
+        .into_iter()
+        .map(|mut item| {
+            let normalized = normalize_relative_path(&item.relative_path);
+            item.delete_video_file =
+                !normalized.is_empty() && !remaining_referenced_paths.contains(&normalized);
+            item
+        })
+        .collect()
+}
+
 fn mark_screenshot_file_deletions(
     items: Vec<ScreenshotCleanupItem>,
     remaining_referenced_paths: &HashSet<String>,
@@ -887,6 +964,21 @@ fn all_screenshot_ids(conn: &Connection) -> Result<HashSet<String>, String> {
         ids.insert(row.map_err(|err| err.to_string())?);
     }
     Ok(ids)
+}
+
+fn estimate_video_bytes(videos_dir: &Path, items: &[RunDataVideoCleanupItem]) -> i64 {
+    let mut estimated_paths = HashSet::new();
+    items
+        .iter()
+        .filter(|item| item.delete_video_file)
+        .filter_map(|item| {
+            let path = resolve_cleanup_file_path(videos_dir, &item.relative_path)?;
+            let normalized = normalize_relative_path(&item.relative_path);
+            estimated_paths
+                .insert(normalized)
+                .then_some(file_size(&path))
+        })
+        .sum()
 }
 
 fn scan_orphan_screenshot_files(
@@ -1042,6 +1134,51 @@ fn remove_file_if_exists(path: &Path) -> Result<bool, String> {
         Err(err) if err.kind() == std::io::ErrorKind::NotFound => Ok(false),
         Err(err) => Err(format!("failed to remove {}: {err}", path.display())),
     }
+}
+
+fn validate_run_cleanup_cascade_fks(conn: &Connection) -> Result<(), String> {
+    for (child_table, child_column, parent_table) in [
+        ("battles", "run_id", "runs"),
+        ("run_events", "run_id", "runs"),
+        ("run_sync_state", "run_id", "runs"),
+        ("battle_snapshots", "battle_id", "battles"),
+        (
+            "bazaardb_snapshot_uploads",
+            "snapshot_id",
+            "run_screenshots",
+        ),
+    ] {
+        if !table_exists(conn, child_table)? {
+            continue;
+        }
+        if !has_on_delete_cascade_fk(conn, child_table, child_column, parent_table)? {
+            return Err(format!(
+                "run cleanup requires {child_table}.{child_column} -> {parent_table} ON DELETE CASCADE before deleting files"
+            ));
+        }
+    }
+    Ok(())
+}
+
+fn has_on_delete_cascade_fk(
+    conn: &Connection,
+    child_table: &str,
+    child_column: &str,
+    parent_table: &str,
+) -> Result<bool, String> {
+    conn.query_row(
+        "select exists(
+            select 1
+            from pragma_foreign_key_list(?1)
+            where \"table\" = ?2
+              and \"from\" = ?3
+              and upper(on_delete) = 'CASCADE'
+        )",
+        params![child_table, parent_table, child_column],
+        |row| row.get::<_, i64>(0),
+    )
+    .map(|value| value != 0)
+    .map_err(|err| err.to_string())
 }
 
 fn remove_empty_dated_directories(screenshots_dir: &Path) {
@@ -1537,6 +1674,86 @@ mod tests {
     }
 
     #[test]
+    fn run_cleanup_preserves_shared_video_file_referenced_by_skipped_run() {
+        let fixture = create_fixture();
+        let videos_dir = crate::services::paths::combat_replay_videos_dir(&fixture.game_path);
+        fs::create_dir_all(videos_dir.join("2026-06-10")).unwrap();
+        let shared_video = videos_dir.join("2026-06-10/shared.mp4");
+        fs::write(&shared_video, b"shared-video").unwrap();
+
+        let conn = rusqlite::Connection::open(&fixture.database_path).unwrap();
+        insert_run(
+            &conn,
+            "run-clean",
+            "completed",
+            1,
+            "Ranked",
+            "2026-06-10T10:00:00Z",
+        );
+        insert_run(
+            &conn,
+            "run-shot-pending",
+            "completed",
+            1,
+            "Ranked",
+            "2026-06-10T10:05:00Z",
+        );
+        conn.execute_batch(
+            "
+            insert into run_sync_state (run_id, dirty) values
+                ('run-clean', 0),
+                ('run-shot-pending', 0);
+            insert into battles (battle_id, source, run_id, recorded_at_utc, replay_dirty) values
+                ('battle-clean', 'LOCAL', 'run-clean', '2026-06-10T09:00:00Z', 0),
+                ('battle-pending', 'LOCAL', 'run-shot-pending', '2026-06-10T09:05:00Z', 0);
+            insert into combat_replay_videos (video_id, battle_id, video_relative_path, started_at_utc, status) values
+                ('video-clean', 'battle-clean', '2026-06-10\\shared.mp4', '2026-06-10T09:01:00Z', 'COMPLETED'),
+                ('video-pending', 'battle-pending', '2026-06-10/shared.mp4', '2026-06-10T09:06:00Z', 'COMPLETED');
+            insert into run_screenshots (
+                screenshot_id, run_id, capture_source, image_relative_path, captured_at_utc, captured_at_local
+            ) values
+                ('shot-pending', 'run-shot-pending', 'end_of_run_auto', '2026-06-10/pending.png',
+                 '2026-06-10T10:05:00Z', '2026-06-10T18:05:00+08:00');
+            insert into bazaardb_snapshot_uploads (snapshot_id, status) values ('shot-pending', 'pending');
+            ",
+        )
+        .unwrap();
+        drop(conn);
+
+        let plan =
+            super::plan_run_data_cleanup(&fixture.database_path, &fixture.game_path, None).unwrap();
+
+        assert_eq!(plan.items.len(), 1);
+        assert_eq!(plan.items[0].run_id, "run-clean");
+        assert_eq!(plan.items[0].videos.len(), 1);
+        assert_eq!(plan.items[0].videos[0].video_id, "video-clean");
+        assert_eq!(
+            plan.estimated_bytes, 0,
+            "skipped run still references the normalized video path"
+        );
+
+        let result =
+            super::execute_run_data_cleanup(&fixture.database_path, &fixture.game_path, None)
+                .unwrap();
+
+        assert_eq!(result.deleted_runs, 1);
+        assert_eq!(result.deleted_files, 0);
+        assert_eq!(result.freed_bytes, 0);
+        assert!(shared_video.exists(), "skipped run must keep shared video");
+
+        let conn = rusqlite::Connection::open(&fixture.database_path).unwrap();
+        let count = |sql: &str| -> i64 { conn.query_row(sql, [], |row| row.get(0)).unwrap() };
+        assert_eq!(
+            count("select count(*) from combat_replay_videos where video_id = 'video-clean'"),
+            0
+        );
+        assert_eq!(
+            count("select count(*) from combat_replay_videos where video_id = 'video-pending'"),
+            1
+        );
+    }
+
+    #[test]
     fn run_plan_handles_battles_table_without_replay_dirty() {
         let temp_dir = TempDir::new().unwrap();
         let game_path = temp_dir.path().to_path_buf();
@@ -1757,6 +1974,81 @@ mod tests {
         );
         assert_eq!(
             count("select count(*) from run_screenshots where screenshot_id = 'shot-pending'"),
+            1
+        );
+    }
+
+    #[test]
+    fn execute_run_cleanup_fails_before_file_deletion_when_battles_lacks_run_cascade() {
+        let temp_dir = TempDir::new().unwrap();
+        let game_path = temp_dir.path().to_path_buf();
+        let data_dir = game_path.join("BazaarPlusPlusV4");
+        let database_path = data_dir.join("bazaarplusplus.db");
+        let videos_dir = data_dir.join("CombatReplayVideos");
+        let replays_dir = data_dir.join("CombatReplays");
+        fs::create_dir_all(videos_dir.join("2026-06-10")).unwrap();
+        fs::create_dir_all(&replays_dir).unwrap();
+        let video_file = videos_dir.join("2026-06-10/v1.mp4");
+        let replay_file = replays_dir.join("battle-1.payload.mpack.gz");
+        fs::write(&video_file, b"video").unwrap();
+        fs::write(&replay_file, b"replay").unwrap();
+
+        let conn = rusqlite::Connection::open(&database_path).unwrap();
+        conn.execute_batch(
+            "
+            pragma foreign_keys = on;
+            create table runs (run_id text primary key, started_at_utc text not null, last_seen_at_utc text not null, status text not null, completed integer not null default 0, hero text not null, game_mode text not null, ended_at_utc text null);
+            create table battles (battle_id text primary key, source text not null, run_id text null, recorded_at_utc text not null, replay_dirty integer not null default 0, deleted_at_utc text null);
+            create table combat_replay_videos (video_id text primary key, battle_id text not null, video_relative_path text not null, started_at_utc text not null, file_size_bytes integer null, status text not null);
+            ",
+        )
+        .unwrap();
+        insert_run(
+            &conn,
+            "run-legacy",
+            "completed",
+            1,
+            "Ranked",
+            "2026-06-10T10:00:00Z",
+        );
+        conn.execute_batch(
+            "
+            insert into battles (battle_id, source, run_id, recorded_at_utc, replay_dirty)
+                values ('battle-1', 'LOCAL', 'run-legacy', '2026-06-10T09:00:00Z', 0);
+            insert into combat_replay_videos (video_id, battle_id, video_relative_path, started_at_utc, status)
+                values ('video-1', 'battle-1', '2026-06-10/v1.mp4', '2026-06-10T09:05:00Z', 'COMPLETED');
+            ",
+        )
+        .unwrap();
+        drop(conn);
+
+        let error = super::execute_run_data_cleanup(&database_path, &game_path, None).unwrap_err();
+
+        assert!(
+            error.contains("battles.run_id") && error.contains("ON DELETE CASCADE"),
+            "{error}"
+        );
+        assert!(
+            video_file.exists(),
+            "validation must happen before video deletion"
+        );
+        assert!(
+            replay_file.exists(),
+            "validation must happen before replay deletion"
+        );
+
+        let conn = rusqlite::Connection::open(&database_path).unwrap();
+        let count = |sql: &str| -> i64 { conn.query_row(sql, [], |row| row.get(0)).unwrap() };
+        assert_eq!(
+            count("select count(*) from runs where run_id = 'run-legacy'"),
+            1
+        );
+        assert_eq!(
+            count("select count(*) from battles where battle_id = 'battle-1'"),
+            1
+        );
+        assert_eq!(
+            count("select count(*) from combat_replay_videos where video_id = 'video-1'"),
             1
         );
     }
