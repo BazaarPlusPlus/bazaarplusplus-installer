@@ -4,7 +4,7 @@ use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 
 use crate::history::files::resolve_cleanup_file_path;
-use crate::history::queries::{open_cleanup_connection, open_connection, table_exists};
+use crate::history::queries::{open_cleanup_connection, open_connection, table_exists, VideoRef};
 
 /// Wire strings are a stable contract with the frontend preset buttons.
 #[derive(Clone, Copy, Debug, PartialEq, serde::Serialize, serde::Deserialize, ts_rs::TS)]
@@ -233,6 +233,340 @@ pub fn execute_screenshot_cleanup(
         freed_bytes,
         skipped_pending_uploads: plan.skipped_pending_uploads,
     })
+}
+
+#[derive(ts_rs::TS)]
+#[ts(export)]
+#[allow(dead_code)]
+pub struct RunDataCleanupItem {
+    pub run_id: String,
+    pub battle_ids: Vec<String>,
+    #[ts(type = "Array<{ video_id: string, relative_path: string }>")]
+    pub videos: Vec<VideoRef>,
+    #[ts(type = "Array<{ screenshot_id: string, image_relative_path: string }>")]
+    pub screenshots: Vec<ScreenshotCleanupItem>,
+}
+
+#[derive(ts_rs::TS)]
+#[ts(export)]
+#[allow(dead_code)]
+pub struct RunDataCleanupPlan {
+    pub items: Vec<RunDataCleanupItem>,
+    pub estimated_bytes: i64,
+    pub skipped_pending_uploads: i64,
+}
+
+#[derive(Clone, Debug, PartialEq, serde::Serialize, ts_rs::TS)]
+#[ts(export)]
+#[allow(dead_code)]
+pub struct RunDataCleanupPreview {
+    pub runs: i64,
+    pub battles: i64,
+    pub videos: i64,
+    pub estimated_bytes: i64,
+    pub skipped_pending_uploads: i64,
+}
+
+#[allow(dead_code)]
+impl RunDataCleanupPlan {
+    pub fn empty() -> RunDataCleanupPlan {
+        RunDataCleanupPlan {
+            items: Vec::new(),
+            estimated_bytes: 0,
+            skipped_pending_uploads: 0,
+        }
+    }
+
+    pub fn to_preview(&self) -> RunDataCleanupPreview {
+        RunDataCleanupPreview {
+            runs: self.items.len() as i64,
+            battles: self
+                .items
+                .iter()
+                .map(|item| item.battle_ids.len() as i64)
+                .sum(),
+            videos: self.items.iter().map(|item| item.videos.len() as i64).sum(),
+            estimated_bytes: self.estimated_bytes,
+            skipped_pending_uploads: self.skipped_pending_uploads,
+        }
+    }
+}
+
+#[allow(dead_code)]
+pub fn plan_run_data_cleanup(
+    database_path: &Path,
+    game_path: &Path,
+    cutoff: Option<&CleanupCutoff>,
+) -> Result<RunDataCleanupPlan, String> {
+    if !database_path.exists() {
+        return Ok(RunDataCleanupPlan::empty());
+    }
+
+    let conn = open_connection(database_path)?;
+    if !table_exists(&conn, "runs")? {
+        return Ok(RunDataCleanupPlan::empty());
+    }
+
+    let has_battles_table = table_exists(&conn, "battles")?;
+    let has_sync_table = table_exists(&conn, "run_sync_state")?;
+    let has_screenshots_table = table_exists(&conn, "run_screenshots")?;
+    let has_uploads_table =
+        has_screenshots_table && table_exists(&conn, "bazaardb_snapshot_uploads")?;
+    let cutoff_utc = cutoff.map(|value| value.utc.as_str());
+    let run_ids = eligible_run_ids(
+        &conn,
+        has_battles_table,
+        has_sync_table,
+        has_uploads_table,
+        cutoff_utc,
+    )?;
+    let skipped_pending_uploads = skipped_pending_run_count(
+        &conn,
+        has_battles_table,
+        has_sync_table,
+        has_uploads_table,
+        cutoff_utc,
+    )?;
+
+    let screenshots_dir = crate::services::paths::screenshots_dir(game_path);
+    let videos_dir = crate::services::paths::combat_replay_videos_dir(game_path);
+    let replays_dir = crate::services::paths::combat_replays_dir(game_path);
+
+    let mut items = Vec::new();
+    let mut estimated_bytes = 0i64;
+    for run_id in run_ids {
+        let battle_ids = run_battle_ids(&conn, has_battles_table, &run_id)?;
+        let videos = run_video_refs(&conn, has_battles_table, &run_id)?;
+        let screenshots = run_screenshot_items(&conn, has_screenshots_table, &run_id)?;
+
+        for video in &videos {
+            if let Some(path) = resolve_cleanup_file_path(&videos_dir, &video.relative_path) {
+                estimated_bytes += file_size(&path);
+            }
+        }
+        for battle_id in &battle_ids {
+            if let Some(path) = replay_payload_path(&replays_dir, battle_id) {
+                estimated_bytes += file_size(&path);
+            }
+        }
+        for screenshot in &screenshots {
+            if let Some(path) =
+                resolve_cleanup_file_path(&screenshots_dir, &screenshot.image_relative_path)
+            {
+                estimated_bytes += file_size(&path);
+            }
+        }
+
+        items.push(RunDataCleanupItem {
+            run_id,
+            battle_ids,
+            videos,
+            screenshots,
+        });
+    }
+
+    Ok(RunDataCleanupPlan {
+        items,
+        estimated_bytes,
+        skipped_pending_uploads,
+    })
+}
+
+#[allow(dead_code)]
+fn eligible_run_ids(
+    conn: &Connection,
+    has_battles_table: bool,
+    has_sync_table: bool,
+    has_uploads_table: bool,
+    cutoff_utc: Option<&str>,
+) -> Result<Vec<String>, String> {
+    let mut sql = String::from("select r.run_id from runs r ");
+    if has_sync_table {
+        sql.push_str("left join run_sync_state s on s.run_id = r.run_id ");
+    }
+    sql.push_str(
+        "where r.status <> 'active' \
+         and (?1 is null or datetime(coalesce(r.ended_at_utc, r.last_seen_at_utc, r.started_at_utc)) < datetime(?1)) ",
+    );
+    if has_battles_table {
+        sql.push_str(
+            "and not exists (
+                select 1 from battles b where b.run_id = r.run_id and b.replay_dirty = 1
+             ) ",
+        );
+    }
+    if has_sync_table {
+        sql.push_str(
+            "and not (
+                coalesce(s.dirty, 0) = 1 and r.completed = 1 and r.game_mode = 'Ranked'
+             ) ",
+        );
+    }
+    if has_uploads_table {
+        sql.push_str(
+            "and not exists (
+                select 1
+                from run_screenshots rs
+                join bazaardb_snapshot_uploads u on u.snapshot_id = rs.screenshot_id
+                where rs.run_id = r.run_id and u.status = 'pending'
+             ) ",
+        );
+    }
+    sql.push_str(
+        "order by datetime(coalesce(r.ended_at_utc, r.last_seen_at_utc, r.started_at_utc)) asc, r.run_id asc",
+    );
+
+    let mut stmt = conn.prepare(&sql).map_err(|err| err.to_string())?;
+    let rows = stmt
+        .query_map(params![cutoff_utc], |row| row.get::<_, String>(0))
+        .map_err(|err| err.to_string())?;
+    rows.collect::<Result<Vec<_>, _>>()
+        .map_err(|err| err.to_string())
+}
+
+#[allow(dead_code)]
+fn skipped_pending_run_count(
+    conn: &Connection,
+    has_battles_table: bool,
+    has_sync_table: bool,
+    has_uploads_table: bool,
+    cutoff_utc: Option<&str>,
+) -> Result<i64, String> {
+    let mut gates = Vec::new();
+    if has_battles_table {
+        gates.push(
+            "exists (
+                select 1 from battles b where b.run_id = r.run_id and b.replay_dirty = 1
+             )",
+        );
+    }
+    if has_sync_table {
+        gates.push("(coalesce(s.dirty, 0) = 1 and r.completed = 1 and r.game_mode = 'Ranked')");
+    }
+    if has_uploads_table {
+        gates.push(
+            "exists (
+                select 1
+                from run_screenshots rs
+                join bazaardb_snapshot_uploads u on u.snapshot_id = rs.screenshot_id
+                where rs.run_id = r.run_id and u.status = 'pending'
+             )",
+        );
+    }
+    if gates.is_empty() {
+        return Ok(0);
+    }
+
+    let mut sql = String::from("select count(*) from runs r ");
+    if has_sync_table {
+        sql.push_str("left join run_sync_state s on s.run_id = r.run_id ");
+    }
+    sql.push_str(
+        "where r.status <> 'active' \
+         and (?1 is null or datetime(coalesce(r.ended_at_utc, r.last_seen_at_utc, r.started_at_utc)) < datetime(?1)) \
+         and (",
+    );
+    sql.push_str(&gates.join(" or "));
+    sql.push(')');
+
+    conn.query_row(&sql, params![cutoff_utc], |row| row.get(0))
+        .map_err(|err| err.to_string())
+}
+
+#[allow(dead_code)]
+fn run_battle_ids(
+    conn: &Connection,
+    has_battles_table: bool,
+    run_id: &str,
+) -> Result<Vec<String>, String> {
+    if !has_battles_table {
+        return Ok(Vec::new());
+    }
+
+    let mut stmt = conn
+        .prepare("select battle_id from battles where run_id = ?1 order by battle_id asc")
+        .map_err(|err| err.to_string())?;
+    let rows = stmt
+        .query_map([run_id], |row| row.get::<_, String>(0))
+        .map_err(|err| err.to_string())?;
+    rows.collect::<Result<Vec<_>, _>>()
+        .map_err(|err| err.to_string())
+}
+
+#[allow(dead_code)]
+fn run_video_refs(
+    conn: &Connection,
+    has_battles_table: bool,
+    run_id: &str,
+) -> Result<Vec<VideoRef>, String> {
+    if !has_battles_table || !table_exists(conn, "combat_replay_videos")? {
+        return Ok(Vec::new());
+    }
+
+    let mut stmt = conn
+        .prepare(
+            "select v.video_id, v.video_relative_path
+             from combat_replay_videos v
+             join battles b on b.battle_id = v.battle_id
+             where b.run_id = ?1
+             order by v.video_id asc",
+        )
+        .map_err(|err| err.to_string())?;
+    let rows = stmt
+        .query_map([run_id], |row| {
+            Ok(VideoRef {
+                video_id: row.get(0)?,
+                relative_path: row.get(1)?,
+            })
+        })
+        .map_err(|err| err.to_string())?;
+    rows.collect::<Result<Vec<_>, _>>()
+        .map_err(|err| err.to_string())
+}
+
+#[allow(dead_code)]
+fn run_screenshot_items(
+    conn: &Connection,
+    has_screenshots_table: bool,
+    run_id: &str,
+) -> Result<Vec<ScreenshotCleanupItem>, String> {
+    if !has_screenshots_table {
+        return Ok(Vec::new());
+    }
+
+    let mut stmt = conn
+        .prepare(
+            "select screenshot_id, image_relative_path
+             from run_screenshots
+             where run_id = ?1
+             order by screenshot_id asc",
+        )
+        .map_err(|err| err.to_string())?;
+    let rows = stmt
+        .query_map([run_id], |row| {
+            Ok(ScreenshotCleanupItem {
+                screenshot_id: row.get(0)?,
+                image_relative_path: row.get(1)?,
+                delete_image_file: true,
+            })
+        })
+        .map_err(|err| err.to_string())?;
+    rows.collect::<Result<Vec<_>, _>>()
+        .map_err(|err| err.to_string())
+}
+
+/// Replay payload path: <CombatReplays>/<battleId>.payload.mpack.gz.
+#[allow(dead_code)]
+fn replay_payload_path(replays_dir: &Path, battle_id: &str) -> Option<PathBuf> {
+    let trimmed = battle_id.trim();
+    if trimmed.is_empty()
+        || trimmed.contains('/')
+        || trimmed.contains('\\')
+        || trimmed.contains("..")
+    {
+        return None;
+    }
+    Some(replays_dir.join(format!("{trimmed}.payload.mpack.gz")))
 }
 
 fn eligible_screenshots(
@@ -626,6 +960,23 @@ mod tests {
         }
     }
 
+    fn insert_run(
+        conn: &rusqlite::Connection,
+        run_id: &str,
+        status: &str,
+        completed: i64,
+        game_mode: &str,
+        ended_at_utc: &str,
+    ) {
+        conn.execute(
+            "insert into runs (
+                run_id, started_at_utc, last_seen_at_utc, status, completed, hero, game_mode, ended_at_utc
+             ) values (?1, ?2, ?2, ?3, ?4, 'Vanessa', ?5, ?2)",
+            rusqlite::params![run_id, ended_at_utc, status, completed, game_mode],
+        )
+        .unwrap();
+    }
+
     #[test]
     fn cutoff_for_all_preset_is_none() {
         let tz = FixedOffset::east_opt(8 * 3600).unwrap();
@@ -817,6 +1168,200 @@ mod tests {
         assert!(plan.orphan_files.is_empty());
         assert!(plan.upload_cache_files.is_empty());
         assert_eq!(plan.estimated_bytes, 0);
+    }
+
+    #[test]
+    fn run_plan_applies_upload_and_activity_gates() {
+        let fixture = create_fixture();
+        let conn = rusqlite::Connection::open(&fixture.database_path).unwrap();
+        insert_run(
+            &conn,
+            "run-safe",
+            "completed",
+            1,
+            "Ranked",
+            "2026-06-10T10:00:00Z",
+        );
+        insert_run(
+            &conn,
+            "run-dirty",
+            "completed",
+            1,
+            "Ranked",
+            "2026-06-11T10:00:00Z",
+        );
+        insert_run(
+            &conn,
+            "run-normal-dirty",
+            "completed",
+            1,
+            "Normal",
+            "2026-06-12T10:00:00Z",
+        );
+        insert_run(
+            &conn,
+            "run-active",
+            "active",
+            0,
+            "Ranked",
+            "2026-06-13T10:00:00Z",
+        );
+        insert_run(
+            &conn,
+            "run-replay-dirty",
+            "completed",
+            1,
+            "Ranked",
+            "2026-06-14T10:00:00Z",
+        );
+        insert_run(
+            &conn,
+            "run-recent",
+            "completed",
+            1,
+            "Ranked",
+            "2026-07-02T10:00:00Z",
+        );
+        conn.execute_batch(
+            "
+            insert into run_sync_state (run_id, dirty) values
+                ('run-safe', 0),
+                ('run-dirty', 1),
+                ('run-normal-dirty', 1),
+                ('run-replay-dirty', 0),
+                ('run-recent', 0);
+            insert into battles (battle_id, source, run_id, recorded_at_utc, replay_dirty) values
+                ('battle-safe', 'LOCAL', 'run-safe', '2026-06-10T09:00:00Z', 0),
+                ('battle-replay-dirty', 'LOCAL', 'run-replay-dirty', '2026-06-14T09:00:00Z', 1),
+                ('battle-ghost', 'GHOST', null, '2026-06-10T09:00:00Z', 0);
+            insert into combat_replay_videos (video_id, battle_id, video_relative_path, started_at_utc, status) values
+                ('video-1', 'battle-safe', '2026-06-10/v1.mp4', '2026-06-10T09:05:00Z', 'COMPLETED');
+            insert into run_screenshots (
+                screenshot_id, run_id, capture_source, image_relative_path, captured_at_utc, captured_at_local
+            ) values
+                ('shot-safe', 'run-safe', 'end_of_run_auto', '2026-06-10/safe.png',
+                 '2026-06-10T10:00:00Z', '2026-06-10T18:00:00+08:00');
+            ",
+        )
+        .unwrap();
+        drop(conn);
+
+        let plan = super::plan_run_data_cleanup(
+            &fixture.database_path,
+            &fixture.game_path,
+            Some(&CleanupCutoff {
+                utc: "2026-07-01T00:00:00Z".to_string(),
+                local_date: NaiveDate::from_ymd_opt(2026, 7, 1).unwrap(),
+            }),
+        )
+        .unwrap();
+
+        let ids = plan
+            .items
+            .iter()
+            .map(|item| item.run_id.as_str())
+            .collect::<Vec<_>>();
+        assert_eq!(ids, vec!["run-safe", "run-normal-dirty"]);
+        assert_eq!(
+            plan.skipped_pending_uploads, 2,
+            "run-dirty and run-replay-dirty"
+        );
+
+        let safe = &plan.items[0];
+        assert_eq!(safe.battle_ids, vec!["battle-safe"]);
+        assert_eq!(safe.videos.len(), 1);
+        assert_eq!(safe.screenshots.len(), 1);
+    }
+
+    #[test]
+    fn run_plan_skips_runs_with_pending_screenshot_uploads() {
+        let fixture = create_fixture();
+        let conn = rusqlite::Connection::open(&fixture.database_path).unwrap();
+        insert_run(
+            &conn,
+            "run-shot-pending",
+            "completed",
+            1,
+            "Ranked",
+            "2026-06-10T10:00:00Z",
+        );
+        conn.execute_batch(
+            "
+            insert into run_sync_state (run_id, dirty) values ('run-shot-pending', 0);
+            insert into run_screenshots (
+                screenshot_id, run_id, capture_source, image_relative_path, captured_at_utc, captured_at_local
+            ) values
+                ('shot-p', 'run-shot-pending', 'end_of_run_auto', '2026-06-10/p.png',
+                 '2026-06-10T10:00:00Z', '2026-06-10T18:00:00+08:00');
+            insert into bazaardb_snapshot_uploads (snapshot_id, status) values ('shot-p', 'pending');
+            ",
+        )
+        .unwrap();
+        drop(conn);
+
+        let plan =
+            super::plan_run_data_cleanup(&fixture.database_path, &fixture.game_path, None).unwrap();
+        assert!(plan.items.is_empty());
+        assert_eq!(plan.skipped_pending_uploads, 1);
+    }
+
+    #[test]
+    fn run_plan_estimates_run_owned_files_with_safe_paths() {
+        let fixture = create_fixture();
+        let conn = rusqlite::Connection::open(&fixture.database_path).unwrap();
+        insert_run(
+            &conn,
+            "run-files",
+            "completed",
+            1,
+            "Normal",
+            "2026-06-10T10:00:00Z",
+        );
+        conn.execute_batch(
+            "
+            insert into battles (battle_id, source, run_id, recorded_at_utc, replay_dirty) values
+                ('battle-files', 'LOCAL', 'run-files', '2026-06-10T09:00:00Z', 0),
+                ('../battle-escape', 'LOCAL', 'run-files', '2026-06-10T09:30:00Z', 0);
+            insert into combat_replay_videos (
+                video_id, battle_id, video_relative_path, started_at_utc, status
+            ) values
+                ('video-safe', 'battle-files', '2026-06-10/video.mp4', '2026-06-10T09:05:00Z', 'COMPLETED'),
+                ('video-absolute', 'battle-files', '/tmp/outside.mp4', '2026-06-10T09:06:00Z', 'COMPLETED');
+            insert into run_screenshots (
+                screenshot_id, run_id, capture_source, image_relative_path, captured_at_utc, captured_at_local
+            ) values
+                ('shot-files', 'run-files', 'end_of_run_auto', '2026-06-10/shot.png',
+                 '2026-06-10T10:00:00Z', '2026-06-10T18:00:00+08:00'),
+                ('shot-absolute', 'run-files', 'end_of_run_auto', '/tmp/outside.png',
+                 '2026-06-10T10:01:00Z', '2026-06-10T18:01:00+08:00');
+            ",
+        )
+        .unwrap();
+        drop(conn);
+
+        let videos_dir = crate::services::paths::combat_replay_videos_dir(&fixture.game_path);
+        let replays_dir = crate::services::paths::combat_replays_dir(&fixture.game_path);
+        fs::create_dir_all(videos_dir.join("2026-06-10")).unwrap();
+        fs::create_dir_all(&replays_dir).unwrap();
+        fs::write(videos_dir.join("2026-06-10/video.mp4"), b"video").unwrap();
+        fs::write(
+            replays_dir.join("battle-files.payload.mpack.gz"),
+            b"payload",
+        )
+        .unwrap();
+        write_screenshot_file(&fixture.screenshots_dir, "2026-06-10/shot.png", b"shot");
+
+        let plan =
+            super::plan_run_data_cleanup(&fixture.database_path, &fixture.game_path, None).unwrap();
+
+        assert_eq!(plan.items.len(), 1);
+        assert_eq!(
+            plan.items[0].battle_ids,
+            vec!["../battle-escape", "battle-files"]
+        );
+        assert_eq!(plan.items[0].videos.len(), 2);
+        assert_eq!(plan.items[0].screenshots.len(), 2);
+        assert_eq!(plan.estimated_bytes, 5 + 7 + 4);
     }
 
     #[test]
