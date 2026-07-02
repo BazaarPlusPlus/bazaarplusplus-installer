@@ -953,6 +953,59 @@ mod tests {
     }
 
     #[test]
+    fn execute_dedupes_duplicate_planned_rows_sharing_one_file() {
+        let fixture = create_fixture();
+        let conn = rusqlite::Connection::open(&fixture.database_path).unwrap();
+        conn.execute_batch(
+            "
+            insert into run_screenshots (
+                screenshot_id, run_id, capture_source, image_relative_path,
+                captured_at_utc, captured_at_local
+            ) values
+                ('shot-duplicate-a', 'run-1', 'end_of_run_auto', '2026-06-15/duplicate.png',
+                 '2026-06-15T10:00:00Z', '2026-06-15T18:00:00+08:00'),
+                ('shot-duplicate-b', 'run-2', 'end_of_run_auto', '2026-06-15/duplicate.png',
+                 '2026-06-15T10:05:00Z', '2026-06-15T18:05:00+08:00');
+            insert into bazaardb_snapshot_uploads (snapshot_id, status) values
+                ('shot-duplicate-a', 'uploaded'),
+                ('shot-duplicate-b', 'uploaded');
+            ",
+        )
+        .unwrap();
+        drop(conn);
+        let duplicate_file = write_screenshot_file(
+            &fixture.screenshots_dir,
+            "2026-06-15/duplicate.png",
+            b"1234",
+        );
+
+        let plan =
+            plan_screenshot_cleanup(&fixture.database_path, &fixture.game_path, None).unwrap();
+
+        assert_eq!(plan.items.len(), 2);
+        assert_eq!(plan.estimated_bytes, 4);
+
+        let result = super::execute_screenshot_cleanup(
+            &fixture.database_path,
+            &fixture.game_path,
+            None, // preset "all"
+        )
+        .unwrap();
+
+        assert_eq!(result.deleted_rows, 2);
+        assert_eq!(result.deleted_files, 1);
+        assert_eq!(result.freed_bytes, 4);
+        assert_eq!(result.skipped_pending_uploads, 0);
+        assert!(!duplicate_file.exists());
+
+        let conn = rusqlite::Connection::open(&fixture.database_path).unwrap();
+        let rows: i64 = conn
+            .query_row("select count(*) from run_screenshots", [], |row| row.get(0))
+            .unwrap();
+        assert_eq!(rows, 0);
+    }
+
+    #[test]
     fn execute_deletes_planned_row_when_db_file_is_missing() {
         let fixture = create_fixture();
         let conn = rusqlite::Connection::open(&fixture.database_path).unwrap();
