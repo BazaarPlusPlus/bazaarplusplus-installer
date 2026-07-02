@@ -2,12 +2,15 @@ import { invoke } from '@tauri-apps/api/core';
 import type {
   AppBootstrap,
   AppLocalePayload,
+  CleanupPreset,
   FileActionResult,
   GameDirectorySelection,
   HistoryRunDetail,
   HistoryRunList,
   InstallState,
   ResetBppDataResult,
+  ScreenshotCleanupPreview,
+  ScreenshotCleanupResult,
   StreamOverlayCropSettingsPayload,
   StreamOverlayDisplayMode,
   StreamServiceStatus
@@ -112,6 +115,14 @@ export interface TauriCommandMap {
       limit?: number;
     };
     output: HistoryRunList;
+  };
+  preview_screenshot_cleanup: {
+    input: { gamePath?: string; preset: CleanupPreset };
+    output: ScreenshotCleanupPreview;
+  };
+  execute_screenshot_cleanup: {
+    input: { gamePath?: string; preset: CleanupPreset };
+    output: ScreenshotCleanupResult;
   };
 }
 

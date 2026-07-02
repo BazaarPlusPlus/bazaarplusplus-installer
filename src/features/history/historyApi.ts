@@ -1,6 +1,10 @@
 import { invokeCommand } from '../../api/tauri';
 import { hasTauriRuntime } from '../../api/runtime';
-import type { HistoryRunDetail, HistoryRunList } from '../../types/backend';
+import type {
+  CleanupPreset,
+  HistoryRunDetail,
+  HistoryRunList
+} from '../../types/backend';
 
 export const emptyHistoryRunList: HistoryRunList = {
   summary: {
@@ -52,4 +56,20 @@ export async function deleteBattleVideo(battleId: string, videoId: string) {
   }
 
   return invokeCommand('delete_battle_video', { battleId, videoId });
+}
+
+export async function previewScreenshotCleanup(preset: CleanupPreset) {
+  if (!hasTauriRuntime()) {
+    return null;
+  }
+
+  return invokeCommand('preview_screenshot_cleanup', { preset });
+}
+
+export async function executeScreenshotCleanup(preset: CleanupPreset) {
+  if (!hasTauriRuntime()) {
+    return null;
+  }
+
+  return invokeCommand('execute_screenshot_cleanup', { preset });
 }
