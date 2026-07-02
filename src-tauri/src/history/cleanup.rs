@@ -127,13 +127,13 @@ pub fn plan_screenshot_cleanup(
         &screenshots_dir,
         &referenced_paths,
         cutoff.map(|c| c.local_date),
-    )?;
+    );
 
     let mut remaining_screenshot_ids = all_screenshot_ids(&conn)?;
     for item in &items {
         remaining_screenshot_ids.remove(&item.screenshot_id);
     }
-    let upload_cache_files = scan_upload_cache_files(&screenshots_dir, &remaining_screenshot_ids)?;
+    let upload_cache_files = scan_upload_cache_files(&screenshots_dir, &remaining_screenshot_ids);
 
     let estimated_bytes = estimate_screenshot_bytes(&screenshots_dir, &items)
         + orphan_files.iter().map(|path| file_size(path)).sum::<i64>()
@@ -251,15 +251,24 @@ fn scan_orphan_screenshot_files(
     screenshots_dir: &Path,
     referenced_paths: &HashSet<String>,
     cutoff_local_date: Option<NaiveDate>,
-) -> Result<Vec<PathBuf>, String> {
+) -> Vec<PathBuf> {
     if !screenshots_dir.exists() {
-        return Ok(Vec::new());
+        return Vec::new();
     }
 
     let mut orphan_files = Vec::new();
-    for entry in std::fs::read_dir(screenshots_dir).map_err(|err| err.to_string())? {
-        let entry = entry.map_err(|err| err.to_string())?;
-        if !entry.file_type().map_err(|err| err.to_string())?.is_dir() {
+    let Ok(entries) = std::fs::read_dir(screenshots_dir) else {
+        return orphan_files;
+    };
+
+    for entry in entries {
+        let Ok(entry) = entry else {
+            continue;
+        };
+        let Ok(file_type) = entry.file_type() else {
+            continue;
+        };
+        if !file_type.is_dir() {
             continue;
         }
 
@@ -274,70 +283,83 @@ fn scan_orphan_screenshot_files(
             continue;
         }
 
-        collect_orphan_files(
+        collect_dated_folder_orphan_files(
             screenshots_dir,
             &entry.path(),
             referenced_paths,
             &mut orphan_files,
-        )?;
+        );
     }
 
     orphan_files.sort();
-    Ok(orphan_files)
+    orphan_files
 }
 
-fn collect_orphan_files(
+fn collect_dated_folder_orphan_files(
     screenshots_dir: &Path,
     directory: &Path,
     referenced_paths: &HashSet<String>,
     orphan_files: &mut Vec<PathBuf>,
-) -> Result<(), String> {
-    for entry in std::fs::read_dir(directory).map_err(|err| err.to_string())? {
-        let entry = entry.map_err(|err| err.to_string())?;
+) {
+    let Ok(entries) = std::fs::read_dir(directory) else {
+        return;
+    };
+
+    for entry in entries {
+        let Ok(entry) = entry else {
+            continue;
+        };
+        let Ok(file_type) = entry.file_type() else {
+            continue;
+        };
+        if !file_type.is_file() {
+            continue;
+        }
+
         let path = entry.path();
-        let file_type = entry.file_type().map_err(|err| err.to_string())?;
-        if file_type.is_dir() {
-            collect_orphan_files(screenshots_dir, &path, referenced_paths, orphan_files)?;
-        } else if file_type.is_file() {
-            let relative = path
-                .strip_prefix(screenshots_dir)
-                .map_err(|err| err.to_string())?
-                .to_string_lossy();
-            if !referenced_paths.contains(&normalize_relative_path(&relative)) {
-                orphan_files.push(path);
-            }
+        let Ok(relative) = path.strip_prefix(screenshots_dir) else {
+            continue;
+        };
+        let relative = relative.to_string_lossy();
+        if !referenced_paths.contains(&normalize_relative_path(&relative)) {
+            orphan_files.push(path);
         }
     }
-    Ok(())
 }
 
-fn scan_upload_cache_files(
-    screenshots_dir: &Path,
-    keep_ids: &HashSet<String>,
-) -> Result<Vec<PathBuf>, String> {
+fn scan_upload_cache_files(screenshots_dir: &Path, keep_ids: &HashSet<String>) -> Vec<PathBuf> {
     let cache_dir = screenshots_dir.join(UPLOAD_CACHE_DIRECTORY);
     if !cache_dir.exists() {
-        return Ok(Vec::new());
+        return Vec::new();
     }
 
     let mut stale_files = Vec::new();
-    for entry in std::fs::read_dir(cache_dir).map_err(|err| err.to_string())? {
-        let entry = entry.map_err(|err| err.to_string())?;
-        if !entry.file_type().map_err(|err| err.to_string())?.is_file() {
+    let Ok(entries) = std::fs::read_dir(cache_dir) else {
+        return stale_files;
+    };
+
+    for entry in entries {
+        let Ok(entry) = entry else {
+            continue;
+        };
+        let Ok(file_type) = entry.file_type() else {
+            continue;
+        };
+        if !file_type.is_file() {
             continue;
         }
 
         let path = entry.path();
-        let Some(stem) = path.file_stem().and_then(|value| value.to_str()) else {
+        let Some(stem) = path.file_stem().map(|value| value.to_string_lossy()) else {
             continue;
         };
-        if !keep_ids.contains(stem) {
+        if !keep_ids.contains(stem.as_ref()) {
             stale_files.push(path);
         }
     }
 
     stale_files.sort();
-    Ok(stale_files)
+    stale_files
 }
 
 fn estimate_screenshot_bytes(screenshots_dir: &Path, items: &[ScreenshotCleanupItem]) -> i64 {
@@ -526,6 +548,11 @@ mod tests {
         let _kept = write_screenshot_file(&fixture.screenshots_dir, "2026-06-15/kept.png", b"kept");
         let orphan =
             write_screenshot_file(&fixture.screenshots_dir, "2026-06-15/orphan.png", b"orphan");
+        let _nested_user_file = write_screenshot_file(
+            &fixture.screenshots_dir,
+            "2026-06-15/nested/user-file.txt",
+            b"user",
+        );
         let _recent_orphan = write_screenshot_file(
             &fixture.screenshots_dir,
             "2026-07-02/recent-orphan.png",
@@ -536,11 +563,8 @@ mod tests {
             "UploadCache/shot-gone.png",
             b"gone",
         );
-        let stale_extensionless_cache = write_screenshot_file(
-            &fixture.screenshots_dir,
-            "UploadCache/shot-extra",
-            b"extra",
-        );
+        let stale_extensionless_cache =
+            write_screenshot_file(&fixture.screenshots_dir, "UploadCache/shot-extra", b"extra");
         let _kept_cache = write_screenshot_file(
             &fixture.screenshots_dir,
             "UploadCache/shot-kept.jpg",
@@ -561,6 +585,43 @@ mod tests {
     }
 
     #[test]
+    fn plan_skips_screenshot_root_read_errors() {
+        let fixture = create_fixture();
+        fs::remove_dir(&fixture.screenshots_dir).unwrap();
+        fs::write(&fixture.screenshots_dir, b"not a directory").unwrap();
+
+        let cutoff = cutoff("2026-07-01T00:00:00Z", (2026, 7, 1));
+        let plan =
+            plan_screenshot_cleanup(&fixture.database_path, &fixture.game_path, Some(&cutoff))
+                .unwrap();
+
+        assert!(plan.items.is_empty());
+        assert!(plan.orphan_files.is_empty());
+        assert!(plan.upload_cache_files.is_empty());
+        assert_eq!(plan.estimated_bytes, 0);
+    }
+
+    #[test]
+    fn plan_skips_upload_cache_read_errors() {
+        let fixture = create_fixture();
+        let orphan =
+            write_screenshot_file(&fixture.screenshots_dir, "2026-06-15/orphan.png", b"orphan");
+        fs::write(
+            fixture.screenshots_dir.join("UploadCache"),
+            b"not a directory",
+        )
+        .unwrap();
+
+        let cutoff = cutoff("2026-07-01T00:00:00Z", (2026, 7, 1));
+        let plan =
+            plan_screenshot_cleanup(&fixture.database_path, &fixture.game_path, Some(&cutoff))
+                .unwrap();
+
+        assert_eq!(plan.orphan_files, vec![orphan]);
+        assert!(plan.upload_cache_files.is_empty());
+    }
+
+    #[test]
     fn plan_on_missing_database_is_empty() {
         let temp_dir = TempDir::new().unwrap();
         let game_path = temp_dir.path().to_path_buf();
@@ -570,6 +631,23 @@ mod tests {
 
         assert!(plan.items.is_empty());
         assert!(plan.orphan_files.is_empty());
+        assert_eq!(plan.estimated_bytes, 0);
+    }
+
+    #[test]
+    fn plan_on_missing_screenshot_table_is_empty() {
+        let temp_dir = TempDir::new().unwrap();
+        let game_path = temp_dir.path().to_path_buf();
+        let data_dir = game_path.join("BazaarPlusPlusV4");
+        let database_path = data_dir.join("bazaarplusplus.db");
+        fs::create_dir_all(&data_dir).unwrap();
+        drop(Connection::open(&database_path).unwrap());
+
+        let plan = plan_screenshot_cleanup(&database_path, &game_path, None).unwrap();
+
+        assert!(plan.items.is_empty());
+        assert!(plan.orphan_files.is_empty());
+        assert!(plan.upload_cache_files.is_empty());
         assert_eq!(plan.estimated_bytes, 0);
     }
 }
