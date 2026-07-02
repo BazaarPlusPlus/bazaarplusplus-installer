@@ -1,32 +1,58 @@
 import { useState } from 'react';
 import type {
   CleanupPreset,
+  RunDataCleanupPreview,
+  RunDataCleanupResult,
   ScreenshotCleanupPreview,
   ScreenshotCleanupResult
 } from '../../types/backend';
 import { useAsyncAction } from '../shared/useAsyncAction';
 import {
+  executeRunDataCleanup,
   executeScreenshotCleanup,
+  previewRunDataCleanup,
   previewScreenshotCleanup
 } from './historyApi';
 
-type PendingCleanup = {
-  preset: CleanupPreset;
-  preview: ScreenshotCleanupPreview;
-};
+export type CleanupScope = 'screenshots' | 'run_data';
+
+export type PendingCleanup =
+  | {
+      scope: 'screenshots';
+      preset: CleanupPreset;
+      preview: ScreenshotCleanupPreview;
+    }
+  | {
+      scope: 'run_data';
+      preset: CleanupPreset;
+      preview: RunDataCleanupPreview;
+    };
+
+export type CleanupOutcome =
+  | { scope: 'screenshots'; result: ScreenshotCleanupResult }
+  | { scope: 'run_data'; result: RunDataCleanupResult };
 
 export function useStorageCleanup(onCompleted: () => Promise<void> | void) {
   const [pending, setPending] = useState<PendingCleanup | null>(null);
-  const [result, setResult] = useState<ScreenshotCleanupResult | null>(null);
-  const { busy, error, clearError, run } =
-    useAsyncAction<'preview' | 'execute'>();
+  const [outcome, setOutcome] = useState<CleanupOutcome | null>(null);
+  const { busy, error, clearError, run } = useAsyncAction<
+    'preview' | 'execute'
+  >();
 
-  const requestCleanup = (preset: CleanupPreset) =>
+  const requestCleanup = (scope: CleanupScope, preset: CleanupPreset) =>
     run('preview', async () => {
-      setResult(null);
-      const preview = await previewScreenshotCleanup(preset);
+      setOutcome(null);
+      if (scope === 'screenshots') {
+        const preview = await previewScreenshotCleanup(preset);
+        if (preview) {
+          setPending({ scope, preset, preview });
+        }
+        return;
+      }
+
+      const preview = await previewRunDataCleanup(preset);
       if (preview) {
-        setPending({ preset, preview });
+        setPending({ scope, preset, preview });
       }
     });
 
@@ -37,9 +63,16 @@ export function useStorageCleanup(onCompleted: () => Promise<void> | void) {
     }
     void run('execute', async () => {
       setPending(null);
-      const outcome = await executeScreenshotCleanup(target.preset);
-      if (outcome) {
-        setResult(outcome);
+      if (target.scope === 'screenshots') {
+        const result = await executeScreenshotCleanup(target.preset);
+        if (result) {
+          setOutcome({ scope: 'screenshots', result });
+        }
+      } else {
+        const result = await executeRunDataCleanup(target.preset);
+        if (result) {
+          setOutcome({ scope: 'run_data', result });
+        }
       }
       await onCompleted();
     });
@@ -49,7 +82,7 @@ export function useStorageCleanup(onCompleted: () => Promise<void> | void) {
 
   return {
     pending,
-    result,
+    outcome,
     busy,
     error,
     clearError,

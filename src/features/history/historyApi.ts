@@ -73,3 +73,19 @@ export async function executeScreenshotCleanup(preset: CleanupPreset) {
 
   return invokeCommand('execute_screenshot_cleanup', { preset });
 }
+
+export async function previewRunDataCleanup(preset: CleanupPreset) {
+  if (!hasTauriRuntime()) {
+    return null;
+  }
+
+  return invokeCommand('preview_run_data_cleanup', { preset });
+}
+
+export async function executeRunDataCleanup(preset: CleanupPreset) {
+  if (!hasTauriRuntime()) {
+    return null;
+  }
+
+  return invokeCommand('execute_run_data_cleanup', { preset });
+}

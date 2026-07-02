@@ -43,7 +43,9 @@ const COMMAND_INPUT_FIELDS = {
   delete_battle_video: ['gamePath', 'battleId', 'videoId'],
   delete_run_videos: ['gamePath', 'runId', 'limit'],
   preview_screenshot_cleanup: ['gamePath', 'preset'],
-  execute_screenshot_cleanup: ['gamePath', 'preset']
+  execute_screenshot_cleanup: ['gamePath', 'preset'],
+  preview_run_data_cleanup: ['gamePath', 'preset'],
+  execute_run_data_cleanup: ['gamePath', 'preset']
 } satisfies InputFieldChecklist;
 
 function parseWithCommandsNames(): string[] {

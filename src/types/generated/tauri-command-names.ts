@@ -25,6 +25,8 @@ export const TAURI_COMMAND_NAMES = [
   'delete_run_videos',
   'preview_screenshot_cleanup',
   'execute_screenshot_cleanup',
+  'preview_run_data_cleanup',
+  'execute_run_data_cleanup',
 ] as const;
 
 export type TauriCommandName =
@@ -52,4 +54,6 @@ export type TauriCommandName =
   | 'delete_battle_video'
   | 'delete_run_videos'
   | 'preview_screenshot_cleanup'
-  | 'execute_screenshot_cleanup';
+  | 'execute_screenshot_cleanup'
+  | 'preview_run_data_cleanup'
+  | 'execute_run_data_cleanup';
