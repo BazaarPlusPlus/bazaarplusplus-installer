@@ -36,8 +36,8 @@ export function useStorageCleanup(onCompleted: () => Promise<void> | void) {
       return;
     }
     void run('execute', async () => {
-      const outcome = await executeScreenshotCleanup(target.preset);
       setPending(null);
+      const outcome = await executeScreenshotCleanup(target.preset);
       if (outcome) {
         setResult(outcome);
       }
