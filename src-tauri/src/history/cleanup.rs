@@ -62,6 +62,7 @@ const UPLOAD_CACHE_DIRECTORY: &str = "UploadCache";
 pub struct ScreenshotCleanupItem {
     pub screenshot_id: String,
     pub image_relative_path: String,
+    delete_image_file: bool,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -121,6 +122,9 @@ pub fn plan_screenshot_cleanup(
     let cutoff_utc = cutoff.map(|value| value.utc.as_str());
     let screenshots_dir = crate::services::paths::screenshots_dir(game_path);
     let items = eligible_screenshots(&conn, has_uploads_table, cutoff_utc)?;
+    let remaining_referenced_paths =
+        remaining_screenshot_relative_paths_after_cleanup(&conn, &items)?;
+    let items = mark_screenshot_file_deletions(items, &remaining_referenced_paths);
     let skipped_pending_uploads = pending_upload_count(&conn, has_uploads_table, cutoff_utc)?;
     let referenced_paths = all_screenshot_relative_paths(&conn)?;
     let orphan_files = scan_orphan_screenshot_files(
@@ -172,6 +176,7 @@ pub fn execute_screenshot_cleanup(
     let mut deleted_rows = 0i64;
     let mut deleted_files = 0i64;
     let mut freed_bytes = 0i64;
+    let mut deleted_screenshot_paths = HashSet::new();
 
     if !plan.items.is_empty() {
         let mut conn = open_cleanup_connection(database_path)?;
@@ -180,9 +185,16 @@ pub fn execute_screenshot_cleanup(
             // a crash in between leaves a row whose 404 is handled by every
             // consumer, never a file that a fresh row can no longer describe.
             for item in chunk {
+                if !item.delete_image_file {
+                    continue;
+                }
                 if let Some(path) =
                     resolve_cleanup_file_path(&screenshots_dir, &item.image_relative_path)
                 {
+                    let normalized = normalize_relative_path(&item.image_relative_path);
+                    if !deleted_screenshot_paths.insert(normalized) {
+                        continue;
+                    }
                     freed_bytes += file_size(&path);
                     if remove_file_if_exists(&path)? {
                         deleted_files += 1;
@@ -254,6 +266,7 @@ fn eligible_screenshots(
             Ok(ScreenshotCleanupItem {
                 screenshot_id: row.get(0)?,
                 image_relative_path: row.get(1)?,
+                delete_image_file: false,
             })
         })
         .map_err(|err| err.to_string())?;
@@ -302,6 +315,52 @@ fn all_screenshot_relative_paths(conn: &Connection) -> Result<HashSet<String>, S
         }
     }
     Ok(paths)
+}
+
+fn remaining_screenshot_relative_paths_after_cleanup(
+    conn: &Connection,
+    items: &[ScreenshotCleanupItem],
+) -> Result<HashSet<String>, String> {
+    let planned_ids = items
+        .iter()
+        .map(|item| item.screenshot_id.as_str())
+        .collect::<HashSet<_>>();
+    let mut stmt = conn
+        .prepare("select screenshot_id, image_relative_path from run_screenshots")
+        .map_err(|err| err.to_string())?;
+    let rows = stmt
+        .query_map([], |row| {
+            Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
+        })
+        .map_err(|err| err.to_string())?;
+
+    let mut paths = HashSet::new();
+    for row in rows {
+        let (screenshot_id, image_relative_path) = row.map_err(|err| err.to_string())?;
+        if planned_ids.contains(screenshot_id.as_str()) {
+            continue;
+        }
+        let normalized = normalize_relative_path(&image_relative_path);
+        if !normalized.is_empty() {
+            paths.insert(normalized);
+        }
+    }
+    Ok(paths)
+}
+
+fn mark_screenshot_file_deletions(
+    items: Vec<ScreenshotCleanupItem>,
+    remaining_referenced_paths: &HashSet<String>,
+) -> Vec<ScreenshotCleanupItem> {
+    items
+        .into_iter()
+        .map(|mut item| {
+            let normalized = normalize_relative_path(&item.image_relative_path);
+            item.delete_image_file =
+                !normalized.is_empty() && !remaining_referenced_paths.contains(&normalized);
+            item
+        })
+        .collect()
 }
 
 fn all_screenshot_ids(conn: &Connection) -> Result<HashSet<String>, String> {
@@ -435,10 +494,17 @@ fn scan_upload_cache_files(screenshots_dir: &Path, keep_ids: &HashSet<String>) -
 }
 
 fn estimate_screenshot_bytes(screenshots_dir: &Path, items: &[ScreenshotCleanupItem]) -> i64 {
+    let mut estimated_paths = HashSet::new();
     items
         .iter()
-        .filter_map(|item| resolve_cleanup_file_path(screenshots_dir, &item.image_relative_path))
-        .map(|path| file_size(&path))
+        .filter(|item| item.delete_image_file)
+        .filter_map(|item| {
+            let path = resolve_cleanup_file_path(screenshots_dir, &item.image_relative_path)?;
+            let normalized = normalize_relative_path(&item.image_relative_path);
+            estimated_paths
+                .insert(normalized)
+                .then_some(file_size(&path))
+        })
         .sum()
 }
 
@@ -821,5 +887,112 @@ mod tests {
             uploads, 1,
             "cascade must remove the deleted screenshot's upload row"
         );
+    }
+
+    #[test]
+    fn execute_preserves_shared_file_referenced_by_pending_upload() {
+        let fixture = create_fixture();
+        let conn = rusqlite::Connection::open(&fixture.database_path).unwrap();
+        conn.execute_batch(
+            "
+            insert into run_screenshots (
+                screenshot_id, run_id, capture_source, image_relative_path,
+                captured_at_utc, captured_at_local
+            ) values
+                ('shot-old', 'run-1', 'end_of_run_auto', '2026-06-15/shared.png',
+                 '2026-06-15T10:00:00Z', '2026-06-15T18:00:00+08:00'),
+                ('shot-pending', 'run-2', 'end_of_run_auto', '2026-06-15/shared.png',
+                 '2026-06-15T10:05:00Z', '2026-06-15T18:05:00+08:00');
+            insert into bazaardb_snapshot_uploads (snapshot_id, status) values
+                ('shot-old', 'uploaded'),
+                ('shot-pending', 'pending');
+            ",
+        )
+        .unwrap();
+        drop(conn);
+        let shared_file =
+            write_screenshot_file(&fixture.screenshots_dir, "2026-06-15/shared.png", b"shared");
+
+        let plan =
+            plan_screenshot_cleanup(&fixture.database_path, &fixture.game_path, None).unwrap();
+
+        assert_eq!(plan.items.len(), 1);
+        assert_eq!(plan.items[0].screenshot_id, "shot-old");
+        assert_eq!(plan.estimated_bytes, 0);
+
+        let result = super::execute_screenshot_cleanup(
+            &fixture.database_path,
+            &fixture.game_path,
+            None, // preset "all"
+        )
+        .unwrap();
+
+        assert_eq!(result.deleted_rows, 1);
+        assert_eq!(result.deleted_files, 0);
+        assert_eq!(result.freed_bytes, 0);
+        assert_eq!(result.skipped_pending_uploads, 1);
+        assert!(shared_file.exists(), "pending upload must keep shared file");
+
+        let conn = rusqlite::Connection::open(&fixture.database_path).unwrap();
+        let old_rows: i64 = conn
+            .query_row(
+                "select count(*) from run_screenshots where screenshot_id = 'shot-old'",
+                [],
+                |row| row.get(0),
+            )
+            .unwrap();
+        assert_eq!(old_rows, 0);
+        let pending_rows: i64 = conn
+            .query_row(
+                "select count(*) from run_screenshots where screenshot_id = 'shot-pending'",
+                [],
+                |row| row.get(0),
+            )
+            .unwrap();
+        assert_eq!(pending_rows, 1);
+    }
+
+    #[test]
+    fn execute_deletes_planned_row_when_db_file_is_missing() {
+        let fixture = create_fixture();
+        let conn = rusqlite::Connection::open(&fixture.database_path).unwrap();
+        conn.execute_batch(
+            "
+            insert into run_screenshots (
+                screenshot_id, run_id, capture_source, image_relative_path,
+                captured_at_utc, captured_at_local
+            ) values (
+                'shot-missing-file', 'run-1', 'end_of_run_auto', '2026-06-15/missing.png',
+                '2026-06-15T10:00:00Z', '2026-06-15T18:00:00+08:00'
+            );
+            insert into bazaardb_snapshot_uploads (snapshot_id, status) values
+                ('shot-missing-file', 'uploaded');
+            ",
+        )
+        .unwrap();
+        drop(conn);
+
+        let plan =
+            plan_screenshot_cleanup(&fixture.database_path, &fixture.game_path, None).unwrap();
+
+        assert_eq!(plan.items.len(), 1);
+        assert_eq!(plan.estimated_bytes, 0);
+
+        let result = super::execute_screenshot_cleanup(
+            &fixture.database_path,
+            &fixture.game_path,
+            None, // preset "all"
+        )
+        .unwrap();
+
+        assert_eq!(result.deleted_rows, 1);
+        assert_eq!(result.deleted_files, 0);
+        assert_eq!(result.freed_bytes, 0);
+
+        let conn = rusqlite::Connection::open(&fixture.database_path).unwrap();
+        let rows: i64 = conn
+            .query_row("select count(*) from run_screenshots", [], |row| row.get(0))
+            .unwrap();
+        assert_eq!(rows, 0);
     }
 }
