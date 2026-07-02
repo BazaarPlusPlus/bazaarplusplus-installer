@@ -21,6 +21,7 @@ export type { InstallModState } from './bindings/InstallModState';
 export type { InstallState } from './bindings/InstallState';
 export type { InstallWarning } from './bindings/InstallWarning';
 export type { ResetBppDataResult } from './bindings/ResetBppDataResult';
+export type { RunDataCleanupPreview } from './bindings/RunDataCleanupPreview';
 export type { ScreenshotCleanupPreview } from './bindings/ScreenshotCleanupPreview';
 export type { ScreenshotCleanupResult } from './bindings/ScreenshotCleanupResult';
 export type { StreamDbStatus } from './bindings/StreamDbStatus';

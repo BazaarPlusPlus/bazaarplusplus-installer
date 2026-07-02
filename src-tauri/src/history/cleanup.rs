@@ -235,20 +235,14 @@ pub fn execute_screenshot_cleanup(
     })
 }
 
-#[derive(ts_rs::TS)]
-#[ts(export)]
 #[allow(dead_code)]
 pub struct RunDataCleanupItem {
     pub run_id: String,
     pub battle_ids: Vec<String>,
-    #[ts(type = "Array<{ video_id: string, relative_path: string }>")]
     pub videos: Vec<VideoRef>,
-    #[ts(type = "Array<{ screenshot_id: string, image_relative_path: string }>")]
     pub screenshots: Vec<ScreenshotCleanupItem>,
 }
 
-#[derive(ts_rs::TS)]
-#[ts(export)]
 #[allow(dead_code)]
 pub struct RunDataCleanupPlan {
     pub items: Vec<RunDataCleanupItem>,
@@ -308,6 +302,8 @@ pub fn plan_run_data_cleanup(
     }
 
     let has_battles_table = table_exists(&conn, "battles")?;
+    let has_replay_dirty_column =
+        has_battles_table && column_exists(&conn, "battles", "replay_dirty")?;
     let has_sync_table = table_exists(&conn, "run_sync_state")?;
     let has_screenshots_table = table_exists(&conn, "run_screenshots")?;
     let has_uploads_table =
@@ -315,17 +311,22 @@ pub fn plan_run_data_cleanup(
     let cutoff_utc = cutoff.map(|value| value.utc.as_str());
     let run_ids = eligible_run_ids(
         &conn,
-        has_battles_table,
+        has_replay_dirty_column,
         has_sync_table,
         has_uploads_table,
         cutoff_utc,
     )?;
     let skipped_pending_uploads = skipped_pending_run_count(
         &conn,
-        has_battles_table,
+        has_replay_dirty_column,
         has_sync_table,
         has_uploads_table,
         cutoff_utc,
+    )?;
+    let remaining_screenshot_paths = remaining_screenshot_relative_paths_after_run_cleanup(
+        &conn,
+        has_screenshots_table,
+        &run_ids,
     )?;
 
     let screenshots_dir = crate::services::paths::screenshots_dir(game_path);
@@ -333,11 +334,15 @@ pub fn plan_run_data_cleanup(
     let replays_dir = crate::services::paths::combat_replays_dir(game_path);
 
     let mut items = Vec::new();
+    let mut screenshot_items_for_estimate = Vec::new();
     let mut estimated_bytes = 0i64;
     for run_id in run_ids {
         let battle_ids = run_battle_ids(&conn, has_battles_table, &run_id)?;
         let videos = run_video_refs(&conn, has_battles_table, &run_id)?;
-        let screenshots = run_screenshot_items(&conn, has_screenshots_table, &run_id)?;
+        let screenshots = mark_screenshot_file_deletions(
+            run_screenshot_items(&conn, has_screenshots_table, &run_id)?,
+            &remaining_screenshot_paths,
+        );
 
         for video in &videos {
             if let Some(path) = resolve_cleanup_file_path(&videos_dir, &video.relative_path) {
@@ -349,13 +354,7 @@ pub fn plan_run_data_cleanup(
                 estimated_bytes += file_size(&path);
             }
         }
-        for screenshot in &screenshots {
-            if let Some(path) =
-                resolve_cleanup_file_path(&screenshots_dir, &screenshot.image_relative_path)
-            {
-                estimated_bytes += file_size(&path);
-            }
-        }
+        screenshot_items_for_estimate.extend(screenshots.iter().cloned());
 
         items.push(RunDataCleanupItem {
             run_id,
@@ -364,6 +363,8 @@ pub fn plan_run_data_cleanup(
             screenshots,
         });
     }
+
+    estimated_bytes += estimate_screenshot_bytes(&screenshots_dir, &screenshot_items_for_estimate);
 
     Ok(RunDataCleanupPlan {
         items,
@@ -375,7 +376,7 @@ pub fn plan_run_data_cleanup(
 #[allow(dead_code)]
 fn eligible_run_ids(
     conn: &Connection,
-    has_battles_table: bool,
+    has_replay_dirty_column: bool,
     has_sync_table: bool,
     has_uploads_table: bool,
     cutoff_utc: Option<&str>,
@@ -388,7 +389,7 @@ fn eligible_run_ids(
         "where r.status <> 'active' \
          and (?1 is null or datetime(coalesce(r.ended_at_utc, r.last_seen_at_utc, r.started_at_utc)) < datetime(?1)) ",
     );
-    if has_battles_table {
+    if has_replay_dirty_column {
         sql.push_str(
             "and not exists (
                 select 1 from battles b where b.run_id = r.run_id and b.replay_dirty = 1
@@ -427,13 +428,13 @@ fn eligible_run_ids(
 #[allow(dead_code)]
 fn skipped_pending_run_count(
     conn: &Connection,
-    has_battles_table: bool,
+    has_replay_dirty_column: bool,
     has_sync_table: bool,
     has_uploads_table: bool,
     cutoff_utc: Option<&str>,
 ) -> Result<i64, String> {
     let mut gates = Vec::new();
-    if has_battles_table {
+    if has_replay_dirty_column {
         gates.push(
             "exists (
                 select 1 from battles b where b.run_id = r.run_id and b.replay_dirty = 1
@@ -547,12 +548,51 @@ fn run_screenshot_items(
             Ok(ScreenshotCleanupItem {
                 screenshot_id: row.get(0)?,
                 image_relative_path: row.get(1)?,
-                delete_image_file: true,
+                delete_image_file: false,
             })
         })
         .map_err(|err| err.to_string())?;
     rows.collect::<Result<Vec<_>, _>>()
         .map_err(|err| err.to_string())
+}
+
+fn remaining_screenshot_relative_paths_after_run_cleanup(
+    conn: &Connection,
+    has_screenshots_table: bool,
+    planned_run_ids: &[String],
+) -> Result<HashSet<String>, String> {
+    if !has_screenshots_table || planned_run_ids.is_empty() {
+        return Ok(HashSet::new());
+    }
+
+    let planned_run_ids = planned_run_ids
+        .iter()
+        .map(String::as_str)
+        .collect::<HashSet<_>>();
+    let mut stmt = conn
+        .prepare("select run_id, image_relative_path from run_screenshots")
+        .map_err(|err| err.to_string())?;
+    let rows = stmt
+        .query_map([], |row| {
+            Ok((row.get::<_, Option<String>>(0)?, row.get::<_, String>(1)?))
+        })
+        .map_err(|err| err.to_string())?;
+
+    let mut paths = HashSet::new();
+    for row in rows {
+        let (run_id, image_relative_path) = row.map_err(|err| err.to_string())?;
+        if run_id
+            .as_deref()
+            .is_some_and(|run_id| planned_run_ids.contains(run_id))
+        {
+            continue;
+        }
+        let normalized = normalize_relative_path(&image_relative_path);
+        if !normalized.is_empty() {
+            paths.insert(normalized);
+        }
+    }
+    Ok(paths)
 }
 
 /// Replay payload path: <CombatReplays>/<battleId>.payload.mpack.gz.
@@ -567,6 +607,16 @@ fn replay_payload_path(replays_dir: &Path, battle_id: &str) -> Option<PathBuf> {
         return None;
     }
     Some(replays_dir.join(format!("{trimmed}.payload.mpack.gz")))
+}
+
+fn column_exists(conn: &Connection, table_name: &str, column_name: &str) -> Result<bool, String> {
+    conn.query_row(
+        "select exists(select 1 from pragma_table_info(?1) where name = ?2)",
+        params![table_name, column_name],
+        |row| row.get::<_, i64>(0),
+    )
+    .map(|value| value != 0)
+    .map_err(|err| err.to_string())
 }
 
 fn eligible_screenshots(
@@ -1303,6 +1353,100 @@ mod tests {
             super::plan_run_data_cleanup(&fixture.database_path, &fixture.game_path, None).unwrap();
         assert!(plan.items.is_empty());
         assert_eq!(plan.skipped_pending_uploads, 1);
+    }
+
+    #[test]
+    fn run_plan_preserves_shared_screenshot_file_referenced_by_skipped_run() {
+        let fixture = create_fixture();
+        let conn = rusqlite::Connection::open(&fixture.database_path).unwrap();
+        insert_run(
+            &conn,
+            "run-clean",
+            "completed",
+            1,
+            "Ranked",
+            "2026-06-10T10:00:00Z",
+        );
+        insert_run(
+            &conn,
+            "run-shot-pending",
+            "completed",
+            1,
+            "Ranked",
+            "2026-06-10T10:05:00Z",
+        );
+        conn.execute_batch(
+            "
+            insert into run_sync_state (run_id, dirty) values
+                ('run-clean', 0),
+                ('run-shot-pending', 0);
+            insert into run_screenshots (
+                screenshot_id, run_id, capture_source, image_relative_path, captured_at_utc, captured_at_local
+            ) values
+                ('shot-clean', 'run-clean', 'end_of_run_auto', '2026-06-10\\shared.png',
+                 '2026-06-10T10:00:00Z', '2026-06-10T18:00:00+08:00'),
+                ('shot-pending', 'run-shot-pending', 'end_of_run_auto', '2026-06-10/shared.png',
+                 '2026-06-10T10:05:00Z', '2026-06-10T18:05:00+08:00');
+            insert into bazaardb_snapshot_uploads (snapshot_id, status) values ('shot-pending', 'pending');
+            ",
+        )
+        .unwrap();
+        drop(conn);
+        write_screenshot_file(&fixture.screenshots_dir, "2026-06-10/shared.png", b"shared");
+
+        let plan =
+            super::plan_run_data_cleanup(&fixture.database_path, &fixture.game_path, None).unwrap();
+
+        assert_eq!(plan.items.len(), 1);
+        assert_eq!(plan.items[0].run_id, "run-clean");
+        assert_eq!(plan.items[0].screenshots.len(), 1);
+        assert_eq!(plan.items[0].screenshots[0].screenshot_id, "shot-clean");
+        assert!(
+            !plan.items[0].screenshots[0].delete_image_file,
+            "pending run still references the normalized screenshot path"
+        );
+        assert_eq!(plan.estimated_bytes, 0);
+        assert_eq!(plan.skipped_pending_uploads, 1);
+    }
+
+    #[test]
+    fn run_plan_handles_battles_table_without_replay_dirty() {
+        let temp_dir = TempDir::new().unwrap();
+        let game_path = temp_dir.path().to_path_buf();
+        let data_dir = game_path.join("BazaarPlusPlusV4");
+        let database_path = data_dir.join("bazaarplusplus.db");
+        fs::create_dir_all(&data_dir).unwrap();
+        let conn = rusqlite::Connection::open(&database_path).unwrap();
+        conn.execute_batch(
+            "
+            pragma foreign_keys = on;
+            create table runs (run_id text primary key, started_at_utc text not null, last_seen_at_utc text not null, status text not null, completed integer not null default 0, hero text not null, game_mode text not null, ended_at_utc text null);
+            create table battles (battle_id text primary key, source text not null, run_id text null, recorded_at_utc text not null, deleted_at_utc text null, foreign key (run_id) references runs(run_id) on delete cascade, check ((source = 'LOCAL') or (source = 'GHOST' and run_id is null)));
+            ",
+        )
+        .unwrap();
+        insert_run(
+            &conn,
+            "legacy-run",
+            "completed",
+            1,
+            "Ranked",
+            "2026-06-10T10:00:00Z",
+        );
+        conn.execute(
+            "insert into battles (battle_id, source, run_id, recorded_at_utc) values
+                ('legacy-battle', 'LOCAL', 'legacy-run', '2026-06-10T09:00:00Z')",
+            [],
+        )
+        .unwrap();
+        drop(conn);
+
+        let plan = super::plan_run_data_cleanup(&database_path, &game_path, None).unwrap();
+
+        assert_eq!(plan.items.len(), 1);
+        assert_eq!(plan.items[0].run_id, "legacy-run");
+        assert_eq!(plan.items[0].battle_ids, vec!["legacy-battle"]);
+        assert_eq!(plan.skipped_pending_uploads, 0);
     }
 
     #[test]
