@@ -34,6 +34,22 @@ const BPP_BUNDLED_DEPENDENCY_RELATIVE_PATHS: &[&str] = &[
     "BepInEx/plugins/ffmpeg-LICENSE.txt",
 ];
 
+/// BepInEx bootstrap the payload ships outside the two ownership lists, plus
+/// files BepInEx itself generates at runtime. Removed only when BPP is the last
+/// installed plugin; while another mod remains these paths are shared loader state.
+const BEPINEX_BOOTSTRAP_RELATIVE_PATHS: &[&str] = &[
+    "BepInEx/core",
+    "BepInEx/cache",
+    "BepInEx/config/BepInEx.cfg",
+    "BepInEx/LogOutput.log",
+    "BepInEx/plugins/.gitkeep",
+    "winhttp.dll",
+    "doorstop_config.ini",
+    "run_bepinex.sh",
+    "libdoorstop.dylib",
+    "bpp_launcher.c",
+];
+
 /// Backoff used between retries when a file/directory removal fails. The first
 /// retry runs immediately, the second after a short pause, and the last after
 /// a longer pause. Windows often releases ERROR_SHARING_VIOLATION holds inside
@@ -294,6 +310,19 @@ fn remove_empty_dir_if_exists(path: &Path) -> Result<(), String> {
     }
 }
 
+pub(super) fn remove_bootstrap_files(game_path: &Path) -> Result<(), String> {
+    for relative_path in BEPINEX_BOOTSTRAP_RELATIVE_PATHS {
+        remove_path_if_exists(&game_path.join(relative_path))?;
+    }
+
+    remove_empty_dir_if_exists(&game_path.join("BepInEx/config"))?;
+    remove_empty_dir_if_exists(&game_path.join("BepInEx/plugins"))?;
+    remove_empty_dir_if_exists(&game_path.join("BepInEx/patchers"))?;
+    remove_empty_dir_if_exists(&game_path.join("BepInEx"))?;
+
+    Ok(())
+}
+
 pub(super) fn has_third_party_plugins(game_path: &Path) -> bool {
     let plugins_dir = game_path.join("BepInEx/plugins");
     let Ok(entries) = std::fs::read_dir(&plugins_dir) else {
@@ -406,8 +435,8 @@ mod tests {
 
     use super::{
         cleanup_bpp_data_directory, ensure_valid_game_path, prepare_install_target,
-        preserve_file_if_exists, restore_preserved_file, uninstall_payload, PreservedFile,
-        BPP_CONFIG_RELATIVE_PATH,
+        preserve_file_if_exists, remove_bootstrap_files, restore_preserved_file, uninstall_payload,
+        PreservedFile, BPP_CONFIG_RELATIVE_PATH,
     };
 
     #[test]
@@ -601,6 +630,58 @@ mod tests {
             assert!(tmp.path().join("doorstop_config.ini").exists());
             assert!(tmp.path().join("winhttp.dll").exists());
         }
+    }
+
+    #[test]
+    fn test_remove_bootstrap_files_restores_vanilla_game_root() {
+        let tmp = tempfile::tempdir().unwrap();
+        std::fs::create_dir_all(tmp.path().join("BepInEx/core")).unwrap();
+        std::fs::create_dir_all(tmp.path().join("BepInEx/cache")).unwrap();
+        std::fs::create_dir_all(tmp.path().join("BepInEx/config")).unwrap();
+        std::fs::create_dir_all(tmp.path().join("BepInEx/plugins")).unwrap();
+        std::fs::write(
+            tmp.path().join("BepInEx/core/BepInEx.Preloader.dll"),
+            b"dll",
+        )
+        .unwrap();
+        std::fs::write(tmp.path().join("BepInEx/cache/typeloader.dat"), b"cache").unwrap();
+        std::fs::write(tmp.path().join("BepInEx/config/BepInEx.cfg"), b"cfg").unwrap();
+        std::fs::write(tmp.path().join("BepInEx/LogOutput.log"), b"log").unwrap();
+        std::fs::write(tmp.path().join("BepInEx/plugins/.gitkeep"), b"").unwrap();
+        std::fs::write(tmp.path().join("winhttp.dll"), b"dll").unwrap();
+        std::fs::write(tmp.path().join("doorstop_config.ini"), b"cfg").unwrap();
+        std::fs::write(tmp.path().join("run_bepinex.sh"), b"#!/bin/sh\n").unwrap();
+        std::fs::write(tmp.path().join("libdoorstop.dylib"), b"dylib").unwrap();
+        std::fs::write(tmp.path().join("bpp_launcher.c"), b"c").unwrap();
+
+        remove_bootstrap_files(tmp.path()).unwrap();
+
+        assert!(!tmp.path().join("BepInEx").exists());
+        assert!(!tmp.path().join("winhttp.dll").exists());
+        assert!(!tmp.path().join("doorstop_config.ini").exists());
+        assert!(!tmp.path().join("run_bepinex.sh").exists());
+        assert!(!tmp.path().join("libdoorstop.dylib").exists());
+        assert!(!tmp.path().join("bpp_launcher.c").exists());
+    }
+
+    #[test]
+    fn test_remove_bootstrap_files_keeps_unknown_foreign_files() {
+        let tmp = tempfile::tempdir().unwrap();
+        std::fs::create_dir_all(tmp.path().join("BepInEx/core")).unwrap();
+        std::fs::create_dir_all(tmp.path().join("BepInEx/config")).unwrap();
+        std::fs::write(
+            tmp.path().join("BepInEx/core/BepInEx.Preloader.dll"),
+            b"dll",
+        )
+        .unwrap();
+        std::fs::write(tmp.path().join("BepInEx/config/OtherMod.cfg"), b"cfg").unwrap();
+
+        remove_bootstrap_files(tmp.path()).unwrap();
+
+        // Bootstrap gone, unknown foreign config (and thus BepInEx/) kept.
+        assert!(!tmp.path().join("BepInEx/core").exists());
+        assert!(tmp.path().join("BepInEx/config/OtherMod.cfg").exists());
+        assert!(tmp.path().join("BepInEx").exists());
     }
 
     #[test]

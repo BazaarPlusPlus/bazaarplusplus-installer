@@ -178,6 +178,9 @@ pub fn uninstall_bpp(
         payload::uninstall_payload_preserving_shared_dependencies(game_path)?;
     } else {
         payload::uninstall_payload(game_path)?;
+        // Last plugin standing: also tear down the BepInEx bootstrap so the
+        // Windows doorstop stops injecting and detection reports uninstalled.
+        payload::remove_bootstrap_files(game_path)?;
     }
 
     if !keep_shared_bootstrap {
