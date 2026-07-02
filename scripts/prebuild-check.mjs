@@ -17,18 +17,6 @@ const platformAliases = new Map([
   ['windows', 'windows']
 ]);
 
-const managedPluginDependencies = [
-  'BepInEx/plugins/Microsoft.Data.Sqlite.dll',
-  'BepInEx/plugins/SQLitePCLRaw.batteries_v2.dll',
-  'BepInEx/plugins/SQLitePCLRaw.core.dll',
-  'BepInEx/plugins/SQLitePCLRaw.provider.e_sqlite3.dll',
-  'BepInEx/plugins/SixLabors.ImageSharp.dll',
-  'BepInEx/plugins/System.Buffers.dll',
-  'BepInEx/plugins/System.Memory.dll',
-  'BepInEx/plugins/System.Numerics.Vectors.dll',
-  'BepInEx/plugins/System.Text.Encoding.CodePages.dll'
-];
-
 export function resolveTargetPlatforms(platformEnv) {
   if (!platformEnv) {
     return ['macos', 'windows'];
@@ -42,30 +30,29 @@ export function resolveTargetPlatforms(platformEnv) {
   return [platform];
 }
 
-export function requiredEntriesForPlatform(platform) {
-  if (platform === 'macos') {
-    return [
-      'run_bepinex.sh',
-      'libdoorstop.dylib',
-      'BepInEx/plugins/BazaarPlusPlus.dll',
-      'BepInEx/plugins/BazaarPlusPlus.version',
-      ...managedPluginDependencies,
-      'BepInEx/plugins/libe_sqlite3.dylib'
-    ];
-  }
-
-  if (platform === 'windows') {
-    return [
-      'winhttp.dll',
-      'doorstop_config.ini',
-      'BepInEx/plugins/BazaarPlusPlus.dll',
-      'BepInEx/plugins/BazaarPlusPlus.version',
-      ...managedPluginDependencies,
-      'BepInEx/plugins/e_sqlite3.dll'
-    ];
-  }
-
-  throw new Error(`Unsupported platform: ${platform}`);
+export function payloadFilesForPlatform(rootDir, platform) {
+  const platformRoot = path.join(
+    rootDir,
+    'src-tauri',
+    'resources',
+    'SourceForBuild',
+    platform
+  );
+  const entries = [];
+  const walk = (dir) => {
+    for (const dirent of fs.readdirSync(dir, { withFileTypes: true })) {
+      const child = path.join(dir, dirent.name);
+      if (dirent.isDirectory()) {
+        walk(child);
+      } else {
+        entries.push(
+          path.relative(platformRoot, child).split(path.sep).join('/')
+        );
+      }
+    }
+  };
+  walk(platformRoot);
+  return entries.sort();
 }
 
 function sourceZipPathForPlatform(rootDir, platform) {
@@ -236,7 +223,7 @@ function ensureZipLooksValid(rootDir, zipPath, platform) {
 
   const buffer = fs.readFileSync(zipPath);
   const entries = listZipEntries(buffer);
-  for (const requiredEntry of requiredEntriesForPlatform(platform)) {
+  for (const requiredEntry of payloadFilesForPlatform(rootDir, platform)) {
     const present = entries.some(
       (entry) => entry === requiredEntry || entry.endsWith(`/${requiredEntry}`)
     );

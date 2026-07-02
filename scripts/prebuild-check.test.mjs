@@ -8,45 +8,44 @@ import {
   assertMacosTrampolineStub,
   macosTrampolineStubPath,
   npmExecFileInvocation,
-  requiredEntriesForPlatform
+  payloadFilesForPlatform
 } from './prebuild-check.mjs';
 
-test('macOS bundles BazaarPlusPlus SQLite dependencies', () => {
-  expect(requiredEntriesForPlatform('macos')).toEqual([
-    'run_bepinex.sh',
-    'libdoorstop.dylib',
+test('payload manifest is derived from the SourceForBuild tree', () => {
+  const rootDir = mkdtempSync(path.join(tmpdir(), 'bpp-payload-'));
+  const platformRoot = path.join(
+    rootDir,
+    'src-tauri',
+    'resources',
+    'SourceForBuild',
+    'windows'
+  );
+  mkdirSync(path.join(platformRoot, 'BepInEx', 'plugins'), { recursive: true });
+  writeFileSync(path.join(platformRoot, 'winhttp.dll'), 'x');
+  writeFileSync(
+    path.join(platformRoot, 'BepInEx', 'plugins', 'BazaarPlusPlus.dll'),
+    'x'
+  );
+  writeFileSync(
+    path.join(platformRoot, 'BepInEx', 'plugins', 'NewDependency.dll'),
+    'x'
+  );
+
+  expect(payloadFilesForPlatform(rootDir, 'windows')).toEqual([
     'BepInEx/plugins/BazaarPlusPlus.dll',
-    'BepInEx/plugins/BazaarPlusPlus.version',
-    'BepInEx/plugins/Microsoft.Data.Sqlite.dll',
-    'BepInEx/plugins/SQLitePCLRaw.batteries_v2.dll',
-    'BepInEx/plugins/SQLitePCLRaw.core.dll',
-    'BepInEx/plugins/SQLitePCLRaw.provider.e_sqlite3.dll',
-    'BepInEx/plugins/SixLabors.ImageSharp.dll',
-    'BepInEx/plugins/System.Buffers.dll',
-    'BepInEx/plugins/System.Memory.dll',
-    'BepInEx/plugins/System.Numerics.Vectors.dll',
-    'BepInEx/plugins/System.Text.Encoding.CodePages.dll',
-    'BepInEx/plugins/libe_sqlite3.dylib'
+    'BepInEx/plugins/NewDependency.dll',
+    'winhttp.dll'
   ]);
 });
 
-test('Windows bundles BazaarPlusPlus SQLite dependencies', () => {
-  expect(requiredEntriesForPlatform('windows')).toEqual([
-    'winhttp.dll',
-    'doorstop_config.ini',
-    'BepInEx/plugins/BazaarPlusPlus.dll',
-    'BepInEx/plugins/BazaarPlusPlus.version',
-    'BepInEx/plugins/Microsoft.Data.Sqlite.dll',
-    'BepInEx/plugins/SQLitePCLRaw.batteries_v2.dll',
-    'BepInEx/plugins/SQLitePCLRaw.core.dll',
-    'BepInEx/plugins/SQLitePCLRaw.provider.e_sqlite3.dll',
-    'BepInEx/plugins/SixLabors.ImageSharp.dll',
-    'BepInEx/plugins/System.Buffers.dll',
-    'BepInEx/plugins/System.Memory.dll',
-    'BepInEx/plugins/System.Numerics.Vectors.dll',
-    'BepInEx/plugins/System.Text.Encoding.CodePages.dll',
-    'BepInEx/plugins/e_sqlite3.dll'
-  ]);
+test('real SourceForBuild trees include the core payload files', () => {
+  const repoRoot = process.cwd();
+  const macos = payloadFilesForPlatform(repoRoot, 'macos');
+  const windows = payloadFilesForPlatform(repoRoot, 'windows');
+  expect(macos).toContain('BepInEx/plugins/BazaarPlusPlus.dll');
+  expect(macos).toContain('run_bepinex.sh');
+  expect(windows).toContain('BepInEx/plugins/BazaarPlusPlus.dll');
+  expect(windows).toContain('winhttp.dll');
 });
 
 test('macOS launcher check accepts safe codesign tempfile handling', () => {
