@@ -328,9 +328,6 @@ fn scan_upload_cache_files(
         }
 
         let path = entry.path();
-        if !has_upload_cache_extension(&path) {
-            continue;
-        }
         let Some(stem) = path.file_stem().and_then(|value| value.to_str()) else {
             continue;
         };
@@ -341,15 +338,6 @@ fn scan_upload_cache_files(
 
     stale_files.sort();
     Ok(stale_files)
-}
-
-fn has_upload_cache_extension(path: &Path) -> bool {
-    path.extension()
-        .and_then(|value| value.to_str())
-        .map(|extension| {
-            extension.eq_ignore_ascii_case("png") || extension.eq_ignore_ascii_case("jpg")
-        })
-        .unwrap_or(false)
 }
 
 fn estimate_screenshot_bytes(screenshots_dir: &Path, items: &[ScreenshotCleanupItem]) -> i64 {
@@ -548,6 +536,11 @@ mod tests {
             "UploadCache/shot-gone.png",
             b"gone",
         );
+        let stale_extensionless_cache = write_screenshot_file(
+            &fixture.screenshots_dir,
+            "UploadCache/shot-extra",
+            b"extra",
+        );
         let _kept_cache = write_screenshot_file(
             &fixture.screenshots_dir,
             "UploadCache/shot-kept.jpg",
@@ -561,7 +554,10 @@ mod tests {
 
         assert!(plan.items.is_empty());
         assert_eq!(plan.orphan_files, vec![orphan]);
-        assert_eq!(plan.upload_cache_files, vec![stale_cache]);
+        assert_eq!(
+            plan.upload_cache_files,
+            vec![stale_extensionless_cache, stale_cache]
+        );
     }
 
     #[test]
