@@ -1,0 +1,19 @@
+static/support/wechat-pay.svg
+  s_029afe841f1f23::t_9f34b007ff2156 1
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.9",
+  "base_commit_sha": "7be269c07d185cefb2bf9ed21b984204138b814e",
+  "prompts": {},
+  "sessions": {
+    "s_029afe841f1f23": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f2429-d8e9-7b40-b6eb-57914a3d3093",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Xinyu YANG <cauyxy@gmail.com>"
+    }
+  }
+}
