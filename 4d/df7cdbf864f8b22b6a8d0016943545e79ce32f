@@ -1,0 +1,22 @@
+docs/INDEX.md
+  s_962ab2a4909f27::t_b1242581e7bcbb 21
+docs/truth/history-stream.md
+  s_962ab2a4909f27::t_febf458483a938 4,23-31
+  s_962ab2a4909f27::t_9031ec82f99b6e 22
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.9",
+  "base_commit_sha": "4ddf7cdbf864f8b22b6a8d0016943545e79ce32f",
+  "prompts": {},
+  "sessions": {
+    "s_962ab2a4909f27": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f244a-25f3-7543-8f4a-3f8234115943",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Xinyu YANG <cauyxy@gmail.com>"
+    }
+  }
+}
