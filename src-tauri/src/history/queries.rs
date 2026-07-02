@@ -42,6 +42,17 @@ pub fn open_write_connection(database_path: &Path) -> Result<Connection, String>
     Ok(conn)
 }
 
+/// Write connection for cleanup operations. Unlike `open_write_connection`,
+/// this enables per-connection foreign-key enforcement so the mod schema's
+/// ON DELETE CASCADE chains (runs -> run_events/battles/run_sync_state,
+/// run_screenshots -> bazaardb_snapshot_uploads) fire on our deletes.
+pub fn open_cleanup_connection(database_path: &Path) -> Result<Connection, String> {
+    let conn = open_write_connection(database_path)?;
+    conn.execute_batch("PRAGMA foreign_keys = ON;")
+        .map_err(|err| err.to_string())?;
+    Ok(conn)
+}
+
 pub fn table_exists(conn: &Connection, table_name: &str) -> Result<bool, String> {
     conn.query_row(
         "select exists(select 1 from sqlite_master where type = 'table' and name = ?1)",
@@ -416,5 +427,34 @@ mod tests {
 
         assert!(open_connection(&database_path).is_err());
         assert!(!database_path.exists());
+    }
+
+    #[test]
+    fn cleanup_connection_enables_foreign_key_cascade() {
+        let temp_dir = tempfile::tempdir().unwrap();
+        let database_path = temp_dir.path().join("bazaarplusplus.db");
+        {
+            let conn = rusqlite::Connection::open(&database_path).unwrap();
+            conn.execute_batch(
+                "create table parents (id text primary key);
+                 create table children (
+                     id text primary key,
+                     parent_id text not null,
+                     foreign key (parent_id) references parents(id) on delete cascade
+                 );
+                 insert into parents values ('p1');
+                 insert into children values ('c1', 'p1');",
+            )
+            .unwrap();
+        }
+
+        let conn = super::open_cleanup_connection(&database_path).unwrap();
+        conn.execute("delete from parents where id = 'p1'", [])
+            .unwrap();
+
+        let remaining: i64 = conn
+            .query_row("select count(*) from children", [], |row| row.get(0))
+            .unwrap();
+        assert_eq!(remaining, 0, "cascade must fire on the cleanup connection");
     }
 }
