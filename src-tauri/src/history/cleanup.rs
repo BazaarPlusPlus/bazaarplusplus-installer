@@ -373,6 +373,133 @@ pub fn plan_run_data_cleanup(
     })
 }
 
+/// Runs are heavier than screenshots (multiple tables + cascade per row),
+/// so chunks are smaller to keep each write transaction short while the game
+/// may also be writing to the WAL database.
+#[allow(dead_code)]
+const RUN_CLEANUP_CHUNK_SIZE: usize = 25;
+
+#[derive(Clone, Debug, PartialEq, serde::Serialize, ts_rs::TS)]
+#[ts(export)]
+#[allow(dead_code)]
+pub struct RunDataCleanupResult {
+    pub deleted_runs: i64,
+    pub deleted_files: i64,
+    pub freed_bytes: i64,
+    pub skipped_pending_uploads: i64,
+}
+
+#[allow(dead_code)]
+pub fn execute_run_data_cleanup(
+    database_path: &Path,
+    game_path: &Path,
+    cutoff: Option<&CleanupCutoff>,
+) -> Result<RunDataCleanupResult, String> {
+    let plan = plan_run_data_cleanup(database_path, game_path, cutoff)?;
+    let screenshots_dir = crate::services::paths::screenshots_dir(game_path);
+    let videos_dir = crate::services::paths::combat_replay_videos_dir(game_path);
+    let replays_dir = crate::services::paths::combat_replays_dir(game_path);
+    let mut deleted_runs = 0i64;
+    let mut deleted_files = 0i64;
+    let mut freed_bytes = 0i64;
+    let mut deleted_video_paths = HashSet::new();
+    let mut deleted_replay_payloads = HashSet::new();
+    let mut deleted_screenshot_paths = HashSet::new();
+
+    if !plan.items.is_empty() {
+        let mut conn = open_cleanup_connection(database_path)?;
+        for chunk in plan.items.chunks(RUN_CLEANUP_CHUNK_SIZE) {
+            for item in chunk {
+                for video in &item.videos {
+                    let Some(path) = resolve_cleanup_file_path(&videos_dir, &video.relative_path)
+                    else {
+                        continue;
+                    };
+                    let normalized = normalize_relative_path(&video.relative_path);
+                    if normalized.is_empty() {
+                        continue;
+                    }
+                    if !deleted_video_paths.insert(normalized) {
+                        continue;
+                    }
+                    freed_bytes += file_size(&path);
+                    if remove_file_if_exists(&path)? {
+                        deleted_files += 1;
+                    }
+                }
+
+                for battle_id in &item.battle_ids {
+                    let Some(path) = replay_payload_path(&replays_dir, battle_id) else {
+                        continue;
+                    };
+                    if !deleted_replay_payloads.insert(battle_id.trim().to_string()) {
+                        continue;
+                    }
+                    freed_bytes += file_size(&path);
+                    if remove_file_if_exists(&path)? {
+                        deleted_files += 1;
+                    }
+                }
+
+                for screenshot in &item.screenshots {
+                    if !screenshot.delete_image_file {
+                        continue;
+                    }
+                    let Some(path) = resolve_cleanup_file_path(
+                        &screenshots_dir,
+                        &screenshot.image_relative_path,
+                    ) else {
+                        continue;
+                    };
+                    let normalized = normalize_relative_path(&screenshot.image_relative_path);
+                    if !deleted_screenshot_paths.insert(normalized) {
+                        continue;
+                    }
+                    freed_bytes += file_size(&path);
+                    if remove_file_if_exists(&path)? {
+                        deleted_files += 1;
+                    }
+                }
+            }
+
+            let transaction = conn.transaction().map_err(|err| err.to_string())?;
+            for item in chunk {
+                // These tables do not cascade from runs in the mod schema.
+                // All other run-owned tables are deleted through the runs FK.
+                for video in &item.videos {
+                    transaction
+                        .execute(
+                            "delete from combat_replay_videos where video_id = ?1",
+                            [&video.video_id],
+                        )
+                        .map_err(|err| err.to_string())?;
+                }
+                for screenshot in &item.screenshots {
+                    transaction
+                        .execute(
+                            "delete from run_screenshots where screenshot_id = ?1",
+                            [&screenshot.screenshot_id],
+                        )
+                        .map_err(|err| err.to_string())?;
+                }
+                deleted_runs += transaction
+                    .execute("delete from runs where run_id = ?1", [&item.run_id])
+                    .map_err(|err| err.to_string())? as i64;
+            }
+            transaction.commit().map_err(|err| err.to_string())?;
+        }
+    }
+
+    remove_empty_dated_directories(&screenshots_dir);
+
+    Ok(RunDataCleanupResult {
+        deleted_runs,
+        deleted_files,
+        freed_bytes,
+        skipped_pending_uploads: plan.skipped_pending_uploads,
+    })
+}
+
 #[allow(dead_code)]
 fn eligible_run_ids(
     conn: &Connection,
@@ -1506,6 +1633,132 @@ mod tests {
         assert_eq!(plan.items[0].videos.len(), 2);
         assert_eq!(plan.items[0].screenshots.len(), 2);
         assert_eq!(plan.estimated_bytes, 5 + 7 + 4);
+    }
+
+    #[test]
+    fn execute_run_cleanup_cascades_rows_deletes_files_and_spares_ghosts() {
+        let fixture = create_fixture();
+        let data_dir = fixture.game_path.join("BazaarPlusPlusV4");
+        let videos_dir = data_dir.join("CombatReplayVideos");
+        let replays_dir = data_dir.join("CombatReplays");
+        fs::create_dir_all(videos_dir.join("2026-06-10")).unwrap();
+        fs::create_dir_all(&replays_dir).unwrap();
+        fs::write(videos_dir.join("2026-06-10/v1.mp4"), b"vvvv").unwrap();
+        fs::write(replays_dir.join("battle-1.payload.mpack.gz"), b"ppp").unwrap();
+        let ghost_payload = replays_dir.join("battle-ghost.payload.mpack.gz");
+        fs::write(&ghost_payload, b"gg").unwrap();
+        let shot_file =
+            write_screenshot_file(&fixture.screenshots_dir, "2026-06-10/shot.png", b"ss");
+        let shared_shot =
+            write_screenshot_file(&fixture.screenshots_dir, "2026-06-10/shared.png", b"shared");
+
+        let conn = rusqlite::Connection::open(&fixture.database_path).unwrap();
+        insert_run(
+            &conn,
+            "run-1",
+            "completed",
+            1,
+            "Ranked",
+            "2026-06-10T10:00:00Z",
+        );
+        insert_run(
+            &conn,
+            "run-pending",
+            "completed",
+            1,
+            "Ranked",
+            "2026-06-10T10:05:00Z",
+        );
+        conn.execute_batch(
+            "
+            insert into run_sync_state (run_id, dirty) values
+                ('run-1', 0),
+                ('run-pending', 0);
+            insert into run_events (run_id, seq, ts_utc, kind, payload_json)
+                values ('run-1', 1, '2026-06-10T09:00:00Z', 'test', '{}');
+            insert into battles (battle_id, source, run_id, recorded_at_utc, replay_dirty) values
+                ('battle-1', 'LOCAL', 'run-1', '2026-06-10T09:00:00Z', 0),
+                ('battle-ghost', 'GHOST', null, '2026-06-10T09:00:00Z', 0);
+            insert into battle_snapshots (battle_id, player_hand_json) values ('battle-1', '[]');
+            insert into combat_replay_videos (video_id, battle_id, video_relative_path, started_at_utc, status)
+                values ('video-1', 'battle-1', '2026-06-10/v1.mp4', '2026-06-10T09:05:00Z', 'COMPLETED');
+            insert into run_screenshots (screenshot_id, run_id, capture_source, image_relative_path, captured_at_utc, captured_at_local)
+                values
+                    ('shot-1', 'run-1', 'end_of_run_auto', '2026-06-10/shot.png',
+                     '2026-06-10T10:00:00Z', '2026-06-10T18:00:00+08:00'),
+                    ('shot-shared', 'run-1', 'end_of_run_auto', '2026-06-10\\shared.png',
+                     '2026-06-10T10:01:00Z', '2026-06-10T18:01:00+08:00'),
+                    ('shot-pending', 'run-pending', 'end_of_run_auto', '2026-06-10/shared.png',
+                     '2026-06-10T10:05:00Z', '2026-06-10T18:05:00+08:00');
+            insert into bazaardb_snapshot_uploads (snapshot_id, status) values
+                ('shot-1', 'uploaded'),
+                ('shot-shared', 'uploaded'),
+                ('shot-pending', 'pending');
+            ",
+        )
+        .unwrap();
+        drop(conn);
+
+        let result =
+            super::execute_run_data_cleanup(&fixture.database_path, &fixture.game_path, None)
+                .unwrap();
+
+        assert_eq!(result.deleted_runs, 1);
+        // v1.mp4 + battle-1 payload + shot.png; shared.png stays for the pending run.
+        assert_eq!(result.deleted_files, 3);
+        assert_eq!(result.freed_bytes, 4 + 3 + 2);
+        assert_eq!(result.skipped_pending_uploads, 1);
+
+        assert!(!videos_dir.join("2026-06-10/v1.mp4").exists());
+        assert!(!replays_dir.join("battle-1.payload.mpack.gz").exists());
+        assert!(!shot_file.exists());
+        assert!(
+            shared_shot.exists(),
+            "pending run must keep shared screenshot"
+        );
+        assert!(ghost_payload.exists(), "ghost payloads are never touched");
+
+        let conn = rusqlite::Connection::open(&fixture.database_path).unwrap();
+        let count = |sql: &str| -> i64 { conn.query_row(sql, [], |row| row.get(0)).unwrap() };
+        assert_eq!(count("select count(*) from runs where run_id = 'run-1'"), 0);
+        assert_eq!(
+            count("select count(*) from run_events where run_id = 'run-1'"),
+            0,
+            "cascade"
+        );
+        assert_eq!(
+            count("select count(*) from battle_snapshots where battle_id = 'battle-1'"),
+            0,
+            "cascade"
+        );
+        assert_eq!(
+            count("select count(*) from run_sync_state where run_id = 'run-1'"),
+            0,
+            "cascade"
+        );
+        assert_eq!(
+            count("select count(*) from run_screenshots where run_id = 'run-1'"),
+            0
+        );
+        assert_eq!(
+            count("select count(*) from bazaardb_snapshot_uploads where snapshot_id in ('shot-1', 'shot-shared')"),
+            0,
+            "cascade"
+        );
+        assert_eq!(count("select count(*) from combat_replay_videos"), 0);
+        assert_eq!(
+            count("select count(*) from battles where source = 'GHOST'"),
+            1,
+            "ghost battle survives"
+        );
+        assert_eq!(
+            count("select count(*) from runs where run_id = 'run-pending'"),
+            1
+        );
+        assert_eq!(
+            count("select count(*) from run_screenshots where screenshot_id = 'shot-pending'"),
+            1
+        );
     }
 
     #[test]
