@@ -1,0 +1,26 @@
+src/features/history/CleanupConfirmModal.tsx
+  s_962ab2a4909f27::t_4f097057b5eaa7 1-85
+src/features/history/StorageCleanupCard.tsx
+  s_962ab2a4909f27::t_4f097057b5eaa7 1-100
+src/features/history/useStorageCleanup.ts
+  s_962ab2a4909f27::t_4f097057b5eaa7 1-60
+src/pages/History.tsx
+  s_962ab2a4909f27::t_4f097057b5eaa7 10,51
+  s_962ab2a4909f27::t_00f40e44553675 52
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.9",
+  "base_commit_sha": "79a57103072bc30f9c793f4fa563730f27d2a55a",
+  "prompts": {},
+  "sessions": {
+    "s_962ab2a4909f27": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f244a-25f3-7543-8f4a-3f8234115943",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Xinyu YANG <cauyxy@gmail.com>"
+    }
+  }
+}
