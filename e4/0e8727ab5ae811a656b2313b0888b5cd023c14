@@ -1,0 +1,23 @@
+src-tauri/src/history/cleanup.rs
+  s_962ab2a4909f27::t_5752bff7c501bf 53-89
+  s_962ab2a4909f27::t_8277cd3e5f6741 39-41
+  s_962ab2a4909f27::t_f1414b07633988 1-38,42-52
+src-tauri/src/history/mod.rs
+  s_962ab2a4909f27::t_f1ba5bb08b8b8d 2
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.9",
+  "base_commit_sha": "e40e8727ab5ae811a656b2313b0888b5cd023c14",
+  "prompts": {},
+  "sessions": {
+    "s_962ab2a4909f27": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f244a-25f3-7543-8f4a-3f8234115943",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Xinyu YANG <cauyxy@gmail.com>"
+    }
+  }
+}
