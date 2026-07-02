@@ -1,0 +1,39 @@
+src-tauri/src/config.rs
+  s_962ab2a4909f27::t_c433b78c17ef09 2
+  s_962ab2a4909f27::t_7ca6997625cc04 3
+src-tauri/src/history/cleanup.rs
+  s_962ab2a4909f27::t_f6ba04e3b9cc03 7
+  s_962ab2a4909f27::t_11d78fd14b3fcc 238-239,241-251,253-260,262-269,271-287,289-294,296-374,376-426,428-475,477-495,497-526,528-558,560-571
+  s_962ab2a4909f27::t_6ea0b5b06f5334 288,1347-1351
+  s_962ab2a4909f27::t_00d1a90c252723 240,252,261,270,295,375,427,476,496,527,559
+  s_962ab2a4909f27::t_196d9965be84d8 963-979,1173-1346,1352-1365
+  s_962ab2a4909f27::t_3d8dd3f324d404 1366
+src-tauri/src/services/paths.rs
+  s_962ab2a4909f27::t_406baed825ca6f 27
+  s_962ab2a4909f27::t_4a35cc304a8105 4-5,28-29
+  s_9b5a71252463f6::t_809f9bc15fd40d 30-31
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.9",
+  "base_commit_sha": "605c2805fb03f8ebcb4e2cffba9235bbd8502d9f",
+  "prompts": {},
+  "sessions": {
+    "s_962ab2a4909f27": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f244a-25f3-7543-8f4a-3f8234115943",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Xinyu YANG <cauyxy@gmail.com>"
+    },
+    "s_9b5a71252463f6": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "9223b3ee-6187-4278-8611-91fd22d365f5",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Xinyu YANG <cauyxy@gmail.com>"
+    }
+  }
+}
