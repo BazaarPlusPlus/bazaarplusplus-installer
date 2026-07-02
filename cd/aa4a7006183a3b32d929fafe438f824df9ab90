@@ -1,0 +1,42 @@
+package.json
+  h_518331e5a07dc9 3
+src-tauri/Cargo.lock
+  s_d0b5b4b9779d6e::t_8b7697bfabf330 353
+src-tauri/Cargo.toml
+  s_d0b5b4b9779d6e::t_6e0114ee34df7f 3
+src-tauri/tauri.conf.json
+  s_d0b5b4b9779d6e::t_09dfa170b51bfb 4
+docs/plans/2026-07-02-storage-cleanup.md
+  s_39d7208379c824::t_d8858fa67a5e23 1-2686
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.5",
+  "base_commit_sha": "cdaa4a7006183a3b32d929fafe438f824df9ab90",
+  "prompts": {},
+  "humans": {
+    "h_518331e5a07dc9": {
+      "author": "Xinyu YANG <cauyxy@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_39d7208379c824": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a443d189-38e7-4f64-be5b-9bf21da9071d",
+        "model": "unknown"
+      },
+      "human_author": "Xinyu YANG <cauyxy@gmail.com>"
+    },
+    "s_d0b5b4b9779d6e": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f241b-135f-7de2-bd63-9f3eb9826862",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Xinyu YANG <cauyxy@gmail.com>"
+    }
+  },
+  "attestation_metadata": {},
+  "remote_transcripts": {}
+}
