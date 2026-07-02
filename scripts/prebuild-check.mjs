@@ -30,6 +30,10 @@ export function resolveTargetPlatforms(platformEnv) {
   return [platform];
 }
 
+// Gitignored, so invisible to git status — but MSBuild's ZipDirectory zips the
+// whole SourceForBuild tree verbatim, so a stray one would ship to users.
+const osArtifactNames = new Set(['.DS_Store', 'Thumbs.db', 'desktop.ini']);
+
 export function payloadFilesForPlatform(rootDir, platform) {
   const platformRoot = path.join(
     rootDir,
@@ -44,6 +48,10 @@ export function payloadFilesForPlatform(rootDir, platform) {
       const child = path.join(dir, dirent.name);
       if (dirent.isDirectory()) {
         walk(child);
+      } else if (osArtifactNames.has(dirent.name)) {
+        throw new Error(
+          `Stray OS artifact ${child} would ship inside the BepInEx payload; delete it and rebuild the zips`
+        );
       } else {
         entries.push(
           path.relative(platformRoot, child).split(path.sep).join('/')
@@ -223,6 +231,13 @@ function ensureZipLooksValid(rootDir, zipPath, platform) {
 
   const buffer = fs.readFileSync(zipPath);
   const entries = listZipEntries(buffer);
+  for (const entry of entries) {
+    if (osArtifactNames.has(entry.split('/').pop())) {
+      throw new Error(
+        `${platform} zip contains OS artifact '${entry}' in ${zipPath}; rebuild it from a clean SourceForBuild tree`
+      );
+    }
+  }
   for (const requiredEntry of payloadFilesForPlatform(rootDir, platform)) {
     const present = entries.some(
       (entry) => entry === requiredEntry || entry.endsWith(`/${requiredEntry}`)

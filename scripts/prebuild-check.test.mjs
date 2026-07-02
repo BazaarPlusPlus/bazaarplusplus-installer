@@ -38,6 +38,24 @@ test('payload manifest is derived from the SourceForBuild tree', () => {
   ]);
 });
 
+test('payload manifest rejects stray OS artifacts that would ship to users', () => {
+  const rootDir = mkdtempSync(path.join(tmpdir(), 'bpp-payload-'));
+  const platformRoot = path.join(
+    rootDir,
+    'src-tauri',
+    'resources',
+    'SourceForBuild',
+    'windows'
+  );
+  mkdirSync(path.join(platformRoot, 'BepInEx', 'plugins'), { recursive: true });
+  writeFileSync(path.join(platformRoot, 'winhttp.dll'), 'x');
+  writeFileSync(path.join(platformRoot, 'BepInEx', '.DS_Store'), 'x');
+
+  expect(() => payloadFilesForPlatform(rootDir, 'windows')).toThrow(
+    /OS artifact/
+  );
+});
+
 test('real SourceForBuild trees include the core payload files', () => {
   const repoRoot = process.cwd();
   const macos = payloadFilesForPlatform(repoRoot, 'macos');
