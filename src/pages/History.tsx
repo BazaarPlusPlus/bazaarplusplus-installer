@@ -7,6 +7,7 @@ import {
   formatDateTime,
   formatRunResultLabel
 } from '../features/history/format';
+import { StorageCleanupCard } from '../features/history/StorageCleanupCard';
 import { useHistoryPage } from '../features/history/useHistoryPage';
 import { useI18n } from '../i18n/LocaleProvider';
 import type { HistoryRunRow } from '../types/backend';
@@ -46,6 +47,8 @@ export default function History() {
             value={page.summary.winRate}
           />
         </div>
+
+        <StorageCleanupCard onCompleted={page.refresh} />
 
         {page.error && <ErrorBanner message={page.error} />}
 
