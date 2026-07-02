@@ -101,8 +101,12 @@ pub fn install_bepinex(
         })?;
 
         debug_log!("Extracting BepInEx...");
-        let _extracted = zip_archive::extract_zip(&zip_bytes, game_path)?;
-        debug_log!("Extracted {} files.", _extracted.len());
+        let _report = zip_archive::extract_zip(&zip_bytes, game_path)?;
+        debug_log!(
+            "Extracted {} files, skipped {} identical.",
+            _report.written.len(),
+            _report.skipped_identical.len()
+        );
 
         #[cfg(target_os = "macos")]
         {
