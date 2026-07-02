@@ -27,7 +27,9 @@ macro_rules! with_commands {
             (commands::history, delete_battle_video),
             (commands::history, delete_run_videos),
             (commands::history, preview_screenshot_cleanup),
-            (commands::history, execute_screenshot_cleanup)
+            (commands::history, execute_screenshot_cleanup),
+            (commands::history, preview_run_data_cleanup),
+            (commands::history, execute_run_data_cleanup)
         }
     };
 }
@@ -105,6 +107,6 @@ mod tests {
             .collect::<Vec<_>>();
 
         assert_eq!(parsed, names);
-        assert_eq!(names.len(), 25);
+        assert_eq!(names.len(), 27);
     }
 }

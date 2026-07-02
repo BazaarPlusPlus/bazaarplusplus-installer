@@ -2,7 +2,9 @@ use crate::history::HistoryRunDetail;
 use crate::services::history::{
     delete_battle_video as delete_battle_video_service,
     delete_run_videos as delete_run_videos_service, empty_history_list,
+    execute_run_data_cleanup as execute_run_data_cleanup_service,
     execute_screenshot_cleanup as execute_screenshot_cleanup_service, get_run_detail, list_runs,
+    preview_run_data_cleanup as preview_run_data_cleanup_service,
     preview_screenshot_cleanup as preview_screenshot_cleanup_service, require_history_paths,
     reveal_battle_video as reveal_battle_video_file,
     reveal_run_screenshot as reveal_run_screenshot_file,
@@ -118,4 +120,26 @@ pub fn execute_screenshot_cleanup(
 ) -> Result<crate::history::cleanup::ScreenshotCleanupResult, String> {
     let paths = require_history_paths(&app, state.get_game_path(), game_path)?;
     execute_screenshot_cleanup_service(&paths, preset)
+}
+
+#[tauri::command]
+pub fn preview_run_data_cleanup(
+    app: tauri::AppHandle,
+    state: tauri::State<'_, StreamRuntimeState>,
+    game_path: Option<String>,
+    preset: crate::history::cleanup::CleanupPreset,
+) -> Result<crate::history::cleanup::RunDataCleanupPreview, String> {
+    let paths = require_history_paths(&app, state.get_game_path(), game_path)?;
+    preview_run_data_cleanup_service(&paths, preset)
+}
+
+#[tauri::command]
+pub fn execute_run_data_cleanup(
+    app: tauri::AppHandle,
+    state: tauri::State<'_, StreamRuntimeState>,
+    game_path: Option<String>,
+    preset: crate::history::cleanup::CleanupPreset,
+) -> Result<crate::history::cleanup::RunDataCleanupResult, String> {
+    let paths = require_history_paths(&app, state.get_game_path(), game_path)?;
+    execute_run_data_cleanup_service(&paths, preset)
 }
