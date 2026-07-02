@@ -1,0 +1,39 @@
+src/types/generated/index.ts
+  s_962ab2a4909f27::t_b0b5f981f694ac 25
+src/types/generated/bindings/RunDataCleanupResult.ts
+  s_962ab2a4909f27::t_b0b5f981f694ac 1-3
+src/features/history/historyApi.ts
+  s_962ab2a4909f27::t_317c9486969789 76-91
+src/features/history/useStorageCleanup.ts
+  s_962ab2a4909f27::t_7e56849554310d 4-5,11,13,17-24,30-33,37,42,44-53,55,66-75,85
+  s_962ab2a4909f27::t_b2e7823308c1cb 25-29,38-40
+src/api/tauri-command-registry.test.ts
+  s_962ab2a4909f27::t_2b72d7d60787f3 46-48
+src/features/history/StorageCleanupCard.tsx
+  s_962ab2a4909f27::t_b2e7823308c1cb 25-28
+  s_962ab2a4909f27::t_425c98e128fabf 7-12,32-38,46-77,90-101,103,105,112,121,129-161,164
+  s_962ab2a4909f27::t_d1718df70f6470 162-163
+src/i18n/messages.ts
+  s_962ab2a4909f27::t_295053e21551b3 211,218-219,224-225
+  s_962ab2a4909f27::t_017ab052b38380 466,473-474,480-481
+src/types/generated/tauri-command-names.ts
+  s_962ab2a4909f27::t_b0b5f981f694ac 28-29,57-59
+src/api/tauri.ts
+  s_962ab2a4909f27::t_461880da33684b 12-13,129-136
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.9",
+  "base_commit_sha": "313263155dbbfb3e55ab4d084d47c443cc246cff",
+  "prompts": {},
+  "sessions": {
+    "s_962ab2a4909f27": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f244a-25f3-7543-8f4a-3f8234115943",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Xinyu YANG <cauyxy@gmail.com>"
+    }
+  }
+}
