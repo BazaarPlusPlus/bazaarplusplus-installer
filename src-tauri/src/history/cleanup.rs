@@ -4,7 +4,7 @@ use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 
 use crate::history::files::resolve_cleanup_file_path;
-use crate::history::queries::{open_connection, table_exists};
+use crate::history::queries::{open_cleanup_connection, open_connection, table_exists};
 
 /// Wire strings are a stable contract with the frontend preset buttons.
 #[derive(Clone, Copy, Debug, PartialEq, serde::Serialize, serde::Deserialize, ts_rs::TS)]
@@ -148,6 +148,78 @@ pub fn plan_screenshot_cleanup(
         upload_cache_files,
         estimated_bytes,
         skipped_pending_uploads,
+    })
+}
+
+const CLEANUP_CHUNK_SIZE: usize = 200;
+
+#[derive(Clone, Debug, PartialEq, serde::Serialize, ts_rs::TS)]
+#[ts(export)]
+pub struct ScreenshotCleanupResult {
+    pub deleted_rows: i64,
+    pub deleted_files: i64,
+    pub freed_bytes: i64,
+    pub skipped_pending_uploads: i64,
+}
+
+pub fn execute_screenshot_cleanup(
+    database_path: &Path,
+    game_path: &Path,
+    cutoff: Option<&CleanupCutoff>,
+) -> Result<ScreenshotCleanupResult, String> {
+    let plan = plan_screenshot_cleanup(database_path, game_path, cutoff)?;
+    let screenshots_dir = crate::services::paths::screenshots_dir(game_path);
+    let mut deleted_rows = 0i64;
+    let mut deleted_files = 0i64;
+    let mut freed_bytes = 0i64;
+
+    if !plan.items.is_empty() {
+        let mut conn = open_cleanup_connection(database_path)?;
+        for chunk in plan.items.chunks(CLEANUP_CHUNK_SIZE) {
+            // Files first, then rows, mirroring the delete-video precedent:
+            // a crash in between leaves a row whose 404 is handled by every
+            // consumer, never a file that a fresh row can no longer describe.
+            for item in chunk {
+                if let Some(path) =
+                    resolve_cleanup_file_path(&screenshots_dir, &item.image_relative_path)
+                {
+                    freed_bytes += file_size(&path);
+                    if remove_file_if_exists(&path)? {
+                        deleted_files += 1;
+                    }
+                }
+            }
+            let transaction = conn.transaction().map_err(|err| err.to_string())?;
+            for item in chunk {
+                deleted_rows += transaction
+                    .execute(
+                        "delete from run_screenshots where screenshot_id = ?1",
+                        [&item.screenshot_id],
+                    )
+                    .map_err(|err| err.to_string())? as i64;
+            }
+            transaction.commit().map_err(|err| err.to_string())?;
+        }
+    }
+
+    for path in plan
+        .orphan_files
+        .iter()
+        .chain(plan.upload_cache_files.iter())
+    {
+        freed_bytes += file_size(path);
+        if remove_file_if_exists(path)? {
+            deleted_files += 1;
+        }
+    }
+
+    remove_empty_dated_directories(&screenshots_dir);
+
+    Ok(ScreenshotCleanupResult {
+        deleted_rows,
+        deleted_files,
+        freed_bytes,
+        skipped_pending_uploads: plan.skipped_pending_uploads,
     })
 }
 
@@ -385,6 +457,36 @@ fn file_size(path: &Path) -> i64 {
     std::fs::metadata(path)
         .map(|metadata| metadata.len() as i64)
         .unwrap_or(0)
+}
+
+fn remove_file_if_exists(path: &Path) -> Result<bool, String> {
+    match std::fs::remove_file(path) {
+        Ok(()) => Ok(true),
+        Err(err) if err.kind() == std::io::ErrorKind::NotFound => Ok(false),
+        Err(err) => Err(format!("failed to remove {}: {err}", path.display())),
+    }
+}
+
+fn remove_empty_dated_directories(screenshots_dir: &Path) {
+    let Ok(entries) = std::fs::read_dir(screenshots_dir) else {
+        return;
+    };
+    for entry in entries.flatten() {
+        let path = entry.path();
+        if !path.is_dir() {
+            continue;
+        }
+        let name = entry.file_name().to_string_lossy().into_owned();
+        if NaiveDate::parse_from_str(&name, "%Y-%m-%d").is_err() {
+            continue;
+        }
+        let is_empty = std::fs::read_dir(&path)
+            .map(|mut dir| dir.next().is_none())
+            .unwrap_or(false);
+        if is_empty {
+            let _ = std::fs::remove_dir(&path);
+        }
+    }
 }
 
 #[cfg(test)]
@@ -649,5 +751,75 @@ mod tests {
         assert!(plan.orphan_files.is_empty());
         assert!(plan.upload_cache_files.is_empty());
         assert_eq!(plan.estimated_bytes, 0);
+    }
+
+    #[test]
+    fn execute_deletes_rows_files_orphans_and_cascades_upload_records() {
+        let fixture = create_fixture();
+        let conn = rusqlite::Connection::open(&fixture.database_path).unwrap();
+        conn.execute_batch(
+            "
+            insert into run_screenshots (
+                screenshot_id, run_id, capture_source, image_relative_path,
+                captured_at_utc, captured_at_local
+            ) values
+                ('shot-old', 'run-1', 'end_of_run_auto', '2026-06-15/old.png',
+                 '2026-06-15T10:00:00Z', '2026-06-15T18:00:00+08:00'),
+                ('shot-pending', 'run-2', 'end_of_run_auto', '2026-06-16/pending.png',
+                 '2026-06-16T10:00:00Z', '2026-06-16T18:00:00+08:00');
+            insert into bazaardb_snapshot_uploads (snapshot_id, status) values
+                ('shot-old', 'uploaded'),
+                ('shot-pending', 'pending');
+            ",
+        )
+        .unwrap();
+        drop(conn);
+        let old_file =
+            write_screenshot_file(&fixture.screenshots_dir, "2026-06-15/old.png", b"12345");
+        let pending_file =
+            write_screenshot_file(&fixture.screenshots_dir, "2026-06-16/pending.png", b"p");
+        let orphan =
+            write_screenshot_file(&fixture.screenshots_dir, "2026-06-14/orphan.png", b"ooo");
+        let cache =
+            write_screenshot_file(&fixture.screenshots_dir, "UploadCache/shot-old.png", b"cc");
+
+        let result = super::execute_screenshot_cleanup(
+            &fixture.database_path,
+            &fixture.game_path,
+            None, // preset "all"
+        )
+        .unwrap();
+
+        assert_eq!(result.deleted_rows, 1);
+        // old.png + orphan.png + UploadCache/shot-old.png
+        assert_eq!(result.deleted_files, 3);
+        assert_eq!(result.freed_bytes, 5 + 3 + 2);
+        assert_eq!(result.skipped_pending_uploads, 1);
+
+        assert!(!old_file.exists());
+        assert!(!orphan.exists());
+        assert!(!cache.exists());
+        assert!(pending_file.exists(), "pending upload must survive");
+        // Emptied dated folders are removed; the pending one stays.
+        assert!(!fixture.screenshots_dir.join("2026-06-15").exists());
+        assert!(!fixture.screenshots_dir.join("2026-06-14").exists());
+        assert!(fixture.screenshots_dir.join("2026-06-16").exists());
+
+        let conn = rusqlite::Connection::open(&fixture.database_path).unwrap();
+        let rows: i64 = conn
+            .query_row("select count(*) from run_screenshots", [], |row| row.get(0))
+            .unwrap();
+        assert_eq!(rows, 1);
+        let uploads: i64 = conn
+            .query_row(
+                "select count(*) from bazaardb_snapshot_uploads",
+                [],
+                |row| row.get(0),
+            )
+            .unwrap();
+        assert_eq!(
+            uploads, 1,
+            "cascade must remove the deleted screenshot's upload row"
+        );
     }
 }
