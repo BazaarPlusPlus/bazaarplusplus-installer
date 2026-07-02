@@ -344,6 +344,28 @@ pub(super) fn has_third_party_plugins(game_path: &Path) -> bool {
     })
 }
 
+/// A patcher-only mod leaves nothing in `BepInEx/plugins`: its whole footprint
+/// lives under `BepInEx/patchers`, which BPP never ships. Any file there means
+/// a third-party mod still depends on the shared BepInEx bootstrap.
+pub(super) fn has_third_party_patchers(game_path: &Path) -> bool {
+    dir_contains_any_file(&game_path.join("BepInEx/patchers"))
+}
+
+fn dir_contains_any_file(dir: &Path) -> bool {
+    let Ok(entries) = std::fs::read_dir(dir) else {
+        return false;
+    };
+
+    entries.filter_map(Result::ok).any(|entry| {
+        let path = entry.path();
+        if path.is_dir() {
+            dir_contains_any_file(&path)
+        } else {
+            true
+        }
+    })
+}
+
 pub(super) fn ensure_valid_game_path(game_path: &Path) -> Result<(), String> {
     if crate::services::detect::is_valid_game_path(game_path) {
         return Ok(());
@@ -697,6 +719,22 @@ mod tests {
         std::fs::write(plugins_dir.join("OtherMod.dll"), b"dll").unwrap();
 
         assert!(super::has_third_party_plugins(tmp.path()));
+    }
+
+    #[test]
+    fn test_has_third_party_patchers_requires_a_file_not_just_directories() {
+        let tmp = tempfile::tempdir().unwrap();
+        assert!(!super::has_third_party_patchers(tmp.path()));
+
+        std::fs::create_dir_all(tmp.path().join("BepInEx/patchers/SomeMod")).unwrap();
+        assert!(!super::has_third_party_patchers(tmp.path()));
+
+        std::fs::write(
+            tmp.path().join("BepInEx/patchers/SomeMod/Patcher.dll"),
+            b"dll",
+        )
+        .unwrap();
+        assert!(super::has_third_party_patchers(tmp.path()));
     }
 
     #[test]

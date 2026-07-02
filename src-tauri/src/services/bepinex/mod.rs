@@ -160,11 +160,13 @@ pub fn uninstall_bpp(
         )?;
     }
 
-    let keep_shared_bootstrap = payload::has_third_party_plugins(game_path);
+    let keep_shared_bootstrap = payload::has_third_party_plugins(game_path)
+        || payload::has_third_party_patchers(game_path);
 
-    // Restore the vanilla bundle only when BPP is the last installed plugin. If
-    // another mod remains, the trampoline / launch options are shared BepInEx
-    // bootstrap state and removing them would disable that mod.
+    // Restore the vanilla bundle only when BPP is the last installed mod. If
+    // another mod remains — a plugin in BepInEx/plugins or a patcher-only mod
+    // under BepInEx/patchers — the trampoline / launch options are shared
+    // BepInEx bootstrap state and removing them would disable that mod.
     if !keep_shared_bootstrap {
         // Call uninstall_trampoline UNCONDITIONALLY (not gated on is_trampolined):
         // it self-classifies — a no-op when already vanilla, a restore when a
