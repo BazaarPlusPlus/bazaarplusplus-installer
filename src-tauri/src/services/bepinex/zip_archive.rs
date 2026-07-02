@@ -78,6 +78,18 @@ pub(super) fn extract_zip(zip_bytes: &[u8], dest_dir: &Path) -> Result<ExtractRe
     Ok(report)
 }
 
+pub(super) fn zip_entry_paths(
+    zip_bytes: &[u8],
+) -> Result<std::collections::HashSet<String>, String> {
+    let reader = Cursor::new(zip_bytes);
+    let archive = zip::ZipArchive::new(reader).map_err(|err| err.to_string())?;
+    Ok(archive
+        .file_names()
+        .filter(|name| !name.ends_with('/'))
+        .map(|name| name.replace('\\', "/"))
+        .collect())
+}
+
 /// A shared dll another mod ships at the same version must not be rewritten
 /// on every BPP install; the length gate keeps the multi-MB payload entries
 /// from being read unless they could actually match.
@@ -94,7 +106,7 @@ fn existing_file_is_identical(path: &Path, contents: &[u8]) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use super::{bundled_zip_relative_path, extract_zip};
+    use super::{bundled_zip_relative_path, extract_zip, zip_entry_paths};
     use std::io::{Cursor, Write};
     use std::path::PathBuf;
 
@@ -150,6 +162,16 @@ mod tests {
         assert_eq!(report.written.len(), 1);
         assert!(report.skipped_identical.is_empty());
         assert_eq!(std::fs::read(&target).unwrap(), b"fake dll content");
+    }
+
+    #[test]
+    fn test_zip_entry_paths_lists_files_not_directories() {
+        let zip_bytes = make_test_zip();
+
+        let paths = zip_entry_paths(&zip_bytes).unwrap();
+
+        assert!(paths.contains("BepInEx/core/BepInEx.Core.dll"));
+        assert!(!paths.iter().any(|path| path.ends_with('/')));
     }
 
     #[test]

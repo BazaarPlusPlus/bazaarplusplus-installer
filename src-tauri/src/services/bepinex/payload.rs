@@ -326,19 +326,42 @@ pub(super) fn ensure_valid_game_path(game_path: &Path) -> Result<(), String> {
     ))
 }
 
-pub(super) fn prepare_install_target(game_path: &Path) -> Result<InstallTargetBackup, String> {
+pub(super) fn prepare_install_target(
+    game_path: &Path,
+    incoming_relative_paths: &std::collections::HashSet<String>,
+) -> Result<InstallTargetBackup, String> {
     ensure_valid_game_path(game_path)?;
     let backup = InstallTargetBackup::capture(game_path)?;
-    if let Err(uninstall_err) = uninstall_payload(game_path) {
+    if let Err(cleanup_err) = remove_stale_bpp_files(game_path, incoming_relative_paths) {
         return match backup.restore(game_path) {
-            Ok(()) => Err(uninstall_err),
+            Ok(()) => Err(cleanup_err),
             Err(restore_err) => Err(format!(
-                "{uninstall_err}; additionally failed to restore previous payload: {restore_err}"
+                "{cleanup_err}; additionally failed to restore previous payload: {restore_err}"
             )),
         };
     }
 
     Ok(backup)
+}
+
+/// Install-time pre-clean. Removes an owned path only when the incoming payload
+/// no longer ships it; paths the zip will overwrite anyway stay in place so
+/// extraction's identical-skip gate decides their fate.
+fn remove_stale_bpp_files(
+    game_path: &Path,
+    incoming_relative_paths: &std::collections::HashSet<String>,
+) -> Result<(), String> {
+    for relative_path in BPP_PRIVATE_RELATIVE_PATHS
+        .iter()
+        .chain(BPP_BUNDLED_DEPENDENCY_RELATIVE_PATHS)
+    {
+        if incoming_relative_paths.contains(*relative_path) {
+            continue;
+        }
+        remove_path_if_exists(&game_path.join(relative_path))?;
+    }
+
+    Ok(())
 }
 
 pub(super) fn preserve_file_if_exists(
@@ -397,7 +420,7 @@ mod tests {
     }
 
     #[test]
-    fn test_prepare_install_target_cleans_previous_bpp_files_only() {
+    fn test_prepare_install_target_removes_only_stale_bpp_files() {
         let tmp = tempfile::tempdir().unwrap();
 
         #[cfg(target_os = "macos")]
@@ -422,13 +445,33 @@ mod tests {
             b"bpp",
         )
         .unwrap();
+        std::fs::write(
+            tmp.path()
+                .join("BepInEx/plugins/Microsoft.Data.Sqlite.dll"),
+            b"stale dep",
+        )
+        .unwrap();
 
-        prepare_install_target(tmp.path()).unwrap();
+        // The incoming payload still ships BazaarPlusPlus.dll but no longer
+        // ships Microsoft.Data.Sqlite.dll.
+        let incoming: std::collections::HashSet<String> =
+            ["BepInEx/plugins/BazaarPlusPlus.dll".to_string()]
+                .into_iter()
+                .collect();
 
+        prepare_install_target(tmp.path(), &incoming).unwrap();
+
+        // Third-party file: never touched.
         assert!(tmp.path().join("BepInEx/plugins/old.dll").exists());
-        assert!(!tmp
+        // Owned and shipped by the incoming zip: left for extraction to overwrite.
+        assert!(tmp
             .path()
             .join("BepInEx/plugins/BazaarPlusPlus.dll")
+            .exists());
+        // Owned but stale: removed.
+        assert!(!tmp
+            .path()
+            .join("BepInEx/plugins/Microsoft.Data.Sqlite.dll")
             .exists());
         #[cfg(target_os = "macos")]
         {
@@ -463,7 +506,7 @@ mod tests {
         std::fs::create_dir_all(tmp.path().join("BepInEx/plugins")).unwrap();
         std::fs::write(tmp.path().join("BepInEx/plugins/old.dll"), b"old").unwrap();
 
-        let backup = prepare_install_target(tmp.path()).unwrap();
+        let backup = prepare_install_target(tmp.path(), &std::collections::HashSet::new()).unwrap();
         std::fs::create_dir_all(tmp.path().join("BepInEx/plugins")).unwrap();
         std::fs::write(tmp.path().join("BepInEx/plugins/new.dll"), b"new").unwrap();
         #[cfg(target_os = "macos")]
@@ -512,7 +555,7 @@ mod tests {
         std::fs::write(plugins_dir.join("BazaarPlusPlus.version"), b"4.0.0").unwrap();
         std::fs::write(data_dir.join("stale.dll"), b"dll").unwrap();
 
-        prepare_install_target(tmp.path()).unwrap();
+        prepare_install_target(tmp.path(), &std::collections::HashSet::new()).unwrap();
 
         assert!(data_dir.exists());
         assert!(data_dir.join("stale.dll").exists());

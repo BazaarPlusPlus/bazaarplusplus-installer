@@ -85,21 +85,22 @@ pub fn install_bepinex(
             true,
         )?;
     }
-    let install_backup = payload::prepare_install_target(game_path)?;
+    debug_log!("Reading bundled BepInEx.zip...");
+    let relative_zip_path = zip_archive::bundled_zip_relative_path();
+    let resource_path = app
+        .path()
+        .resource_dir()
+        .map_err(|err| err.to_string())?
+        .join(relative_zip_path);
+    let zip_bytes = std::fs::read(&resource_path).map_err(|err| {
+        debug_error!("Cannot read bundled BepInEx.zip: {err}");
+        format!("Cannot read bundled BepInEx.zip: {err}")
+    })?;
+    let incoming_relative_paths = zip_archive::zip_entry_paths(&zip_bytes)?;
+
+    let install_backup = payload::prepare_install_target(game_path, &incoming_relative_paths)?;
 
     let install_result = (|| -> Result<(), String> {
-        debug_log!("Reading bundled BepInEx.zip...");
-        let relative_zip_path = zip_archive::bundled_zip_relative_path();
-        let resource_path = app
-            .path()
-            .resource_dir()
-            .map_err(|err| err.to_string())?
-            .join(relative_zip_path);
-        let zip_bytes = std::fs::read(&resource_path).map_err(|err| {
-            debug_error!("Cannot read bundled BepInEx.zip: {err}");
-            format!("Cannot read bundled BepInEx.zip: {err}")
-        })?;
-
         debug_log!("Extracting BepInEx...");
         let _report = zip_archive::extract_zip(&zip_bytes, game_path)?;
         debug_log!(
