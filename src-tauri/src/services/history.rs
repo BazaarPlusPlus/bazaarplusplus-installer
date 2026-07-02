@@ -149,6 +149,7 @@ fn strip_extended_length_prefix(value: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::{history_paths_for_game_path, require_video_file_exists};
+    use crate::services::paths;
 
     #[test]
     fn history_paths_use_combat_replay_videos_as_video_root() {
@@ -158,14 +159,9 @@ mod tests {
 
         assert_eq!(
             paths.combat_replay_videos_dir,
-            game_path
-                .join("BazaarPlusPlusV4")
-                .join("CombatReplayVideos")
+            paths::combat_replay_videos_dir(&game_path)
         );
-        assert_eq!(
-            paths.database_path,
-            game_path.join("BazaarPlusPlusV4").join("bazaarplusplus.db")
-        );
+        assert_eq!(paths.database_path, paths::database_path(&game_path));
     }
 
     #[test]

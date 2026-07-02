@@ -85,7 +85,7 @@ impl OverlayRecordRepository {
 #[cfg(test)]
 mod tests {
     use super::OverlayRecordRepository;
-    use crate::config::DATABASE_FILE_NAME;
+    use crate::services::paths;
 
     fn create_run_screenshots_table(conn: &rusqlite::Connection) {
         conn.execute(
@@ -114,12 +114,11 @@ mod tests {
     fn repository_sets_strip_url_when_relative_image_exists() {
         let temp_dir = tempfile::tempdir().unwrap();
         let game_path = temp_dir.path().join("TheBazaar");
-        let data_dir = game_path.join("BazaarPlusPlusV4");
-        let screenshots_dir = data_dir.join("Screenshots");
+        let screenshots_dir = paths::screenshots_dir(&game_path);
         std::fs::create_dir_all(&screenshots_dir).unwrap();
         std::fs::write(screenshots_dir.join("match-1.png"), b"png").unwrap();
 
-        let database_path = data_dir.join(DATABASE_FILE_NAME);
+        let database_path = paths::database_path(&game_path);
         let conn = rusqlite::Connection::open(&database_path).unwrap();
         create_run_screenshots_table(&conn);
         conn.execute(
@@ -144,10 +143,10 @@ mod tests {
     fn repository_preserves_optional_snapshot_metrics() {
         let temp_dir = tempfile::tempdir().unwrap();
         let game_path = temp_dir.path().join("TheBazaar");
-        let data_dir = game_path.join("BazaarPlusPlusV4");
+        let data_dir = paths::bpp_data_dir(&game_path);
         std::fs::create_dir_all(&data_dir).unwrap();
 
-        let database_path = data_dir.join(DATABASE_FILE_NAME);
+        let database_path = paths::database_path(&game_path);
         let conn = rusqlite::Connection::open(&database_path).unwrap();
         create_run_screenshots_table(&conn);
         conn.execute(

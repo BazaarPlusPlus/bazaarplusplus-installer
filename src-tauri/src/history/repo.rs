@@ -164,6 +164,8 @@ mod tests {
     use super::{
         delete_battle_video, delete_run_videos, get_history_run_detail, list_history_runs,
     };
+    use crate::config::DATABASE_FILE_NAME;
+    use crate::services::paths;
 
     fn create_history_schema(conn: &rusqlite::Connection) {
         conn.execute_batch(
@@ -231,7 +233,7 @@ mod tests {
     #[test]
     fn list_history_runs_derives_summary_results_video_counts_and_strip_urls() {
         let temp_dir = tempfile::tempdir().unwrap();
-        let database_path = temp_dir.path().join("bazaarplusplus.db");
+        let database_path = temp_dir.path().join(DATABASE_FILE_NAME);
         let conn = rusqlite::Connection::open(&database_path).unwrap();
         create_history_schema(&conn);
         conn.execute_batch(
@@ -296,14 +298,14 @@ mod tests {
     #[test]
     fn run_detail_maps_local_battles_latest_completed_video_and_deletes_video_rows() {
         let temp_dir = tempfile::tempdir().unwrap();
-        let data_dir = temp_dir.path().join("BazaarPlusPlusV4");
-        let video_dir = data_dir.join("CombatReplayVideos");
+        let game_path = temp_dir.path();
+        let video_dir = paths::combat_replay_videos_dir(game_path);
         let dated_videos_dir = video_dir.join("2026-05-20");
         std::fs::create_dir_all(&dated_videos_dir).unwrap();
         std::fs::write(dated_videos_dir.join("new.mp4"), b"new-video").unwrap();
         std::fs::write(dated_videos_dir.join("old.mp4"), b"old-video").unwrap();
 
-        let database_path = data_dir.join("bazaarplusplus.db");
+        let database_path = paths::database_path(game_path);
         let conn = rusqlite::Connection::open(&database_path).unwrap();
         create_history_schema(&conn);
         conn.execute_batch(

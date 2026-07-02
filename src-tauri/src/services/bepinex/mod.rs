@@ -27,7 +27,7 @@ pub async fn reset_bpp_data(
     game_path: String,
 ) -> Result<bool, String> {
     // Drop our own SQLite connections before touching the data directory.
-    // Without this, OBS overlay polling keeps `bazaarplusplus.db` open and
+    // Without this, OBS overlay polling keeps the SQLite database open and
     // Windows refuses to delete it (the headline customer complaint).
     let _ = crate::stream::server::stop(stream_state.inner()).await;
 
@@ -270,9 +270,10 @@ mod tests {
 
     #[test]
     fn test_format_partial_failure_uses_unit_separator() {
+        let game_path = Path::new("C:/Games/The Bazaar");
         let formatted = format_partial_failure(&[
-            PathBuf::from("C:/Games/The Bazaar/BazaarPlusPlusV4/bazaarplusplus.db"),
-            PathBuf::from("C:/Games/The Bazaar/BazaarPlusPlusV4/Identity/observation.json"),
+            crate::services::paths::database_path(game_path),
+            crate::services::paths::bpp_data_dir(game_path).join("Identity/observation.json"),
         ]);
 
         assert!(formatted.starts_with(RESET_BPP_DATA_ERR_PARTIAL_FAILURE));

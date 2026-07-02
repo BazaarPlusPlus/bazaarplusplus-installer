@@ -204,7 +204,7 @@ fn try_remove_with_retry(path: &Path, is_dir: bool) -> bool {
 /// Bottom-up recursive delete that retries each entry independently and
 /// collects every path it could not remove. Unlike `remove_dir_all`, this does
 /// not abort on the first sharing violation, so a single locked sqlite handle
-/// won't leave the rest of `BazaarPlusPlusV4/` half-deleted.
+/// won't leave the rest of the BazaarPlusPlus data directory half-deleted.
 pub(crate) fn remove_dir_with_retry(root: &Path) -> RemovalReport {
     let mut report = RemovalReport::default();
 
@@ -453,7 +453,7 @@ pub(super) fn cleanup_bpp_data_directory(game_path: &Path) -> RemovalReport {
 
 #[cfg(test)]
 mod tests {
-    use crate::config::BAZAAR_DATA_DIRECTORY;
+    use crate::config::{BAZAAR_DATA_DIRECTORY, DATABASE_FILE_NAME};
 
     use super::{
         cleanup_bpp_data_directory, ensure_valid_game_path, prepare_install_target,
@@ -828,7 +828,7 @@ mod tests {
         let data_dir = tmp.path().join(BAZAAR_DATA_DIRECTORY);
         let nested = data_dir.join("Identity").join("inner");
         std::fs::create_dir_all(&nested).unwrap();
-        std::fs::write(data_dir.join("bazaarplusplus.db"), b"db").unwrap();
+        std::fs::write(data_dir.join(DATABASE_FILE_NAME), b"db").unwrap();
         std::fs::write(nested.join("auth.json"), b"auth").unwrap();
 
         let report = cleanup_bpp_data_directory(tmp.path());
