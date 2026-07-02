@@ -1,0 +1,24 @@
+src-tauri/src/services/bepinex/payload.rs
+  s_d2e93b8e8896a5::t_d25ac6df99c8d0 438-439,635-684
+  s_d2e93b8e8896a5::t_8b6ff15a9ccabc 37-52,313-323
+src-tauri/src/services/bepinex/mod.rs
+  s_d2e93b8e8896a5::t_2cffb5b2804cf2 181-183
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "6dd1ecb23bcd4fb3ce337d655c107121f26a9d70",
+  "prompts": {},
+  "sessions": {
+    "s_d2e93b8e8896a5": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f2277-d3e3-7130-82fc-dfaf1cff7428",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Xinyu YANG <cauyxy@gmail.com>"
+    }
+  },
+  "attestation_metadata": {},
+  "remote_transcripts": {}
+}
