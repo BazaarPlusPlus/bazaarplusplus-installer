@@ -38,7 +38,7 @@ pub fn parse_appmanifest_branch_state(content: &str) -> Result<AppManifestBranch
             &format!("{USER_CONFIG_KEY}.{BETA_KEY}"),
             BETA_KEY,
         )?,
-        mounted_beta_key: read_optional_mounted_beta_key(&lines, app_open, app_close),
+        mounted_beta_key: read_optional_mounted_beta_key(&lines, app_open, app_close)?,
         state_flags: read_required_u64_field(
             &lines,
             app_open,
@@ -125,35 +125,35 @@ pub fn write_appmanifest_branch_target(path: &Path, target_beta_key: &str) -> Re
     })
 }
 
+fn parse_quoted(input: &str) -> Option<(&str, &str)> {
+    let mut escaped = false;
+    let mut end = None;
+
+    for (idx, ch) in input.char_indices().skip(1) {
+        if escaped {
+            escaped = false;
+            continue;
+        }
+
+        if ch == '\\' {
+            escaped = true;
+            continue;
+        }
+
+        if ch == '"' {
+            end = Some(idx);
+            break;
+        }
+    }
+
+    let end = end?;
+    Some((&input[1..end], &input[end + 1..]))
+}
+
 fn parse_line_pair(line: &str) -> Option<(&str, &str, &str)> {
     let indent_len = line.find('"')?;
     let indent = &line[..indent_len];
     let trimmed = &line[indent_len..];
-
-    fn parse_quoted(input: &str) -> Option<(&str, &str)> {
-        let mut escaped = false;
-        let mut end = None;
-
-        for (idx, ch) in input.char_indices().skip(1) {
-            if escaped {
-                escaped = false;
-                continue;
-            }
-
-            if ch == '\\' {
-                escaped = true;
-                continue;
-            }
-
-            if ch == '"' {
-                end = Some(idx);
-                break;
-            }
-        }
-
-        let end = end?;
-        Some((&input[1..end], &input[end + 1..]))
-    }
 
     let (key, rest) = parse_quoted(trimmed)?;
     let rest = rest.trim_start();
@@ -163,6 +163,14 @@ fn parse_line_pair(line: &str) -> Option<(&str, &str, &str)> {
     }
 
     Some((indent, key, value))
+}
+
+fn parse_line_key(line: &str) -> Option<&str> {
+    let key_start = line.find('"')?;
+    let trimmed = &line[key_start..];
+    let (key, _rest) = parse_quoted(trimmed)?;
+
+    Some(key)
 }
 
 struct LineSpan<'a> {
@@ -335,6 +343,39 @@ fn find_direct_pair_index(
     None
 }
 
+fn find_direct_key_index(
+    lines: &[String],
+    block_open: usize,
+    block_close: usize,
+    key: &str,
+) -> Option<usize> {
+    let mut depth = 0usize;
+
+    for idx in block_open + 1..block_close {
+        match lines[idx].trim() {
+            "{" => {
+                depth += 1;
+                continue;
+            }
+            "}" => {
+                depth = depth.saturating_sub(1);
+                continue;
+            }
+            _ => {}
+        }
+
+        if depth == 0 {
+            if let Some(parsed_key) = parse_line_key(&lines[idx]) {
+                if parsed_key == key {
+                    return Some(idx);
+                }
+            }
+        }
+    }
+
+    None
+}
+
 fn find_app_state_block(lines: &[String]) -> Result<(usize, usize), String> {
     find_root_named_block(lines, APP_STATE_KEY)
         .ok_or_else(|| "Malformed appmanifest: missing AppState block".to_string())
@@ -356,6 +397,10 @@ fn missing_field_error(field: &str) -> String {
 
 fn invalid_number_error(field: &str, value: &str) -> String {
     format!("Malformed appmanifest: {field} is not a valid unsigned integer: {value:?}")
+}
+
+fn malformed_field_error(field: &str) -> String {
+    format!("Malformed appmanifest: malformed {field}")
 }
 
 fn read_required_string_field(
@@ -409,13 +454,18 @@ fn read_optional_mounted_beta_key(
     lines: &[String],
     app_open: usize,
     app_close: usize,
-) -> Option<String> {
-    let (mounted_open, mounted_close) =
-        find_direct_named_block(lines, app_open, app_close, MOUNTED_CONFIG_KEY)?;
-    let beta_idx = find_direct_pair_index(lines, mounted_open, mounted_close, BETA_KEY)?;
-    let (_indent, _key, value) = parse_line_pair(&lines[beta_idx])?;
+) -> Result<Option<String>, String> {
+    let Some((mounted_open, mounted_close)) =
+        find_direct_named_block(lines, app_open, app_close, MOUNTED_CONFIG_KEY)
+    else {
+        return Ok(None);
+    };
+    let beta_idx = find_direct_key_index(lines, mounted_open, mounted_close, BETA_KEY)
+        .ok_or_else(|| missing_field_error(&format!("{MOUNTED_CONFIG_KEY}.{BETA_KEY}")))?;
+    let (_indent, _key, value) = parse_line_pair(&lines[beta_idx])
+        .ok_or_else(|| malformed_field_error(&format!("{MOUNTED_CONFIG_KEY}.{BETA_KEY}")))?;
 
-    Some(unescape_vdf_string(value))
+    Ok(Some(unescape_vdf_string(value)))
 }
 
 fn rewrite_pair_line(line: &str, expected_key: &str, value: &str) -> Result<String, String> {
@@ -495,6 +545,20 @@ mod tests {
         assert_eq!(state.bytes_to_download, Some(222));
         assert_eq!(state.bytes_staged, Some(333));
         assert_eq!(state.bytes_to_stage, Some(444));
+    }
+
+    #[test]
+    fn test_parse_appmanifest_branch_state_errors_when_mounted_beta_key_is_missing_or_malformed() {
+        let cases = [
+            "\"AppState\"\n{\n\t\"StateFlags\"\t\t\"4\"\n\t\"UserConfig\"\n\t{\n\t\t\"BetaKey\"\t\t\"public_test_realm\"\n\t}\n\t\"MountedConfig\"\n\t{\n\t\t\"MountedDepots\"\n\t\t{\n\t\t\t\"1617401\"\t\t\"123456789\"\n\t\t}\n\t}\n}",
+            "\"AppState\"\n{\n\t\"StateFlags\"\t\t\"4\"\n\t\"UserConfig\"\n\t{\n\t\t\"BetaKey\"\t\t\"public_test_realm\"\n\t}\n\t\"MountedConfig\"\n\t{\n\t\t\"BetaKey\"\n\t}\n}",
+        ];
+
+        for manifest in cases {
+            let error = parse_appmanifest_branch_state(manifest).unwrap_err();
+
+            assert!(error.contains("MountedConfig.BetaKey"));
+        }
     }
 
     #[test]
