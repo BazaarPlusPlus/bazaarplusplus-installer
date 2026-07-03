@@ -144,7 +144,7 @@ pub fn branch_target_authorized_in_config(
         .value
         .get_obj()
         .ok_or_else(|| "Malformed config.vdf: root is not an object".to_string())?;
-    let Some(app) = steam_config_app_obj(root, THE_BAZAAR_APP_ID) else {
+    let Some(app) = steam_config_app_obj(root, THE_BAZAAR_APP_ID)? else {
         return Ok(false);
     };
     let betahash_key = format!("{BETAHASH_PREFIX}{target_beta_key}");
@@ -166,23 +166,47 @@ pub fn read_branch_target_authorized(
     branch_target_authorized_in_config(&content, target_beta_key)
 }
 
-fn first_obj<'a, 'text>(values: &'a [Value<'text>]) -> Option<&'a Obj<'text>>
+fn child_obj_at_path<'a, 'text>(
+    parent: &'a Obj<'text>,
+    key: &str,
+    path: &str,
+) -> Result<Option<&'a Obj<'text>>, String>
 where
     'a: 'text,
 {
-    values.first()?.get_obj()
+    let Some(values) = parent.get(key) else {
+        return Ok(None);
+    };
+
+    values
+        .first()
+        .and_then(Value::get_obj)
+        .map(Some)
+        .ok_or_else(|| format!("Malformed config.vdf: {path} is not an object"))
 }
 
-fn steam_config_app_obj<'a, 'text>(root: &'a Obj<'text>, app_id: &str) -> Option<&'a Obj<'text>>
+fn steam_config_app_obj<'a, 'text>(
+    root: &'a Obj<'text>,
+    app_id: &str,
+) -> Result<Option<&'a Obj<'text>>, String>
 where
     'a: 'text,
 {
-    root.get("Software")
-        .and_then(|values| first_obj(values))
-        .and_then(|software| software.get("Valve").and_then(|values| first_obj(values)))
-        .and_then(|valve| valve.get("Steam").and_then(|values| first_obj(values)))
-        .and_then(|steam| steam.get("apps").and_then(|values| first_obj(values)))
-        .and_then(|apps| apps.get(app_id).and_then(|values| first_obj(values)))
+    let Some(software) = child_obj_at_path(root, "Software", "Software")? else {
+        return Ok(None);
+    };
+    let Some(valve) = child_obj_at_path(software, "Valve", "Software.Valve")? else {
+        return Ok(None);
+    };
+    let Some(steam) = child_obj_at_path(valve, "Steam", "Software.Valve.Steam")? else {
+        return Ok(None);
+    };
+    let Some(apps) = child_obj_at_path(steam, "apps", "Software.Valve.Steam.apps")? else {
+        return Ok(None);
+    };
+    let app_path = format!("Software.Valve.Steam.apps.{app_id}");
+
+    child_obj_at_path(apps, app_id, &app_path)
 }
 
 fn parse_quoted(input: &str) -> Option<(&str, &str)> {
@@ -664,6 +688,37 @@ mod tests {
                 .unwrap_err();
 
         assert!(error.contains("config.vdf"));
+    }
+
+    #[test]
+    fn test_branch_target_authorized_in_config_errors_when_present_config_path_is_not_object() {
+        let malformed_software = "\"InstallConfigStore\"
+{
+  \"Software\" \"not-an-object\"
+}";
+        let malformed_app = "\"InstallConfigStore\"
+{
+  \"Software\"
+  {
+    \"Valve\"
+    {
+      \"Steam\"
+      {
+        \"apps\"
+        {
+          \"1617400\" \"not-an-object\"
+        }
+      }
+    }
+  }
+}";
+
+        for config in [malformed_software, malformed_app] {
+            let error =
+                branch_target_authorized_in_config(config, "public_test_realm").unwrap_err();
+
+            assert!(error.contains("config.vdf"));
+        }
     }
 
     #[test]
