@@ -124,6 +124,7 @@ pub fn plan_screenshot_cleanup(
     database_path: &Path,
     game_path: &Path,
     cutoff: Option<&CleanupCutoff>,
+    today_local_date: NaiveDate,
 ) -> Result<ScreenshotCleanupPlan, String> {
     if !database_path.exists() {
         return Ok(ScreenshotCleanupPlan::empty());
@@ -147,6 +148,7 @@ pub fn plan_screenshot_cleanup(
         &screenshots_dir,
         &referenced_paths,
         cutoff.map(|c| c.local_date),
+        today_local_date,
     );
 
     let mut remaining_screenshot_ids = all_screenshot_ids(&conn)?;
@@ -186,8 +188,9 @@ pub fn execute_screenshot_cleanup(
     database_path: &Path,
     game_path: &Path,
     cutoff: Option<&CleanupCutoff>,
+    today_local_date: NaiveDate,
 ) -> Result<ScreenshotCleanupResult, String> {
-    let plan = plan_screenshot_cleanup(database_path, game_path, cutoff)?;
+    let plan = plan_screenshot_cleanup(database_path, game_path, cutoff, today_local_date)?;
     let screenshots_dir = crate::services::paths::screenshots_dir(game_path);
     let mut deleted_rows = 0i64;
     let mut deleted_files = 0i64;
@@ -990,10 +993,28 @@ fn scan_orphan_screenshot_files(
     screenshots_dir: &Path,
     referenced_paths: &HashSet<String>,
     cutoff_local_date: Option<NaiveDate>,
+    today_local_date: NaiveDate,
 ) -> Vec<PathBuf> {
     if !screenshots_dir.exists() {
         return Vec::new();
     }
+
+    // Folders whose date is at or after this floor are never swept for orphans.
+    // Today's local-date folder is ALWAYS protected — that is why the floor is
+    // `today_local_date` even under preset `all` (cutoff `None`). The mod writes
+    // a screenshot's PNG to disk (via an atomic `<name>.png.<guid>.tmp` rename)
+    // BEFORE it inserts the matching `run_screenshots` row, and it names the
+    // dated folder from local capture time. So a file captured "now" briefly has
+    // no row; sweeping today's folder would classify that in-flight file (or its
+    // transient `.tmp` sibling) as an orphan and delete it, leaving the mod to
+    // insert a row pointing at a missing file. A bounded preset's cutoff is
+    // always <= today, so `min` keeps its existing, stricter protection. (Known
+    // residual: a capture straddling local midnight can land in yesterday's
+    // folder; that sub-second window is left open by design rather than
+    // injecting a clock for an mtime grace check.)
+    let protect_from = cutoff_local_date.map_or(today_local_date, |cutoff_date| {
+        cutoff_date.min(today_local_date)
+    });
 
     let mut orphan_files = Vec::new();
     let Ok(entries) = std::fs::read_dir(screenshots_dir) else {
@@ -1018,7 +1039,7 @@ fn scan_orphan_screenshot_files(
         let Ok(folder_date) = NaiveDate::parse_from_str(folder_name, "%Y-%m-%d") else {
             continue;
         };
-        if cutoff_local_date.is_some_and(|cutoff_date| folder_date >= cutoff_date) {
+        if folder_date >= protect_from {
             continue;
         }
 
@@ -1279,6 +1300,14 @@ mod tests {
         }
     }
 
+    /// A fixed "today" for the generic cleanup tests. It sits strictly after
+    /// every dated folder those tests create, so the today-folder orphan guard
+    /// never masks the past-folder sweeps they assert. The guard itself is
+    /// exercised by the dedicated all-preset tests below.
+    fn test_today() -> NaiveDate {
+        NaiveDate::from_ymd_opt(2026, 7, 15).unwrap()
+    }
+
     fn insert_run(
         conn: &rusqlite::Connection,
         run_id: &str,
@@ -1354,9 +1383,13 @@ mod tests {
         write_screenshot_file(&fixture.screenshots_dir, "2026-06-15/old.png", b"12345");
 
         let cutoff = cutoff("2026-07-01T00:00:00Z", (2026, 7, 1));
-        let plan =
-            plan_screenshot_cleanup(&fixture.database_path, &fixture.game_path, Some(&cutoff))
-                .unwrap();
+        let plan = plan_screenshot_cleanup(
+            &fixture.database_path,
+            &fixture.game_path,
+            Some(&cutoff),
+            test_today(),
+        )
+        .unwrap();
 
         let item_ids = plan
             .items
@@ -1410,9 +1443,13 @@ mod tests {
         );
 
         let cutoff = cutoff("2026-07-01T00:00:00Z", (2026, 7, 1));
-        let plan =
-            plan_screenshot_cleanup(&fixture.database_path, &fixture.game_path, Some(&cutoff))
-                .unwrap();
+        let plan = plan_screenshot_cleanup(
+            &fixture.database_path,
+            &fixture.game_path,
+            Some(&cutoff),
+            test_today(),
+        )
+        .unwrap();
 
         assert!(plan.items.is_empty());
         assert_eq!(plan.orphan_files, vec![orphan]);
@@ -1423,15 +1460,102 @@ mod tests {
     }
 
     #[test]
+    fn plan_all_preset_skips_todays_and_future_local_folders() {
+        // Under preset `all` (cutoff `None`) the orphan sweep must still protect
+        // today's local-date folder: the mod writes a screenshot's PNG (and a
+        // transient `<name>.png.<guid>.tmp`) to disk BEFORE inserting its
+        // run_screenshots row, so a just-captured file in today's folder has no
+        // row yet and must not be classified as an orphan.
+        let fixture = create_fixture();
+        let today = NaiveDate::from_ymd_opt(2026, 7, 3).unwrap();
+
+        let past_orphan =
+            write_screenshot_file(&fixture.screenshots_dir, "2026-06-15/past.png", b"stale");
+        // Today's in-flight capture: the final PNG and its atomic temp sibling.
+        let _today_png = write_screenshot_file(
+            &fixture.screenshots_dir,
+            "2026-07-03/2026-07-03_14-32-15-427_final_run-abc.png",
+            b"live",
+        );
+        let _today_tmp = write_screenshot_file(
+            &fixture.screenshots_dir,
+            "2026-07-03/2026-07-03_14-32-15-427_final_run-abc.png.deadbeef.tmp",
+            b"tmp",
+        );
+        // A future-dated folder (installer clock behind the mod's) is protected too.
+        let _future =
+            write_screenshot_file(&fixture.screenshots_dir, "2026-07-04/ahead.png", b"ahead");
+
+        let plan = plan_screenshot_cleanup(&fixture.database_path, &fixture.game_path, None, today)
+            .unwrap();
+
+        assert!(plan.items.is_empty());
+        assert_eq!(
+            plan.orphan_files,
+            vec![past_orphan],
+            "only the past-day folder is swept; today and future are protected"
+        );
+        assert_eq!(plan.estimated_bytes, 5);
+    }
+
+    #[test]
+    fn execute_all_preset_keeps_todays_inflight_files() {
+        let fixture = create_fixture();
+        let today = NaiveDate::from_ymd_opt(2026, 7, 3).unwrap();
+
+        let past_orphan =
+            write_screenshot_file(&fixture.screenshots_dir, "2026-06-15/past.png", b"stale");
+        let today_png = write_screenshot_file(
+            &fixture.screenshots_dir,
+            "2026-07-03/2026-07-03_14-32-15-427_final_run-abc.png",
+            b"live",
+        );
+        let today_tmp = write_screenshot_file(
+            &fixture.screenshots_dir,
+            "2026-07-03/2026-07-03_14-32-15-427_final_run-abc.png.deadbeef.tmp",
+            b"tmp",
+        );
+
+        let result = super::execute_screenshot_cleanup(
+            &fixture.database_path,
+            &fixture.game_path,
+            None, // preset "all"
+            today,
+        )
+        .unwrap();
+
+        assert_eq!(
+            result.deleted_files, 1,
+            "only the past-day orphan is deleted"
+        );
+        assert_eq!(result.freed_bytes, 5);
+        assert!(!past_orphan.exists());
+        assert!(
+            today_png.exists(),
+            "a just-captured file with no row yet must survive"
+        );
+        assert!(
+            today_tmp.exists(),
+            "the atomic .tmp sibling must survive too"
+        );
+        assert!(fixture.screenshots_dir.join("2026-07-03").exists());
+        assert!(!fixture.screenshots_dir.join("2026-06-15").exists());
+    }
+
+    #[test]
     fn plan_skips_screenshot_root_read_errors() {
         let fixture = create_fixture();
         fs::remove_dir(&fixture.screenshots_dir).unwrap();
         fs::write(&fixture.screenshots_dir, b"not a directory").unwrap();
 
         let cutoff = cutoff("2026-07-01T00:00:00Z", (2026, 7, 1));
-        let plan =
-            plan_screenshot_cleanup(&fixture.database_path, &fixture.game_path, Some(&cutoff))
-                .unwrap();
+        let plan = plan_screenshot_cleanup(
+            &fixture.database_path,
+            &fixture.game_path,
+            Some(&cutoff),
+            test_today(),
+        )
+        .unwrap();
 
         assert!(plan.items.is_empty());
         assert!(plan.orphan_files.is_empty());
@@ -1451,9 +1575,13 @@ mod tests {
         .unwrap();
 
         let cutoff = cutoff("2026-07-01T00:00:00Z", (2026, 7, 1));
-        let plan =
-            plan_screenshot_cleanup(&fixture.database_path, &fixture.game_path, Some(&cutoff))
-                .unwrap();
+        let plan = plan_screenshot_cleanup(
+            &fixture.database_path,
+            &fixture.game_path,
+            Some(&cutoff),
+            test_today(),
+        )
+        .unwrap();
 
         assert_eq!(plan.orphan_files, vec![orphan]);
         assert!(plan.upload_cache_files.is_empty());
@@ -1465,7 +1593,7 @@ mod tests {
         let game_path = temp_dir.path().to_path_buf();
         let database_path = game_path.join("BazaarPlusPlusV4").join("bazaarplusplus.db");
 
-        let plan = plan_screenshot_cleanup(&database_path, &game_path, None).unwrap();
+        let plan = plan_screenshot_cleanup(&database_path, &game_path, None, test_today()).unwrap();
 
         assert!(plan.items.is_empty());
         assert!(plan.orphan_files.is_empty());
@@ -1481,7 +1609,7 @@ mod tests {
         fs::create_dir_all(&data_dir).unwrap();
         drop(Connection::open(&database_path).unwrap());
 
-        let plan = plan_screenshot_cleanup(&database_path, &game_path, None).unwrap();
+        let plan = plan_screenshot_cleanup(&database_path, &game_path, None, test_today()).unwrap();
 
         assert!(plan.items.is_empty());
         assert!(plan.orphan_files.is_empty());
@@ -2092,6 +2220,7 @@ mod tests {
             &fixture.database_path,
             &fixture.game_path,
             None, // preset "all"
+            test_today(),
         )
         .unwrap();
 
@@ -2152,8 +2281,13 @@ mod tests {
         let shared_file =
             write_screenshot_file(&fixture.screenshots_dir, "2026-06-15/shared.png", b"shared");
 
-        let plan =
-            plan_screenshot_cleanup(&fixture.database_path, &fixture.game_path, None).unwrap();
+        let plan = plan_screenshot_cleanup(
+            &fixture.database_path,
+            &fixture.game_path,
+            None,
+            test_today(),
+        )
+        .unwrap();
 
         assert_eq!(plan.items.len(), 1);
         assert_eq!(plan.items[0].screenshot_id, "shot-old");
@@ -2163,6 +2297,7 @@ mod tests {
             &fixture.database_path,
             &fixture.game_path,
             None, // preset "all"
+            test_today(),
         )
         .unwrap();
 
@@ -2218,8 +2353,13 @@ mod tests {
             b"1234",
         );
 
-        let plan =
-            plan_screenshot_cleanup(&fixture.database_path, &fixture.game_path, None).unwrap();
+        let plan = plan_screenshot_cleanup(
+            &fixture.database_path,
+            &fixture.game_path,
+            None,
+            test_today(),
+        )
+        .unwrap();
 
         assert_eq!(plan.items.len(), 2);
         assert_eq!(plan.estimated_bytes, 4);
@@ -2228,6 +2368,7 @@ mod tests {
             &fixture.database_path,
             &fixture.game_path,
             None, // preset "all"
+            test_today(),
         )
         .unwrap();
 
@@ -2264,8 +2405,13 @@ mod tests {
         .unwrap();
         drop(conn);
 
-        let plan =
-            plan_screenshot_cleanup(&fixture.database_path, &fixture.game_path, None).unwrap();
+        let plan = plan_screenshot_cleanup(
+            &fixture.database_path,
+            &fixture.game_path,
+            None,
+            test_today(),
+        )
+        .unwrap();
 
         assert_eq!(plan.items.len(), 1);
         assert_eq!(plan.estimated_bytes, 0);
@@ -2274,6 +2420,7 @@ mod tests {
             &fixture.database_path,
             &fixture.game_path,
             None, // preset "all"
+            test_today(),
         )
         .unwrap();
 

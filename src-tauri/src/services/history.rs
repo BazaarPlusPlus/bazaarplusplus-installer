@@ -101,11 +101,14 @@ pub fn preview_screenshot_cleanup(
     paths: &HistoryPaths,
     preset: crate::history::cleanup::CleanupPreset,
 ) -> Result<crate::history::cleanup::ScreenshotCleanupPreview, String> {
-    let cutoff = crate::history::cleanup::CleanupCutoff::for_preset(preset, chrono::Local::now());
+    let now = chrono::Local::now();
+    let today = now.date_naive();
+    let cutoff = crate::history::cleanup::CleanupCutoff::for_preset(preset, now);
     let plan = crate::history::cleanup::plan_screenshot_cleanup(
         &paths.database_path,
         &paths.game_path,
         cutoff.as_ref(),
+        today,
     )?;
     Ok(plan.to_preview())
 }
@@ -114,11 +117,14 @@ pub fn execute_screenshot_cleanup(
     paths: &HistoryPaths,
     preset: crate::history::cleanup::CleanupPreset,
 ) -> Result<crate::history::cleanup::ScreenshotCleanupResult, String> {
-    let cutoff = crate::history::cleanup::CleanupCutoff::for_preset(preset, chrono::Local::now());
+    let now = chrono::Local::now();
+    let today = now.date_naive();
+    let cutoff = crate::history::cleanup::CleanupCutoff::for_preset(preset, now);
     crate::history::cleanup::execute_screenshot_cleanup(
         &paths.database_path,
         &paths.game_path,
         cutoff.as_ref(),
+        today,
     )
 }
 
