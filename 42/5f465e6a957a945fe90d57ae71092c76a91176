@@ -1,0 +1,25 @@
+docs/decisions/007-steam-branch-switch.md
+  s_9471e7840cef14::t_cdc0ac50e8f190 3-74
+docs/INDEX.md
+  s_9471e7840cef14::t_fee629aadd9736 42
+  s_9471e7840cef14::t_d153b9fedd7143 31
+docs/archive/2026-07-03-steam-branch-switch.md
+  s_9471e7840cef14::t_94f19c64c54c92 6,11-15
+  s_9471e7840cef14::t_65d6dc381efd24 16
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.9",
+  "base_commit_sha": "425f465e6a957a945fe90d57ae71092c76a91176",
+  "prompts": {},
+  "sessions": {
+    "s_9471e7840cef14": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "bf48d288-2a4d-4ff9-b8e9-bd657c57dfbe",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Xinyu YANG <cauyxy@gmail.com>"
+    }
+  }
+}
