@@ -455,10 +455,14 @@ fn read_optional_mounted_beta_key(
     app_open: usize,
     app_close: usize,
 ) -> Result<Option<String>, String> {
+    if find_direct_key_index(lines, app_open, app_close, MOUNTED_CONFIG_KEY).is_none() {
+        return Ok(None);
+    }
+
     let Some((mounted_open, mounted_close)) =
         find_direct_named_block(lines, app_open, app_close, MOUNTED_CONFIG_KEY)
     else {
-        return Ok(None);
+        return Err(malformed_field_error(MOUNTED_CONFIG_KEY));
     };
     let beta_idx = find_direct_key_index(lines, mounted_open, mounted_close, BETA_KEY)
         .ok_or_else(|| missing_field_error(&format!("{MOUNTED_CONFIG_KEY}.{BETA_KEY}")))?;
@@ -559,6 +563,15 @@ mod tests {
 
             assert!(error.contains("MountedConfig.BetaKey"));
         }
+    }
+
+    #[test]
+    fn test_parse_appmanifest_branch_state_errors_when_mounted_config_block_is_malformed() {
+        let manifest = "\"AppState\"\n{\n\t\"StateFlags\"\t\t\"4\"\n\t\"UserConfig\"\n\t{\n\t\t\"BetaKey\"\t\t\"public_test_realm\"\n\t}\n\t\"MountedConfig\"\n}";
+
+        let error = parse_appmanifest_branch_state(manifest).unwrap_err();
+
+        assert!(error.contains("MountedConfig"));
     }
 
     #[test]
