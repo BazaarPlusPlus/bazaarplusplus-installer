@@ -36,15 +36,31 @@ impl CleanupCutoff {
             CleanupPreset::All => return None,
             CleanupPreset::OlderThan7Days => now.clone() - Duration::days(7),
             CleanupPreset::BeforeThisMonth => {
-                let month_start = now
+                let first_of_month = now
                     .date_naive()
                     .with_day(1)
-                    .expect("day 1 is always a valid day")
+                    .expect("day 1 is always a valid day");
+                let month_start = first_of_month
                     .and_hms_opt(0, 0, 0)
                     .expect("midnight is always a valid time");
+                // A spring-forward DST gap can make local midnight on the 1st
+                // not exist, so `earliest()` returns None. That must NOT collapse
+                // to `None` here — `None` is the wire meaning of preset `All`
+                // (delete everything). Fall back to local noon (no timezone skips
+                // noon) so a bounded preset always yields a real cutoff.
                 now.timezone()
                     .from_local_datetime(&month_start)
-                    .earliest()?
+                    .earliest()
+                    .or_else(|| {
+                        now.timezone()
+                            .from_local_datetime(
+                                &first_of_month
+                                    .and_hms_opt(12, 0, 0)
+                                    .expect("noon is always a valid time"),
+                            )
+                            .earliest()
+                    })
+                    .unwrap_or_else(|| now.clone() - Duration::days(31))
             }
         };
         Some(CleanupCutoff {
@@ -235,7 +251,6 @@ pub fn execute_screenshot_cleanup(
     })
 }
 
-#[allow(dead_code)]
 #[derive(Clone, Debug, PartialEq)]
 pub struct RunDataVideoCleanupItem {
     pub video_id: String,
@@ -243,7 +258,6 @@ pub struct RunDataVideoCleanupItem {
     delete_video_file: bool,
 }
 
-#[allow(dead_code)]
 pub struct RunDataCleanupItem {
     pub run_id: String,
     pub battle_ids: Vec<String>,
@@ -251,7 +265,6 @@ pub struct RunDataCleanupItem {
     pub screenshots: Vec<ScreenshotCleanupItem>,
 }
 
-#[allow(dead_code)]
 pub struct RunDataCleanupPlan {
     pub items: Vec<RunDataCleanupItem>,
     pub estimated_bytes: i64,
@@ -260,7 +273,6 @@ pub struct RunDataCleanupPlan {
 
 #[derive(Clone, Debug, PartialEq, serde::Serialize, ts_rs::TS)]
 #[ts(export)]
-#[allow(dead_code)]
 pub struct RunDataCleanupPreview {
     pub runs: i64,
     pub battles: i64,
@@ -269,7 +281,6 @@ pub struct RunDataCleanupPreview {
     pub skipped_pending_uploads: i64,
 }
 
-#[allow(dead_code)]
 impl RunDataCleanupPlan {
     pub fn empty() -> RunDataCleanupPlan {
         RunDataCleanupPlan {
@@ -294,7 +305,6 @@ impl RunDataCleanupPlan {
     }
 }
 
-#[allow(dead_code)]
 pub fn plan_run_data_cleanup(
     database_path: &Path,
     game_path: &Path,
@@ -387,12 +397,10 @@ pub fn plan_run_data_cleanup(
 /// Runs are heavier than screenshots (multiple tables + cascade per row),
 /// so chunks are smaller to keep each write transaction short while the game
 /// may also be writing to the WAL database.
-#[allow(dead_code)]
 const RUN_CLEANUP_CHUNK_SIZE: usize = 25;
 
 #[derive(Clone, Debug, PartialEq, serde::Serialize, ts_rs::TS)]
 #[ts(export)]
-#[allow(dead_code)]
 pub struct RunDataCleanupResult {
     pub deleted_runs: i64,
     pub deleted_files: i64,
@@ -400,7 +408,6 @@ pub struct RunDataCleanupResult {
     pub skipped_pending_uploads: i64,
 }
 
-#[allow(dead_code)]
 pub fn execute_run_data_cleanup(
     database_path: &Path,
     game_path: &Path,
@@ -515,7 +522,6 @@ pub fn execute_run_data_cleanup(
     })
 }
 
-#[allow(dead_code)]
 fn eligible_run_ids(
     conn: &Connection,
     has_replay_dirty_column: bool,
@@ -567,7 +573,6 @@ fn eligible_run_ids(
         .map_err(|err| err.to_string())
 }
 
-#[allow(dead_code)]
 fn skipped_pending_run_count(
     conn: &Connection,
     has_replay_dirty_column: bool,
@@ -616,7 +621,6 @@ fn skipped_pending_run_count(
         .map_err(|err| err.to_string())
 }
 
-#[allow(dead_code)]
 fn run_battle_ids(
     conn: &Connection,
     has_battles_table: bool,
@@ -636,7 +640,6 @@ fn run_battle_ids(
         .map_err(|err| err.to_string())
 }
 
-#[allow(dead_code)]
 fn run_video_refs(
     conn: &Connection,
     has_battles_table: bool,
@@ -668,7 +671,6 @@ fn run_video_refs(
         .map_err(|err| err.to_string())
 }
 
-#[allow(dead_code)]
 fn run_screenshot_items(
     conn: &Connection,
     has_screenshots_table: bool,
@@ -785,17 +787,20 @@ fn remaining_video_relative_paths_after_run_cleanup(
 }
 
 /// Replay payload path: <CombatReplays>/<battleId>.payload.mpack.gz.
-#[allow(dead_code)]
 fn replay_payload_path(replays_dir: &Path, battle_id: &str) -> Option<PathBuf> {
     let trimmed = battle_id.trim();
+    // `:` guards against a Windows drive-relative id like `C:target`, which has
+    // no `/`/`\\` yet escapes `replays_dir` when joined via its drive prefix.
     if trimmed.is_empty()
         || trimmed.contains('/')
         || trimmed.contains('\\')
+        || trimmed.contains(':')
         || trimmed.contains("..")
     {
         return None;
     }
-    Some(replays_dir.join(format!("{trimmed}.payload.mpack.gz")))
+    let path = replays_dir.join(format!("{trimmed}.payload.mpack.gz"));
+    path.starts_with(replays_dir).then_some(path)
 }
 
 fn column_exists(conn: &Connection, table_name: &str, column_name: &str) -> Result<bool, String> {

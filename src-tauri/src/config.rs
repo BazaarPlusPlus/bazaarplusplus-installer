@@ -1,5 +1,4 @@
 pub const BAZAAR_DATA_DIRECTORY: &str = "BazaarPlusPlusV4";
-#[allow(dead_code)]
 pub const COMBAT_REPLAYS_DIRECTORY: &str = "CombatReplays";
 pub const COMBAT_REPLAY_VIDEOS_DIRECTORY: &str = "CombatReplayVideos";
 pub const DATABASE_FILE_NAME: &str = "bazaarplusplus.db";

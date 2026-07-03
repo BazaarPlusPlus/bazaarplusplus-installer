@@ -24,7 +24,6 @@ pub fn combat_replay_videos_dir(game_path: &Path) -> PathBuf {
     bpp_data_dir(game_path).join(COMBAT_REPLAY_VIDEOS_DIRECTORY)
 }
 
-#[allow(dead_code)]
 pub fn combat_replays_dir(game_path: &Path) -> PathBuf {
     bpp_data_dir(game_path).join(COMBAT_REPLAYS_DIRECTORY)
 }

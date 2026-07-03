@@ -40,7 +40,12 @@ pub fn resolve_cleanup_file_path(root_dir: &Path, raw_path: &str) -> Option<Path
     if trimmed.is_empty() || PathBuf::from(trimmed).is_absolute() {
         return None;
     }
-    resolve_data_file_path(root_dir, trimmed)
+    let resolved = resolve_data_file_path(root_dir, trimmed)?;
+    // Defense in depth: a Windows drive-relative segment like `C:evil.png` is
+    // not `is_absolute()`, yet `PathBuf::join` treats its drive prefix as
+    // replacing the root, so the resolved path can escape `root_dir`. Confirm
+    // containment before any delete ever touches this path.
+    resolved.starts_with(root_dir).then_some(resolved)
 }
 
 pub fn resolve_screenshot_path(game_path: &Path, raw_path: &str) -> Option<PathBuf> {
@@ -74,6 +79,31 @@ mod tests {
         assert_eq!(resolve_cleanup_file_path(root, absolute), None);
         assert_eq!(resolve_cleanup_file_path(root, ""), None);
         assert_eq!(resolve_cleanup_file_path(root, "   "), None);
+    }
+
+    #[test]
+    fn cleanup_path_never_resolves_outside_root() {
+        // Whatever survives resolution must stay under root_dir. On Windows a
+        // drive-relative segment like `C:evil.png` would otherwise escape via
+        // join(); on Unix it is an ordinary filename that stays contained. The
+        // invariant (contained or refused) must hold on every platform.
+        let root = std::path::Path::new("root");
+        for raw in [
+            "C:evil.png",
+            r"C:\evil.png",
+            r"..\..\evil.png",
+            "2026-06-15/shot.png",
+        ] {
+            if let Some(resolved) = resolve_cleanup_file_path(root, raw) {
+                assert!(
+                    resolved.starts_with(root),
+                    "`{raw}` resolved outside root: {resolved:?}"
+                );
+            }
+        }
+        // On Windows the drive-relative form is a real escape and must be refused.
+        #[cfg(windows)]
+        assert_eq!(resolve_cleanup_file_path(root, "C:evil.png"), None);
     }
 
     #[test]
