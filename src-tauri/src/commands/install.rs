@@ -49,6 +49,13 @@ pub async fn install_mod(
 }
 
 #[tauri::command]
+pub fn get_branch_switch_status(
+    branch_state: tauri::State<'_, BranchSwitchRuntimeState>,
+) -> Result<BranchSwitchStatus, String> {
+    Ok(branch_state.snapshot())
+}
+
+#[tauri::command]
 pub async fn switch_branch(
     app: tauri::AppHandle,
     branch_state: tauri::State<'_, BranchSwitchRuntimeState>,

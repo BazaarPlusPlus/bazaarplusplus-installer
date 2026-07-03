@@ -24,6 +24,7 @@ const COMMAND_INPUT_FIELDS = {
   get_install_state: ['gamePath'],
   choose_game_directory: [],
   install_mod: ['gamePath'],
+  get_branch_switch_status: [],
   switch_branch: ['gamePath', 'target', 'compatOptIn'],
   cancel_branch_switch: [],
   reset_bpp_data: ['gamePath'],

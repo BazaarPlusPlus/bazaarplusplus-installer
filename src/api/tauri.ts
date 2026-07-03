@@ -45,6 +45,10 @@ export interface TauriCommandMap {
     input: { gamePath: string; compatOptIn: boolean };
     output: InstallState;
   };
+  get_branch_switch_status: {
+    input: undefined;
+    output: BranchSwitchStatus;
+  };
   switch_branch: {
     input: {
       gamePath: string;
