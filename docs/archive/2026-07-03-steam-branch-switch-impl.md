@@ -1,7 +1,9 @@
 ---
-status: active-plan
+status: archived
 topic: steam-branch-switch-impl
 last-verified: 14ed7fa9099db151cfba141c66c8fbd958031a68
+archived: 2026-07-04
+note: Feature was implemented and then fully removed; see ADR 007 "Removal (2026-07-04)". Plan retained for history only.
 ---
 
 # Steam Branch Switch — Implementation Plan (online ↔ PTR)

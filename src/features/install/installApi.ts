@@ -1,10 +1,6 @@
 import { invokeCommand } from '../../api/tauri';
 import { hasTauriRuntime } from '../../api/runtime';
-import type {
-  BranchSwitchStatus,
-  InstallState,
-  SteamBranchTarget
-} from '../../types/backend';
+import type { InstallState } from '../../types/backend';
 
 export const emptyInstallState: InstallState = {
   selected_game_path: null,
@@ -38,16 +34,6 @@ export const emptyInstallState: InstallState = {
   warnings: []
 };
 
-export const idleBranchSwitchStatus: BranchSwitchStatus = {
-  phase: 'idle',
-  target: null,
-  cancelable: false,
-  bytes_downloaded: null,
-  bytes_to_download: null,
-  progress_fraction: null,
-  message: null
-};
-
 export async function loadInstallState(gamePath?: string) {
   if (!hasTauriRuntime()) {
     return emptyInstallState;
@@ -66,26 +52,6 @@ export async function chooseGameDirectory() {
 
 export async function installMod(gamePath: string, compatOptIn: boolean) {
   return invokeCommand('install_mod', { gamePath, compatOptIn });
-}
-
-export async function getBranchSwitchStatus() {
-  if (!hasTauriRuntime()) {
-    return idleBranchSwitchStatus;
-  }
-
-  return invokeCommand('get_branch_switch_status');
-}
-
-export async function switchBranch(
-  gamePath: string,
-  target: SteamBranchTarget,
-  compatOptIn: boolean
-) {
-  return invokeCommand('switch_branch', { gamePath, target, compatOptIn });
-}
-
-export async function cancelBranchSwitch(): Promise<BranchSwitchStatus> {
-  return invokeCommand('cancel_branch_switch');
 }
 
 export async function resetBppData(gamePath: string) {

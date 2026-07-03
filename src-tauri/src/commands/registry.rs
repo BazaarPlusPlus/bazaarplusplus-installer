@@ -8,9 +8,6 @@ macro_rules! with_commands {
             (commands::install, get_install_state),
             (commands::install, choose_game_directory),
             (commands::install, install_mod),
-            (commands::install, get_branch_switch_status),
-            (commands::install, switch_branch),
-            (commands::install, cancel_branch_switch),
             (commands::install, reset_bpp_data),
             (commands::install, uninstall_mod),
             (commands::install, launch_game),
@@ -109,6 +106,6 @@ mod tests {
             .collect::<Vec<_>>();
 
         assert_eq!(parsed, names);
-        assert_eq!(names.len(), 29);
+        assert_eq!(names.len(), 26);
     }
 }

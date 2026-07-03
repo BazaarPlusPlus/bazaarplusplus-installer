@@ -54,7 +54,7 @@ export function InstallStatusPanel({ page }: { page: InstallPage }) {
             <div className="flex gap-2">
               <button
                 type="button"
-                disabled={page.busy || page.branchSwitch.blocking}
+                disabled={page.busy}
                 onClick={page.chooseDirectory}
                 className="px-4 py-1.5 text-xs bg-[rgba(200,148,55,0.04)] border border-[rgba(180,130,48,0.2)] rounded-sm hover:bg-[rgba(200,148,55,0.1)] disabled:opacity-40 transition-colors text-[#e8dcc8]"
               >
@@ -62,7 +62,7 @@ export function InstallStatusPanel({ page }: { page: InstallPage }) {
               </button>
               <button
                 type="button"
-                disabled={page.busy || page.branchSwitch.blocking}
+                disabled={page.busy}
                 onClick={() => page.refresh()}
                 className="px-4 py-1.5 text-xs bg-[rgba(200,148,55,0.04)] border border-[rgba(180,130,48,0.2)] rounded-sm hover:bg-[rgba(200,148,55,0.1)] disabled:opacity-40 transition-colors text-[#e8dcc8]"
               >

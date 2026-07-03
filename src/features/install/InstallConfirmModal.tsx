@@ -128,9 +128,7 @@ export function InstallConfirmModal({
             <button
               type="button"
               disabled={
-                !installAcknowledged ||
-                page.action === 'install' ||
-                page.branchSwitch.blocking
+                !installAcknowledged || page.action === 'install'
               }
               onClick={onConfirm}
               className="px-5 py-2 rounded-sm text-sm cinzel font-bold tracking-wider transition-all bg-gradient-to-b from-[#d4a040] to-[#9e5c1e] text-[#0b0906] shadow-[0_0_15px_rgba(212,160,64,0.4)] hover:brightness-110 active:brightness-95 disabled:opacity-45 disabled:hover:brightness-100"

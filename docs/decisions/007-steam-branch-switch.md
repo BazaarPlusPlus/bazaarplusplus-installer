@@ -1,9 +1,15 @@
 ---
-status: decision
+status: superseded-removed
 topic: steam-branch-switch
 ---
 
 # External Steam Branch Switching Via appmanifest (BetaKey + StateFlags)
+
+> **Removed 2026-07-04.** The installer feature built on this mechanism (Steam branch
+> switch UI + backend service and commands) was shipped and then fully removed as a
+> product decision. This ADR is retained as the historical record of the *validated
+> mechanism* — the recipe below is still accurate — but no installer code acts on it
+> anymore. See **Removal (2026-07-04)** at the end.
 
 ## Context
 
@@ -71,3 +77,13 @@ withdrawn. Full forensics of both tests: `docs/archive/2026-07-03-steam-branch-s
   localconfig line-rewrite pattern (`services/vdf/parse.rs`) is a model, but the ACF needs its own
   editor. Must edit only the first (`UserConfig`) `BetaKey`, never `MountedConfig`.
 - Whether to build this now is a separate product decision.
+
+## Removal (2026-07-04)
+
+The feature was implemented (`services/branch_switch.rs`, `services/branch.rs`, the
+`get_branch_switch_status` / `switch_branch` / `cancel_branch_switch` commands, and the
+`BranchSwitchControls` UI) and then removed in full. Rationale: a product decision to drop
+online↔PTR switching from the installer — the unavoidable multi-GB per-switch re-download
+and the Steam-state edit surface were not worth the maintenance cost. The mechanism
+documented above remains valid and is recoverable from git history if the feature is ever
+revived.

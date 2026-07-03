@@ -8,7 +8,6 @@ import {
   Trash2
 } from 'lucide-react';
 import type { useInstallPage } from './useInstallPage';
-import { BranchSwitchControls } from './BranchSwitchControls';
 import { InstallActionButton } from './InstallActionButton';
 import { InstallFactItem } from './InstallFactItem';
 import { ResetDataFailureDetails } from './ResetDataFailureDetails';
@@ -43,10 +42,6 @@ export function InstallActionsPanel({
                 onOpenInstallModal={onOpenInstallModal}
               />
             </div>
-
-            <div className="h-px bg-gradient-to-r from-transparent via-[rgba(200,148,55,0.3)] to-transparent" />
-
-            <BranchSwitchControls page={page} />
 
             <div className="h-px bg-gradient-to-r from-transparent via-[rgba(200,148,55,0.3)] to-transparent" />
 
@@ -97,9 +92,7 @@ export function InstallActionsPanel({
             <div className="grid grid-cols-2 gap-2 mt-auto pt-2">
               <InstallActionButton
                 disabled={
-                  page.busy ||
-                  page.branchSwitch.blocking ||
-                  !page.state.actions.can_reset_data
+                  page.busy ||                  !page.state.actions.can_reset_data
                 }
                 busy={page.action === 'resetData'}
                 onClick={onOpenResetDataModal}
@@ -113,9 +106,7 @@ export function InstallActionsPanel({
               />
               <InstallActionButton
                 disabled={
-                  page.busy ||
-                  page.branchSwitch.blocking ||
-                  !page.state.actions.can_uninstall
+                  page.busy ||                  !page.state.actions.can_uninstall
                 }
                 busy={page.action === 'uninstall'}
                 onClick={page.uninstall}
@@ -147,9 +138,7 @@ function PrimaryActionButton({
         <button
           type="button"
           disabled={
-            page.busy ||
-            page.branchSwitch.blocking ||
-            !page.state.actions.can_launch
+            page.busy ||            !page.state.actions.can_launch
           }
           onClick={page.launch}
           className="w-full py-4 bg-gradient-to-b from-[#d4a040] to-[#9e5c1e] text-[#0b0906] font-bold cinzel tracking-wider rounded-sm shadow-[0_0_15px_rgba(212,160,64,0.4)] hover:brightness-110 active:brightness-95 disabled:opacity-45 disabled:hover:brightness-100 transition-all flex items-center justify-center gap-2 text-lg"
@@ -170,9 +159,7 @@ function PrimaryActionButton({
       <button
         type="button"
         disabled={
-          page.busy ||
-          page.branchSwitch.blocking ||
-          !page.state.actions.can_reinstall
+          page.busy ||          !page.state.actions.can_reinstall
         }
         onClick={onOpenInstallModal}
         className="w-full py-4 bg-gradient-to-b from-[#d24a4a] to-[#8e1e1e] text-[#fdeaea] font-bold cinzel tracking-wider rounded-sm shadow-[0_0_15px_rgba(200,60,60,0.4)] hover:brightness-110 active:brightness-95 disabled:opacity-45 disabled:hover:brightness-100 transition-all flex items-center justify-center gap-2 text-lg"
@@ -191,9 +178,7 @@ function PrimaryActionButton({
     <button
       type="button"
       disabled={
-        page.busy ||
-        page.branchSwitch.blocking ||
-        !page.state.actions.can_install
+        page.busy ||        !page.state.actions.can_install
       }
       onClick={onOpenInstallModal}
       className="w-full py-4 bg-gradient-to-b from-[#d4a040] to-[#9e5c1e] text-[#0b0906] font-bold cinzel tracking-wider rounded-sm shadow-[0_0_15px_rgba(212,160,64,0.4)] hover:brightness-110 active:brightness-95 disabled:opacity-45 disabled:hover:brightness-100 transition-all flex items-center justify-center gap-2 text-lg"

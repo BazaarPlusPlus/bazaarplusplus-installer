@@ -5,9 +5,6 @@ export const TAURI_COMMAND_NAMES = [
   'get_install_state',
   'choose_game_directory',
   'install_mod',
-  'get_branch_switch_status',
-  'switch_branch',
-  'cancel_branch_switch',
   'reset_bpp_data',
   'uninstall_mod',
   'launch_game',
@@ -37,9 +34,6 @@ export type TauriCommandName =
   | 'get_install_state'
   | 'choose_game_directory'
   | 'install_mod'
-  | 'get_branch_switch_status'
-  | 'switch_branch'
-  | 'cancel_branch_switch'
   | 'reset_bpp_data'
   | 'uninstall_mod'
   | 'launch_game'

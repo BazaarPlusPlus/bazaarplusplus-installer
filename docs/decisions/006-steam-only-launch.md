@@ -27,7 +27,7 @@ Reasons (recorded per the reversal):
 
 1. **Strategic shift to Steam-only.** Product direction narrowed to Steam — the substrate for
    Steam-side work such as beta-branch switching (online ↔ PTR dual-version). See
-   `docs/plans/2026-07-03-steam-branch-switch.md`.
+   [ADR 007](007-steam-branch-switch.md) (feature later implemented and then removed).
 2. **Maintenance burden.** The capture/replay implementation (process capture, platform
    differences, backup/restore, concurrency guards, orphan recovery) was large and fragile
    relative to the size of the non-Steam user segment.

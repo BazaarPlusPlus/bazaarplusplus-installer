@@ -88,9 +88,7 @@ export function ResetDataConfirmModal({
             <button
               type="button"
               disabled={
-                !acknowledged ||
-                page.action === 'resetData' ||
-                page.branchSwitch.blocking
+                !acknowledged || page.action === 'resetData'
               }
               onClick={onConfirm}
               className="px-5 py-2 rounded-sm text-sm cinzel font-bold tracking-wider transition-all bg-gradient-to-b from-[#d85d5d] to-[#9a2a2a] text-[#fff1f1] shadow-[0_0_15px_rgba(160,50,50,0.35)] hover:brightness-110 active:brightness-95 disabled:opacity-45 disabled:hover:brightness-100"

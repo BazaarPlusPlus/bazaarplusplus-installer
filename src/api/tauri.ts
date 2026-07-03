@@ -2,8 +2,6 @@ import { invoke } from '@tauri-apps/api/core';
 import type {
   AppBootstrap,
   AppLocalePayload,
-  BranchSwitchResult,
-  BranchSwitchStatus,
   CleanupPreset,
   FileActionResult,
   GameDirectorySelection,
@@ -15,7 +13,6 @@ import type {
   RunDataCleanupResult,
   ScreenshotCleanupPreview,
   ScreenshotCleanupResult,
-  SteamBranchTarget,
   StreamOverlayCropSettingsPayload,
   StreamOverlayDisplayMode,
   StreamServiceStatus
@@ -44,22 +41,6 @@ export interface TauriCommandMap {
   install_mod: {
     input: { gamePath: string; compatOptIn: boolean };
     output: InstallState;
-  };
-  get_branch_switch_status: {
-    input: undefined;
-    output: BranchSwitchStatus;
-  };
-  switch_branch: {
-    input: {
-      gamePath: string;
-      target: SteamBranchTarget;
-      compatOptIn: boolean;
-    };
-    output: BranchSwitchResult;
-  };
-  cancel_branch_switch: {
-    input: undefined;
-    output: BranchSwitchStatus;
   };
   reset_bpp_data: {
     input: { gamePath: string };
