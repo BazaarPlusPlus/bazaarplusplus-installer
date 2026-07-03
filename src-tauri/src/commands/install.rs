@@ -4,7 +4,8 @@ use tauri_plugin_dialog::DialogExt;
 
 use crate::services::{
     install::{
-        build_install_state, launch_game_via_steam, run_install, run_reset_bpp_data, run_uninstall,
+        build_install_state, launch_game_via_steam, run_install, run_reset_bepinex,
+        run_reset_bpp_data, run_uninstall,
     },
     startup::InstallerContextState,
 };
@@ -52,6 +53,15 @@ pub async fn reset_bpp_data(
     game_path: String,
 ) -> Result<ResetBppDataResult, String> {
     run_reset_bpp_data(app, install_state, stream_state, game_path).await
+}
+
+#[tauri::command]
+pub async fn reset_bepinex(
+    app: tauri::AppHandle,
+    install_state: tauri::State<'_, InstallerContextState>,
+    game_path: String,
+) -> Result<ResetBepinexResult, String> {
+    run_reset_bepinex(app, install_state, game_path).await
 }
 
 #[tauri::command]

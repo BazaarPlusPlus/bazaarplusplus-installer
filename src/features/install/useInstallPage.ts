@@ -3,7 +3,11 @@ import { listen } from '@tauri-apps/api/event';
 import { hasTauriRuntime } from '../../api/runtime';
 import type { InstallState } from '../../types/backend';
 import { useI18n, type Translate } from '../../i18n/LocaleProvider';
-import { parseResetBppDataError, toErrorMessage } from '../shared/errors';
+import {
+  parseResetBepinexError,
+  parseResetBppDataError,
+  toErrorMessage
+} from '../shared/errors';
 import { useAsyncAction } from '../shared/useAsyncAction';
 import {
   chooseGameDirectory,
@@ -11,6 +15,7 @@ import {
   installMod,
   launchGame,
   loadInstallState,
+  resetBepinex,
   resetBppData,
   uninstallMod
 } from './installApi';
@@ -20,6 +25,7 @@ type InstallAction =
   | 'choose'
   | 'install'
   | 'resetData'
+  | 'resetBepinex'
   | 'uninstall'
   | 'launch';
 
@@ -156,6 +162,39 @@ export function useInstallPage() {
     [flashMessage, run, state, t]
   );
 
+  const resetBepinexFolder = useCallback(
+    () =>
+      run(
+        'resetBepinex',
+        async () => {
+          if (!state.has_bepinex_files) {
+            setResetDataFailurePaths([]);
+            flashMessage(t('resetBepinexNothingToDelete'));
+            return;
+          }
+
+          const path = requireGamePath(state, t);
+          const result = await resetBepinex(path);
+          setState(result.state);
+          setResetDataFailurePaths([]);
+          flashMessage(
+            result.removed
+              ? t('resetBepinexDone')
+              : t('resetBepinexNothingToDelete')
+          );
+        },
+        {
+          onStart: () => {
+            setMessage(null);
+            setResetDataFailurePaths([]);
+          },
+          errorMessage: (caught) =>
+            formatResetBepinexError(caught, t, setResetDataFailurePaths)
+        }
+      ),
+    [flashMessage, run, state, t]
+  );
+
   const uninstall = useCallback(
     () =>
       run(
@@ -196,6 +235,7 @@ export function useInstallPage() {
     chooseDirectory,
     install,
     resetData,
+    resetBepinex: resetBepinexFolder,
     uninstall,
     launch
   };
@@ -221,6 +261,26 @@ function formatResetBppDataError(
   if (resetError?.code === 'partial_failure') {
     setFailurePaths(resetError.paths);
     return t('resetDataPartialFailure', {
+      count: Math.max(1, resetError.paths.length)
+    });
+  }
+  setFailurePaths([]);
+  return toErrorMessage(error);
+}
+
+function formatResetBepinexError(
+  error: unknown,
+  t: Translate,
+  setFailurePaths: (paths: string[]) => void
+) {
+  const resetError = parseResetBepinexError(error);
+  if (resetError?.code === 'game_running') {
+    setFailurePaths([]);
+    return t('resetBepinexBlockedByGame');
+  }
+  if (resetError?.code === 'partial_failure') {
+    setFailurePaths(resetError.paths);
+    return t('resetBepinexPartialFailure', {
       count: Math.max(1, resetError.paths.length)
     });
   }

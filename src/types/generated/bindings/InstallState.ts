@@ -5,4 +5,10 @@ import type { InstallGameState } from "./InstallGameState";
 import type { InstallModState } from "./InstallModState";
 import type { InstallWarning } from "./InstallWarning";
 
-export type InstallState = { selected_game_path: string | null, steam_path: string | null, steam_launch_options_supported: boolean, game: InstallGameState, mod_state: InstallModState, compat: InstallCompatState, actions: InstallActions, has_resettable_data: boolean, warnings: Array<InstallWarning>, };
+export type InstallState = { selected_game_path: string | null, steam_path: string | null, steam_launch_options_supported: boolean, game: InstallGameState, mod_state: InstallModState, compat: InstallCompatState, actions: InstallActions, has_resettable_data: boolean, 
+/**
+ * Whether a `BepInEx/` directory physically exists — gates the blunt
+ * "reset BepInEx folder" action independently of a healthy install, so it
+ * stays usable when BepInEx is broken/half-installed.
+ */
+has_bepinex_files: boolean, warnings: Array<InstallWarning>, };

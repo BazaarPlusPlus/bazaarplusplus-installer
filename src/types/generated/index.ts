@@ -20,6 +20,7 @@ export type { InstallGameState } from './bindings/InstallGameState';
 export type { InstallModState } from './bindings/InstallModState';
 export type { InstallState } from './bindings/InstallState';
 export type { InstallWarning } from './bindings/InstallWarning';
+export type { ResetBepinexResult } from './bindings/ResetBepinexResult';
 export type { ResetBppDataResult } from './bindings/ResetBppDataResult';
 export type { RunDataCleanupPreview } from './bindings/RunDataCleanupPreview';
 export type { RunDataCleanupResult } from './bindings/RunDataCleanupResult';

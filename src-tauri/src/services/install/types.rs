@@ -11,6 +11,10 @@ pub struct InstallState {
     pub compat: InstallCompatState,
     pub actions: InstallActions,
     pub has_resettable_data: bool,
+    /// Whether a `BepInEx/` directory physically exists — gates the blunt
+    /// "reset BepInEx folder" action independently of a healthy install, so it
+    /// stays usable when BepInEx is broken/half-installed.
+    pub has_bepinex_files: bool,
     pub warnings: Vec<InstallWarning>,
 }
 
@@ -19,6 +23,13 @@ pub struct InstallState {
 pub struct ResetBppDataResult {
     pub state: InstallState,
     pub removed_data: bool,
+}
+
+#[derive(Clone, Debug, Serialize, ts_rs::TS)]
+#[ts(export)]
+pub struct ResetBepinexResult {
+    pub state: InstallState,
+    pub removed: bool,
 }
 
 /// macOS launch-mode (兼容模式 / trampoline) state surfaced to the UI.
@@ -58,6 +69,7 @@ pub struct InstallActions {
     pub can_install: bool,
     pub can_reinstall: bool,
     pub can_reset_data: bool,
+    pub can_reset_bepinex: bool,
     pub can_uninstall: bool,
     pub can_launch: bool,
 }

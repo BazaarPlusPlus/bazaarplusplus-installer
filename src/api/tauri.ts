@@ -8,6 +8,7 @@ import type {
   HistoryRunDetail,
   HistoryRunList,
   InstallState,
+  ResetBepinexResult,
   ResetBppDataResult,
   RunDataCleanupPreview,
   RunDataCleanupResult,
@@ -45,6 +46,10 @@ export interface TauriCommandMap {
   reset_bpp_data: {
     input: { gamePath: string };
     output: ResetBppDataResult;
+  };
+  reset_bepinex: {
+    input: { gamePath: string };
+    output: ResetBepinexResult;
   };
   uninstall_mod: {
     input: { gamePath: string };

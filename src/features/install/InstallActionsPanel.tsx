@@ -2,6 +2,7 @@ import {
   AlertCircle,
   AlertTriangle,
   DownloadCloud,
+  FolderX,
   Loader2,
   Play,
   RefreshCw,
@@ -19,12 +20,14 @@ export function InstallActionsPanel({
   page,
   primaryMode,
   onOpenInstallModal,
-  onOpenResetDataModal
+  onOpenResetDataModal,
+  onOpenResetBepinexModal
 }: {
   page: InstallPage;
   primaryMode: 'install' | 'reinstall' | 'launch';
   onOpenInstallModal: () => void;
   onOpenResetDataModal: () => void;
+  onOpenResetBepinexModal: () => void;
 }) {
   const { t } = useI18n();
   return (
@@ -89,7 +92,7 @@ export function InstallActionsPanel({
 
             <div className="h-px bg-gradient-to-r from-transparent via-[rgba(200,148,55,0.3)] to-transparent" />
 
-            <div className="grid grid-cols-2 gap-2 mt-auto pt-2">
+            <div className="grid grid-cols-3 gap-2 mt-auto pt-2">
               <InstallActionButton
                 disabled={
                   page.busy ||                  !page.state.actions.can_reset_data
@@ -102,6 +105,16 @@ export function InstallActionsPanel({
                     ? t('actionNoResettableData')
                     : t('actionResetData')
                 }
+                danger
+              />
+              <InstallActionButton
+                disabled={
+                  page.busy ||                  !page.state.actions.can_reset_bepinex
+                }
+                busy={page.action === 'resetBepinex'}
+                onClick={onOpenResetBepinexModal}
+                icon={<FolderX size={14} />}
+                label={t('actionResetBepinex')}
                 danger
               />
               <InstallActionButton

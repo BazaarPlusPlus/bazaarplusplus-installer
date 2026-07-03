@@ -451,6 +451,17 @@ pub(super) fn cleanup_bpp_data_directory(game_path: &Path) -> RemovalReport {
     remove_dir_with_retry(&game_path.join(BAZAAR_DATA_DIRECTORY))
 }
 
+/// Blunt whole-folder wipe of `<game>/BepInEx` — deletes BazaarPlusPlus AND any
+/// third-party plugin/patcher living under it, unlike the surgical
+/// `uninstall_payload`. Leaves the doorstop/trampoline bootstrap (winhttp.dll,
+/// run_bepinex.sh, libdoorstop.dylib, the macOS stub, the `.orig` backup) in
+/// place: both loaders tolerate a missing target assembly and fall through to
+/// the real game, so the bundle stays launchable and a later Reinstall re-lays
+/// BepInEx idempotently.
+pub(super) fn reset_bepinex_directory(game_path: &Path) -> RemovalReport {
+    remove_dir_with_retry(&game_path.join("BepInEx"))
+}
+
 #[cfg(test)]
 mod tests {
     use crate::config::{BAZAAR_DATA_DIRECTORY, DATABASE_FILE_NAME};

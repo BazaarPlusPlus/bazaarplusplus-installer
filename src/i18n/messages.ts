@@ -73,6 +73,7 @@ const zh = {
   actionReinstall: '重新安装',
   actionResetData: '重置本地数据',
   actionNoResettableData: '暂无本地数据',
+  actionResetBepinex: '重置 BepInEx',
   actionUninstall: '卸载',
   launchGame: '启动游戏',
   installed: '已安装',
@@ -102,6 +103,22 @@ const zh = {
   resetDataFailureCopy: '复制诊断信息',
   resetDataFailureCopied: '已复制',
   resetDataFailureCopyFailed: '复制失败，请手动选择文本复制',
+  resetBepinexConfirmTitle: '重置 BepInEx 文件夹',
+  resetBepinexConfirmBody:
+    '这会删除 The Bazaar 安装目录中的整个 BepInEx 文件夹。',
+  resetBepinexConfirmOtherMods:
+    '文件夹内的所有内容都会被删除，包括你安装的其他 BepInEx 模组。',
+  resetBepinexConfirmReinstall:
+    '删除后 BazaarPlusPlus 将不再生效，需要重新点击“安装”来恢复。',
+  resetBepinexConfirmGameClosed: '请先退出 The Bazaar，避免文件仍被占用。',
+  resetBepinexConfirmAcknowledge: '我知道整个 BepInEx 文件夹（含其他模组）会被删除。',
+  resetBepinexConfirmAction: '删除 BepInEx 文件夹',
+  resetBepinexDone: 'BepInEx 文件夹已删除',
+  resetBepinexNothingToDelete: '未找到 BepInEx 文件夹',
+  resetBepinexBlockedByGame:
+    'The Bazaar 仍在运行。请先退出游戏，再重置 BepInEx 文件夹。',
+  resetBepinexPartialFailure:
+    '有 {count} 个项目未能删除。请关闭游戏后重试。',
   uninstallDone: '卸载完成',
   selectGameDirFirst: '请先选择 The Bazaar 安装目录。',
 
@@ -304,6 +321,7 @@ const en: Record<MessageKey, string> = {
   actionReinstall: 'Reinstall',
   actionResetData: 'Reset Local Data',
   actionNoResettableData: 'No Local Data',
+  actionResetBepinex: 'Reset BepInEx',
   actionUninstall: 'Uninstall',
   launchGame: 'Launch Game',
   installed: 'Installed',
@@ -335,6 +353,24 @@ const en: Record<MessageKey, string> = {
   resetDataFailureCopy: 'Copy Diagnostics',
   resetDataFailureCopied: 'Copied',
   resetDataFailureCopyFailed: 'Copy failed. Select the text and copy manually.',
+  resetBepinexConfirmTitle: 'Reset BepInEx Folder',
+  resetBepinexConfirmBody:
+    'This deletes the entire BepInEx folder in The Bazaar install directory.',
+  resetBepinexConfirmOtherMods:
+    'Everything inside it is removed, including any other BepInEx mods you installed.',
+  resetBepinexConfirmReinstall:
+    'After this, BazaarPlusPlus stops working — click Install again to restore it.',
+  resetBepinexConfirmGameClosed:
+    'Quit The Bazaar first so the files are not held open.',
+  resetBepinexConfirmAcknowledge:
+    'I understand the entire BepInEx folder (including other mods) will be deleted.',
+  resetBepinexConfirmAction: 'Delete BepInEx Folder',
+  resetBepinexDone: 'BepInEx folder deleted',
+  resetBepinexNothingToDelete: 'No BepInEx folder found',
+  resetBepinexBlockedByGame:
+    'The Bazaar is still running. Quit the game before resetting the BepInEx folder.',
+  resetBepinexPartialFailure:
+    '{count} item(s) could not be deleted. Close the game, then try again.',
   uninstallDone: 'Uninstall complete',
   selectGameDirFirst: 'Select The Bazaar install directory first.',
 

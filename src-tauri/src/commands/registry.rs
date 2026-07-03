@@ -9,6 +9,7 @@ macro_rules! with_commands {
             (commands::install, choose_game_directory),
             (commands::install, install_mod),
             (commands::install, reset_bpp_data),
+            (commands::install, reset_bepinex),
             (commands::install, uninstall_mod),
             (commands::install, launch_game),
             (commands::stream, get_stream_status),
@@ -106,6 +107,6 @@ mod tests {
             .collect::<Vec<_>>();
 
         assert_eq!(parsed, names);
-        assert_eq!(names.len(), 26);
+        assert_eq!(names.len(), 27);
     }
 }

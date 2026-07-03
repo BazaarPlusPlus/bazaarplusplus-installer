@@ -2,7 +2,7 @@ mod types;
 
 pub use types::{
     FileActionResult, GameDirectorySelection, InstallActions, InstallCompatState, InstallGameState,
-    InstallModState, InstallState, InstallWarning, ResetBppDataResult,
+    InstallModState, InstallState, InstallWarning, ResetBepinexResult, ResetBppDataResult,
 };
 
 use std::process::Command;
@@ -12,7 +12,7 @@ use tauri::Manager;
 use std::path::Path;
 
 use crate::services::{
-    bepinex::{self, install_bepinex, reset_bpp_data, uninstall_bpp, LaunchMode},
+    bepinex::{self, install_bepinex, reset_bepinex_folder, reset_bpp_data, uninstall_bpp, LaunchMode},
     detect::detect_for_install,
     macos_version::use_trampoline,
     startup::InstallerContextState,
@@ -123,6 +123,16 @@ pub async fn run_reset_bpp_data(
     })
 }
 
+pub async fn run_reset_bepinex(
+    app: tauri::AppHandle,
+    install_state: tauri::State<'_, InstallerContextState>,
+    game_path: String,
+) -> Result<ResetBepinexResult, String> {
+    let removed = reset_bepinex_folder(game_path.clone()).await?;
+    let state = build_install_state(app, install_state, Some(game_path))?;
+    Ok(ResetBepinexResult { state, removed })
+}
+
 pub async fn run_uninstall(
     app: tauri::AppHandle,
     state: tauri::State<'_, InstallerContextState>,
@@ -169,6 +179,7 @@ fn install_state_from_snapshot(
     let needs_trampoline_repair = installed && !trampoline_consistent;
     let can_launch = game_found && env.game_path_valid;
     let has_resettable_data = has_resettable_bpp_data(env.game_path.as_deref());
+    let has_bepinex_files = has_bepinex_directory(env.game_path.as_deref());
     let mut warnings = Vec::new();
     if !game_found || !env.game_path_valid {
         warnings.push(InstallWarning {
@@ -215,10 +226,12 @@ fn install_state_from_snapshot(
             can_install: can_launch && !installed,
             can_reinstall: can_launch && installed,
             can_reset_data: can_launch && has_resettable_data,
+            can_reset_bepinex: can_launch && has_bepinex_files,
             can_uninstall: can_launch && installed,
             can_launch,
         },
         has_resettable_data,
+        has_bepinex_files,
         warnings,
     }
 }
@@ -227,6 +240,13 @@ fn has_resettable_bpp_data(game_path: Option<&str>) -> bool {
     game_path
         .map(Path::new)
         .map(|path| crate::services::paths::bpp_data_dir(path).exists())
+        .unwrap_or(false)
+}
+
+fn has_bepinex_directory(game_path: Option<&str>) -> bool {
+    game_path
+        .map(Path::new)
+        .map(|path| path.join("BepInEx").is_dir())
         .unwrap_or(false)
 }
 
@@ -261,7 +281,7 @@ fn open_url(url: &str) -> Result<(), String> {
 
 #[cfg(test)]
 mod tests {
-    use super::has_resettable_bpp_data;
+    use super::{has_bepinex_directory, has_resettable_bpp_data};
 
     #[test]
     fn test_has_resettable_bpp_data_detects_existing_data_directory() {
@@ -279,5 +299,17 @@ mod tests {
 
         assert!(!has_resettable_bpp_data(Some(path.as_str())));
         assert!(!has_resettable_bpp_data(None));
+    }
+
+    #[test]
+    fn test_has_bepinex_directory_detects_existing_folder() {
+        let tmp = tempfile::tempdir().unwrap();
+        let path = tmp.path().to_string_lossy().into_owned();
+        assert!(!has_bepinex_directory(Some(path.as_str())));
+
+        std::fs::create_dir_all(tmp.path().join("BepInEx")).unwrap();
+
+        assert!(has_bepinex_directory(Some(path.as_str())));
+        assert!(!has_bepinex_directory(None));
     }
 }

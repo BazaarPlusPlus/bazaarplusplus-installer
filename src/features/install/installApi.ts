@@ -27,10 +27,12 @@ export const emptyInstallState: InstallState = {
     can_install: false,
     can_reinstall: false,
     can_reset_data: false,
+    can_reset_bepinex: false,
     can_uninstall: false,
     can_launch: false
   },
   has_resettable_data: false,
+  has_bepinex_files: false,
   warnings: []
 };
 
@@ -56,6 +58,10 @@ export async function installMod(gamePath: string, compatOptIn: boolean) {
 
 export async function resetBppData(gamePath: string) {
   return invokeCommand('reset_bpp_data', { gamePath });
+}
+
+export async function resetBepinex(gamePath: string) {
+  return invokeCommand('reset_bepinex', { gamePath });
 }
 
 export async function uninstallMod(gamePath: string) {

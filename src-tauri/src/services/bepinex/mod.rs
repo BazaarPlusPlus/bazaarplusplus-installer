@@ -21,6 +21,11 @@ use super::{debug_error, debug_log};
 pub(crate) const RESET_BPP_DATA_ERR_GAME_RUNNING: &str = "bpp_data_reset_blocked_by_game";
 pub(crate) const RESET_BPP_DATA_ERR_PARTIAL_FAILURE: &str = "bpp_data_reset_partial_failure";
 
+/// Same shape as the data-reset codes, for the blunter "wipe the whole BepInEx
+/// folder" action. Kept distinct so the frontend can show BepInEx-specific copy.
+pub(crate) const RESET_BEPINEX_ERR_GAME_RUNNING: &str = "bepinex_reset_blocked_by_game";
+pub(crate) const RESET_BEPINEX_ERR_PARTIAL_FAILURE: &str = "bepinex_reset_partial_failure";
+
 pub async fn reset_bpp_data(
     stream_state: tauri::State<'_, StreamRuntimeState>,
     game_path: String,
@@ -57,14 +62,57 @@ fn reset_bpp_data_blocking(game_path: &Path) -> Result<bool, String> {
 }
 
 fn format_partial_failure(paths: &[PathBuf]) -> String {
+    format!(
+        "{RESET_BPP_DATA_ERR_PARTIAL_FAILURE}:{}",
+        join_failure_paths(paths)
+    )
+}
+
+fn format_bepinex_partial_failure(paths: &[PathBuf]) -> String {
+    format!(
+        "{RESET_BEPINEX_ERR_PARTIAL_FAILURE}:{}",
+        join_failure_paths(paths)
+    )
+}
+
+fn join_failure_paths(paths: &[PathBuf]) -> String {
     // Use a delimiter that won't collide with Windows drive letters or POSIX
     // separators. The frontend splits on `\u{1f}` to recover the list.
-    let joined = paths
+    paths
         .iter()
         .map(|path| path.display().to_string())
         .collect::<Vec<_>>()
-        .join("\u{1f}");
-    format!("{RESET_BPP_DATA_ERR_PARTIAL_FAILURE}:{joined}")
+        .join("\u{1f}")
+}
+
+/// Blunt "wipe the whole BepInEx folder" repair. Deletes only `<game>/BepInEx`
+/// (including any third-party mod under it) and leaves the doorstop/trampoline
+/// bootstrap untouched, so the game stays launchable and the user reinstalls
+/// manually afterward. Unlike [`reset_bpp_data`] this touches no SQLite database,
+/// so it needs neither the stream-server stop nor `StreamRuntimeState`.
+pub async fn reset_bepinex_folder(game_path: String) -> Result<bool, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        reset_bepinex_folder_blocking(Path::new(&game_path))
+    })
+    .await
+    .map_err(|err| format!("failed to reset BepInEx folder: {err}"))?
+}
+
+fn reset_bepinex_folder_blocking(game_path: &Path) -> Result<bool, String> {
+    payload::ensure_valid_game_path(game_path)?;
+
+    if crate::services::game_process::is_bazaar_running_best_effort() {
+        return Err(RESET_BEPINEX_ERR_GAME_RUNNING.to_string());
+    }
+
+    let had_bepinex = game_path.join("BepInEx").exists();
+    let report = payload::reset_bepinex_directory(game_path);
+    if !report.is_empty() {
+        return Err(format_bepinex_partial_failure(&report.failed));
+    }
+
+    debug_log!("Reset BepInEx folder at {}", game_path.display());
+    Ok(had_bepinex)
 }
 
 pub fn install_bepinex(
@@ -265,6 +313,48 @@ mod tests {
         assert!(removed_data);
         assert!(!removed_data_again);
         assert!(!data_dir.exists());
+    }
+
+    #[test]
+    fn test_reset_bepinex_folder_removes_bepinex_directory_and_foreign_mods() {
+        let tmp = make_valid_game_dir();
+        let bepinex = tmp.path().join("BepInEx");
+        std::fs::create_dir_all(bepinex.join("plugins")).unwrap();
+        std::fs::write(bepinex.join("plugins/BazaarPlusPlus.dll"), b"bpp").unwrap();
+        // A third-party mod under BepInEx is deliberately wiped too (blunt reset).
+        std::fs::write(bepinex.join("plugins/OtherMod.dll"), b"foreign").unwrap();
+
+        let removed = reset_bepinex_folder_blocking(tmp.path()).unwrap();
+
+        assert!(removed);
+        assert!(!bepinex.exists());
+    }
+
+    #[test]
+    fn test_reset_bepinex_folder_leaves_bootstrap_and_game_intact() {
+        let tmp = make_valid_game_dir();
+        std::fs::create_dir_all(tmp.path().join("BepInEx/core")).unwrap();
+        // Doorstop/trampoline bootstrap lives OUTSIDE BepInEx and must survive so
+        // the bundle stays launchable; only BepInEx itself is removed.
+        std::fs::write(tmp.path().join("winhttp.dll"), b"doorstop").unwrap();
+        std::fs::write(tmp.path().join("run_bepinex.sh"), b"#!/bin/sh\n").unwrap();
+
+        let removed = reset_bepinex_folder_blocking(tmp.path()).unwrap();
+
+        assert!(removed);
+        assert!(!tmp.path().join("BepInEx").exists());
+        assert!(tmp.path().join("winhttp.dll").exists());
+        assert!(tmp.path().join("run_bepinex.sh").exists());
+    }
+
+    #[test]
+    fn test_reset_bepinex_folder_is_noop_when_directory_missing() {
+        let tmp = make_valid_game_dir();
+        assert!(!tmp.path().join("BepInEx").exists());
+
+        let removed = reset_bepinex_folder_blocking(tmp.path()).unwrap();
+
+        assert!(!removed);
     }
 
     #[test]

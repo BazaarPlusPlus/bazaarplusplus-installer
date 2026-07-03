@@ -3,6 +3,7 @@ import { PageShell } from '../components/ui/PageShell';
 import { InstallActionsPanel } from '../features/install/InstallActionsPanel';
 import { InstallConfirmModal } from '../features/install/InstallConfirmModal';
 import { InstallStatusPanel } from '../features/install/InstallStatusPanel';
+import { ResetBepinexConfirmModal } from '../features/install/ResetBepinexConfirmModal';
 import { ResetDataConfirmModal } from '../features/install/ResetDataConfirmModal';
 import { useInstallPage } from '../features/install/useInstallPage';
 import { useI18n } from '../i18n/LocaleProvider';
@@ -12,8 +13,11 @@ export default function Install() {
   const page = useInstallPage();
   const [showInstallModal, setShowInstallModal] = useState(false);
   const [showResetDataModal, setShowResetDataModal] = useState(false);
+  const [showResetBepinexModal, setShowResetBepinexModal] = useState(false);
   const [installAcknowledged, setInstallAcknowledged] = useState(false);
   const [resetDataAcknowledged, setResetDataAcknowledged] = useState(false);
+  const [resetBepinexAcknowledged, setResetBepinexAcknowledged] =
+    useState(false);
   const [compatOptIn, setCompatOptIn] = useState(false);
   const primaryMode: 'install' | 'reinstall' | 'launch' = !page.state.mod_state
     .installed
@@ -49,6 +53,17 @@ export default function Install() {
     setResetDataAcknowledged(false);
   };
 
+  const openResetBepinexModal = () => {
+    setShowResetBepinexModal(true);
+    setResetBepinexAcknowledged(false);
+  };
+
+  const confirmResetBepinex = async () => {
+    await page.resetBepinex();
+    setShowResetBepinexModal(false);
+    setResetBepinexAcknowledged(false);
+  };
+
   return (
     <PageShell eyebrow="Install" title={t('installTitle')}>
       <div className="grid grid-cols-12 gap-8 w-full">
@@ -58,6 +73,7 @@ export default function Install() {
           primaryMode={primaryMode}
           onOpenInstallModal={openInstallModal}
           onOpenResetDataModal={openResetDataModal}
+          onOpenResetBepinexModal={openResetBepinexModal}
         />
       </div>
 
@@ -81,6 +97,16 @@ export default function Install() {
           onAcknowledgedChange={setResetDataAcknowledged}
           onClose={() => setShowResetDataModal(false)}
           onConfirm={confirmResetData}
+        />
+      )}
+
+      {showResetBepinexModal && (
+        <ResetBepinexConfirmModal
+          page={page}
+          acknowledged={resetBepinexAcknowledged}
+          onAcknowledgedChange={setResetBepinexAcknowledged}
+          onClose={() => setShowResetBepinexModal(false)}
+          onConfirm={confirmResetBepinex}
         />
       )}
     </PageShell>

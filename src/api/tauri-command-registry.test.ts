@@ -25,6 +25,7 @@ const COMMAND_INPUT_FIELDS = {
   choose_game_directory: [],
   install_mod: ['gamePath'],
   reset_bpp_data: ['gamePath'],
+  reset_bepinex: ['gamePath'],
   uninstall_mod: ['gamePath'],
   launch_game: [],
   get_stream_status: [],
