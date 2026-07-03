@@ -1,10 +1,45 @@
 ---
-status: active-plan
+status: refuted
 topic: steam-branch-switch
 last-verified: b0a815de69f8cf92760f82e10772b3b0262873f6
 ---
 
 # External Steam Branch Switching (Approach A)
+
+## ⚠️ Validation result — 2026-07-03: Approach A is refuted
+
+Tested empirically on the live dev machine (macOS, on PTR). **Editing `UserConfig.BetaKey` and
+running `steam://validate/1617400` does NOT switch the branch.** Evidence:
+
+- `steam://validate/1617400` ran a **same-branch integrity pass** against the mounted PTR files
+  (~83 KB re-downloaded / ~553 KB re-staged) and finished. It did not honor the edited selection:
+  `StateFlags` never left `4`, `MountedConfig.BetaKey` stayed `public_test_realm`, and
+  `BytesToDownload` never recomputed toward the ~1.4 GB online delta.
+- Steam **reverted the external edit**: after validate, `UserConfig.BetaKey` was overwritten from
+  `""` back to `public_test_realm`. The appmanifest `UserConfig.BetaKey` is a downstream **mirror**,
+  not the source of truth.
+- The authoritative selected branch is **not in any local plaintext file**. `public_test_realm`
+  appears only in the appmanifest mirror and in `config.vdf` as the *authorization* cache
+  (`betahash_*` / `betadesc_*` / `betadate_*`), never as an editable selection; `localconfig.vdf`
+  has none. The selection is Steam **account/cloud** state, which Steam re-asserts on any beta op.
+- A plain Steam start (no validate) also did not reconcile within 2 min (it kept the edit until
+  validate reverted it).
+
+**Conclusion:** there is no client-side file to edit that makes the Steam client download a
+different branch, so Approach A cannot work. Remaining external-switch paths:
+
+1. **steamcmd** `+app_update 1617400 -beta <branch> -betapassword <code> validate` — a separate
+   login/install context (the path this doc rejected); viable only as an isolated resident copy.
+2. **UI automation** of the Steam beta dropdown — brittle, out of scope.
+3. **Abandon external switching** — treat online↔PTR as a manual Steam-UI step, and keep the mod's
+   read-side branch detection (already landed) as the only automated half.
+
+Corrected side-finding: the completion signal is **not** `BytesToDownload==0` — those fields retain
+the last operation's totals when idle (observed `85248`/`566722` post-validate, `1534104752`/
+`3065790990` before). A done-predicate would be `BytesDownloaded==BytesToDownload &&
+BytesStaged==BytesToStage && StateFlags==4 && MountedConfig.BetaKey==target`.
+
+The original design below is retained as the record of what was tried and why it fails.
 
 ## Goal
 
@@ -120,14 +155,17 @@ online↔PTR switch is a multi-GB re-download.** No method removes this.
   game. Channel detection already landed on the mod repo; this doc is only about the write/switch
   side that Steam gives no clean handle for.
 
-## Open questions (verify on the main path, do not build standalone probes)
+## Open questions — resolved by the 2026-07-03 validation (see top)
 
-- Confirm `steam://validate/1617400` actually forces a **branch reconcile** (not just a same-branch
-  integrity pass) after `UserConfig.BetaKey` is rewritten. If not, determine the exact `StateFlags`
-  bit that requests an update.
-- Confirm whether, with Steam closed during the edit, a plain `steam://rungameid/1617400` on next
-  start triggers the switch on its own (validate may be unnecessary).
-- Confirm the completion signal: is `StateFlags == 4 && MountedConfig.BetaKey == target` sufficient,
-  or is there a transient window where both hold mid-download?
-- Confirm the post-switch trampoline repair ordering on macOS 27+ end-to-end (switch → repair →
-  launch) on a real machine.
+- ❌ Does `steam://validate/1617400` force a **branch reconcile** after `UserConfig.BetaKey` is
+  rewritten? **No.** It ran a same-branch integrity pass and Steam reverted the edit. `StateFlags`
+  stayed `4` (no update-required bit was ever set).
+- ❌ Does a plain start trigger the switch without validate? **No** (no reconcile within 2 min; the
+  edit persisted only until validate reverted it).
+- ⚠️ Completion signal: `StateFlags==4 && MountedConfig.BetaKey==target` alone is **not** enough —
+  `StateFlags==4` also holds when idle/fully-installed on the *current* branch. Combine with the
+  `Bytes*` equality predicate above. (Moot unless a working switch mechanism is found.)
+- ⏸️ Post-switch trampoline repair ordering: **not reached** — no switch mechanism to repair after.
+
+These are now moot for Approach A. The live decision is which pivot to take (steamcmd / UI
+automation / abandon) — see the validation result at the top.
