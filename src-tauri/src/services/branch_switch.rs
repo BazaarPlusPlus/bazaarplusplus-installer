@@ -434,6 +434,17 @@ where
     loop {
         if ops.timed_out() {
             let error = "Timed out waiting for Steam to finish switching branches.".to_string();
+            match ops.read_appmanifest_branch_state() {
+                Ok(current) => {
+                    commit_lock.update_cancelable(current.bytes_staged);
+                }
+                Err(read_error) => {
+                    return Err(format!(
+                        "{error}; could not confirm pre-commit state: {read_error}"
+                    ));
+                }
+            }
+
             return if commit_lock.locked {
                 Err(error)
             } else {
@@ -510,12 +521,22 @@ fn restore_after_pre_commit_error<Ops>(
 where
     Ops: BranchSwitchBlockingOps,
 {
-    match ops.restore_original_branch(original_beta_key) {
-        Ok(()) => error,
-        Err(restore_error) => {
-            format!("{error}; additionally failed to restore original branch: {restore_error}")
-        }
+    let close_error = ops.close_steam().err();
+    let restore_error = ops.restore_original_branch(original_beta_key).err();
+    let mut combined = error;
+
+    if let Some(close_error) = close_error {
+        combined.push_str(&format!(
+            "; additionally failed to close Steam before restore: {close_error}"
+        ));
     }
+    if let Some(restore_error) = restore_error {
+        combined.push_str(&format!(
+            "; additionally failed to restore original branch: {restore_error}"
+        ));
+    }
+
+    combined
 }
 
 struct RealBranchSwitchBlockingOps {
@@ -1048,27 +1069,35 @@ mod tests {
 
     #[derive(Default)]
     struct TestBlockingOps {
-        close_result: Option<Result<(), String>>,
+        close_results: Vec<Result<(), String>>,
         write_result: Option<Result<(), String>>,
         start_result: Option<Result<(), String>>,
         read_results: Vec<Result<AppManifestBranchState, String>>,
         timed_out_results: Vec<bool>,
         restore_result: Option<Result<(), String>>,
+        calls: Vec<String>,
         written_targets: Vec<String>,
         restored_betas: Vec<String>,
     }
 
     impl super::BranchSwitchBlockingOps for TestBlockingOps {
         fn close_steam(&mut self) -> Result<(), String> {
-            self.close_result.take().unwrap_or(Ok(()))
+            self.calls.push("close".to_string());
+            if self.close_results.is_empty() {
+                Ok(())
+            } else {
+                self.close_results.remove(0)
+            }
         }
 
         fn write_appmanifest_branch_target(&mut self, target_beta_key: &str) -> Result<(), String> {
+            self.calls.push("write".to_string());
             self.written_targets.push(target_beta_key.to_string());
             self.write_result.take().unwrap_or(Ok(()))
         }
 
         fn start_steam(&mut self) -> Result<(), String> {
+            self.calls.push("start".to_string());
             self.start_result.take().unwrap_or(Ok(()))
         }
 
@@ -1083,6 +1112,7 @@ mod tests {
         }
 
         fn read_appmanifest_branch_state(&mut self) -> Result<AppManifestBranchState, String> {
+            self.calls.push("read".to_string());
             if self.read_results.is_empty() {
                 Ok(manifest_state_for_completion())
             } else {
@@ -1091,6 +1121,7 @@ mod tests {
         }
 
         fn restore_original_branch(&mut self, original_beta_key: &str) -> Result<(), String> {
+            self.calls.push("restore".to_string());
             self.restored_betas.push(original_beta_key.to_string());
             self.restore_result.take().unwrap_or(Ok(()))
         }
@@ -1122,6 +1153,20 @@ mod tests {
         assert_eq!(ops.restored_betas, vec!["original_beta"]);
     }
 
+    fn call_index(calls: &[String], name: &str) -> usize {
+        calls
+            .iter()
+            .position(|call| call == name)
+            .unwrap_or_else(|| panic!("missing {name} call in {calls:?}"))
+    }
+
+    fn last_call_index(calls: &[String], name: &str) -> usize {
+        calls
+            .iter()
+            .rposition(|call| call == name)
+            .unwrap_or_else(|| panic!("missing {name} call in {calls:?}"))
+    }
+
     #[test]
     fn blocking_ops_read_error_before_commit_combines_restore_failure() {
         let mut ops = TestBlockingOps {
@@ -1147,9 +1192,62 @@ mod tests {
     }
 
     #[test]
+    fn blocking_ops_read_error_closes_steam_before_restoring_original_branch() {
+        let mut ops = TestBlockingOps {
+            read_results: vec![Err("read failed".to_string())],
+            ..TestBlockingOps::default()
+        };
+        let cancel_flag = AtomicBool::new(false);
+
+        let error = super::run_branch_switch_blocking_with_ops(
+            &mut ops,
+            SteamBranchTarget::Ptr,
+            &cancel_flag,
+            "original_beta",
+            0,
+            |_status| {},
+        )
+        .unwrap_err();
+
+        assert!(error.contains("read failed"));
+        let read_idx = call_index(&ops.calls, "read");
+        let close_idx = last_call_index(&ops.calls, "close");
+        let restore_idx = call_index(&ops.calls, "restore");
+        assert!(read_idx < close_idx);
+        assert!(close_idx < restore_idx);
+    }
+
+    #[test]
+    fn blocking_ops_read_error_reports_close_and_restore_failures() {
+        let mut ops = TestBlockingOps {
+            close_results: vec![Ok(()), Err("close failed".to_string())],
+            read_results: vec![Err("read failed".to_string())],
+            restore_result: Some(Err("restore failed".to_string())),
+            ..TestBlockingOps::default()
+        };
+        let cancel_flag = AtomicBool::new(false);
+
+        let error = super::run_branch_switch_blocking_with_ops(
+            &mut ops,
+            SteamBranchTarget::Ptr,
+            &cancel_flag,
+            "original_beta",
+            0,
+            |_status| {},
+        )
+        .unwrap_err();
+
+        assert!(error.contains("read failed"));
+        assert!(error.contains("close failed"));
+        assert!(error.contains("restore failed"));
+        assert_eq!(ops.restored_betas, vec!["original_beta"]);
+    }
+
+    #[test]
     fn blocking_ops_timeout_before_commit_restores_original_branch() {
         let mut ops = TestBlockingOps {
             timed_out_results: vec![true],
+            read_results: vec![Ok(incomplete_manifest_state(Some(0)))],
             ..TestBlockingOps::default()
         };
         let cancel_flag = AtomicBool::new(false);
@@ -1166,6 +1264,36 @@ mod tests {
 
         assert!(error.contains("Timed out"));
         assert_eq!(ops.restored_betas, vec!["original_beta"]);
+        let read_idx = call_index(&ops.calls, "read");
+        let close_idx = last_call_index(&ops.calls, "close");
+        let restore_idx = call_index(&ops.calls, "restore");
+        assert!(read_idx < close_idx);
+        assert!(close_idx < restore_idx);
+    }
+
+    #[test]
+    fn blocking_ops_timeout_after_final_read_shows_commit_does_not_restore() {
+        let mut ops = TestBlockingOps {
+            timed_out_results: vec![true],
+            read_results: vec![Ok(incomplete_manifest_state(Some(11)))],
+            ..TestBlockingOps::default()
+        };
+        let cancel_flag = AtomicBool::new(false);
+
+        let error = super::run_branch_switch_blocking_with_ops(
+            &mut ops,
+            SteamBranchTarget::Ptr,
+            &cancel_flag,
+            "original_beta",
+            10,
+            |_status| {},
+        )
+        .unwrap_err();
+
+        assert!(error.contains("Timed out"));
+        assert!(ops.restored_betas.is_empty());
+        assert_eq!(ops.calls.iter().filter(|call| *call == "read").count(), 1);
+        assert_eq!(ops.calls.iter().filter(|call| *call == "close").count(), 1);
     }
 
     #[test]
