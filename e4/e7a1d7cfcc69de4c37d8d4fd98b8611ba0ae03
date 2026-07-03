@@ -1,0 +1,40 @@
+src-tauri/src/services/branch_switch.rs
+  s_6ca26b0bb6d373::t_8de1a8020b1a5c 521-531,535-590
+  s_6ca26b0bb6d373::t_75d151ddb20694 732,739,744-748
+  s_6ca26b0bb6d373::t_7096786126106f 890,989,1009,1150-1171,1203
+  s_6ca26b0bb6d373::t_140e208a87fdca 403-404,426,431-432,435-445,448-462,475,484,488-490,501-502
+  s_6ca26b0bb6d373::t_627d4ce865431d 702,715-719
+  s_6ca26b0bb6d373::t_2da7948de03b62 591,720,729-731,733-738,740-743,749-751,999-1008
+  s_6ca26b0bb6d373::t_d4285e8f8cfeed 891-919
+  s_6ca26b0bb6d373::t_7e222cf67b56b8 840-851,1147-1149,1172-1174,1178-1202
+  s_6ca26b0bb6d373::t_74a964c3c2a3ee 192-193,197,953-988
+  s_6ca26b0bb6d373::t_0f179b0f2cdb82 383
+  s_6ca26b0bb6d373::t_beab22b0aacd1d 1175-1177
+  s_6ca26b0bb6d373::t_5a76639bb2d4cc 795-796
+  s_6ca26b0bb6d373::t_42fc18775292b8 1054-1055,1078-1082,1086-1090,1122-1145
+  s_6ca26b0bb6d373::t_5f285a70351950 389-401,406-412,416,418,422,519-520,1048-1053,1056-1077,1083-1085,1091-1121,1146
+  s_6ca26b0bb6d373::t_e18612ba2ba950 194-196,225
+  s_6ca26b0bb6d373::t_c0d1a84db3a9a0 423-425,427-429,503-518
+  s_6ca26b0bb6d373::t_aacbf078cc0352 592
+  s_6ca26b0bb6d373::t_6b3fedae9bf7ae 721
+  s_6ca26b0bb6d373::t_c957937be43ef2 990
+  s_6ca26b0bb6d373::t_eac63e87786bdb 1010
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.5",
+  "base_commit_sha": "e4e7a1d7cfcc69de4c37d8d4fd98b8611ba0ae03",
+  "prompts": {},
+  "sessions": {
+    "s_6ca26b0bb6d373": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f2856-2adb-76f2-84b2-7cd5c5d8044c",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Xinyu YANG <cauyxy@gmail.com>"
+    }
+  },
+  "attestation_metadata": {},
+  "remote_transcripts": {}
+}
