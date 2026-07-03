@@ -1,7 +1,9 @@
 ---
-status: refuted
+status: archived
 topic: steam-branch-switch
 last-verified: b0a815de69f8cf92760f82e10772b3b0262873f6
+archived: 2026-07-03
+note: Approach A refuted by live test; current decision in docs/decisions/007-steam-branch-switch-infeasible.md
 ---
 
 # External Steam Branch Switching (Approach A)

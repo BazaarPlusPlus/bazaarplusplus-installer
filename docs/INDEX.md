@@ -28,6 +28,7 @@ Last consolidation audit: `2026-06-11` on `7b18f73d4718d3e1406de9f526d1fbba09ac5
 | `docs/decisions/004-steam-and-tempo-launch-flows.md` | steam-tempo-launch | superseded-by-006 | n/a |
 | `docs/decisions/005-reset-local-data-contract.md` | reset-local-data | decision | n/a |
 | `docs/decisions/006-steam-only-launch.md` | steam-only-launch | decision | n/a |
+| `docs/decisions/007-steam-branch-switch-infeasible.md` | steam-branch-switch-infeasible | decision | n/a |
 | `docs/archive/README.md` | old documentation index | superseded | archived 2026-06-11 |
 | `docs/archive/architecture.md` | old architecture doc | superseded | archived 2026-06-11 |
 | `docs/archive/updater-release-plan.md` | old updater release doc | superseded | archived 2026-06-11 |
@@ -38,6 +39,7 @@ Last consolidation audit: `2026-06-11` on `7b18f73d4718d3e1406de9f526d1fbba09ac5
 | `docs/archive/2026-06-06-installer-auto-update-restore-design.md` | auto-update design | implemented | archived 2026-06-11 |
 | `docs/archive/superpowers/plans/2026-06-10-tempo-native-launch.md` | Tempo launch plan | implemented | archived 2026-06-11 |
 | `docs/archive/superpowers/plans/2026-06-10-reset-local-data-ux.md` | reset local data plan | implemented | archived 2026-06-11 |
+| `docs/archive/2026-07-03-steam-branch-switch.md` | steam-branch-switch (Approach A) | refuted | archived 2026-07-03 |
 
 ## Original Inventory
 
