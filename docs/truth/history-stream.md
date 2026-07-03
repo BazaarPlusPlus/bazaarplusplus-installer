@@ -1,7 +1,7 @@
 ---
 status: truth
 topic: history-stream
-last-verified: 7b18f73d4718d3e1406de9f526d1fbba09ac567f
+last-verified: c811ba4e0b25c72792487bbe80e5d3b3094637a3
 ---
 
 # History And Stream
@@ -19,6 +19,16 @@ last-verified: 7b18f73d4718d3e1406de9f526d1fbba09ac567f
 - The History page renders Runs, Videos, and Win Rate summary cards in `src/pages/History.tsx:34-39`.
 - History rows include optional preview images and link to `/history/:run_id` details in `src/pages/History.tsx:99-157`.
 - Run detail renders run metadata, screenshot reveal, summary stats, and a battle table with video reveal/delete controls in `src/pages/RunDetail.tsx:65-160` and `src/pages/RunDetail.tsx:190-285`.
+- The History page renders the storage cleanup card after the summary cards in `src/pages/History.tsx:51`; the card offers separate end-of-run screenshot and run-data rows in `src/features/history/StorageCleanupCard.tsx:90-101`.
+
+## Storage Cleanup
+
+- Tauri exposes preview and execute commands for screenshot cleanup and run-data cleanup in `src-tauri/src/commands/history.rs:103-145`, and all four commands are registered in `src-tauri/src/commands/registry.rs:29-32`.
+- The cleanup presets are the wire strings `all`, `older_than_7_days`, and `before_this_month`; `CleanupCutoff::for_preset` computes non-`all` cutoffs from local time and stores UTC strings for SQL comparisons in `src-tauri/src/history/cleanup.rs:9-73`. A non-`all` preset never collapses to `None` (the wire meaning of `all`): a spring-forward DST gap at local month-start falls back to local noon.
+- Screenshot cleanup plans and executes against `end_of_run_auto` rows, skips pending BazaarDB screenshot uploads, compares captured timestamps with `datetime()`, protects files still referenced by surviving rows, and sweeps orphan dated-folder files plus stale `UploadCache` copies in `src-tauri/src/history/cleanup.rs:123-173` and `src-tauri/src/history/cleanup.rs:185-253`.
+- Run-data cleanup plans only non-active runs, skips upload-unsafe completed Ranked dirty runs, replay-dirty battles, and pending screenshot uploads, and protects screenshot/video files still referenced by kept rows in `src-tauri/src/history/cleanup.rs:308-398`.
+- Run-data execution opens the FK-enabled cleanup connection, validates required cascade foreign keys before removing files, deletes replay videos, replay payloads, and eligible screenshots before deleting rows, then removes video rows, screenshot rows, and `runs` rows without directly deleting `battles`; cleanup file resolution refuses drive-relative escapes in `src-tauri/src/history/cleanup.rs:411-524`.
+- The FK-enabled cleanup connection turns on `PRAGMA foreign_keys = ON` in `src-tauri/src/history/queries.rs:49-54`, so current-schema `runs` deletes cascade to run-owned child rows while ghost battles remain outside run cleanup.
 
 ## Stream Service
 

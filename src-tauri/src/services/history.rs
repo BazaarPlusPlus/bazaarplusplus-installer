@@ -97,6 +97,56 @@ pub fn delete_run_videos(
     list_runs(database_path, limit)
 }
 
+pub fn preview_screenshot_cleanup(
+    paths: &HistoryPaths,
+    preset: crate::history::cleanup::CleanupPreset,
+) -> Result<crate::history::cleanup::ScreenshotCleanupPreview, String> {
+    let cutoff = crate::history::cleanup::CleanupCutoff::for_preset(preset, chrono::Local::now());
+    let plan = crate::history::cleanup::plan_screenshot_cleanup(
+        &paths.database_path,
+        &paths.game_path,
+        cutoff.as_ref(),
+    )?;
+    Ok(plan.to_preview())
+}
+
+pub fn execute_screenshot_cleanup(
+    paths: &HistoryPaths,
+    preset: crate::history::cleanup::CleanupPreset,
+) -> Result<crate::history::cleanup::ScreenshotCleanupResult, String> {
+    let cutoff = crate::history::cleanup::CleanupCutoff::for_preset(preset, chrono::Local::now());
+    crate::history::cleanup::execute_screenshot_cleanup(
+        &paths.database_path,
+        &paths.game_path,
+        cutoff.as_ref(),
+    )
+}
+
+pub fn preview_run_data_cleanup(
+    paths: &HistoryPaths,
+    preset: crate::history::cleanup::CleanupPreset,
+) -> Result<crate::history::cleanup::RunDataCleanupPreview, String> {
+    let cutoff = crate::history::cleanup::CleanupCutoff::for_preset(preset, chrono::Local::now());
+    let plan = crate::history::cleanup::plan_run_data_cleanup(
+        &paths.database_path,
+        &paths.game_path,
+        cutoff.as_ref(),
+    )?;
+    Ok(plan.to_preview())
+}
+
+pub fn execute_run_data_cleanup(
+    paths: &HistoryPaths,
+    preset: crate::history::cleanup::CleanupPreset,
+) -> Result<crate::history::cleanup::RunDataCleanupResult, String> {
+    let cutoff = crate::history::cleanup::CleanupCutoff::for_preset(preset, chrono::Local::now());
+    crate::history::cleanup::execute_run_data_cleanup(
+        &paths.database_path,
+        &paths.game_path,
+        cutoff.as_ref(),
+    )
+}
+
 pub fn empty_history_list() -> HistoryRunList {
     HistoryRunList {
         summary: HistorySummary {

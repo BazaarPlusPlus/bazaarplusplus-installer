@@ -204,6 +204,25 @@ const zh = {
   deleteVideoConfirmTitle: '删除视频',
   deleteVideoConfirmBody: '这会永久删除该场战斗的回放视频文件，且无法恢复。',
   deleteVideoConfirmAction: '删除视频',
+
+  // Storage cleanup (History page)
+  storageCleanupTitle: '存储清理',
+  storageCleanupScreenshotsLabel: '对局结算截图',
+  storageCleanupRunDataLabel: '对局数据',
+  storageCleanupPresetAll: '清理全部',
+  storageCleanupPresetOlderThan7Days: '清理 7 天前',
+  storageCleanupPresetBeforeThisMonth: '仅保留本月',
+  storageCleanupConfirmTitle: '确认清理',
+  storageCleanupScreenshotsConfirmBody:
+    '将删除 {count} 张结算截图（约 {size}），删除后无法恢复。',
+  storageCleanupRunDataConfirmBody:
+    '将删除 {runs} 局对局记录，包括 {battles} 场战斗、{videos} 个回放视频及相关截图（约 {size}），删除后无法恢复。',
+  storageCleanupSkippedPending: '另有 {count} 项尚未完成上传，将自动跳过。',
+  storageCleanupNothingToClean: '没有符合条件的可清理数据。',
+  storageCleanupConfirmAction: '确认清理',
+  storageCleanupScreenshotsDone: '已删除 {files} 个文件，释放约 {size}。',
+  storageCleanupRunDataDone:
+    '已删除 {runs} 局对局和 {files} 个文件，释放约 {size}。',
   noVideo: '无视频',
 
   // Stream page
@@ -441,6 +460,25 @@ const en: Record<MessageKey, string> = {
   deleteVideoConfirmBody:
     'This permanently deletes the replay video file for this battle and cannot be undone.',
   deleteVideoConfirmAction: 'Delete Video',
+
+  storageCleanupTitle: 'Storage Cleanup',
+  storageCleanupScreenshotsLabel: 'End-of-run screenshots',
+  storageCleanupRunDataLabel: 'Run data',
+  storageCleanupPresetAll: 'Clean all',
+  storageCleanupPresetOlderThan7Days: 'Older than 7 days',
+  storageCleanupPresetBeforeThisMonth: 'Keep this month only',
+  storageCleanupConfirmTitle: 'Confirm Cleanup',
+  storageCleanupScreenshotsConfirmBody:
+    'This will permanently delete {count} end-of-run screenshots (about {size}). This cannot be undone.',
+  storageCleanupRunDataConfirmBody:
+    'This will permanently delete {runs} runs, including {battles} battles, {videos} replay videos and related screenshots (about {size}). This cannot be undone.',
+  storageCleanupSkippedPending:
+    '{count} items are still pending upload and will be skipped.',
+  storageCleanupNothingToClean: 'Nothing matches the selected range.',
+  storageCleanupConfirmAction: 'Clean Up',
+  storageCleanupScreenshotsDone: 'Deleted {files} files, freed about {size}.',
+  storageCleanupRunDataDone:
+    'Deleted {runs} runs and {files} files, freed about {size}.',
   noVideo: 'No video',
 
   streamModeCurrent: 'Battle Count',
