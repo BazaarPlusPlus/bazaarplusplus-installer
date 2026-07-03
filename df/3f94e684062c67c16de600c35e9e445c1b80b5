@@ -1,0 +1,73 @@
+docs/INDEX.md
+  s_9471e7840cef14::t_931c1e6225086f 20
+  s_9471e7840cef14::t_3f2275faa00498 82
+  s_9471e7840cef14::t_2a95c46ab41d10 28,30
+src-tauri/src/commands/install.rs
+  s_9471e7840cef14::t_a58b39d428b75e 7
+  s_9471e7840cef14::t_34cce42b00dfea 67-68
+docs/plans/2026-07-03-steam-branch-switch.md
+  s_9471e7840cef14::t_dd0824bbfa9e5a 68-76
+  s_9471e7840cef14::t_7e514541120b57 110-111
+  s_9471e7840cef14::t_eb08e1497b6cf0 65-67
+  s_9471e7840cef14::t_289e9a84437305 77-79,107-109
+  s_9471e7840cef14::t_7ab641c99322fc 112-114
+  s_9471e7840cef14::t_a6fc098f662f37 1-64,80-106,115-133
+src/features/install/InstallActionsPanel.tsx
+  s_9471e7840cef14::t_c52b93b05c95f1 8
+src-tauri/src/services/bepinex/mod.rs
+  s_9471e7840cef14::t_8e253434d36675 7
+src-tauri/src/commands/registry.rs
+  s_9471e7840cef14::t_f72028eb454d35 109
+docs/decisions/006-steam-only-launch.md
+  s_9471e7840cef14::t_69613daa303693 1-51
+docs/truth/launch-modes.md
+  s_9471e7840cef14::t_9d48b34f4866a4 4,9,11-13
+src/features/install/installApi.ts
+  s_9471e7840cef14::t_85eea87aef230f 65,70
+docs/truth/install-reset.md
+  s_9471e7840cef14::t_908524fe010a4b 4
+  s_9471e7840cef14::t_ba48808e999e25 13
+  s_9471e7840cef14::t_ba5890d9234a51 17-19
+  s_9471e7840cef14::t_6dc647b81a66b7 11
+docs/truth/overview.md
+  s_9471e7840cef14::t_a122e2be1fde09 4
+  s_9471e7840cef14::t_3048a8a7774af7 23
+src/api/tauri-command-registry.test.ts
+  s_9471e7840cef14::t_ad6c16c7729932 29
+src/features/install/useInstallPage.ts
+  s_9471e7840cef14::t_68cf6fc79869de 1
+  s_9471e7840cef14::t_4da19a03e1e918 40
+  s_9471e7840cef14::t_1cc84af95d2a36 178,180,182,190-191,200
+docs/decisions/004-steam-and-tempo-launch-flows.md
+  s_9471e7840cef14::t_5b3bc6a240fdbe 2,8-10
+  s_9471e7840cef14::t_8bc4ddba1ce1bd 11
+src-tauri/src/services/install/mod.rs
+  s_9471e7840cef14::t_ba4591480c2c75 42-43
+  s_9471e7840cef14::t_501588abaf4ac7 133
+  s_9471e7840cef14::t_02f7593e8731e0 264
+  s_9471e7840cef14::t_9a1a0399ebbae9 179
+src/types/generated/bindings/InstallState.ts
+  s_9471e7840cef14::t_2b2c3a8b3cec77 8
+docs/truth/architecture.md
+  s_9471e7840cef14::t_a9d106720021b8 4
+  s_9471e7840cef14::t_29ecab5dda01dc 24-25
+docs/plans/manual-validation.md
+  s_9471e7840cef14::t_1b37eabd4dc516 13
+  s_9471e7840cef14::t_30209a28211cb1 15
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.9",
+  "base_commit_sha": "df3f94e684062c67c16de600c35e9e445c1b80b5",
+  "prompts": {},
+  "sessions": {
+    "s_9471e7840cef14": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "bf48d288-2a4d-4ff9-b8e9-bd657c57dfbe",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Xinyu YANG <cauyxy@gmail.com>"
+    }
+  }
+}
