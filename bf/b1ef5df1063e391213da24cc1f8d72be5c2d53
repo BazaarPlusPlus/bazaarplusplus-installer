@@ -1,0 +1,95 @@
+src/types/generated/bindings/ResetBepinexResult.ts
+  s_a193bdc6b0902e::t_10d59111d90db2 1-4
+src/pages/Install.tsx
+  s_a193bdc6b0902e::t_dac5e3c2e04b0d 56-66
+  s_a193bdc6b0902e::t_cb1e40d8c7acf3 76
+  s_a193bdc6b0902e::t_6300fff6179209 16,19-20
+  s_a193bdc6b0902e::t_6fbb7568ca7782 102-111
+  s_a193bdc6b0902e::t_67aa538579746a 6
+src/types/generated/bindings/InstallActions.ts
+  s_a193bdc6b0902e::t_10d59111d90db2 3
+src/features/install/installApi.ts
+  s_a193bdc6b0902e::t_731eeb21bca4bc 63-66
+  s_a193bdc6b0902e::t_e73f9479b41ecc 30,35
+src/features/shared/errors.ts
+  s_a193bdc6b0902e::t_836059be36ecb8 7-8
+  s_a193bdc6b0902e::t_eab1f20b144e40 11,15-22,24,28-29,39-54
+src/features/install/useInstallPage.ts
+  s_a193bdc6b0902e::t_0fa47a73829dfb 165-197
+  s_a193bdc6b0902e::t_ab42542fb1dff5 271-290
+  s_a193bdc6b0902e::t_2f818951c1d767 238
+  s_a193bdc6b0902e::t_36f1cdc16d1029 6-10,18,28
+src-tauri/src/services/bepinex/payload.rs
+  s_a193bdc6b0902e::t_987c585b9564f5 454-464
+src-tauri/src/services/bepinex/mod.rs
+  s_a193bdc6b0902e::t_1a7f8ef7526010 24-28
+  s_a193bdc6b0902e::t_8ffee845f528ac 65-78,81,85-115
+  s_a193bdc6b0902e::t_39a112f6edaef9 318-359
+src/types/generated/bindings/InstallState.ts
+  s_a193bdc6b0902e::t_10d59111d90db2 8-14
+src-tauri/src/commands/registry.rs
+  s_a193bdc6b0902e::t_8bec2d4795e7de 12
+  s_a193bdc6b0902e::t_5acdaa7197fac3 110
+src-tauri/src/services/install/types.rs
+  s_a193bdc6b0902e::t_1680a750532f54 14-17,28-32
+  s_a193bdc6b0902e::t_37860dd11a4cd1 72
+  s_a193bdc6b0902e::t_ce3f12ddce05f4 33-34
+src-tauri/src/commands/install.rs
+  s_a193bdc6b0902e::t_af803ec5744569 59-66
+  s_a193bdc6b0902e::t_1652f841a76d8d 7-8
+  s_f247e3d35645bf::t_1fa4533d1a0bb7 58
+src/types/generated/tauri-command-names.ts
+  s_a193bdc6b0902e::t_10d59111d90db2 9,39
+src/types/generated/index.ts
+  s_a193bdc6b0902e::t_10d59111d90db2 23
+src/features/install/ResetBepinexConfirmModal.tsx
+  s_a193bdc6b0902e::t_09c071038ca366 1-109
+src/features/install/InstallActionsPanel.tsx
+  s_a193bdc6b0902e::t_10fc6f8ccc247f 95,110-117
+  s_a193bdc6b0902e::t_7545e7187ea590 5
+  s_a193bdc6b0902e::t_e70625defd3a58 23-24,30
+  s_a193bdc6b0902e::t_4c58f189e49e17 118-119
+src/i18n/messages.ts
+  s_a193bdc6b0902e::t_d8db549d274661 106-121
+  s_a193bdc6b0902e::t_43e3afaa3f1f2e 356-373
+  s_a193bdc6b0902e::t_99c3f5fe786306 324
+  s_a193bdc6b0902e::t_ab53941911a7fd 76
+src/api/tauri-command-registry.test.ts
+  s_a193bdc6b0902e::t_9051bc9332d563 28
+src-tauri/src/services/install/mod.rs
+  s_a193bdc6b0902e::t_44087cc5166f4d 126-135
+  s_a193bdc6b0902e::t_ffcf2568ac3496 284
+  s_a193bdc6b0902e::t_599c2eb45decf9 246-252
+  s_a193bdc6b0902e::t_cc70cbb00da8a2 303-314
+  s_a193bdc6b0902e::t_894c5eff4aa2c1 182
+  s_a193bdc6b0902e::t_17dc4cbfadd319 5
+  s_a193bdc6b0902e::t_55837621f87d53 229,234
+  s_a193bdc6b0902e::t_104bb76270cc75 15
+src/api/tauri.ts
+  s_a193bdc6b0902e::t_0ebd3072e3e319 50-53
+  s_a193bdc6b0902e::t_9384923e667ad5 11
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "bfb1ef5df1063e391213da24cc1f8d72be5c2d53",
+  "prompts": {},
+  "sessions": {
+    "s_a193bdc6b0902e": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "84fd4b36-8951-47f7-b6ad-faa38f5fcf33",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Xinyu YANG <cauyxy@gmail.com>"
+    },
+    "s_f247e3d35645bf": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f2993-db27-7d13-ba2f-0db87176d030",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Xinyu YANG <cauyxy@gmail.com>"
+    }
+  }
+}
