@@ -1,0 +1,49 @@
+src-tauri/src/services/mod.rs
+  s_6ca26b0bb6d373::t_b083ee721672de 3
+src-tauri/src/services/branch_switch.rs
+  s_6ca26b0bb6d373::t_2ce1cf1185e8ab 605-609
+  s_6ca26b0bb6d373::t_7f01e59cd4dd0e 3-4,6-9,11,45-70,78-102,115-169,184-193,726-749,751-759
+  s_6ca26b0bb6d373::t_850943209edcf1 13,15-16,610-639
+  s_6ca26b0bb6d373::t_9555c678b71c27 528-568
+  s_6ca26b0bb6d373::t_b13da69246d221 597,600,602-603,760-767
+  s_6ca26b0bb6d373::t_f4665fd2fd4f03 28,113,259-261,270,310,428-432,579,582,604,647,695-698
+  s_6ca26b0bb6d373::t_cd775b6858d46d 5,10,14,17-22,24-26,71-77,103-112,114
+  s_6ca26b0bb6d373::t_34839976c8029e 598-599,601
+  s_6ca26b0bb6d373::t_007e5aa84666b4 583-594
+  s_6ca26b0bb6d373::t_b764e60d576f41 571-578
+  s_6ca26b0bb6d373::t_0bdffd32b8455e 595-596,658-669
+  s_6ca26b0bb6d373::t_0d4040364d9136 170-183
+  s_6ca26b0bb6d373::t_528a5b797551ae 29-30,38-41
+  s_6ca26b0bb6d373::t_b083ee721672de 12,23,27,569-570,642-643,646,648-657,670,806-807
+  s_6ca26b0bb6d373::t_0a71315810c2ff 1-2
+  s_6ca26b0bb6d373::t_99f92fbea03e81 580-581,677-694,699-725,750
+  s_6ca26b0bb6d373::t_4e70c85aad0f8c 640-641,645,768-805
+  s_6ca26b0bb6d373::t_65da94a803f5f2 194-258,262-269,271-309,311-427,433-527
+  s_6ca26b0bb6d373::t_102fe84636c427 31-37,42-44,644,671-676
+src-tauri/src/lib.rs
+  s_6ca26b0bb6d373::t_0eb9a01d6f8334 37
+src-tauri/src/services/branch.rs
+  s_6ca26b0bb6d373::t_c39d964b4c1435 73-83,125-131,134-135
+  s_6ca26b0bb6d373::t_f4665fd2fd4f03 98-99,120-124
+  s_6ca26b0bb6d373::t_64afd6fc37209c 72
+src-tauri/src/services/steam.rs
+  s_6ca26b0bb6d373::t_88bc0ef5c5fd30 136-145
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.5",
+  "base_commit_sha": "46e2bc7cfc6e22acba4915dcbf992b92d36a3554",
+  "prompts": {},
+  "sessions": {
+    "s_6ca26b0bb6d373": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f2856-2adb-76f2-84b2-7cd5c5d8044c",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Xinyu YANG <cauyxy@gmail.com>"
+    }
+  },
+  "attestation_metadata": {},
+  "remote_transcripts": {}
+}
