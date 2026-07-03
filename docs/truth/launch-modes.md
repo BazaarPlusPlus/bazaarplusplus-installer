@@ -1,25 +1,16 @@
 ---
 status: truth
 topic: launch-modes
-last-verified: 57761d71ebe557c8647d0006a28f557fa8678a09
+last-verified: 529b56cad3da13db83b0266377503143596e5dad
 ---
 
 # Launch Modes
 
-## Steam Versus Tempo
+## Steam Launch
 
-- Launch flow is selected by both Steam detection and game path. Steam flow is used only when a Steam client is detected and the resolved game path contains a `steamapps` path component; otherwise Tempo native flow is selected in `src-tauri/src/services/install/mod.rs:177-191`.
-- The public launch action re-detects environment state, then dispatches to Steam URL launch or Tempo capture/replay in `src-tauri/src/services/install/mod.rs:199-210`.
-- Steam launch opens `steam://rungameid/1617400` in `src-tauri/src/services/install/mod.rs:24-24` and `src-tauri/src/services/install/mod.rs:167-169`; the capability allows `steam://*` URLs in `src-tauri/capabilities/default.json:12-18`.
-
-## Tempo Native Flow
-
-- Tempo launches are guarded by a process-wide in-flight flag and a cancel flag in `src-tauri/src/services/tempo.rs:22-24` and `src-tauri/src/services/tempo.rs:115-127`.
-- Before Tempo launch, the service resolves the game directory, launcher target, and game executable; if a game process is already running it returns `tempo_game_already_running` in `src-tauri/src/services/tempo.rs:129-141`.
-- The flow backs up and removes mod payload files, starts Tempo Launcher, waits for a native game process, captures arguments, terminates the captured process, restores the payload, and launches the modded game with captured arguments in `src-tauri/src/services/tempo.rs:173-223`.
-- If the Tempo flow errors, it attempts backup restore, reinstalls the macOS trampoline when it had temporarily removed it, emits an error status, and returns the error in `src-tauri/src/services/tempo.rs:226-237`.
-- The install page listens for `tempo-launch-status`, updates busy state, maps known phases to localized messages, and exposes a cancel action in `src/features/install/useInstallPage.ts:135-152` and `src/features/install/useInstallPage.ts:226-248`.
-- The launch button shows a Tempo hint and cancel button while a Tempo launch is in progress in `src/features/install/InstallActionsPanel.tsx:152-165`.
+- The installer launches the game exclusively through the Steam client. There is no other launch path — Steam detection is the substrate for every install and launch.
+- The launch command takes no arguments and calls `launch_game_via_steam()` directly in `src-tauri/src/commands/install.rs:66-70`, which opens `steam://rungameid/1617400` in `src-tauri/src/services/install/mod.rs:24` and `src-tauri/src/services/install/mod.rs:146-148`; the capability allows `steam://*` URLs in `src-tauri/capabilities/default.json:12-18`.
+- Game detection resolves Steam copies only, via `steamapps/libraryfolders.vdf` and well-known Steam library paths in `src-tauri/src/services/detect/steam.rs:268` and `src-tauri/src/services/game_path.rs:125-153`.
 
 ## macOS Prefix And Trampoline Modes
 

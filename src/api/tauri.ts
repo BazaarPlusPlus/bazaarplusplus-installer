@@ -51,10 +51,6 @@ export interface TauriCommandMap {
     output: InstallState;
   };
   launch_game: {
-    input: { gamePath?: string };
-    output: FileActionResult;
-  };
-  cancel_tempo_launch: {
     input: undefined;
     output: FileActionResult;
   };

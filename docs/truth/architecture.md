@@ -1,7 +1,7 @@
 ---
 status: truth
 topic: architecture
-last-verified: df2a1aff04d29bed00f16d369d7558755e31a556
+last-verified: 529b56cad3da13db83b0266377503143596e5dad
 ---
 
 # Architecture
@@ -21,8 +21,8 @@ last-verified: df2a1aff04d29bed00f16d369d7558755e31a556
 
 ## Feature Boundaries
 
-- Install state is produced by Rust detection and serialized through `InstallState`; the contract includes selected paths, launch flow, game/mod state, macOS compatibility state, action gates, resettable-data status, and warnings in `src-tauri/src/services/install/types.rs:3-16`.
-- Install, reset, uninstall, and launch orchestration are owned by `src-tauri/src/services/install/mod.rs`; the install service selects Steam or Tempo launch flow, applies prefix or trampoline launch mode, and rebuilds state after mutations in `src-tauri/src/services/install/mod.rs:36-120`.
+- Install state is produced by Rust detection and serialized through `InstallState`; the contract includes selected paths, game/mod state, macOS compatibility state, action gates, resettable-data status, and warnings in `src-tauri/src/services/install/types.rs:3-15`.
+- Install, reset, uninstall, and launch orchestration are owned by `src-tauri/src/services/install/mod.rs`; launch goes through the Steam client only (`launch_game_via_steam`), and the install service applies prefix or trampoline launch mode and rebuilds state after mutations in `src-tauri/src/services/install/mod.rs`.
 - History reads use SQLite read-only connections by default in `src-tauri/src/history/queries.rs:29-35`; the separate write connection is used only where mutation is needed in `src-tauri/src/history/queries.rs:37-43`.
 - The stream service is a local Axum HTTP service bound to `127.0.0.1:17654`, creates overlay repositories and settings stores, and exposes overlay/settings URLs in `src-tauri/src/stream/server.rs:16-99`.
 

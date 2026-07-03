@@ -127,17 +127,6 @@ pub(crate) fn fallback_game_candidates() -> Vec<PathBuf> {
 
     #[cfg(target_os = "macos")]
     {
-        if let Some(home) = dirs::home_dir() {
-            push_unique(
-                &mut candidates,
-                home.join("Library/Application Support/Tempo Launcher - Beta/game/buildx64"),
-            );
-            push_unique(
-                &mut candidates,
-                home.join("Library/Application Support/Tempo Launcher - Beta/game"),
-            );
-        }
-
         if let Some(path) = dirs::home_dir()
             .map(|home| home.join("Library/Application Support/Steam/steamapps/common/The Bazaar"))
         {
@@ -147,17 +136,6 @@ pub(crate) fn fallback_game_candidates() -> Vec<PathBuf> {
 
     #[cfg(target_os = "windows")]
     {
-        for var_name in ["APPDATA", "LOCALAPPDATA"] {
-            if let Some(base) = std::env::var_os(var_name).map(PathBuf::from) {
-                push_unique(
-                    &mut candidates,
-                    base.join("Tempo Launcher - Beta")
-                        .join("game")
-                        .join("buildx64"),
-                );
-            }
-        }
-
         use windows::Win32::Storage::FileSystem::GetLogicalDrives;
 
         // Only probe drive letters that actually exist. The previous

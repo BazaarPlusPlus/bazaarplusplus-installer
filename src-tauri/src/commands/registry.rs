@@ -11,7 +11,6 @@ macro_rules! with_commands {
             (commands::install, reset_bpp_data),
             (commands::install, uninstall_mod),
             (commands::install, launch_game),
-            (commands::install, cancel_tempo_launch),
             (commands::stream, get_stream_status),
             (commands::stream, ensure_stream_session),
             (commands::stream, restart_stream_session),
@@ -107,6 +106,6 @@ mod tests {
             .collect::<Vec<_>>();
 
         assert_eq!(parsed, names);
-        assert_eq!(names.len(), 27);
+        assert_eq!(names.len(), 26);
     }
 }

@@ -6,7 +6,6 @@ export const emptyInstallState: InstallState = {
   selected_game_path: null,
   steam_path: null,
   steam_launch_options_supported: false,
-  launch_flow: 'steam',
   game: {
     found: false,
     path_valid: false,
@@ -63,18 +62,10 @@ export async function uninstallMod(gamePath: string) {
   return invokeCommand('uninstall_mod', { gamePath });
 }
 
-export async function launchGame(gamePath?: string) {
+export async function launchGame() {
   if (!hasTauriRuntime()) {
     return { ok: true };
   }
 
-  return invokeCommand('launch_game', { gamePath });
-}
-
-export async function cancelTempoLaunch() {
-  if (!hasTauriRuntime()) {
-    return { ok: true };
-  }
-
-  return invokeCommand('cancel_tempo_launch');
+  return invokeCommand('launch_game');
 }

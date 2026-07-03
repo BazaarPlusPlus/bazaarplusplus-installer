@@ -10,14 +10,9 @@ These items are not promoted as truth. They are platform or service checks that 
 
 ## macOS Launch
 
-- Validate macOS 27+ install/reinstall/launch on a real machine with the current trampoline path. Code forces trampoline on macOS major version 27+ in `src-tauri/src/services/macos_version.rs:51-68` and applies the trampoline in `src-tauri/src/services/install/mod.rs:67-88`.
+- Validate macOS 27+ install/reinstall/launch on a real machine with the current trampoline path. Code forces trampoline on macOS major version 27+ in `src-tauri/src/services/macos_version.rs:51-68` and applies the trampoline in `src-tauri/src/services/install/mod.rs:56-77`.
 - Validate macOS <= 26 compatibility-mode opt-in separately. Code exposes this as available only below the forced macOS 27 threshold in `src-tauri/src/services/macos_version.rs:75-80`.
-- Validate recovery when Steam verify or a game update reverts the bundle. Code compares desired/applied trampoline state and routes repairs through reinstall in `src-tauri/src/services/install/mod.rs:224-232`.
-
-## Tempo Native Launch
-
-- Validate native Tempo capture/replay on macOS and Windows. Code backs up/removes payload, starts Tempo, captures process arguments, restores payload, and launches modded game in `src-tauri/src/services/tempo.rs:173-223`.
-- Validate cancellation and timeout copy in the live app. Code exposes cancel through `request_cancel` and frontend `cancelLaunch` in `src-tauri/src/services/tempo.rs:40-46` and `src/features/install/useInstallPage.ts:246-248`.
+- Validate recovery when Steam verify or a game update reverts the bundle. Code compares desired/applied trampoline state and routes repairs through reinstall in `src-tauri/src/services/install/mod.rs:167-186`.
 
 ## Updater Release
 

@@ -17,7 +17,7 @@ Last consolidation audit: `2026-06-11` on `7b18f73d4718d3e1406de9f526d1fbba09ac5
 | `docs/truth/architecture.md` | architecture | truth | `7b18f73d4718d3e1406de9f526d1fbba09ac567f` |
 | `docs/truth/frontend.md` | frontend | truth | `7b18f73d4718d3e1406de9f526d1fbba09ac567f` |
 | `docs/truth/install-reset.md` | install-reset | truth | `7b18f73d4718d3e1406de9f526d1fbba09ac567f` |
-| `docs/truth/launch-modes.md` | launch-modes | truth | `7b18f73d4718d3e1406de9f526d1fbba09ac567f` |
+| `docs/truth/launch-modes.md` | launch-modes | truth | `529b56cad3da13db83b0266377503143596e5dad` |
 | `docs/truth/history-stream.md` | history-stream | truth | `c811ba4e0b25c72792487bbe80e5d3b3094637a3` |
 | `docs/truth/updater-release.md` | updater-release | truth | `7b18f73d4718d3e1406de9f526d1fbba09ac567f` |
 | `docs/truth/verification.md` | verification | truth | `7b18f73d4718d3e1406de9f526d1fbba09ac567f` |
@@ -25,8 +25,9 @@ Last consolidation audit: `2026-06-11` on `7b18f73d4718d3e1406de9f526d1fbba09ac5
 | `docs/decisions/001-documentation-truth-boundaries.md` | documentation-truth-boundaries | decision | n/a |
 | `docs/decisions/002-in-app-updater.md` | in-app-updater | decision | n/a |
 | `docs/decisions/003-macos-launch-trampoline.md` | macos-launch-trampoline | decision | n/a |
-| `docs/decisions/004-steam-and-tempo-launch-flows.md` | steam-tempo-launch | decision | n/a |
+| `docs/decisions/004-steam-and-tempo-launch-flows.md` | steam-tempo-launch | superseded-by-006 | n/a |
 | `docs/decisions/005-reset-local-data-contract.md` | reset-local-data | decision | n/a |
+| `docs/decisions/006-steam-only-launch.md` | steam-only-launch | decision | n/a |
 | `docs/archive/README.md` | old documentation index | superseded | archived 2026-06-11 |
 | `docs/archive/architecture.md` | old architecture doc | superseded | archived 2026-06-11 |
 | `docs/archive/updater-release-plan.md` | old updater release doc | superseded | archived 2026-06-11 |
@@ -78,5 +79,5 @@ Last consolidation audit: `2026-06-11` on `7b18f73d4718d3e1406de9f526d1fbba09ac5
 
 ## Pending Decisions
 
-- Platform validation: macOS 27+ trampoline, macOS <= 26 opt-in, Tempo native launch on macOS/Windows, and Windows updater restart need real-environment validation; see `docs/plans/manual-validation.md`.
+- Platform validation: macOS 27+ trampoline, macOS <= 26 opt-in, and Windows updater restart need real-environment validation; see `docs/plans/manual-validation.md`.
 - CSP: current code sets Tauri CSP to `null` in `src-tauri/tauri.conf.json:23-25`; decide whether a hardening change is desired before documenting a policy.

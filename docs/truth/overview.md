@@ -1,7 +1,7 @@
 ---
 status: truth
 topic: overview
-last-verified: 7b18f73d4718d3e1406de9f526d1fbba09ac567f
+last-verified: 529b56cad3da13db83b0266377503143596e5dad
 ---
 
 # BazaarPlusPlus Installer Overview
@@ -20,7 +20,7 @@ Current documentation truth lives under `docs/truth/`. Historical plans, audits,
 - [Architecture](architecture.md): repo layout, runtime boundaries, build/versioning, and generated bindings.
 - [Frontend](frontend.md): shell, native-feel rules, modals, current product surfaces, and verified UI behavior.
 - [Install And Reset](install-reset.md): install state contract, BepInEx install/uninstall, and reset-local-data behavior.
-- [Launch Modes](launch-modes.md): Steam flow, Tempo native capture/replay, and macOS trampoline mode.
+- [Launch Modes](launch-modes.md): Steam launch and macOS prefix/trampoline mode.
 - [History And Stream](history-stream.md): local history reads, screenshots, stream server, overlay routes, and CORS scope.
 - [Updater And Release](updater-release.md): in-app updater, release scripts, version sync, and R2 manifest flow.
 - [Verification](verification.md): code-backed verification commands and when they apply.

@@ -1,9 +1,13 @@
 ---
-status: decision
+status: superseded by 006-steam-only-launch
 topic: steam-tempo-launch
 ---
 
 # Steam And Tempo Launch Flows
+
+> **Superseded by [006-steam-only-launch](006-steam-only-launch.md) (2026-07-03).** Tempo native
+> launch support was removed and the installer is now Steam-only. This document is retained as a
+> historical record of the dual-flow design; it no longer reflects the code.
 
 ## Context
 
