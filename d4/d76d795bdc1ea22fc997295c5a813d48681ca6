@@ -1,0 +1,21 @@
+docs/truth/history-stream.md
+  s_53f2b3e8c26a2c::t_ad87eed079b5c0 4
+docs/INDEX.md
+  s_53f2b3e8c26a2c::t_ab40e3971c47d1 21
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.9",
+  "base_commit_sha": "d4d76d795bdc1ea22fc997295c5a813d48681ca6",
+  "prompts": {},
+  "sessions": {
+    "s_53f2b3e8c26a2c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "9263fdc0-32a0-4ea7-a9e2-410c3d34a1ef",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Xinyu YANG <cauyxy@gmail.com>"
+    }
+  }
+}
