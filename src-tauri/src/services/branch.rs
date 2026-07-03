@@ -67,7 +67,11 @@ pub fn rewrite_appmanifest_branch_target(
     content: &str,
     target_beta_key: &str,
 ) -> Result<String, String> {
-    let mut lines = content.lines().map(str::to_string).collect::<Vec<_>>();
+    let spans = line_spans(content);
+    let lines = spans
+        .iter()
+        .map(|span| span.content.to_string())
+        .collect::<Vec<_>>();
     let (app_open, app_close) = find_app_state_block(&lines)?;
     let state_flags_idx = find_direct_pair_index(&lines, app_open, app_close, STATE_FLAGS_KEY)
         .ok_or_else(|| missing_field_error(STATE_FLAGS_KEY))?;
@@ -76,14 +80,22 @@ pub fn rewrite_appmanifest_branch_target(
     let user_beta_idx = find_direct_pair_index(&lines, user_open, user_close, BETA_KEY)
         .ok_or_else(|| missing_field_error(&format!("{USER_CONFIG_KEY}.{BETA_KEY}")))?;
 
-    lines[state_flags_idx] = rewrite_pair_line(
-        &lines[state_flags_idx],
+    let state_flags_line = rewrite_pair_line(
+        spans[state_flags_idx].content,
         STATE_FLAGS_KEY,
         BRANCH_SWITCH_STATE_FLAGS,
     )?;
-    lines[user_beta_idx] = rewrite_pair_line(&lines[user_beta_idx], BETA_KEY, target_beta_key)?;
+    let user_beta_line =
+        rewrite_pair_line(spans[user_beta_idx].content, BETA_KEY, target_beta_key)?;
 
-    Ok(join_lines(&lines))
+    Ok(replace_line_contents(
+        content,
+        &spans,
+        &[
+            (state_flags_idx, state_flags_line),
+            (user_beta_idx, user_beta_line),
+        ],
+    ))
 }
 
 pub fn read_appmanifest_branch_state(path: &Path) -> Result<AppManifestBranchState, String> {
@@ -153,8 +165,52 @@ fn parse_line_pair(line: &str) -> Option<(&str, &str, &str)> {
     Some((indent, key, value))
 }
 
-fn join_lines(lines: &[String]) -> String {
-    lines.join("\n")
+struct LineSpan<'a> {
+    content: &'a str,
+    start: usize,
+    content_end: usize,
+}
+
+fn line_spans(content: &str) -> Vec<LineSpan<'_>> {
+    let mut spans = Vec::new();
+    let mut line_start = 0usize;
+
+    for segment in content.split_inclusive('\n') {
+        let line_end = line_start + segment.len();
+        let content_end = if segment.ends_with("\r\n") {
+            line_end - 2
+        } else if segment.ends_with('\n') {
+            line_end - 1
+        } else {
+            line_end
+        };
+
+        spans.push(LineSpan {
+            content: &content[line_start..content_end],
+            start: line_start,
+            content_end,
+        });
+        line_start = line_end;
+    }
+
+    spans
+}
+
+fn replace_line_contents(
+    content: &str,
+    spans: &[LineSpan<'_>],
+    replacements: &[(usize, String)],
+) -> String {
+    let mut updated = content.to_string();
+    let mut replacements = replacements.iter().collect::<Vec<_>>();
+    replacements.sort_by_key(|(line_idx, _line)| std::cmp::Reverse(spans[*line_idx].start));
+
+    for (line_idx, new_line) in replacements {
+        let span = &spans[*line_idx];
+        updated.replace_range(span.start..span.content_end, new_line);
+    }
+
+    updated
 }
 
 fn quoted_key(key: &str) -> String {
@@ -468,6 +524,25 @@ mod tests {
             Some("mounted_should_stay")
         );
         assert_eq!(state.state_flags, 6);
+    }
+
+    #[test]
+    fn test_rewrite_appmanifest_branch_target_preserves_untouched_crlf_bytes() {
+        let original = "\"AppState\"\r\n{\r\n\t\"StateFlags\"\t\t\"4\"\r\n\t\"Unrelated\"\t\t\"preserve me\"\r\n\t\"UserConfig\"\r\n\t{\r\n\t\t\"BetaKey\"\t\t\"online_target\"\r\n\t\t\"Other\"\t\t\"keep\"\r\n\t}\r\n\t\"MountedConfig\"\r\n\t{\r\n\t\t\"BetaKey\"\t\t\"mounted_should_stay\"\r\n\t}\r\n}\r\n";
+        let expected = original
+            .replacen("\"StateFlags\"\t\t\"4\"", "\"StateFlags\"\t\t\"6\"", 1)
+            .replacen(
+                "\t\t\"BetaKey\"\t\t\"online_target\"",
+                "\t\t\"BetaKey\"\t\t\"public_test_realm\"",
+                1,
+            );
+
+        let updated = rewrite_appmanifest_branch_target(original, "public_test_realm").unwrap();
+
+        assert_eq!(updated, expected);
+        assert!(updated.ends_with("\r\n"));
+        assert!(updated.contains("\r\n\t\"Unrelated\"\t\t\"preserve me\"\r\n"));
+        assert!(updated.contains("\r\n\t\t\"BetaKey\"\t\t\"mounted_should_stay\"\r\n"));
     }
 
     #[test]
