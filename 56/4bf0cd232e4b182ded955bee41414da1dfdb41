@@ -1,0 +1,25 @@
+src/layouts/ShellHeader.tsx
+  s_12fa078b7c896c::t_7e80320f52f918 512
+src/i18n/messages.ts
+  s_12fa078b7c896c::t_7e80320f52f918 34,292
+src-tauri/resources/app-bootstrap.json
+  s_12fa078b7c896c::t_7e80320f52f918 6
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.5",
+  "base_commit_sha": "564bf0cd232e4b182ded955bee41414da1dfdb41",
+  "prompts": {},
+  "sessions": {
+    "s_12fa078b7c896c": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f28d9-7f2f-7fa1-851d-6ee5f375abda",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Xinyu YANG <cauyxy@gmail.com>"
+    }
+  },
+  "attestation_metadata": {},
+  "remote_transcripts": {}
+}
