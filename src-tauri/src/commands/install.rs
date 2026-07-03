@@ -3,6 +3,10 @@ pub use crate::services::install::*;
 use tauri_plugin_dialog::DialogExt;
 
 use crate::services::{
+    branch_switch::{
+        run_branch_switch, BranchSwitchResult, BranchSwitchRuntimeState, BranchSwitchStatus,
+        SteamBranchTarget,
+    },
     install::{
         build_install_state, launch_game_via_steam, run_install, run_reset_bpp_data, run_uninstall,
     },
@@ -42,6 +46,33 @@ pub async fn install_mod(
     compat_opt_in: bool,
 ) -> Result<InstallState, String> {
     run_install(app, state, game_path, compat_opt_in).await
+}
+
+#[tauri::command]
+pub async fn switch_branch(
+    app: tauri::AppHandle,
+    branch_state: tauri::State<'_, BranchSwitchRuntimeState>,
+    install_state: tauri::State<'_, InstallerContextState>,
+    game_path: String,
+    target: SteamBranchTarget,
+    compat_opt_in: bool,
+) -> Result<BranchSwitchResult, String> {
+    run_branch_switch(
+        app,
+        branch_state,
+        install_state,
+        game_path,
+        target,
+        compat_opt_in,
+    )
+    .await
+}
+
+#[tauri::command]
+pub fn cancel_branch_switch(
+    branch_state: tauri::State<'_, BranchSwitchRuntimeState>,
+) -> Result<BranchSwitchStatus, String> {
+    branch_state.request_cancel()
 }
 
 #[tauri::command]
