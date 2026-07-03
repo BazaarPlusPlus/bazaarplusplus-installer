@@ -1,0 +1,21 @@
+docs/plans/2026-07-03-steam-branch-switch.md
+  s_9471e7840cef14::t_ddf1e37780edf9 158-171
+  s_9471e7840cef14::t_91494691afdd91 2,9-42
+  s_9471e7840cef14::t_d3b8c130252464 43
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.9",
+  "base_commit_sha": "15b696c2816e642876ef5687b39141f7a805103a",
+  "prompts": {},
+  "sessions": {
+    "s_9471e7840cef14": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "bf48d288-2a4d-4ff9-b8e9-bd657c57dfbe",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Xinyu YANG <cauyxy@gmail.com>"
+    }
+  }
+}
