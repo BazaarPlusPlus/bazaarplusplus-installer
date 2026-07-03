@@ -521,15 +521,15 @@ fn restore_after_pre_commit_error<Ops>(
 where
     Ops: BranchSwitchBlockingOps,
 {
-    let close_error = ops.close_steam().err();
-    let restore_error = ops.restore_original_branch(original_beta_key).err();
     let mut combined = error;
-
-    if let Some(close_error) = close_error {
+    if let Err(close_error) = ops.close_steam() {
         combined.push_str(&format!(
             "; additionally failed to close Steam before restore: {close_error}"
         ));
+        return combined;
     }
+
+    let restore_error = ops.restore_original_branch(original_beta_key).err();
     if let Some(restore_error) = restore_error {
         combined.push_str(&format!(
             "; additionally failed to restore original branch: {restore_error}"
@@ -1168,7 +1168,7 @@ mod tests {
     }
 
     #[test]
-    fn blocking_ops_read_error_before_commit_combines_restore_failure() {
+    fn blocking_ops_read_error_reports_restore_failure_when_close_succeeds() {
         let mut ops = TestBlockingOps {
             read_results: vec![Err("read failed".to_string())],
             restore_result: Some(Err("restore failed".to_string())),
@@ -1218,11 +1218,11 @@ mod tests {
     }
 
     #[test]
-    fn blocking_ops_read_error_reports_close_and_restore_failures() {
+    fn blocking_ops_read_error_reports_close_failure_without_restore_failure() {
         let mut ops = TestBlockingOps {
             close_results: vec![Ok(()), Err("close failed".to_string())],
             read_results: vec![Err("read failed".to_string())],
-            restore_result: Some(Err("restore failed".to_string())),
+            restore_result: Some(Err("restore should not run".to_string())),
             ..TestBlockingOps::default()
         };
         let cancel_flag = AtomicBool::new(false);
@@ -1239,8 +1239,33 @@ mod tests {
 
         assert!(error.contains("read failed"));
         assert!(error.contains("close failed"));
-        assert!(error.contains("restore failed"));
-        assert_eq!(ops.restored_betas, vec!["original_beta"]);
+        assert!(!error.contains("restore should not run"));
+        assert!(ops.restored_betas.is_empty());
+    }
+
+    #[test]
+    fn blocking_ops_read_error_skips_restore_when_recovery_close_fails() {
+        let mut ops = TestBlockingOps {
+            close_results: vec![Ok(()), Err("close failed".to_string())],
+            read_results: vec![Err("read failed".to_string())],
+            ..TestBlockingOps::default()
+        };
+        let cancel_flag = AtomicBool::new(false);
+
+        let error = super::run_branch_switch_blocking_with_ops(
+            &mut ops,
+            SteamBranchTarget::Ptr,
+            &cancel_flag,
+            "original_beta",
+            0,
+            |_status| {},
+        )
+        .unwrap_err();
+
+        assert!(error.contains("read failed"));
+        assert!(error.contains("close failed"));
+        assert!(ops.restored_betas.is_empty());
+        assert!(!ops.calls.iter().any(|call| call == "restore"));
     }
 
     #[test]
