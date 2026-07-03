@@ -34,6 +34,7 @@ pub fn run() {
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_dialog::init())
         .manage(crate::stream::state::StreamRuntimeState::default())
+        .manage(crate::services::branch_switch::BranchSwitchRuntimeState::default())
         .manage(InstallerContextState::default())
         .manage(TrayMenuState::default())
         .plugin(tauri_plugin_opener::init())

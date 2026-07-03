@@ -1,5 +1,6 @@
 pub mod bepinex;
 pub mod branch;
+pub mod branch_switch;
 pub mod detect;
 pub mod game_path;
 pub mod game_process;

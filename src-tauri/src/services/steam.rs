@@ -133,6 +133,16 @@ fn close_steam_internal() -> Result<bool, String> {
 }
 
 #[cfg(any(target_os = "macos", target_os = "windows"))]
+pub(crate) fn close_steam_for_branch_switch() -> Result<bool, String> {
+    close_steam_internal()
+}
+
+#[cfg(not(any(target_os = "macos", target_os = "windows")))]
+pub(crate) fn close_steam_for_branch_switch() -> Result<bool, String> {
+    Ok(false)
+}
+
+#[cfg(any(target_os = "macos", target_os = "windows"))]
 pub fn prepare_steam_for_launch_option_update(
     steam_path: &Path,
     skip_shutdown: bool,

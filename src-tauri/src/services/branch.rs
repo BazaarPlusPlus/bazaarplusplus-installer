@@ -70,6 +70,18 @@ pub fn rewrite_appmanifest_branch_target(
     content: &str,
     target_beta_key: &str,
 ) -> Result<String, String> {
+    rewrite_appmanifest_branch_target_with_state_flags(
+        content,
+        target_beta_key,
+        BRANCH_SWITCH_STATE_FLAGS,
+    )
+}
+
+pub fn rewrite_appmanifest_branch_target_with_state_flags(
+    content: &str,
+    target_beta_key: &str,
+    state_flags: &str,
+) -> Result<String, String> {
     let spans = line_spans(content);
     let lines = spans
         .iter()
@@ -83,11 +95,8 @@ pub fn rewrite_appmanifest_branch_target(
     let user_beta_idx = find_direct_pair_index(&lines, user_open, user_close, BETA_KEY)
         .ok_or_else(|| missing_field_error(&format!("{USER_CONFIG_KEY}.{BETA_KEY}")))?;
 
-    let state_flags_line = rewrite_pair_line(
-        spans[state_flags_idx].content,
-        STATE_FLAGS_KEY,
-        BRANCH_SWITCH_STATE_FLAGS,
-    )?;
+    let state_flags_line =
+        rewrite_pair_line(spans[state_flags_idx].content, STATE_FLAGS_KEY, state_flags)?;
     let user_beta_line =
         rewrite_pair_line(spans[user_beta_idx].content, BETA_KEY, target_beta_key)?;
 
@@ -108,9 +117,22 @@ pub fn read_appmanifest_branch_state(path: &Path) -> Result<AppManifestBranchSta
 }
 
 pub fn write_appmanifest_branch_target(path: &Path, target_beta_key: &str) -> Result<(), String> {
+    write_appmanifest_branch_target_with_state_flags(
+        path,
+        target_beta_key,
+        BRANCH_SWITCH_STATE_FLAGS,
+    )
+}
+
+pub fn write_appmanifest_branch_target_with_state_flags(
+    path: &Path,
+    target_beta_key: &str,
+    state_flags: &str,
+) -> Result<(), String> {
     let content = std::fs::read_to_string(path)
         .map_err(|err| format!("Cannot read appmanifest {}: {err}", path.display()))?;
-    let updated = rewrite_appmanifest_branch_target(&content, target_beta_key)?;
+    let updated =
+        rewrite_appmanifest_branch_target_with_state_flags(&content, target_beta_key, state_flags)?;
     let tmp = path.with_extension("acf.tmp");
 
     std::fs::write(&tmp, updated).map_err(|err| {
