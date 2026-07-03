@@ -1,0 +1,73 @@
+src/i18n/messages.ts
+  s_6ca26b0bb6d373::t_d4b9b538d9bb8b 107-113,115-128,362-368,371-384
+  s_6ca26b0bb6d373::t_029b021bd662e8 114,369-370
+src-tauri/src/commands/install.rs
+  s_6ca26b0bb6d373::t_0373125242fc10 52-57
+  s_6ca26b0bb6d373::t_c3ac83d41267cb 51
+src/features/install/useInstallPage.ts
+  s_6ca26b0bb6d373::t_89a8608f9fd72b 204,298
+  s_6ca26b0bb6d373::t_f03c179cd0545c 17
+  s_6ca26b0bb6d373::t_d4b9b538d9bb8b 4-8,14,22,30,46-48,54-55,128-129,131-133,136-137,149,151-152,182-186,188-202,206-208,211,213-217,219,221,223,295-297,299-300,305-306,340-341,359-369
+  s_6ca26b0bb6d373::t_128da3859134d2 52-53,343-344
+  s_6ca26b0bb6d373::t_186a2bde4d1cbf 158,164,172,179,187,210,229,255,263,270,278,283
+  s_6ca26b0bb6d373::t_e0337a307db734 203,205,218,220,222,345-358
+  s_6ca26b0bb6d373::t_c3902e5e9f5e87 130,134,140-143,145,150
+  s_6ca26b0bb6d373::t_9cb54f21a4dcb7 135,138-139,144,146-148,153
+  s_6ca26b0bb6d373::t_0c566c44976b10 12,342
+  s_6ca26b0bb6d373::t_4194f41f81a688 49-51,56-64
+  s_6ca26b0bb6d373::t_f8c7e10f213f04 154
+  s_6ca26b0bb6d373::t_7a165bd7b74a63 209
+  s_6ca26b0bb6d373::t_fc48a9df60bb60 212
+  s_6ca26b0bb6d373::t_949399221ac1b3 370
+src/api/tauri.ts
+  s_6ca26b0bb6d373::t_1e4c73b09d12d7 48-51
+src/features/install/InstallStatusPanel.tsx
+  s_6ca26b0bb6d373::t_39d9a08069c853 57,65
+src-tauri/src/commands/registry.rs
+  s_6ca26b0bb6d373::t_907a002c61093b 11,112
+src/features/install/ResetDataConfirmModal.tsx
+  s_6ca26b0bb6d373::t_ec7c5822d77574 90-94
+src/types/generated/tauri-command-names.ts
+  s_6ca26b0bb6d373::t_a87ecefd237a65 8,40
+src/api/tauri-command-registry.test.ts
+  s_6ca26b0bb6d373::t_4297ea2382a6b6 27
+src/features/install/BranchSwitchControls.tsx
+  s_6ca26b0bb6d373::t_d4b9b538d9bb8b 1-13,16-27,30,35-121,123-154,172-173,186-222
+  s_6ca26b0bb6d373::t_128da3859134d2 31,33-34
+  s_6ca26b0bb6d373::t_6c2a02cc888ff8 168-170
+  s_6ca26b0bb6d373::t_b0748e8e5cf4ae 32
+  s_6ca26b0bb6d373::t_954a513e38d9ee 14,155,174-185
+  s_6ca26b0bb6d373::t_6f775a9f9d4bea 122
+  s_6ca26b0bb6d373::t_c9ae68de40c9bb 15,162
+  s_6ca26b0bb6d373::t_c477af0d3633c6 28-29,156-161,163-167,171
+src/features/install/InstallActionsPanel.tsx
+  s_6ca26b0bb6d373::t_d4b9b538d9bb8b 11,49-52,99-100,102-103,115-116,118-119,149-150,152-153,173,175,193,197
+  s_6ca26b0bb6d373::t_b1deeba8012c18 194-196
+  s_6ca26b0bb6d373::t_6062bea06cbe20 101,117,151,174
+src/features/install/InstallConfirmModal.tsx
+  s_6ca26b0bb6d373::t_3792178f7cd59a 130-134
+src/features/install/installApi.ts
+  s_6ca26b0bb6d373::t_d4b9b538d9bb8b 3-7,77-89
+  s_6ca26b0bb6d373::t_5fc5af54c849a3 41-50,71-76
+  s_6ca26b0bb6d373::t_5bbfe2f159b508 90
+src/features/install/branchSwitchErrors.ts
+  s_6ca26b0bb6d373::t_c0b615d8d45711 1-2
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.5",
+  "base_commit_sha": "14ed7fa9099db151cfba141c66c8fbd958031a68",
+  "prompts": {},
+  "sessions": {
+    "s_6ca26b0bb6d373": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f2856-2adb-76f2-84b2-7cd5c5d8044c",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Xinyu YANG <cauyxy@gmail.com>"
+    }
+  },
+  "attestation_metadata": {},
+  "remote_transcripts": {}
+}
