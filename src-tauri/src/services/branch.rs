@@ -1,7 +1,10 @@
 #![allow(dead_code)]
 
+use keyvalues_parser::{Obj, Parser, Value};
 use std::path::Path;
 
+const THE_BAZAAR_APP_ID: &str = "1617400";
+const BETAHASH_PREFIX: &str = "betahash_";
 const APP_STATE_KEY: &str = "AppState";
 const USER_CONFIG_KEY: &str = "UserConfig";
 const MOUNTED_CONFIG_KEY: &str = "MountedConfig";
@@ -123,6 +126,63 @@ pub fn write_appmanifest_branch_target(path: &Path, target_beta_key: &str) -> Re
             tmp.display()
         )
     })
+}
+
+pub fn branch_target_authorized_in_config(
+    content: &str,
+    target_beta_key: &str,
+) -> Result<bool, String> {
+    if target_beta_key.is_empty() {
+        return Ok(true);
+    }
+
+    let parsed = Parser::new()
+        .literal_special_chars(true)
+        .parse(content)
+        .map_err(|err| format!("Malformed config.vdf: {err}"))?;
+    let root = parsed
+        .value
+        .get_obj()
+        .ok_or_else(|| "Malformed config.vdf: root is not an object".to_string())?;
+    let Some(app) = steam_config_app_obj(root, THE_BAZAAR_APP_ID) else {
+        return Ok(false);
+    };
+    let betahash_key = format!("{BETAHASH_PREFIX}{target_beta_key}");
+
+    Ok(app.contains_key(betahash_key.as_str()))
+}
+
+pub fn read_branch_target_authorized(
+    config_path: &Path,
+    target_beta_key: &str,
+) -> Result<bool, String> {
+    if target_beta_key.is_empty() {
+        return Ok(true);
+    }
+
+    let content = std::fs::read_to_string(config_path)
+        .map_err(|err| format!("Cannot read config.vdf {}: {err}", config_path.display()))?;
+
+    branch_target_authorized_in_config(&content, target_beta_key)
+}
+
+fn first_obj<'a, 'text>(values: &'a [Value<'text>]) -> Option<&'a Obj<'text>>
+where
+    'a: 'text,
+{
+    values.first()?.get_obj()
+}
+
+fn steam_config_app_obj<'a, 'text>(root: &'a Obj<'text>, app_id: &str) -> Option<&'a Obj<'text>>
+where
+    'a: 'text,
+{
+    root.get("Software")
+        .and_then(|values| first_obj(values))
+        .and_then(|software| software.get("Valve").and_then(|values| first_obj(values)))
+        .and_then(|valve| valve.get("Steam").and_then(|values| first_obj(values)))
+        .and_then(|steam| steam.get("apps").and_then(|values| first_obj(values)))
+        .and_then(|apps| apps.get(app_id).and_then(|values| first_obj(values)))
 }
 
 fn parse_quoted(input: &str) -> Option<(&str, &str)> {
@@ -489,7 +549,10 @@ fn rewrite_pair_line(line: &str, expected_key: &str, value: &str) -> Result<Stri
 
 #[cfg(test)]
 mod tests {
-    use super::{parse_appmanifest_branch_state, rewrite_appmanifest_branch_target};
+    use super::{
+        branch_target_authorized_in_config, parse_appmanifest_branch_state,
+        read_branch_target_authorized, rewrite_appmanifest_branch_target,
+    };
 
     fn appmanifest_fixture() -> &'static str {
         "\"AppState\"
@@ -533,6 +596,125 @@ mod tests {
 \t\t\"BetaKey\"\t\t\"public_test_realm\"
 \t}
 }"
+    }
+
+    fn config_fixture_for_app(app_id: &str, app_body: &str) -> String {
+        format!(
+            "\"InstallConfigStore\"
+{{
+  \"Software\"
+  {{
+    \"Valve\"
+    {{
+      \"Steam\"
+      {{
+        \"apps\"
+        {{
+          \"{app_id}\"
+          {{
+{app_body}
+          }}
+        }}
+      }}
+    }}
+  }}
+}}"
+        )
+    }
+
+    #[test]
+    fn test_branch_target_authorized_in_config_allows_empty_online_without_parsing() {
+        let authorized =
+            branch_target_authorized_in_config("\"InstallConfigStore\"\n{", "").unwrap();
+
+        assert!(authorized);
+    }
+
+    #[test]
+    fn test_branch_target_authorized_in_config_finds_ptr_betahash_for_bazaar_app() {
+        let config = config_fixture_for_app(
+            "1617400",
+            "            \"betahash_public_test_realm\" \"some-hash\"\n",
+        );
+
+        let authorized = branch_target_authorized_in_config(&config, "public_test_realm").unwrap();
+
+        assert!(authorized);
+    }
+
+    #[test]
+    fn test_branch_target_authorized_in_config_returns_false_when_app_or_hash_missing() {
+        let without_bazaar_app = config_fixture_for_app(
+            "123",
+            "            \"betahash_public_test_realm\" \"some-hash\"\n",
+        );
+        let without_hash =
+            config_fixture_for_app("1617400", "            \"name\" \"The Bazaar\"\n");
+
+        assert!(
+            !branch_target_authorized_in_config(&without_bazaar_app, "public_test_realm").unwrap()
+        );
+        assert!(!branch_target_authorized_in_config(&without_hash, "public_test_realm").unwrap());
+    }
+
+    #[test]
+    fn test_branch_target_authorized_in_config_errors_on_malformed_ptr_config() {
+        let error =
+            branch_target_authorized_in_config("\"InstallConfigStore\"\n{", "public_test_realm")
+                .unwrap_err();
+
+        assert!(error.contains("config.vdf"));
+    }
+
+    #[test]
+    fn test_branch_target_authorized_in_config_ignores_hash_under_other_app() {
+        let config = format!(
+            "\"InstallConfigStore\"
+{{
+  \"Software\"
+  {{
+    \"Valve\"
+    {{
+      \"Steam\"
+      {{
+        \"apps\"
+        {{
+          \"123\"
+          {{
+            \"betahash_public_test_realm\" \"some-hash\"
+          }}
+          \"1617400\"
+          {{
+            \"name\" \"The Bazaar\"
+          }}
+        }}
+      }}
+    }}
+  }}
+}}"
+        );
+
+        let authorized = branch_target_authorized_in_config(&config, "public_test_realm").unwrap();
+
+        assert!(!authorized);
+    }
+
+    #[test]
+    fn test_read_branch_target_authorized_reads_config_path() {
+        let tmp = tempfile::tempdir().unwrap();
+        let config_path = tmp.path().join("config.vdf");
+        std::fs::write(
+            &config_path,
+            config_fixture_for_app(
+                "1617400",
+                "            \"betahash_public_test_realm\" \"some-hash\"\n",
+            ),
+        )
+        .unwrap();
+
+        let authorized = read_branch_target_authorized(&config_path, "public_test_realm").unwrap();
+
+        assert!(authorized);
     }
 
     #[test]
