@@ -1,0 +1,41 @@
+src/api/tauri-command-registry.test.ts
+  s_6ca26b0bb6d373::t_af044f69fe5d71 27-28
+src/api/tauri.ts
+  s_6ca26b0bb6d373::t_439c9ba1e58e54 5-6,18,48-59
+src/types/generated/bindings/BranchSwitchStatus.ts
+  s_6ca26b0bb6d373::t_c6217de429d67b 1-5
+src-tauri/src/commands/install.rs
+  s_6ca26b0bb6d373::t_f6a78d64c272e5 6-9,51-76
+  s_6ca26b0bb6d373::t_24084ce4e301aa 77
+src-tauri/src/commands/registry.rs
+  s_6ca26b0bb6d373::t_ce1b33f2b47379 111
+  s_6ca26b0bb6d373::t_69570eac760473 11-12
+src/types/generated/bindings/SteamBranchTarget.ts
+  s_6ca26b0bb6d373::t_c6217de429d67b 1-3
+src/types/generated/index.ts
+  s_6ca26b0bb6d373::t_fa37c0d9be771d 7-9,31
+src/types/generated/bindings/BranchSwitchResult.ts
+  s_6ca26b0bb6d373::t_c6217de429d67b 1-4
+src/types/generated/bindings/BranchSwitchPhase.ts
+  s_6ca26b0bb6d373::t_c6217de429d67b 1-3
+src/types/generated/tauri-command-names.ts
+  s_6ca26b0bb6d373::t_fa37c0d9be771d 8-9,39-40
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.5",
+  "base_commit_sha": "3a524ff5ae3ed4fbe06853ec64227d897c9d68f6",
+  "prompts": {},
+  "sessions": {
+    "s_6ca26b0bb6d373": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f2856-2adb-76f2-84b2-7cd5c5d8044c",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Xinyu YANG <cauyxy@gmail.com>"
+    }
+  },
+  "attestation_metadata": {},
+  "remote_transcripts": {}
+}
