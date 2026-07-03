@@ -22,6 +22,7 @@ Last consolidation audit: `2026-06-11` on `7b18f73d4718d3e1406de9f526d1fbba09ac5
 | `docs/truth/updater-release.md` | updater-release | truth | `7b18f73d4718d3e1406de9f526d1fbba09ac567f` |
 | `docs/truth/verification.md` | verification | truth | `7b18f73d4718d3e1406de9f526d1fbba09ac567f` |
 | `docs/plans/manual-validation.md` | manual-validation | active-plan | `7b18f73d4718d3e1406de9f526d1fbba09ac567f` |
+| `docs/plans/2026-07-03-steam-branch-switch-impl.md` | steam-branch-switch-impl | active-plan | `425f465e6a957a945fe90d57ae71092c76a91176` |
 | `docs/decisions/001-documentation-truth-boundaries.md` | documentation-truth-boundaries | decision | n/a |
 | `docs/decisions/002-in-app-updater.md` | in-app-updater | decision | n/a |
 | `docs/decisions/003-macos-launch-trampoline.md` | macos-launch-trampoline | decision | n/a |

@@ -35,13 +35,12 @@ Derive the appmanifest from the resolved **`game_path`** (`.../steamapps/common/
 
 ## Proven vs still open
 
-- ✅ **Proven:** the reconcile fires client-side and commits to the correct target-branch delta
-  (`StateFlags` 6→1030, `BytesToDownload` = branch delta, `downloading/1617400` populated). Aborting
-  (kill Steam, restore the ACF, clear `downloading/1617400`) reverts cleanly, and the aborted switch
-  did **not** flip the account/cloud selection (a healed restart stayed on PTR).
-- ⚠️ **Not yet observed end-to-end:** letting the download *complete* and confirming
-  `MountedConfig.BetaKey` flips to the target and `StateFlags` returns to `4`. This is standard Steam
-  download behavior (low risk) but was aborted at `BytesDownloaded==0` to avoid the multi-GB pull.
+- ✅ **Proven end-to-end, both directions.** A full round-trip PTR→online→PTR completed with **no
+  validate**: each direction went `StateFlags` 6→1030 (downloading the branch delta) → `4`, with
+  `MountedConfig.BetaKey` flipping to the target and `buildid` updating (online `24001960` ↔ PTR
+  `23993765`). The completion predicate below held at 100%. An earlier abort (kill Steam, restore
+  ACF, clear `downloading/1617400`) also reverted cleanly without flipping the account/cloud
+  selection — so mid-download cancel is safe.
 - Completion predicate: `StateFlags==4 && MountedConfig.BetaKey==target &&
   BytesDownloaded==BytesToDownload && BytesStaged==BytesToStage` — **not** `BytesToDownload==0`
   (those fields retain the last operation's totals when idle).
