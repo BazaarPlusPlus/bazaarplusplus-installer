@@ -1,7 +1,7 @@
 ---
 status: active-plan
 topic: steam-branch-switch-impl
-last-verified: 425f465e6a957a945fe90d57ae71092c76a91176
+last-verified: 14ed7fa9099db151cfba141c66c8fbd958031a68
 ---
 
 # Steam Branch Switch — Implementation Plan (online ↔ PTR)
