@@ -189,6 +189,12 @@ impl BranchSwitchRuntimeState {
         inner.status = status;
         inner.status.clone()
     }
+
+    fn finish_active(&self) -> BranchSwitchStatus {
+        let mut inner = self.inner.lock().expect("branch switch runtime poisoned");
+        inner.active = None;
+        inner.status.clone()
+    }
 }
 
 pub async fn run_branch_switch(
@@ -216,16 +222,7 @@ pub async fn run_branch_switch(
 
     match result {
         Ok(result) => {
-            if result.canceled {
-                let status = runtime.finish(BranchSwitchStatus::idle());
-                emit_status(&app, &status);
-            } else {
-                runtime.finish(BranchSwitchStatus::new(
-                    BranchSwitchPhase::Ready,
-                    target,
-                    false,
-                ));
-            }
+            runtime.finish_active();
             Ok(result)
         }
         Err(error) => {
@@ -383,47 +380,86 @@ async fn repair_if_needed(
     Ok(state)
 }
 
+#[derive(Debug)]
 enum BlockingSwitchResult {
     Completed,
     Canceled,
 }
 
-fn run_branch_switch_blocking(
-    app: tauri::AppHandle,
-    runtime: BranchSwitchRuntimeState,
-    appmanifest_path: PathBuf,
+trait BranchSwitchBlockingOps {
+    fn close_steam(&mut self) -> Result<(), String>;
+    fn write_appmanifest_branch_target(&mut self, target_beta_key: &str) -> Result<(), String>;
+    fn start_steam(&mut self) -> Result<(), String>;
+    fn begin_polling(&mut self);
+    fn timed_out(&mut self) -> bool;
+    fn read_appmanifest_branch_state(&mut self) -> Result<AppManifestBranchState, String>;
+    fn restore_original_branch(&mut self, original_beta_key: &str) -> Result<(), String>;
+    fn sleep(&mut self, interval: Duration);
+}
+
+fn run_branch_switch_blocking_with_ops<Ops, Emit>(
+    ops: &mut Ops,
     target: SteamBranchTarget,
-    cancel_flag: Arc<AtomicBool>,
-    original_beta_key: String,
+    cancel_flag: &AtomicBool,
+    original_beta_key: &str,
     baseline_bytes_staged: u64,
-) -> Result<BlockingSwitchResult, String> {
-    set_and_emit_status(
-        &app,
-        &runtime,
+    mut emit_status: Emit,
+) -> Result<BlockingSwitchResult, String>
+where
+    Ops: BranchSwitchBlockingOps,
+    Emit: FnMut(BranchSwitchStatus),
+{
+    emit_status(
         BranchSwitchStatus::new(BranchSwitchPhase::QuitSteam, target, false)
             .with_message("Closing Steam before editing the appmanifest."),
     );
-    steam::close_steam_for_branch_switch()?;
+    ops.close_steam()?;
 
-    set_and_emit_status(
-        &app,
-        &runtime,
+    emit_status(
         BranchSwitchStatus::new(BranchSwitchPhase::EditAcf, target, false)
             .with_message("Updating Steam appmanifest branch target."),
     );
-    write_appmanifest_branch_target(&appmanifest_path, target.beta_key())?;
-    start_steam()?;
+    ops.write_appmanifest_branch_target(target.beta_key())?;
+    if let Err(error) = ops.start_steam() {
+        return Err(restore_after_pre_commit_error(
+            ops,
+            original_beta_key,
+            error,
+        ));
+    }
 
-    let started_at = Instant::now();
+    ops.begin_polling();
+    let mut commit_lock = CancelCommitLock::new(baseline_bytes_staged);
     let mut last_progress: Option<(Option<u64>, Option<u64>, bool)> = None;
     loop {
-        if started_at.elapsed() > BRANCH_SWITCH_POLL_TIMEOUT {
-            return Err("Timed out waiting for Steam to finish switching branches.".to_string());
+        if ops.timed_out() {
+            let error = "Timed out waiting for Steam to finish switching branches.".to_string();
+            return if commit_lock.locked {
+                Err(error)
+            } else {
+                Err(restore_after_pre_commit_error(
+                    ops,
+                    original_beta_key,
+                    error,
+                ))
+            };
         }
 
-        let current = read_appmanifest_branch_state(&appmanifest_path)?;
-        let cancelable =
-            cancel_allowed_before_commit_point(baseline_bytes_staged, current.bytes_staged);
+        let current = match ops.read_appmanifest_branch_state() {
+            Ok(current) => current,
+            Err(error) => {
+                return if commit_lock.locked {
+                    Err(error)
+                } else {
+                    Err(restore_after_pre_commit_error(
+                        ops,
+                        original_beta_key,
+                        error,
+                    ))
+                };
+            }
+        };
+        let cancelable = commit_lock.update_cancelable(current.bytes_staged);
 
         let progress_key = (
             current.bytes_downloaded,
@@ -436,9 +472,7 @@ fn run_branch_switch_blocking(
             } else {
                 "Steam is staging downloaded files; cancel is locked."
             };
-            set_and_emit_status(
-                &app,
-                &runtime,
+            emit_status(
                 BranchSwitchStatus::new(BranchSwitchPhase::Downloading, target, cancelable)
                     .with_download_progress(&current)
                     .with_message(message),
@@ -447,17 +481,13 @@ fn run_branch_switch_blocking(
         }
 
         if cancel_flag.load(Ordering::SeqCst) && cancelable {
-            set_and_emit_status(
-                &app,
-                &runtime,
+            emit_status(
                 BranchSwitchStatus::new(BranchSwitchPhase::Restoring, target, false)
                     .with_message("Restoring the previous Steam branch."),
             );
-            steam::close_steam_for_branch_switch()?;
-            restore_original_branch(&appmanifest_path, &original_beta_key)?;
-            set_and_emit_status(
-                &app,
-                &runtime,
+            ops.close_steam()?;
+            ops.restore_original_branch(original_beta_key)?;
+            emit_status(
                 BranchSwitchStatus::new(BranchSwitchPhase::Canceled, target, false)
                     .with_message("Steam branch switch was canceled and restored."),
             );
@@ -468,8 +498,96 @@ fn run_branch_switch_blocking(
             return Ok(BlockingSwitchResult::Completed);
         }
 
-        std::thread::sleep(BRANCH_SWITCH_POLL_INTERVAL);
+        ops.sleep(BRANCH_SWITCH_POLL_INTERVAL);
     }
+}
+
+fn restore_after_pre_commit_error<Ops>(
+    ops: &mut Ops,
+    original_beta_key: &str,
+    error: String,
+) -> String
+where
+    Ops: BranchSwitchBlockingOps,
+{
+    match ops.restore_original_branch(original_beta_key) {
+        Ok(()) => error,
+        Err(restore_error) => {
+            format!("{error}; additionally failed to restore original branch: {restore_error}")
+        }
+    }
+}
+
+struct RealBranchSwitchBlockingOps {
+    appmanifest_path: PathBuf,
+    poll_started_at: Option<Instant>,
+}
+
+impl RealBranchSwitchBlockingOps {
+    fn new(appmanifest_path: PathBuf) -> Self {
+        Self {
+            appmanifest_path,
+            poll_started_at: None,
+        }
+    }
+}
+
+impl BranchSwitchBlockingOps for RealBranchSwitchBlockingOps {
+    fn close_steam(&mut self) -> Result<(), String> {
+        steam::close_steam_for_branch_switch().map(|_| ())
+    }
+
+    fn write_appmanifest_branch_target(&mut self, target_beta_key: &str) -> Result<(), String> {
+        write_appmanifest_branch_target(&self.appmanifest_path, target_beta_key)
+    }
+
+    fn start_steam(&mut self) -> Result<(), String> {
+        start_steam()
+    }
+
+    fn begin_polling(&mut self) {
+        self.poll_started_at = Some(Instant::now());
+    }
+
+    fn timed_out(&mut self) -> bool {
+        self.poll_started_at
+            .map(|started_at| started_at.elapsed() > BRANCH_SWITCH_POLL_TIMEOUT)
+            .unwrap_or(false)
+    }
+
+    fn read_appmanifest_branch_state(&mut self) -> Result<AppManifestBranchState, String> {
+        read_appmanifest_branch_state(&self.appmanifest_path)
+    }
+
+    fn restore_original_branch(&mut self, original_beta_key: &str) -> Result<(), String> {
+        restore_original_branch(&self.appmanifest_path, original_beta_key)
+    }
+
+    fn sleep(&mut self, interval: Duration) {
+        std::thread::sleep(interval);
+    }
+}
+
+fn run_branch_switch_blocking(
+    app: tauri::AppHandle,
+    runtime: BranchSwitchRuntimeState,
+    appmanifest_path: PathBuf,
+    target: SteamBranchTarget,
+    cancel_flag: Arc<AtomicBool>,
+    original_beta_key: String,
+    baseline_bytes_staged: u64,
+) -> Result<BlockingSwitchResult, String> {
+    let mut ops = RealBranchSwitchBlockingOps::new(appmanifest_path);
+    run_branch_switch_blocking_with_ops(
+        &mut ops,
+        target,
+        cancel_flag.as_ref(),
+        &original_beta_key,
+        baseline_bytes_staged,
+        |status| {
+            set_and_emit_status(&app, &runtime, status);
+        },
+    )
 }
 
 fn set_and_emit_status(
@@ -581,7 +699,7 @@ fn downloading_scratch_path(appmanifest_path: &Path) -> Result<PathBuf, String> 
 
 fn branch_switch_complete(state: &AppManifestBranchState, target: SteamBranchTarget) -> bool {
     state.state_flags == 4
-        && state.mounted_beta_key.as_deref() == Some(target.beta_key())
+        && mounted_beta_matches_target(state.mounted_beta_key.as_deref(), target)
         && state
             .bytes_downloaded
             .zip(state.bytes_to_download)
@@ -594,11 +712,41 @@ fn branch_switch_complete(state: &AppManifestBranchState, target: SteamBranchTar
             .unwrap_or(false)
 }
 
+fn mounted_beta_matches_target(mounted_beta_key: Option<&str>, target: SteamBranchTarget) -> bool {
+    match target {
+        SteamBranchTarget::Online => mounted_beta_key.unwrap_or("").is_empty(),
+        SteamBranchTarget::Ptr => mounted_beta_key == Some(target.beta_key()),
+    }
+}
+
 fn cancel_allowed_before_commit_point(
     baseline_bytes_staged: u64,
     current_bytes_staged: Option<u64>,
 ) -> bool {
     current_bytes_staged.unwrap_or(0) <= baseline_bytes_staged
+}
+
+#[derive(Debug)]
+struct CancelCommitLock {
+    baseline_bytes_staged: u64,
+    locked: bool,
+}
+
+impl CancelCommitLock {
+    fn new(baseline_bytes_staged: u64) -> Self {
+        Self {
+            baseline_bytes_staged,
+            locked: false,
+        }
+    }
+
+    fn update_cancelable(&mut self, current_bytes_staged: Option<u64>) -> bool {
+        if !cancel_allowed_before_commit_point(self.baseline_bytes_staged, current_bytes_staged) {
+            self.locked = true;
+        }
+
+        !self.locked
+    }
 }
 
 fn restore_original_branch(appmanifest_path: &Path, original_beta_key: &str) -> Result<(), String> {
@@ -644,7 +792,8 @@ mod tests {
     use super::{appmanifest_path_from_game_path, SteamBranchTarget};
     use crate::services::branch::{parse_appmanifest_branch_state, AppManifestBranchState};
     use std::path::{Path, PathBuf};
-    use std::sync::atomic::Ordering;
+    use std::sync::atomic::{AtomicBool, Ordering};
+    use std::time::Duration;
 
     #[test]
     fn appmanifest_path_from_game_path_derives_manifest_from_game_library() {
@@ -688,6 +837,18 @@ mod tests {
         }
     }
 
+    fn incomplete_manifest_state(bytes_staged: Option<u64>) -> AppManifestBranchState {
+        AppManifestBranchState {
+            user_beta_key: "public_test_realm".to_string(),
+            mounted_beta_key: Some("public_test_realm".to_string()),
+            state_flags: 6,
+            bytes_downloaded: Some(50),
+            bytes_to_download: Some(100),
+            bytes_staged,
+            bytes_to_stage: Some(100),
+        }
+    }
+
     #[test]
     fn branch_switch_complete_requires_ready_state_mounted_target_and_equal_byte_pairs() {
         let ready = manifest_state_for_completion();
@@ -727,6 +888,36 @@ mod tests {
     }
 
     #[test]
+    fn branch_switch_complete_accepts_missing_or_empty_mounted_beta_for_online_only() {
+        let mut online_without_mounted_beta = manifest_state_for_completion();
+        online_without_mounted_beta.user_beta_key = "".to_string();
+        online_without_mounted_beta.mounted_beta_key = None;
+        assert!(super::branch_switch_complete(
+            &online_without_mounted_beta,
+            SteamBranchTarget::Online
+        ));
+
+        let mut online_with_empty_mounted_beta = online_without_mounted_beta.clone();
+        online_with_empty_mounted_beta.mounted_beta_key = Some("".to_string());
+        assert!(super::branch_switch_complete(
+            &online_with_empty_mounted_beta,
+            SteamBranchTarget::Online
+        ));
+
+        let mut online_with_ptr_mounted_beta = online_without_mounted_beta.clone();
+        online_with_ptr_mounted_beta.mounted_beta_key = Some("public_test_realm".to_string());
+        assert!(!super::branch_switch_complete(
+            &online_with_ptr_mounted_beta,
+            SteamBranchTarget::Online
+        ));
+
+        assert!(!super::branch_switch_complete(
+            &online_without_mounted_beta,
+            SteamBranchTarget::Ptr
+        ));
+    }
+
+    #[test]
     fn runtime_state_rejects_concurrent_starts_and_only_cancels_while_cancelable() {
         let runtime = super::BranchSwitchRuntimeState::default();
 
@@ -760,11 +951,61 @@ mod tests {
     }
 
     #[test]
+    fn runtime_finish_active_preserves_terminal_status_snapshot() {
+        let runtime = super::BranchSwitchRuntimeState::default();
+
+        runtime.begin_switch(SteamBranchTarget::Ptr).unwrap();
+        runtime.set_status(
+            super::BranchSwitchStatus::new(
+                super::BranchSwitchPhase::Canceled,
+                SteamBranchTarget::Ptr,
+                false,
+            )
+            .with_message("restored"),
+        );
+        let canceled = runtime.finish_active();
+
+        assert_eq!(canceled.phase, super::BranchSwitchPhase::Canceled);
+        assert_eq!(canceled.message.as_deref(), Some("restored"));
+        assert_eq!(
+            runtime.request_cancel().unwrap_err(),
+            "No active branch switch."
+        );
+
+        runtime.begin_switch(SteamBranchTarget::Online).unwrap();
+        runtime.set_status(
+            super::BranchSwitchStatus::new(
+                super::BranchSwitchPhase::Ready,
+                SteamBranchTarget::Online,
+                false,
+            )
+            .with_message("ready"),
+        );
+        let ready = runtime.finish_active();
+
+        assert_eq!(ready.phase, super::BranchSwitchPhase::Ready);
+        assert_eq!(ready.message.as_deref(), Some("ready"));
+        assert_eq!(runtime.snapshot().phase, super::BranchSwitchPhase::Ready);
+    }
+
+    #[test]
     fn cancel_lock_allows_cancel_until_staging_progresses_past_baseline() {
         assert!(super::cancel_allowed_before_commit_point(10, None));
         assert!(super::cancel_allowed_before_commit_point(10, Some(0)));
         assert!(super::cancel_allowed_before_commit_point(10, Some(10)));
         assert!(!super::cancel_allowed_before_commit_point(10, Some(11)));
+    }
+
+    #[test]
+    fn cancel_commit_lock_stays_locked_after_staging_progresses() {
+        let mut lock = super::CancelCommitLock::new(10);
+
+        assert!(lock.update_cancelable(None));
+        assert!(lock.update_cancelable(Some(10)));
+        assert!(!lock.update_cancelable(Some(11)));
+        assert!(!lock.update_cancelable(None));
+        assert!(!lock.update_cancelable(Some(0)));
+        assert!(!lock.update_cancelable(Some(10)));
     }
 
     #[test]
@@ -803,5 +1044,161 @@ mod tests {
         assert_eq!(state.state_flags, 4);
         assert_eq!(state.mounted_beta_key.as_deref(), Some("public_test_realm"));
         assert!(!scratch.exists());
+    }
+
+    #[derive(Default)]
+    struct TestBlockingOps {
+        close_result: Option<Result<(), String>>,
+        write_result: Option<Result<(), String>>,
+        start_result: Option<Result<(), String>>,
+        read_results: Vec<Result<AppManifestBranchState, String>>,
+        timed_out_results: Vec<bool>,
+        restore_result: Option<Result<(), String>>,
+        written_targets: Vec<String>,
+        restored_betas: Vec<String>,
+    }
+
+    impl super::BranchSwitchBlockingOps for TestBlockingOps {
+        fn close_steam(&mut self) -> Result<(), String> {
+            self.close_result.take().unwrap_or(Ok(()))
+        }
+
+        fn write_appmanifest_branch_target(&mut self, target_beta_key: &str) -> Result<(), String> {
+            self.written_targets.push(target_beta_key.to_string());
+            self.write_result.take().unwrap_or(Ok(()))
+        }
+
+        fn start_steam(&mut self) -> Result<(), String> {
+            self.start_result.take().unwrap_or(Ok(()))
+        }
+
+        fn begin_polling(&mut self) {}
+
+        fn timed_out(&mut self) -> bool {
+            if self.timed_out_results.is_empty() {
+                false
+            } else {
+                self.timed_out_results.remove(0)
+            }
+        }
+
+        fn read_appmanifest_branch_state(&mut self) -> Result<AppManifestBranchState, String> {
+            if self.read_results.is_empty() {
+                Ok(manifest_state_for_completion())
+            } else {
+                self.read_results.remove(0)
+            }
+        }
+
+        fn restore_original_branch(&mut self, original_beta_key: &str) -> Result<(), String> {
+            self.restored_betas.push(original_beta_key.to_string());
+            self.restore_result.take().unwrap_or(Ok(()))
+        }
+
+        fn sleep(&mut self, _interval: Duration) {}
+    }
+
+    #[test]
+    fn blocking_ops_start_error_after_manifest_write_restores_original_branch() {
+        let mut ops = TestBlockingOps {
+            start_result: Some(Err("start failed".to_string())),
+            ..TestBlockingOps::default()
+        };
+        let cancel_flag = AtomicBool::new(false);
+        let mut statuses = Vec::new();
+
+        let error = super::run_branch_switch_blocking_with_ops(
+            &mut ops,
+            SteamBranchTarget::Ptr,
+            &cancel_flag,
+            "original_beta",
+            0,
+            |status| statuses.push(status),
+        )
+        .unwrap_err();
+
+        assert_eq!(error, "start failed");
+        assert_eq!(ops.written_targets, vec!["public_test_realm"]);
+        assert_eq!(ops.restored_betas, vec!["original_beta"]);
+    }
+
+    #[test]
+    fn blocking_ops_read_error_before_commit_combines_restore_failure() {
+        let mut ops = TestBlockingOps {
+            read_results: vec![Err("read failed".to_string())],
+            restore_result: Some(Err("restore failed".to_string())),
+            ..TestBlockingOps::default()
+        };
+        let cancel_flag = AtomicBool::new(false);
+
+        let error = super::run_branch_switch_blocking_with_ops(
+            &mut ops,
+            SteamBranchTarget::Ptr,
+            &cancel_flag,
+            "original_beta",
+            0,
+            |_status| {},
+        )
+        .unwrap_err();
+
+        assert!(error.contains("read failed"));
+        assert!(error.contains("restore failed"));
+        assert_eq!(ops.restored_betas, vec!["original_beta"]);
+    }
+
+    #[test]
+    fn blocking_ops_timeout_before_commit_restores_original_branch() {
+        let mut ops = TestBlockingOps {
+            timed_out_results: vec![true],
+            ..TestBlockingOps::default()
+        };
+        let cancel_flag = AtomicBool::new(false);
+
+        let error = super::run_branch_switch_blocking_with_ops(
+            &mut ops,
+            SteamBranchTarget::Ptr,
+            &cancel_flag,
+            "original_beta",
+            0,
+            |_status| {},
+        )
+        .unwrap_err();
+
+        assert!(error.contains("Timed out"));
+        assert_eq!(ops.restored_betas, vec!["original_beta"]);
+    }
+
+    #[test]
+    fn blocking_ops_latches_cancel_locked_after_staging_progress() {
+        let mut ops = TestBlockingOps {
+            read_results: vec![
+                Ok(incomplete_manifest_state(Some(11))),
+                Ok(incomplete_manifest_state(None)),
+                Ok(manifest_state_for_completion()),
+            ],
+            ..TestBlockingOps::default()
+        };
+        let cancel_flag = AtomicBool::new(true);
+        let mut statuses = Vec::new();
+
+        let result = super::run_branch_switch_blocking_with_ops(
+            &mut ops,
+            SteamBranchTarget::Ptr,
+            &cancel_flag,
+            "original_beta",
+            10,
+            |status| statuses.push(status),
+        )
+        .unwrap();
+
+        assert!(matches!(result, super::BlockingSwitchResult::Completed));
+        assert!(ops.restored_betas.is_empty());
+        let downloading_cancelables = statuses
+            .iter()
+            .filter(|status| status.phase == super::BranchSwitchPhase::Downloading)
+            .map(|status| status.cancelable)
+            .collect::<Vec<_>>();
+        assert!(downloading_cancelables.len() >= 2);
+        assert!(downloading_cancelables.iter().all(|cancelable| !cancelable));
     }
 }
