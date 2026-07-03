@@ -3,10 +3,16 @@ status: archived
 topic: steam-branch-switch
 last-verified: b0a815de69f8cf92760f82e10772b3b0262873f6
 archived: 2026-07-03
-note: Approach A refuted by live test; current decision in docs/decisions/007-steam-branch-switch-infeasible.md
+note: Historical forensics of two live tests. Approach A was FIRST mis-recorded as refuted, then VALIDATED with the corrected recipe. Current truth in docs/decisions/007-steam-branch-switch.md
 ---
 
 # External Steam Branch Switching (Approach A)
+
+> **⚠️ Correction (2026-07-03).** The "Approach A refuted" block below reflects only the *first*
+> test (edit `BetaKey` + `validate`). A second test proved Approach A **works** with the corrected
+> recipe (edit `BetaKey` **+ set `StateFlags=6`**, plain start, **no** validate). The authoritative,
+> corrected record is [ADR 007](../decisions/007-steam-branch-switch.md). This archived doc is kept
+> for the forensic detail only.
 
 ## ⚠️ Validation result — 2026-07-03: Approach A is refuted
 
