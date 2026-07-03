@@ -1,0 +1,31 @@
+src-tauri/src/history/cleanup.rs
+  s_3cae60f99e4b86::t_3076b62d0b257c 1015-1017,1386-1392,1446-1452,1489-1490,1527-1530,1536-1539,1552-1558,1578-1584,1596,1612,2284-2290,2356-2362,2408-2414
+  s_3cae60f99e4b86::t_eb7ad1a8214f5a 996,1002-1014,1018,1042
+  s_3cae60f99e4b86::t_9981dfd8bd27b9 191,193
+  s_3cae60f99e4b86::t_7989732e6e80ac 127
+  s_3cae60f99e4b86::t_a22328e3e69922 1462-1488,1491-1526,1531-1535,1540-1544
+  s_3cae60f99e4b86::t_e9226080237054 151
+  s_3cae60f99e4b86::t_c904dd2cddc1d5 1303-1310
+  s_3cae60f99e4b86::t_d91b437bd5c396 2223,2300,2371,2423
+src-tauri/src/services/history.rs
+  s_3cae60f99e4b86::t_0e6c501fd53d3d 120-122,127
+  s_3cae60f99e4b86::t_8d28473106e8e6 104-106,111
+docs/truth/history-stream.md
+  s_3cae60f99e4b86::t_57f6bd47ce6fca 28-29
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.9",
+  "base_commit_sha": "9c85707db07ac4767dbff2a050f7c6ee103b4f20",
+  "prompts": {},
+  "sessions": {
+    "s_3cae60f99e4b86": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "58c95c81-7794-4fb5-8bb5-ff1267a39186",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Xinyu YANG <cauyxy@gmail.com>"
+    }
+  }
+}
