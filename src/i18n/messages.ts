@@ -31,7 +31,7 @@ const zh = {
   socialDouyinSubtitle: '短视频、开发切片和日常',
   socialBilibili: 'B 站',
   bilibiliProjectSubtitle: '教程、演示和项目内容',
-  bilibiliAuthorSubtitle: 'VibeCoding 和日常碎碎念',
+  bilibiliAuthorSubtitle: 'BazaarLine 作者',
 
   // Support menu + payment modal
   wechatPay: '微信支付',
@@ -289,7 +289,7 @@ const en: Record<MessageKey, string> = {
   socialDouyinSubtitle: 'Short videos, dev clips, and daily life',
   socialBilibili: 'Bilibili',
   bilibiliProjectSubtitle: 'Tutorials, demos, and project content',
-  bilibiliAuthorSubtitle: 'VibeCoding and daily notes',
+  bilibiliAuthorSubtitle: 'BazaarLine author',
 
   wechatPay: 'WeChat Pay',
   wechatPayOpen: 'Open QR code',

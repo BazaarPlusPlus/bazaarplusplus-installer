@@ -509,7 +509,7 @@ function ShellSocialLinks({
               </div>
               <div className="flex flex-col">
                 <span className="text-sm font-medium text-[#e8dcc8] group-hover:text-[#f4ead5] transition-colors">
-                  小杨不努力
+                  仓鼠小猫
                 </span>
                 <span className="text-[10px] text-[rgba(200,170,120,0.8)]">
                   {t('bilibiliAuthorSubtitle')}
