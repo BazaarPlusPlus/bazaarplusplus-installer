@@ -1,0 +1,47 @@
+src/features/install/InstallActionsPanel.tsx
+  s_814ec93557a14c::t_6afae0f85f5d34 95,109
+  s_814ec93557a14c::t_46c9da1bb7dbf0 141
+  s_814ec93557a14c::t_50b36dbb5e9ad2 181
+  s_814ec93557a14c::t_9d1b009c791834 162
+docs/INDEX.md
+  s_814ec93557a14c::t_555be515c3b48c 43
+  s_814ec93557a14c::t_650ddee7a3bc10 31
+src-tauri/src/commands/registry.rs
+  s_814ec93557a14c::t_08bd98fd6f327d 109
+src/features/install/installApi.ts
+  s_814ec93557a14c::t_79de155bf2c5af 3
+docs/decisions/007-steam-branch-switch.md
+  s_814ec93557a14c::t_6126d2133ceb79 80-89
+  s_814ec93557a14c::t_a5c68f0c10d31f 2,8-12
+  s_814ec93557a14c::t_31b566f300565a 13
+src/features/install/InstallConfirmModal.tsx
+  s_814ec93557a14c::t_6619a6b51fc1d0 131
+src/features/install/InstallStatusPanel.tsx
+  s_814ec93557a14c::t_511400b778cd7c 57,65
+src/features/install/useInstallPage.ts
+  s_814ec93557a14c::t_64e5b84bc8ae44 4,37,109,123,156,170,182
+docs/decisions/006-steam-only-launch.md
+  s_814ec93557a14c::t_0576fa5cd89880 30
+src/features/install/ResetDataConfirmModal.tsx
+  s_814ec93557a14c::t_66582e538079b4 91
+docs/archive/2026-07-03-steam-branch-switch-impl.md
+  s_814ec93557a14c::t_372f16d555f65e 2,5-6
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.5",
+  "base_commit_sha": "cb47ed67a1e5148fcb8c0c961ec9d8ef97533f22",
+  "prompts": {},
+  "sessions": {
+    "s_814ec93557a14c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "9180eee2-f7dc-454f-bcbf-7bcc3cf1fad8",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Xinyu YANG <cauyxy@gmail.com>"
+    }
+  },
+  "attestation_metadata": {},
+  "remote_transcripts": {}
+}
