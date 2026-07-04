@@ -476,28 +476,6 @@ function ShellSocialLinks({
         {showBilibili && (
           <div className="absolute top-[calc(100%+0.5rem)] left-1/2 w-[260px] bg-[rgba(18,11,5,0.95)] backdrop-blur-md border border-[rgba(200,148,55,0.2)] rounded-sm shadow-[0_16px_40px_rgba(0,0,0,0.6)] p-1.5 z-50 flex flex-col gap-1 transform -translate-x-1/2">
             <a
-              href={bootstrap.links.bilibili_project}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-3 px-3 py-2.5 hover:bg-[rgba(200,148,55,0.1)] rounded-sm text-left transition-all group no-underline"
-              onClick={onCloseBilibili}
-            >
-              <div className="flex items-center justify-center size-8 rounded-sm bg-[rgba(200,148,55,0.05)] border border-[rgba(200,148,55,0.1)] group-hover:border-[rgba(200,148,55,0.3)] group-hover:bg-[rgba(200,148,55,0.15)] transition-colors text-[rgba(200,170,120,0.8)] group-hover:text-[#e8c87a]">
-                <MonitorPlay size={16} />
-              </div>
-              <div className="flex flex-col">
-                <span className="text-sm font-medium text-[#e8dcc8] group-hover:text-[#f4ead5] transition-colors">
-                  BazaarPlusPlus
-                </span>
-                <span className="text-[10px] text-[rgba(200,170,120,0.8)]">
-                  {t('bilibiliProjectSubtitle')}
-                </span>
-              </div>
-            </a>
-
-            <div className="h-px bg-gradient-to-r from-transparent via-[rgba(200,148,55,0.2)] to-transparent my-0.5 mx-2" />
-
-            <a
               href={bootstrap.links.bilibili_author}
               target="_blank"
               rel="noopener noreferrer"
@@ -513,6 +491,28 @@ function ShellSocialLinks({
                 </span>
                 <span className="text-[10px] text-[rgba(200,170,120,0.8)]">
                   {t('bilibiliAuthorSubtitle')}
+                </span>
+              </div>
+            </a>
+
+            <div className="h-px bg-gradient-to-r from-transparent via-[rgba(200,148,55,0.2)] to-transparent my-0.5 mx-2" />
+
+            <a
+              href={bootstrap.links.bilibili_project}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-3 px-3 py-2.5 hover:bg-[rgba(200,148,55,0.1)] rounded-sm text-left transition-all group no-underline"
+              onClick={onCloseBilibili}
+            >
+              <div className="flex items-center justify-center size-8 rounded-sm bg-[rgba(200,148,55,0.05)] border border-[rgba(200,148,55,0.1)] group-hover:border-[rgba(200,148,55,0.3)] group-hover:bg-[rgba(200,148,55,0.15)] transition-colors text-[rgba(200,170,120,0.8)] group-hover:text-[#e8c87a]">
+                <MonitorPlay size={16} />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-sm font-medium text-[#e8dcc8] group-hover:text-[#f4ead5] transition-colors">
+                  BazaarPlusPlus
+                </span>
+                <span className="text-[10px] text-[rgba(200,170,120,0.8)]">
+                  {t('bilibiliProjectSubtitle')}
                 </span>
               </div>
             </a>
