@@ -92,7 +92,7 @@ export function InstallActionsPanel({
 
             <div className="h-px bg-gradient-to-r from-transparent via-[rgba(200,148,55,0.3)] to-transparent" />
 
-            <div className="grid grid-cols-3 gap-2 mt-auto pt-2">
+            <div className="grid grid-cols-2 gap-2 mt-auto pt-2">
               <InstallActionButton
                 disabled={
                   page.busy ||                  !page.state.actions.can_reset_data
@@ -126,6 +126,7 @@ export function InstallActionsPanel({
                 icon={<Trash2 size={14} />}
                 label={t('actionUninstall')}
                 danger
+                className="col-span-2"
               />
             </div>
           </div>
