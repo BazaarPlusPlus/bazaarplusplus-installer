@@ -1,0 +1,26 @@
+src/features/install/InstallActionsPanel.tsx
+  s_e040270044e225::t_8b6ac39369b54b 95,129
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.5",
+  "base_commit_sha": "135ea7db8259ca3c7eae6a50f1c2db8296824ca3",
+  "prompts": {},
+  "humans": {
+    "h_518331e5a07dc9": {
+      "author": "Xinyu YANG <cauyxy@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_e040270044e225": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f2c01-1843-71b1-8f5b-2247ce387710",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Xinyu YANG <cauyxy@gmail.com>"
+    }
+  },
+  "attestation_metadata": {},
+  "remote_transcripts": {}
+}
