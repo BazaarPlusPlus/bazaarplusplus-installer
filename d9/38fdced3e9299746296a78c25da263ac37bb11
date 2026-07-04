@@ -1,0 +1,31 @@
+src/layouts/ShellHeader.tsx
+  s_6aa7fcc3b82a97::t_9ef37d54daf6b8 479,486,490,493,501,508,512,515
+src/layouts/ShellHeader.test.tsx
+  s_6aa7fcc3b82a97::t_6a55ef4053d97c 1-52,60,63-70
+  s_6aa7fcc3b82a97::t_ec6a0cb0ac2afc 53-59,61-62
+vitest.config.ts
+  s_6aa7fcc3b82a97::t_9f81c1bf0bd9d9 2,7-13
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.5",
+  "base_commit_sha": "d938fdced3e9299746296a78c25da263ac37bb11",
+  "prompts": {},
+  "humans": {
+    "h_518331e5a07dc9": {
+      "author": "Xinyu YANG <cauyxy@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_6aa7fcc3b82a97": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f2bfa-12f5-7e01-b598-d10a49e33bb6",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Xinyu YANG <cauyxy@gmail.com>"
+    }
+  },
+  "attestation_metadata": {},
+  "remote_transcripts": {}
+}
