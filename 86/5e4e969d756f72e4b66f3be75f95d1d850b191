@@ -1,0 +1,14 @@
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.5",
+  "base_commit_sha": "865e4e969d756f72e4b66f3be75f95d1d850b191",
+  "prompts": {},
+  "humans": {
+    "h_518331e5a07dc9": {
+      "author": "Xinyu YANG <cauyxy@gmail.com>"
+    }
+  },
+  "attestation_metadata": {},
+  "remote_transcripts": {}
+}
