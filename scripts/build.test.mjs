@@ -3,13 +3,13 @@ import { execFileSync } from 'node:child_process';
 import {
   existsSync,
   mkdirSync,
-  readFileSync,
+  mkdtempSync,
   rmSync,
   writeFileSync
 } from 'node:fs';
+import { relative } from 'node:path';
 
 const projectDir = process.cwd();
-const signingSecretsDir = `${projectDir}/signing-secrets`;
 
 // Resolve a usable bash. On Windows, `bash` is frequently absent from the PATH
 // that npm spawns with (PowerShell/cmd), so fall back to the Git for Windows
@@ -52,11 +52,6 @@ function toBashPath(p) {
     .replace(/^([A-Za-z]):/, (_, drive) => `/${drive.toLowerCase()}`);
 }
 
-const signingSecretsDirBash =
-  process.platform === 'win32'
-    ? toBashPath(signingSecretsDir)
-    : signingSecretsDir;
-
 function runShell(script) {
   return execFileSync(bashCommand, ['-lc', script], {
     cwd: projectDir,
@@ -65,35 +60,33 @@ function runShell(script) {
   });
 }
 
+// Runs the callback against an ISOLATED, throwaway signing-secrets directory so
+// tests never read, write, or restore the developer's real signing-secrets/.
+// (The old backup/restore approach clobbered real keys whenever a run was
+// interrupted before its finally block ran.) The temp dir lives under the
+// project root with a `signing-secrets` leaf, so build.sh's SCRIPT_DIR-relative
+// resolution of a relative apple-api-key-path still lands inside the fixtures.
+// `files` may be an object or a `(ctx) => object` builder that needs the paths;
+// `fn` receives the same ctx { dir, dirBash, relBash }.
 function withSigningSecretFiles(files, fn) {
-  const backups = new Map();
+  const base = mkdtempSync(`${projectDir}/.bpp-signing-test-`);
+  const dir = `${base}/signing-secrets`;
+  mkdirSync(dir, { recursive: true });
 
-  for (const name of Object.keys(files)) {
-    const path = `${signingSecretsDir}/${name}`;
-    backups.set(
-      name,
-      existsSync(path)
-        ? { existed: true, content: readFileSync(path, 'utf8') }
-        : { existed: false }
-    );
-  }
+  const dirBash = process.platform === 'win32' ? toBashPath(dir) : dir;
+  const rel = relative(projectDir, dir);
+  const relBash = process.platform === 'win32' ? toBashPath(rel) : rel;
+  const ctx = { dir, dirBash, relBash };
 
-  mkdirSync(signingSecretsDir, { recursive: true });
-  for (const [name, content] of Object.entries(files)) {
-    writeFileSync(`${signingSecretsDir}/${name}`, content);
+  const resolved = typeof files === 'function' ? files(ctx) : files;
+  for (const [name, content] of Object.entries(resolved)) {
+    writeFileSync(`${dir}/${name}`, content);
   }
 
   try {
-    fn();
+    fn(ctx);
   } finally {
-    for (const [name, backup] of backups.entries()) {
-      const path = `${signingSecretsDir}/${name}`;
-      if (backup.existed) {
-        writeFileSync(path, backup.content);
-      } else {
-        rmSync(path, { force: true });
-      }
-    }
+    rmSync(base, { recursive: true, force: true });
   }
 }
 
@@ -284,18 +277,19 @@ test('macOS loose resource signing applies Developer ID timestamp to trampoline 
 
 test('macOS Developer ID env loads from signing-secrets files', () => {
   withSigningSecretFiles(
-    {
+    ({ dirBash }) => ({
       'apple-api-issuer': 'issuer-from-file\n',
       'apple-api-key': 'KEYFROMFILE\n',
-      'apple-api-key-path': `${signingSecretsDirBash}/AuthKey_KEYFROMFILE.p8\n`,
+      'apple-api-key-path': `${dirBash}/AuthKey_KEYFROMFILE.p8\n`,
       'apple-signing-identity':
         'Developer ID Application: Example Builder (TEAMID1234)\n',
       'AuthKey_KEYFROMFILE.p8': 'private key'
-    },
-    () => {
+    }),
+    ({ dirBash }) => {
       const output = runShell(`
         set -euo pipefail
         unset APPLE_API_ISSUER APPLE_API_KEY APPLE_API_KEY_PATH APPLE_SIGNING_IDENTITY
+        export BPP_SIGNING_SECRETS_DIR="${dirBash}"
         source ./build.sh
         load_macos_developer_id_env >/tmp/bpp-apple-env-test.out
         cat /tmp/bpp-apple-env-test.out
@@ -327,18 +321,19 @@ test('macOS Developer ID env loads from signing-secrets files', () => {
 
 test('macOS Developer ID env exports relative API key paths as absolute paths', () => {
   withSigningSecretFiles(
-    {
+    ({ relBash }) => ({
       'apple-api-issuer': 'issuer-from-file\n',
       'apple-api-key': 'RELKEY\n',
-      'apple-api-key-path': 'signing-secrets/AuthKey_RELKEY.p8\n',
+      'apple-api-key-path': `${relBash}/AuthKey_RELKEY.p8\n`,
       'apple-signing-identity':
         'Developer ID Application: Example Builder (TEAMID1234)\n',
       'AuthKey_RELKEY.p8': 'private key'
-    },
-    () => {
+    }),
+    ({ dirBash }) => {
       const output = runShell(`
         set -euo pipefail
         unset APPLE_API_ISSUER APPLE_API_KEY APPLE_API_KEY_PATH APPLE_SIGNING_IDENTITY
+        export BPP_SIGNING_SECRETS_DIR="${dirBash}"
         source ./build.sh
         load_macos_developer_id_env >/tmp/bpp-apple-env-test.out
         cat /tmp/bpp-apple-env-test.out
@@ -357,17 +352,13 @@ test('macOS Developer ID env detects identity and infers API key path', () => {
     {
       'apple-api-issuer': 'issuer-from-file\n',
       'apple-api-key': 'AUTOKEY\n',
-      'apple-api-key-path': '',
-      'apple-signing-identity': '',
       'AuthKey_AUTOKEY.p8': 'private key'
     },
-    () => {
-      rmSync(`${signingSecretsDir}/apple-api-key-path`, { force: true });
-      rmSync(`${signingSecretsDir}/apple-signing-identity`, { force: true });
-
+    ({ dirBash }) => {
       const output = runShell(`
         set -euo pipefail
         unset APPLE_API_ISSUER APPLE_API_KEY APPLE_API_KEY_PATH APPLE_SIGNING_IDENTITY
+        export BPP_SIGNING_SECRETS_DIR="${dirBash}"
         source ./build.sh
         security() {
           printf '%s\\n' '  1) ABC "Apple Development: dev@example.com (TEAMID1234)"'

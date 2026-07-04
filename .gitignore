@@ -77,5 +77,10 @@ BazaarPlusPlus.Localization.dll
 /src-tauri/resources/Trampoline/
 
 signing-secrets
+
+# Throwaway signing-secrets fixtures created by scripts/build.test.mjs.
+# Auto-removed after each test; only left behind if a run is interrupted.
+.bpp-signing-test-*/
+
 scripts/supporters-import-state.json
 static/support/supporter-pending-review.json
