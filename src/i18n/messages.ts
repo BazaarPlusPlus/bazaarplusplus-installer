@@ -262,6 +262,7 @@ const zh = {
   aboutAppLabel: '应用',
   aboutBppLabel: '插件',
   aboutCredits: '致谢',
+  aboutAcknowledgements: '数据与灵感',
   aboutLicenses: '开源许可',
   aboutVerifiedBadge: 'Fable 5 认证'
 } as const;
@@ -512,6 +513,7 @@ const en: Record<MessageKey, string> = {
   aboutAppLabel: 'App',
   aboutBppLabel: 'BPP',
   aboutCredits: 'Credits',
+  aboutAcknowledgements: 'Data & Inspiration',
   aboutLicenses: 'Licenses',
   aboutVerifiedBadge: 'Fable 5 Verified'
 };
