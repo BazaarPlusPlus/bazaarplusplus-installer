@@ -262,7 +262,9 @@ const zh = {
   aboutAppLabel: '应用',
   aboutBppLabel: '插件',
   aboutCredits: '致谢',
-  aboutLicenses: '开源许可'
+  aboutAcknowledgements: '数据与灵感',
+  aboutLicenses: '开源许可',
+  aboutVerifiedBadge: 'Fable 5 认证'
 } as const;
 
 export type MessageKey = keyof typeof zh;
@@ -511,7 +513,9 @@ const en: Record<MessageKey, string> = {
   aboutAppLabel: 'App',
   aboutBppLabel: 'BPP',
   aboutCredits: 'Credits',
-  aboutLicenses: 'Licenses'
+  aboutAcknowledgements: 'Data & Inspiration',
+  aboutLicenses: 'Licenses',
+  aboutVerifiedBadge: 'Fable 5 Verified'
 };
 
 export const messages: Record<Locale, Record<MessageKey, string>> = { zh, en };

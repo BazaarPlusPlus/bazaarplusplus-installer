@@ -12,23 +12,30 @@
     {
       "name": "cauyxy",
       "role": "AUTHOR",
-      "href": "https://github.com/cauyxy"
+      "href": "https://github.com/cauyxy",
+      "group": "team"
     },
     {
       "name": "timelic",
       "role": "CO-AUTHOR",
-      "href": "https://github.com/timelic"
+      "href": "https://github.com/timelic",
+      "group": "team"
     },
     {
       "name": "pengx17",
       "role": "CO-AUTHOR",
-      "href": "https://github.com/pengx17"
+      "href": "https://github.com/pengx17",
+      "group": "team"
     },
-    { "name": "Codex", "role": "CO-CREATOR" },
-    { "name": "Claude Code", "role": "CO-CREATOR" },
-    { "name": "BazaarDB", "role": "GAMEDATA SOURCE" },
-    { "name": "BazaarHelper", "role": "INSPIRATION" },
-    { "name": "BazaarPlannerMod", "role": "INSPIRATION" }
+    { "name": "Codex", "role": "CO-CREATOR", "group": "team" },
+    { "name": "Claude Code", "role": "CO-CREATOR", "group": "team" },
+    { "name": "BazaarDB", "role": "GAMEDATA SOURCE", "group": "acknowledgement" },
+    { "name": "BazaarHelper", "role": "INSPIRATION", "group": "acknowledgement" },
+    {
+      "name": "BazaarPlannerMod",
+      "role": "INSPIRATION",
+      "group": "acknowledgement"
+    }
   ],
   "licenses": [
     { "name": "BepInEx", "license": "LGPL-2.1", "category": "runtime" },

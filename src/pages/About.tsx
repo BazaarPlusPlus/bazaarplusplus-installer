@@ -2,6 +2,31 @@ import { ExternalLink } from 'lucide-react';
 import { PageHeader } from '../components/ui/PageHeader';
 import { useAppBootstrap } from '../features/about/AppBootstrapProvider';
 import { useI18n } from '../i18n/LocaleProvider';
+import type { MessageKey } from '../i18n/messages';
+import type { AppCredit } from '../types/backend';
+import fableVerifiedBadge from '../../static/about/fable-5-verified.webp';
+
+// Credits are split into ordered groups by their `group` field so contributors
+// stay separate from the external data/inspiration sources we acknowledge.
+const CREDIT_GROUP_LABELS: Record<string, MessageKey> = {
+  team: 'aboutCredits',
+  acknowledgement: 'aboutAcknowledgements'
+};
+
+function groupCredits(
+  credits: readonly AppCredit[]
+): { key: string; items: AppCredit[] }[] {
+  const groups: { key: string; items: AppCredit[] }[] = [];
+  for (const credit of credits) {
+    const existing = groups.find((group) => group.key === credit.group);
+    if (existing) {
+      existing.items.push(credit);
+    } else {
+      groups.push({ key: credit.group, items: [credit] });
+    }
+  }
+  return groups;
+}
 
 export default function About() {
   const { bootstrap } = useAppBootstrap();
@@ -47,20 +72,24 @@ export default function About() {
 
           <div className="h-px bg-gradient-to-r from-transparent via-[rgba(200,148,55,0.3)] to-transparent my-2" />
 
-          <div className="flex flex-col gap-3">
-            <h4 className="cinzel text-[10px] tracking-widest text-[rgba(200,148,55,0.75)] uppercase m-0">
-              {t('aboutCredits')}
-            </h4>
-            <ul className="flex flex-col gap-1 m-0 p-0 list-none">
-              {bootstrap.credits.map((credit) => (
-                <ListItem
-                  key={`${credit.name}:${credit.role}`}
-                  name={credit.name}
-                  role={credit.role}
-                  href={credit.href}
-                />
-              ))}
-            </ul>
+          <div className="flex flex-col gap-5">
+            {groupCredits(bootstrap.credits).map((group) => (
+              <div key={group.key} className="flex flex-col gap-3">
+                <h4 className="cinzel text-[10px] tracking-widest text-[rgba(200,148,55,0.75)] uppercase m-0">
+                  {t(CREDIT_GROUP_LABELS[group.key] ?? 'aboutCredits')}
+                </h4>
+                <ul className="flex flex-col gap-1 m-0 p-0 list-none">
+                  {group.items.map((credit) => (
+                    <ListItem
+                      key={`${credit.name}:${credit.role}`}
+                      name={credit.name}
+                      role={credit.role}
+                      href={credit.href}
+                    />
+                  ))}
+                </ul>
+              </div>
+            ))}
           </div>
         </section>
 
@@ -79,6 +108,15 @@ export default function About() {
             ))}
           </ul>
         </section>
+
+        <footer className="mt-2 flex flex-col items-center">
+          <img
+            src={fableVerifiedBadge}
+            alt={t('aboutVerifiedBadge')}
+            draggable={false}
+            className="w-full max-w-[400px] h-auto select-none opacity-90"
+          />
+        </footer>
       </div>
     </div>
   );
