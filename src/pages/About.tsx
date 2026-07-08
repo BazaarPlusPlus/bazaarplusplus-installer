@@ -2,6 +2,7 @@ import { ExternalLink } from 'lucide-react';
 import { PageHeader } from '../components/ui/PageHeader';
 import { useAppBootstrap } from '../features/about/AppBootstrapProvider';
 import { useI18n } from '../i18n/LocaleProvider';
+import fableVerifiedBadge from '../../static/about/fable-5-verified.webp';
 
 export default function About() {
   const { bootstrap } = useAppBootstrap();
@@ -79,6 +80,15 @@ export default function About() {
             ))}
           </ul>
         </section>
+
+        <footer className="mt-2 flex flex-col items-center">
+          <img
+            src={fableVerifiedBadge}
+            alt={t('aboutVerifiedBadge')}
+            draggable={false}
+            className="w-full max-w-[400px] h-auto select-none opacity-90"
+          />
+        </footer>
       </div>
     </div>
   );
