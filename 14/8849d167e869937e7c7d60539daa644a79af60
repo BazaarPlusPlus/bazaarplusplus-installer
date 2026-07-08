@@ -1,0 +1,37 @@
+src/types/generated/bindings/AppCredit.ts
+  s_e8bd2c3eaeabea::t_6d463b744fae03 3
+src-tauri/resources/app-bootstrap.json
+  s_e8bd2c3eaeabea::t_2e96fedd476d48 15-16,21-22,27-28,30-38
+src/pages/About.tsx
+  s_e8bd2c3eaeabea::t_ccf316dc2bd1b3 5-6,9-29
+  s_e8bd2c3eaeabea::t_8585b2e73142ae 75-92
+  s_e8bd2c3eaeabea::t_c62ad2149e9faf 30
+src/i18n/messages.ts
+  s_e8bd2c3eaeabea::t_a2fb0dc5d32dd2 265
+  s_e8bd2c3eaeabea::t_25609b40d54cee 516
+src-tauri/src/commands/app.rs
+  s_e8bd2c3eaeabea::t_71aa4c02cf0fc3 46
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "148849d167e869937e7c7d60539daa644a79af60",
+  "prompts": {},
+  "humans": {
+    "h_518331e5a07dc9": {
+      "author": "Xinyu YANG <cauyxy@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_e8bd2c3eaeabea": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "56170d77-a018-4cf3-a56a-09a9d9cfe0ff",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Xinyu YANG <cauyxy@gmail.com>"
+    }
+  },
+  "attestation_metadata": {},
+  "remote_transcripts": {}
+}
