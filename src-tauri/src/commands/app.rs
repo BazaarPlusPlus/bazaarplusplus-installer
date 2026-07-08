@@ -42,6 +42,7 @@ pub struct AppLinks {
 pub struct AppCredit {
     pub name: String,
     pub role: String,
+    pub href: Option<String>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, ts_rs::TS)]
