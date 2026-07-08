@@ -1,0 +1,27 @@
+src/features/history/StorageCleanupCard.tsx
+  s_d9f7cfda439374::t_5e0496bb68221f 80-91,93-94,96-107,109-115,134
+  s_d9f7cfda439374::t_1276b8db00f68d 1
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "b87f53162044bd9f7c1e3dbf2659a1f83f21c615",
+  "prompts": {},
+  "humans": {
+    "h_518331e5a07dc9": {
+      "author": "Xinyu YANG <cauyxy@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_d9f7cfda439374": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "865f40d1-41a7-42c4-891f-eb03b9a1790d",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Xinyu YANG <cauyxy@gmail.com>"
+    }
+  },
+  "attestation_metadata": {},
+  "remote_transcripts": {}
+}
