@@ -1,0 +1,32 @@
+src-tauri/resources/app-bootstrap.json
+  s_e75d67a1917845::t_d083fb822b6969 12-26
+src/types/generated/bindings/AppCredit.ts
+  s_e75d67a1917845::t_8281d41a6a01d3 3
+src-tauri/src/commands/app.rs
+  s_e75d67a1917845::t_8989f134c8217e 45
+src/pages/About.tsx
+  s_e75d67a1917845::t_a04cc3eb4e3fb2 60,90,95,98-99,102-115
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "f24f51efd2113cbd2e2f99425482107c47684bb0",
+  "prompts": {},
+  "humans": {
+    "h_518331e5a07dc9": {
+      "author": "Xinyu YANG <cauyxy@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_e75d67a1917845": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f3f69-584a-7fe2-91d4-29ad07dd41b6",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Xinyu YANG <cauyxy@gmail.com>"
+    }
+  },
+  "attestation_metadata": {},
+  "remote_transcripts": {}
+}
