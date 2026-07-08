@@ -1,0 +1,30 @@
+src/pages/About.tsx
+  s_e8bd2c3eaeabea::t_7c1c44f36f1301 83-91
+  s_e8bd2c3eaeabea::t_1cd7d9586b59b8 5
+src/i18n/messages.ts
+  s_e8bd2c3eaeabea::t_49dd1e57475d62 515-516
+  s_e8bd2c3eaeabea::t_2c565974cf6cc0 265-266
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "5740ae8796ea22580899bbd691b667f51fee2d65",
+  "prompts": {},
+  "humans": {
+    "h_518331e5a07dc9": {
+      "author": "Xinyu YANG <cauyxy@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_e8bd2c3eaeabea": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "56170d77-a018-4cf3-a56a-09a9d9cfe0ff",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Xinyu YANG <cauyxy@gmail.com>"
+    }
+  },
+  "attestation_metadata": {},
+  "remote_transcripts": {}
+}
