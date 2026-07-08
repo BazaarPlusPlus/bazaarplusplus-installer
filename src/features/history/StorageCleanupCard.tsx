@@ -1,4 +1,4 @@
-import { Trash2 } from 'lucide-react';
+import { ChevronRight, Trash2 } from 'lucide-react';
 import { ErrorBanner } from '../../components/ui/ErrorBanner';
 import { useI18n } from '../../i18n/LocaleProvider';
 import type { CleanupPreset } from '../../types/backend';
@@ -77,34 +77,42 @@ export function StorageCleanupCard({
   };
 
   return (
-    <div className="p-4 bg-[rgba(18,11,5,0.88)] border border-[rgba(180,130,48,0.13)] rounded-sm shadow-[0_6px_28px_rgba(0,0,0,0.35)] flex flex-col gap-3">
-      <div className="flex items-center gap-2">
-        <Trash2 size={14} className="text-[rgba(200,170,120,0.8)]" />
-        <span className="cinzel text-[10px] tracking-widest text-[rgba(200,170,120,0.8)] uppercase">
-          {t('storageCleanupTitle')}
-        </span>
-      </div>
+    <>
+      <details className="group p-4 bg-[rgba(18,11,5,0.88)] border border-[rgba(180,130,48,0.13)] rounded-sm shadow-[0_6px_28px_rgba(0,0,0,0.35)]">
+        <summary className="flex items-center gap-2 cursor-pointer list-none select-none [&::-webkit-details-marker]:hidden">
+          <ChevronRight
+            size={14}
+            className="shrink-0 text-[rgba(200,170,120,0.8)] transition-transform group-open:rotate-90"
+          />
+          <Trash2 size={14} className="text-[rgba(200,170,120,0.8)]" />
+          <span className="cinzel text-[10px] tracking-widest text-[rgba(200,170,120,0.8)] uppercase">
+            {t('storageCleanupTitle')}
+          </span>
+        </summary>
 
-      {cleanup.error && <ErrorBanner message={cleanup.error} />}
+        <div className="mt-3 flex flex-col gap-3">
+          {cleanup.error && <ErrorBanner message={cleanup.error} />}
 
-      <CleanupRow
-        label={t('storageCleanupScreenshotsLabel')}
-        scope="screenshots"
-        busy={cleanup.busy}
-        onSelect={cleanup.requestCleanup}
-      />
-      <CleanupRow
-        label={t('storageCleanupRunDataLabel')}
-        scope="run_data"
-        busy={cleanup.busy}
-        onSelect={cleanup.requestCleanup}
-      />
+          <CleanupRow
+            label={t('storageCleanupScreenshotsLabel')}
+            scope="screenshots"
+            busy={cleanup.busy}
+            onSelect={cleanup.requestCleanup}
+          />
+          <CleanupRow
+            label={t('storageCleanupRunDataLabel')}
+            scope="run_data"
+            busy={cleanup.busy}
+            onSelect={cleanup.requestCleanup}
+          />
 
-      {cleanup.outcome && (
-        <p className="m-0 text-xs text-[rgba(200,170,120,0.8)]">
-          {outcomeText(cleanup.outcome)}
-        </p>
-      )}
+          {cleanup.outcome && (
+            <p className="m-0 text-xs text-[rgba(200,170,120,0.8)]">
+              {outcomeText(cleanup.outcome)}
+            </p>
+          )}
+        </div>
+      </details>
 
       {cleanup.pending && (
         <CleanupConfirmModal
@@ -123,7 +131,7 @@ export function StorageCleanupCard({
           onConfirm={cleanup.confirm}
         />
       )}
-    </div>
+    </>
   );
 }
 
