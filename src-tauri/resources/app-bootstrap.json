@@ -9,8 +9,21 @@
     "supporter_list": "https://bazaarplusplus.com/support"
   },
   "credits": [
-    { "name": "cauyxy", "role": "AUTHOR" },
-    { "name": "Trae", "role": "CO-CREATOR" },
+    {
+      "name": "cauyxy",
+      "role": "AUTHOR",
+      "href": "https://github.com/cauyxy"
+    },
+    {
+      "name": "timelic",
+      "role": "CO-AUTHOR",
+      "href": "https://github.com/timelic"
+    },
+    {
+      "name": "pengx17",
+      "role": "CO-AUTHOR",
+      "href": "https://github.com/pengx17"
+    },
     { "name": "Codex", "role": "CO-CREATOR" },
     { "name": "Claude Code", "role": "CO-CREATOR" },
     { "name": "BazaarDB", "role": "GAMEDATA SOURCE" },

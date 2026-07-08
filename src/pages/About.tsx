@@ -57,6 +57,7 @@ export default function About() {
                   key={`${credit.name}:${credit.role}`}
                   name={credit.name}
                   role={credit.role}
+                  href={credit.href}
                 />
               ))}
             </ul>
@@ -86,17 +87,32 @@ export default function About() {
 function ListItem({
   name,
   role,
+  href,
   isLicense = false
 }: {
   name: string;
   role?: string;
+  href?: string | null;
   isLicense?: boolean;
 }) {
+  const nameClassName = 'fira-code text-xs text-[rgba(228,216,191,0.85)]';
+
   return (
     <li className="flex items-center justify-between px-3 py-2 bg-[rgba(200,148,55,0.04)] border border-[rgba(180,130,48,0.08)] rounded-sm hover:bg-[rgba(200,148,55,0.08)] transition-colors">
-      <span className="fira-code text-xs text-[rgba(228,216,191,0.85)]">
-        {name}
-      </span>
+      {href ? (
+        <a
+          href={href}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label={`${name} GitHub`}
+          className={`${nameClassName} inline-flex items-center gap-1 rounded-[2px] no-underline hover:text-[#e8c87a] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[rgba(200,148,55,0.55)] focus-visible:ring-offset-2 focus-visible:ring-offset-[#120b05]`}
+        >
+          {name}
+          <ExternalLink size={11} aria-hidden="true" />
+        </a>
+      ) : (
+        <span className={nameClassName}>{name}</span>
+      )}
       {role && (
         <span
           className={`${isLicense ? 'fira-code text-[10px]' : 'cinzel text-[10px] tracking-widest uppercase'} text-[rgba(200,170,120,0.8)]`}
