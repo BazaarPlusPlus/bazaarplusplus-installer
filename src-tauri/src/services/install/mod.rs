@@ -1,3 +1,4 @@
+mod plan;
 mod types;
 
 pub use types::{
@@ -14,7 +15,7 @@ use std::path::Path;
 use crate::services::{
     bepinex::{self, install_bepinex, reset_bepinex_folder, reset_bpp_data, uninstall_bpp},
     detect::detect_for_install,
-    launch_mode::{LaunchMode, LaunchModeGate},
+    launch_mode::LaunchModeGate,
     startup::InstallerContextState,
     steam::prepare_steam_for_launch_option_update,
     vdf::{clear_launch_options_for_steam, patch_launch_options},
@@ -38,75 +39,68 @@ pub async fn run_install(
     game_path: String,
     compat_opt_in: bool,
 ) -> Result<InstallState, String> {
+    // ---- gather (async runtime; the ONLY detect before mutation) ----
     let before = detect_for_install(app.clone(), state, Some(game_path.clone()))?;
     let steam_path = before.steam_path.clone().unwrap_or_default();
-    let has_steam_path = !steam_path.trim().is_empty();
 
-    // Version-forced on macOS 27+, or <= 26 opt-in. Always false off macOS.
-    let requested = LaunchModeGate::current().requested_mode(compat_opt_in);
-    let was_trampolined = bepinex::is_trampolined(Path::new(&game_path)).unwrap_or(false);
+    // ---- plan (pure; ordering contract lives in plan.rs + its table tests) ----
+    // Version-forced on macOS 27+, or <= 26 opt-in. Always Prefix off macOS.
+    let plan = plan::plan_install(plan::InstallPlanInputs {
+        requested: LaunchModeGate::current().requested_mode(compat_opt_in),
+        was_trampolined: bepinex::is_trampolined(Path::new(&game_path)).unwrap_or(false),
+        has_steam_path: !steam_path.trim().is_empty(),
+        steam_launch_options_supported: before.steam_launch_options_supported,
+    });
 
+    // ---- execute (blocking thread; first Err aborts, same as master's `?`s) ----
     let app_for_task = app.clone();
     let game_path_for_task = game_path.clone();
-    let patch_launch_options_supported = before.steam_launch_options_supported;
     tauri::async_runtime::spawn_blocking(move || {
-        let steam = Path::new(&steam_path);
-        let game = Path::new(&game_path_for_task);
-
-        if requested == LaunchMode::Trampoline {
-            // Trampoline mode MUTATES the .app and needs a reliable localconfig
-            // clear -> Steam MUST be closed.
-            if has_steam_path {
-                prepare_steam_for_launch_option_update(steam, false)?;
-            }
-            install_bepinex(
-                app_for_task.clone(),
-                steam_path.clone(),
-                game_path_for_task.clone(),
-            )?;
-            bepinex::install_trampoline(&app_for_task, game)?;
-            // Persist the desired mode AS SOON AS the bundle is trampolined, before
-            // the Steam step below — otherwise a clear-launch-options failure would
-            // leave a trampolined bundle with no marker, which a later detect would
-            // mislabel as `trampoline_reverted` on macOS <= 26.
-            bepinex::write_launch_mode_marker(game, requested)?;
-            // LaunchOptions are driven by the MODE: trampoline => cleared (the
-            // empty/vanilla launch the stub needs).
-            if has_steam_path {
-                clear_launch_options_for_steam(steam)?;
-            }
-        } else {
-            // Prefix mode. Close Steam ONLY to un-apply a previous trampoline (mode
-            // switch); a plain <= 26 prefix install keeps today's behavior exactly
-            // (Steam stays up; patch_launch_options does its own prepare(.., true)).
-            if was_trampolined && has_steam_path {
-                prepare_steam_for_launch_option_update(steam, false)?;
-            }
-            install_bepinex(
-                app_for_task.clone(),
-                steam_path.clone(),
-                game_path_for_task.clone(),
-            )?;
-            if was_trampolined {
-                bepinex::uninstall_trampoline(game)?;
-            }
-            if patch_launch_options_supported && has_steam_path {
-                let _ = patch_launch_options(
-                    app_for_task,
-                    steam_path.clone(),
-                    game_path_for_task.clone(),
-                )?;
-            }
-            bepinex::write_launch_mode_marker(game, requested)?;
+        for step in &plan {
+            execute_install_step(step, &app_for_task, &steam_path, &game_path_for_task)?;
         }
         Ok::<(), String>(())
     })
     .await
     .map_err(|err| format!("failed to run install task: {err}"))??;
 
+    // ---- rebuild state from a FRESH detect (never mutate `before`) ----
     let app_for_state = app.clone();
     let state = app_for_state.state::<InstallerContextState>();
     build_install_state(app, state, Some(game_path))
+}
+
+/// Orderless step interpreter. Every arm is ONE unconditional effect call —
+/// decisions and ordering belong to `plan::plan_install` (see its table
+/// tests). Contract: no conditionals, no error wrapping (error strings pass
+/// through raw to the frontend), no fan-out; per-arm argument literals are
+/// load-bearing and documented on the matching `InstallStep` variant.
+fn execute_install_step(
+    step: &plan::InstallStep,
+    app: &tauri::AppHandle,
+    steam_path: &str,
+    game_path: &str,
+) -> Result<(), String> {
+    let steam = Path::new(steam_path);
+    let game = Path::new(game_path);
+    match step {
+        plan::InstallStep::CloseSteam => prepare_steam_for_launch_option_update(steam, false),
+        plan::InstallStep::InstallBepInEx => {
+            install_bepinex(app.clone(), steam_path.to_string(), game_path.to_string())
+        }
+        plan::InstallStep::InstallTrampoline => bepinex::install_trampoline(app, game),
+        plan::InstallStep::UninstallTrampoline => bepinex::uninstall_trampoline(game),
+        plan::InstallStep::WriteLaunchModeMarker(mode) => {
+            bepinex::write_launch_mode_marker(game, *mode)
+        }
+        plan::InstallStep::ClearLaunchOptions => clear_launch_options_for_steam(steam),
+        // Discard only the Ok LaunchOptionsPatchResult (verified:false is NOT
+        // an error); a hard Err still aborts — master's `let _ = …?` shape.
+        plan::InstallStep::PatchLaunchOptions => {
+            patch_launch_options(app.clone(), steam_path.to_string(), game_path.to_string())
+                .map(|_| ())
+        }
+    }
 }
 
 pub async fn run_reset_bpp_data(
