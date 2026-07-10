@@ -18,36 +18,12 @@ use std::path::PathBuf;
 
 use tauri::AppHandle;
 
+use crate::services::launch_mode::LaunchMode;
+
 /// Game-dir sibling (OUTSIDE the `.app`) recording the chosen launch mode, so the
 /// installer still knows the desired mode after a Steam "Verify integrity" / game
 /// update reverts the bundle. Removed on uninstall.
 pub(crate) const MARKER_FILE: &str = ".bpp-launch-mode";
-
-/// Which launch mechanism an install applied. Persisted in [`MARKER_FILE`].
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(crate) enum LaunchMode {
-    /// In-bundle Mach-O trampoline (macOS 27+ forced, or <= 26 opt-in).
-    Trampoline,
-    /// `run_bepinex.sh` prefix launcher (macOS <= 26 default).
-    Prefix,
-}
-
-impl LaunchMode {
-    fn as_marker(self) -> &'static str {
-        match self {
-            LaunchMode::Trampoline => "trampoline",
-            LaunchMode::Prefix => "prefix",
-        }
-    }
-
-    fn from_marker(value: &str) -> Option<Self> {
-        match value {
-            "trampoline" => Some(LaunchMode::Trampoline),
-            "prefix" => Some(LaunchMode::Prefix),
-            _ => None,
-        }
-    }
-}
 
 // ---------------------------------------------------------------------------
 // Launch-mode marker (macOS only; no-ops elsewhere keep Windows byte-identical)
