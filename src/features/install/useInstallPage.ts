@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { listen } from '@tauri-apps/api/event';
 import { hasTauriRuntime } from '../../api/runtime';
+import { emptyInstallState } from '../../api/previewDefaults';
 import type { InstallState } from '../../types/backend';
 import { useI18n, type Translate } from '../../i18n/LocaleProvider';
 import {
@@ -11,7 +12,6 @@ import {
 import { useAsyncAction } from '../shared/useAsyncAction';
 import {
   chooseGameDirectory,
-  emptyInstallState,
   installMod,
   launchGame,
   loadInstallState,

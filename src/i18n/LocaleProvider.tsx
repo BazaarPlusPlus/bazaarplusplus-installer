@@ -7,8 +7,7 @@ import {
   useState
 } from 'react';
 import type { ReactNode } from 'react';
-import { invokeCommand } from '../api/tauri';
-import { hasTauriRuntime } from '../api/runtime';
+import { invokeOrFallback } from '../api/tauri';
 import {
   LOCALE_STORAGE_KEY,
   formatMessage,
@@ -72,11 +71,8 @@ export function useI18n(): I18nController {
 }
 
 async function syncTrayLocale(locale: Locale) {
-  if (!hasTauriRuntime()) {
-    return;
-  }
   try {
-    await invokeCommand('set_app_locale', { locale });
+    await invokeOrFallback('set_app_locale', { locale });
   } catch {
     // The web UI still switches even when the desktop tray sync fails.
   }

@@ -19,6 +19,8 @@ import type {
   StreamServiceStatus
 } from '../types/backend';
 import type { TauriCommandName } from '../types/generated/tauri-command-names';
+import { hasTauriRuntime } from './runtime';
+import { PREVIEW_FALLBACKS } from './previewFallbacks';
 
 export interface TauriCommandMap {
   // Input object keys mirror Rust command parameters after Tauri's snake_case to
@@ -137,15 +139,15 @@ export interface TauriCommandMap {
   };
 }
 
-type CommandName = Extract<TauriCommandName, keyof TauriCommandMap>;
-type CommandInput<K extends CommandName> = TauriCommandMap[K]['input'];
-type CommandOutput<K extends CommandName> = TauriCommandMap[K]['output'];
+export type CommandName = Extract<TauriCommandName, keyof TauriCommandMap>;
+export type CommandInput<K extends CommandName> = TauriCommandMap[K]['input'];
+export type CommandOutput<K extends CommandName> = TauriCommandMap[K]['output'];
 type CommandArgs<K extends CommandName> =
   undefined extends CommandInput<K>
     ? [payload?: Exclude<CommandInput<K>, undefined>]
     : [payload: CommandInput<K>];
 
-export async function invokeCommand<K extends CommandName>(
+async function invokeCommand<K extends CommandName>(
   name: K,
   ...args: CommandArgs<K>
 ): Promise<CommandOutput<K>> {
@@ -163,7 +165,27 @@ export async function invokeCommand<K extends CommandName>(
   }
 }
 
-function normalizeBackendError(error: unknown): Error {
+type PreviewResult<K extends CommandName> =
+  (typeof PREVIEW_FALLBACKS)[K] extends (...args: never[]) => infer R
+    ? R
+    : never;
+
+export async function invokeOrFallback<K extends CommandName>(
+  name: K,
+  ...args: CommandArgs<K>
+): Promise<CommandOutput<K> | PreviewResult<K>> {
+  const entry = PREVIEW_FALLBACKS[name];
+  if (entry !== 'invoke' && !hasTauriRuntime()) {
+    // This is the single correlated-union cast at the runtime seam. Returning
+    // shared objects directly preserves the existing preview identity behavior.
+    return (entry as (input: CommandInput<K> | undefined) => PreviewResult<K>)(
+      args[0] as CommandInput<K> | undefined
+    );
+  }
+  return invokeCommand(name, ...args);
+}
+
+export function normalizeBackendError(error: unknown): Error {
   if (error instanceof Error) {
     return error;
   }
