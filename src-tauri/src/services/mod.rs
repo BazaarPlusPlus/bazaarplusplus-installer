@@ -4,6 +4,7 @@ pub mod game_path;
 pub mod game_process;
 pub mod history;
 pub mod install;
+pub mod launch_mode;
 pub mod macos_version;
 pub mod path;
 pub mod paths;

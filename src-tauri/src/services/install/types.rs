@@ -41,6 +41,7 @@ pub struct InstallCompatState {
     /// macOS 27+: trampoline forced — render the checkbox checked and locked.
     pub forced: bool,
     /// The desired launch mode (checkbox default): forced, or the persisted marker.
+    // Derived from launch_mode::LaunchModeState::expected_trampoline.
     pub desired: bool,
     /// Whether the bundle currently has the trampoline applied.
     pub applied: bool,
