@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { AppBootstrap } from '../../types/backend';
-import { fallbackBootstrap, loadAppBootstrap } from './aboutApi';
+import { fallbackBootstrap } from '../../api/previewDefaults';
+import { loadAppBootstrap } from './aboutApi';
 
 export function useAppBootstrapState() {
   const [bootstrap, setBootstrap] = useState<AppBootstrap>(fallbackBootstrap);

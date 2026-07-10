@@ -5,15 +5,15 @@ import type {
   StreamServiceStatus
 } from '../../types/backend';
 import { useI18n } from '../../i18n/LocaleProvider';
+import {
+  defaultCropSettings,
+  idleStreamStatus
+} from '../../api/previewDefaults';
 import { toErrorMessage } from '../shared/errors';
 import { useAsyncAction } from '../shared/useAsyncAction';
 import { useTransientMessage } from '../shared/useTransientMessage';
 import {
   applyCropCode,
-  defaultCropSettings,
-  ensureStreamSession,
-  getStreamStatus,
-  idleStreamStatus,
   loadCropSettings,
   openExternal,
   restartStreamSession,
@@ -21,6 +21,10 @@ import {
   saveDisplayMode,
   setStreamWindowOffset
 } from './streamApi';
+import {
+  ensureStreamSession,
+  getStreamStatus
+} from '../shared/streamSessionApi';
 import { createStreamViewModel } from './streamViewModel';
 
 type StreamAction =

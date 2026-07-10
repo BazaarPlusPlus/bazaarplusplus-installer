@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { HistoryRunList, HistoryRunRow } from '../../types/backend';
 import { toErrorMessage } from '../shared/errors';
+import { emptyHistoryRunList } from '../../api/previewDefaults';
 import { ensureStreamSession } from '../shared/streamSessionApi';
 import { optionalStripPreviewUrl } from './stripPreview';
-import { emptyHistoryRunList, listHistoryRuns } from './historyApi';
+import { listHistoryRuns } from './historyApi';
 
 export function useHistoryPage() {
   const [payload, setPayload] = useState<HistoryRunList>(emptyHistoryRunList);
