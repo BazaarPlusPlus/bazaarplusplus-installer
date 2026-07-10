@@ -34,6 +34,18 @@ function readPackageVersion(rootDir) {
   return readJson(path.join(rootDir, 'package.json')).version;
 }
 
+function packageLockPath(rootDir) {
+  return path.join(rootDir, 'package-lock.json');
+}
+
+function readPackageLockVersion(rootDir) {
+  const filePath = packageLockPath(rootDir);
+  if (!fs.existsSync(filePath)) {
+    return null;
+  }
+  return readJson(filePath).version;
+}
+
 function tauriConfigPath(rootDir) {
   return path.join(rootDir, 'src-tauri', 'tauri.conf.json');
 }
@@ -112,6 +124,21 @@ function updateCargoVersion(rootDir, version) {
   writeText(filePath, updatedCargoToml);
 }
 
+function updatePackageLockVersion(rootDir, version) {
+  const filePath = packageLockPath(rootDir);
+  if (!fs.existsSync(filePath)) {
+    return;
+  }
+
+  const packageLock = readJson(filePath);
+  packageLock.version = version;
+  const rootEntry = packageLock.packages?.[''];
+  if (rootEntry) {
+    rootEntry.version = version;
+  }
+  writeJson(filePath, packageLock);
+}
+
 function updateCargoLockVersion(rootDir, packageName, version) {
   const filePath = cargoLockPath(rootDir);
   if (!fs.existsSync(filePath)) {
@@ -138,6 +165,7 @@ export function collectVersionSnapshot(rootDir) {
 
   return {
     packageVersion,
+    packageLockVersion: readPackageLockVersion(rootDir),
     tauriVersion: readTauriVersion(rootDir),
     cargoVersion: readCargoVersion(rootDir),
     cargoLockVersion: readCargoLockVersion(rootDir, packageName)
@@ -168,6 +196,7 @@ export function synchronizeVersions(rootDir) {
   const packageVersion = readPackageVersion(rootDir);
   const packageName = readCargoPackageName(rootDir);
 
+  updatePackageLockVersion(rootDir, packageVersion);
   updateTauriVersion(rootDir, packageVersion);
   updateCargoVersion(rootDir, packageVersion);
   updateCargoLockVersion(rootDir, packageName, packageVersion);

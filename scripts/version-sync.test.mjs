@@ -11,6 +11,7 @@ import {
 
 function createFixture({
   packageVersion = '1.2.3',
+  packageLockVersion = packageVersion,
   tauriVersion = '1.2.3',
   cargoVersion = '1.2.3',
   cargoLockVersion = cargoVersion
@@ -21,6 +22,21 @@ function createFixture({
   fs.writeFileSync(
     path.join(rootDir, 'package.json'),
     JSON.stringify({ name: 'bppinstaller', version: packageVersion }, null, 2)
+  );
+  fs.writeFileSync(
+    path.join(rootDir, 'package-lock.json'),
+    JSON.stringify(
+      {
+        name: 'bppinstaller',
+        version: packageLockVersion,
+        lockfileVersion: 3,
+        packages: {
+          '': { name: 'bppinstaller', version: packageLockVersion }
+        }
+      },
+      null,
+      2
+    )
   );
   fs.writeFileSync(
     path.join(rootDir, 'src-tauri', 'tauri.conf.json'),
@@ -47,9 +63,10 @@ dependencies = []
   return rootDir;
 }
 
-test('collectVersionSnapshot reads package, tauri, cargo, and cargo lock versions', () => {
+test('collectVersionSnapshot reads package, package lock, tauri, cargo, and cargo lock versions', () => {
   const rootDir = createFixture({
     packageVersion: '2.0.0',
+    packageLockVersion: '2.0.0',
     tauriVersion: '2.0.0',
     cargoVersion: '2.0.0',
     cargoLockVersion: '2.0.0'
@@ -57,6 +74,7 @@ test('collectVersionSnapshot reads package, tauri, cargo, and cargo lock version
 
   expect(collectVersionSnapshot(rootDir)).toEqual({
     packageVersion: '2.0.0',
+    packageLockVersion: '2.0.0',
     tauriVersion: '2.0.0',
     cargoVersion: '2.0.0',
     cargoLockVersion: '2.0.0'
@@ -74,9 +92,22 @@ test('assertVersionsAreAligned throws when versions diverge', () => {
   ).toThrow(/Version mismatch/);
 });
 
-test('synchronizeVersions updates tauri, cargo, and cargo lock to match package.json', () => {
+test('assertVersionsAreAligned throws when only the package lock is stale', () => {
+  expect(() =>
+    assertVersionsAreAligned({
+      packageVersion: '4.4.2',
+      packageLockVersion: '4.3.0',
+      tauriVersion: '4.4.2',
+      cargoVersion: '4.4.2',
+      cargoLockVersion: '4.4.2'
+    })
+  ).toThrow(/packageLockVersion=4\.3\.0/);
+});
+
+test('synchronizeVersions updates package lock, tauri, cargo, and cargo lock to match package.json', () => {
   const rootDir = createFixture({
     packageVersion: '3.4.5',
+    packageLockVersion: '1.0.0',
     tauriVersion: '1.0.0',
     cargoVersion: '1.0.0',
     cargoLockVersion: '1.0.0'
@@ -86,9 +117,16 @@ test('synchronizeVersions updates tauri, cargo, and cargo lock to match package.
 
   expect(snapshot).toEqual({
     packageVersion: '3.4.5',
+    packageLockVersion: '3.4.5',
     tauriVersion: '3.4.5',
     cargoVersion: '3.4.5',
     cargoLockVersion: '3.4.5'
   });
   expect(collectVersionSnapshot(rootDir)).toEqual(snapshot);
+
+  const packageLock = JSON.parse(
+    fs.readFileSync(path.join(rootDir, 'package-lock.json'), 'utf8')
+  );
+  expect(packageLock.version).toBe('3.4.5');
+  expect(packageLock.packages[''].version).toBe('3.4.5');
 });
