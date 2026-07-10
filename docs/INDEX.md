@@ -14,7 +14,7 @@ Last consolidation audit: `2026-06-11` on `7b18f73d4718d3e1406de9f526d1fbba09ac5
 | `.trae/rules/git-commit-message.md` | ignored local rule | ignored-operational | n/a |
 | `docs/INDEX.md` | documentation manifest | manifest | 2026-06-11 |
 | `docs/truth/overview.md` | overview | truth | `7b18f73d4718d3e1406de9f526d1fbba09ac567f` |
-| `docs/truth/architecture.md` | architecture | truth | `caa05b74651e44218473fbe9d2a43bfc95bca0c7` |
+| `docs/truth/architecture.md` | architecture | truth | `a1461386ca7417a0fab4eff812fccdaef5420cec` |
 | `docs/truth/frontend.md` | frontend | truth | `7b18f73d4718d3e1406de9f526d1fbba09ac567f` |
 | `docs/truth/install-reset.md` | install-reset | truth | `caa05b74651e44218473fbe9d2a43bfc95bca0c7` |
 | `docs/truth/launch-modes.md` | launch-modes | truth | `3d0c8c833169adde35bc9bca770ecc8b56fa8271` |

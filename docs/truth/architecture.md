@@ -1,14 +1,14 @@
 ---
 status: truth
 topic: architecture
-last-verified: caa05b74651e44218473fbe9d2a43bfc95bca0c7
+last-verified: a1461386ca7417a0fab4eff812fccdaef5420cec
 ---
 
 # Architecture
 
 ## App Shape
 
-- `package.json` defines the desktop app package as `bppinstaller` version `4.4.2` and exposes the development, build, test, type-check, and Tauri scripts in `package.json:2-21`.
+- `package.json` defines the desktop app package as `bppinstaller` and exposes the development, build, test, type-check, and Tauri scripts in `package.json:2-21`; its `version` field is the single version source (see version sync below).
 - The frontend is built by Vite from `src/`; the Tauri config invokes `npm run dev` for development and `npm run prebuild-check && npm run build` before bundle creation in `src-tauri/tauri.conf.json:6-11`.
 - The main desktop shell is Rust/Tauri. It registers native plugins and shared state in `src-tauri/src/lib.rs:18-39`, then registers command handlers and runs the generated Tauri context in `src-tauri/src/lib.rs:72-74`.
 - The main window is configured as a 1000 x 720 window with 900 x 640 minimum dimensions in `src-tauri/tauri.conf.json:13-21`.
@@ -29,6 +29,6 @@ last-verified: caa05b74651e44218473fbe9d2a43bfc95bca0c7
 ## Build And Generated Artifacts
 
 - `npm run check` generates TypeScript bindings and runs `tsc --noEmit`; `npm run test` combines generated bindings, Rust tests, and Vitest in `package.json:13-20`.
-- Version sync treats `package.json` as the source, then writes Tauri config, Cargo.toml, and Cargo.lock versions in `scripts/version-sync.mjs:167-175`.
+- Version sync treats `package.json` as the source, then writes package-lock.json (both root `version` fields), Tauri config, Cargo.toml, and Cargo.lock versions in `scripts/version-sync.mjs:195-206`; `npm run prebuild-check` fails on any misalignment via `collectVersionSnapshot` in `scripts/prebuild-check.mjs:332-333`.
 - `npm run prebuild-check` verifies generated bindings, version alignment, platform ZIP payloads, and the macOS trampoline stub when applicable in `scripts/prebuild-check.mjs:329-348`.
 - Tauri updater artifacts are enabled in the Tauri bundle config in `src-tauri/tauri.conf.json:27-30`.
