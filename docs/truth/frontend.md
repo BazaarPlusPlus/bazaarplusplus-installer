@@ -1,7 +1,7 @@
 ---
 status: truth
 topic: frontend
-last-verified: df2a1aff04d29bed00f16d369d7558755e31a556
+last-verified: aaf01075c3e52acdd7940f3a41a4858c60dd851b
 ---
 
 # Frontend
@@ -19,6 +19,12 @@ last-verified: df2a1aff04d29bed00f16d369d7558755e31a556
 - Reduced motion is honored through `prefers-reduced-motion` in `src/styles/index.css:91-99`.
 - App modals use the native `<dialog>` wrapper and top-layer dialog styling; dialog CSS is in `src/styles/index.css:101-128`, and the updater modal consumes the shared `Dialog` component in `src/layouts/ShellUpdateModal.tsx:40-45`.
 - The current Tauri security config has `csp: null` in `src-tauri/tauri.conf.json:23-25`; treat any CSP hardening claim as future work until code changes.
+
+## Runtime Seam
+
+- Tauri command wrappers dispatch through `invokeOrFallback`, which uses native `invoke` when the runtime is present and otherwise resolves the command's centralized preview behavior in `src/api/tauri.ts:142-193`.
+- `PREVIEW_FALLBACKS` is exhaustive over the generated `TauriCommandName` union, so adding a generated command requires declaring its command-map entry and preview behavior at compile time in `src/api/previewFallbacks.ts:11-79`.
+- Shared install, stream, crop, history, and bootstrap preview values live in the leaf module `src/api/previewDefaults.ts:1-103`; consumers and fallbacks reuse the same object references so preview polling preserves React state bailouts.
 
 ## Current Product Surfaces
 

@@ -1,7 +1,7 @@
 ---
 status: truth
 topic: install-reset
-last-verified: caa05b74651e44218473fbe9d2a43bfc95bca0c7
+last-verified: aaf01075c3e52acdd7940f3a41a4858c60dd851b
 ---
 
 # Install And Reset
