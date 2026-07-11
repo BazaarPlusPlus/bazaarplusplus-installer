@@ -15,7 +15,8 @@ import {
   formatBattleResult,
   formatDateTime,
   formatRunResultLabel,
-  formatRunStatusKey
+  formatRunStatusKey,
+  toneColorClass
 } from '../features/history/format';
 import { DeleteVideoConfirmModal } from '../features/history/DeleteVideoConfirmModal';
 import { useI18n } from '../i18n/LocaleProvider';
@@ -25,14 +26,6 @@ import { useI18n } from '../i18n/LocaleProvider';
 // button appears). Day · Result · OppHero · OppPlayer · Rank · Rating · Video.
 const BATTLE_GRID =
   'grid grid-cols-[3.5rem_4.5rem_minmax(0,1fr)_minmax(0,1fr)_5rem_5rem_5rem] gap-4';
-
-// One tone language for run verdict AND battle result. Neutral (undefined) is
-// muted-gold, NEVER red.
-function toneColorClass(tone: 'ok' | 'bad' | undefined): string {
-  if (tone === 'ok') return 'text-[#6dd9a0]';
-  if (tone === 'bad') return 'text-[#d96d6d]';
-  return 'text-[rgba(200,170,120,0.8)]';
-}
 
 export default function RunDetail() {
   const navigate = useNavigate();

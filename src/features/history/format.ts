@@ -44,6 +44,14 @@ export function formatBattleResult(result: string): {
   }
 }
 
+// One tone language for run verdict AND battle result. Neutral (undefined) is
+// muted-gold, NEVER red.
+export function toneColorClass(tone: 'ok' | 'bad' | undefined): string {
+  if (tone === 'ok') return 'text-[#6dd9a0]';
+  if (tone === 'bad') return 'text-[#d96d6d]';
+  return 'text-[rgba(200,170,120,0.8)]';
+}
+
 export function formatRunStatusKey(status: string): MessageKey {
   switch (status) {
     case 'completed':
