@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { updaterFragmentUrl } from './release-platforms.mjs';
 
 export function buildPlatformFragment({
   platformKey,
@@ -12,7 +13,12 @@ export function buildPlatformFragment({
   return {
     version,
     platform: platformKey,
-    url: `${baseUrl}/${version}/${platformKey}/updater/${path.basename(updaterFile)}`,
+    url: updaterFragmentUrl({
+      baseUrl,
+      version,
+      platformKey,
+      updaterFileName: path.basename(updaterFile)
+    }),
     signature: updaterSignature.trim()
   };
 }

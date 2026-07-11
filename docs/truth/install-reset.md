@@ -1,7 +1,7 @@
 ---
 status: truth
 topic: install-reset
-last-verified: 8ffb2b86dc255a585057138689c345fe69981b8d
+last-verified: 386734973e69736d18e3c4a9417183a04994da33
 ---
 
 # Install And Reset
@@ -19,7 +19,7 @@ last-verified: 8ffb2b86dc255a585057138689c345fe69981b8d
 - Prefix mode installs BepInEx, removes any prior trampoline, patches Steam launch options only when supported, and writes the launch-mode marker as `Prefix` last in `src-tauri/src/services/install/plan.rs:107-129`.
 - Trampoline mode installs BepInEx, applies the macOS trampoline, writes the launch-mode marker as `Trampoline`, and clears Steam launch options in `src-tauri/src/services/install/plan.rs:88-106`.
 - Install pre-clean removes only BPP-owned files the incoming payload no longer ships in `prepare_install_target` and `remove_stale_bpp_files` in `src-tauri/src/services/bepinex/payload.rs:380-416`; extraction skips byte-identical existing files and overwrites the rest in `src-tauri/src/services/bepinex/zip_archive.rs:39-79`. Third-party files are never pre-deleted, but a colliding path with different content is still overwritten by extraction.
-- Ownership is defined by `BPP_PRIVATE_RELATIVE_PATHS` and `BPP_BUNDLED_DEPENDENCY_RELATIVE_PATHS` in `src-tauri/src/services/bepinex/payload.rs:10-35`; `test_ownership_lists_match_shipped_payload` pins them to `resources/SourceForBuild/{macos,windows}/BepInEx/plugins` in `src-tauri/src/services/bepinex/payload.rs:752-786`, and `scripts/prebuild-check.mjs` requires every `SourceForBuild` file to exist in the bundled zips and rejects stray OS artifacts (`.DS_Store` and the like) in both the tree and the zips in `scripts/prebuild-check.mjs:33-64` and `scripts/prebuild-check.mjs:222-250`.
+- Ownership is defined by `BPP_PRIVATE_RELATIVE_PATHS` and `BPP_BUNDLED_DEPENDENCY_RELATIVE_PATHS` in `src-tauri/src/services/bepinex/payload.rs:10-35`; `test_ownership_lists_match_shipped_payload` pins them to `resources/SourceForBuild/{macos,windows}/BepInEx/plugins` in `src-tauri/src/services/bepinex/payload.rs:752-786`, and `scripts/prebuild-check.mjs` requires every `SourceForBuild` file to exist in the bundled zips and rejects stray OS artifacts (`.DS_Store` and the like) in both the tree and the zips in `scripts/prebuild-check.mjs:30-61` and `scripts/prebuild-check.mjs:219-250`.
 - Uninstall is gated on `has_third_party_plugins` and `has_third_party_patchers` in `src-tauri/src/services/bepinex/mod.rs:194-244` and `src-tauri/src/services/bepinex/payload.rs:326-352`: when another mod's plugin (in `BepInEx/plugins`) or patcher (any file under `BepInEx/patchers`) is present, only private BPP files are removed and shared dependencies, trampoline, launch options, and BepInEx bootstrap stay; when BPP is the last mod, the full payload, trampoline, launch-mode marker, Steam launch options, and BepInEx bootstrap are removed through `remove_bootstrap_files` in `src-tauri/src/services/bepinex/payload.rs:313-324`, which lets `is_bepinex_installed` return false in `src-tauri/src/services/detect/game.rs:3-21`.
 - Uninstall never touches the `BazaarPlusPlusV4/` data directory; only the explicit Reset flow removes it via `cleanup_bpp_data_directory` in `src-tauri/src/services/bepinex/payload.rs:450-452`.
 

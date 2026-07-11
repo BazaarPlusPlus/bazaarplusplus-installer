@@ -1,39 +1,20 @@
 import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
-
-const platformAliases = new Map([
-  ['darwin', 'macos'],
-  ['macos', 'macos'],
-  ['win32', 'windows'],
-  ['windows', 'windows']
-]);
+import {
+  RELEASE_PLATFORMS,
+  bundleCleanupDir,
+  resolveBuildPlatform
+} from './release-platforms.mjs';
 
 export function resolveBundleCleanupPath(rootDir, platformEnv) {
-  const platform = platformAliases.get(platformEnv);
-  if (platform === 'macos') {
-    return path.join(
-      rootDir,
-      'src-tauri',
-      'target',
-      'aarch64-apple-darwin',
-      'release',
-      'bundle'
-    );
-  }
-
-  if (platform === 'windows') {
-    return path.join(
-      rootDir,
-      'src-tauri',
-      'target',
-      'release',
-      'bundle',
-      'nsis'
-    );
-  }
-
-  return null;
+  const buildPlatform = resolveBuildPlatform(platformEnv);
+  const platform = RELEASE_PLATFORMS.find(
+    (entry) => entry.buildPlatform === buildPlatform
+  );
+  return platform
+    ? path.join(rootDir, ...bundleCleanupDir(platform).split('/'))
+    : null;
 }
 
 export function cleanupBundleArtifacts(rootDir, platformEnv) {

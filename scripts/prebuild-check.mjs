@@ -7,22 +7,19 @@ import {
   assertVersionsAreAligned,
   collectVersionSnapshot
 } from './version-sync.mjs';
+import {
+  defaultTargetBuildPlatforms,
+  resolveBuildPlatform
+} from './release-platforms.mjs';
 
 export const sharedBundledZipPath = 'BepInExSource/BepInEx.zip';
 
-const platformAliases = new Map([
-  ['darwin', 'macos'],
-  ['macos', 'macos'],
-  ['win32', 'windows'],
-  ['windows', 'windows']
-]);
-
 export function resolveTargetPlatforms(platformEnv) {
   if (!platformEnv) {
-    return ['macos', 'windows'];
+    return defaultTargetBuildPlatforms();
   }
 
-  const platform = platformAliases.get(platformEnv);
+  const platform = resolveBuildPlatform(platformEnv);
   if (!platform) {
     throw new Error(`Unsupported TAURI_ENV_PLATFORM value: ${platformEnv}`);
   }

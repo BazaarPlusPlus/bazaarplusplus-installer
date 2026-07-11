@@ -1,8 +1,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { parseArgs } from 'node:util';
 import { fileURLToPath } from 'node:url';
-
-const PLATFORMS = ['windows-x86_64', 'darwin-aarch64'];
+import { RELEASE_PLATFORM_KEYS } from './release-platforms.mjs';
 
 function readJsonIfExists(filePath) {
   if (!fs.existsSync(filePath)) {
@@ -70,7 +70,7 @@ export function writeLatestManifest({ outputPath, version, tempDir }) {
   const fragments = [];
   const missingPlatforms = [];
 
-  for (const platform of PLATFORMS) {
+  for (const platform of RELEASE_PLATFORM_KEYS) {
     const fragment = readJsonIfExists(path.join(tempDir, `${platform}.json`));
     if (!isValidFragment(fragment, version, platform)) {
       missingPlatforms.push(platform);
@@ -89,16 +89,33 @@ export function writeLatestManifest({ outputPath, version, tempDir }) {
 }
 
 function main() {
-  // argv[3] (<baseUrl>) is accepted but intentionally unused; build.sh passes it
-  // positionally (build.sh:558), so it stays in the usage string to keep
-  // <tempDir> at position 4.
-  const [outputPath, version, , tempDir] = process.argv.slice(2);
+  let values;
+  try {
+    ({ values } = parseArgs({
+      args: process.argv.slice(2),
+      options: {
+        output: { type: 'string' },
+        version: { type: 'string' },
+        'temp-dir': { type: 'string' }
+      },
+      strict: true
+    }));
+  } catch (error) {
+    console.error(error instanceof Error ? error.message : String(error));
+    process.exitCode = 1;
+    return;
+  }
+
+  const outputPath = values.output;
+  const version = values.version;
+  const tempDir = values['temp-dir'];
 
   if (!outputPath || !version || !tempDir) {
     console.error(
-      'Usage: generate-latest-manifest.mjs <output> <version> <baseUrl> <tempDir>'
+      'Usage: generate-latest-manifest.mjs --output <path> --version <version> --temp-dir <path>'
     );
-    process.exit(1);
+    process.exitCode = 1;
+    return;
   }
 
   try {
@@ -117,7 +134,7 @@ function main() {
     }
   } catch (error) {
     console.error(error instanceof Error ? error.message : String(error));
-    process.exit(1);
+    process.exitCode = 1;
   }
 }
 
