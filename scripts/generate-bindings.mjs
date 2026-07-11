@@ -14,31 +14,24 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-export function parseTauriCommandNames(projectRoot) {
-  const registryPath = path.join(
-    projectRoot,
-    'src-tauri/src/commands/registry.rs'
-  );
-  const source = readFileSync(registryPath, 'utf8');
-  const productionSource = source.split('#[cfg(test)]')[0];
-  const listMarker = '$macro! {';
-  const listStart = productionSource.indexOf(listMarker);
-  if (listStart === -1) {
+export function parseCommandNamesArtifact(content) {
+  const names = content
+    .split('\n')
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0);
+  if (names.length === 0) {
     throw new Error(
-      'Could not find with_commands command list in commands/registry.rs'
+      'Tauri command names artifact was empty; expected export_bindings_tauri_command_names to write the command list'
     );
   }
-  const bodyContentStart = listStart + listMarker.length;
-  const listEnd = productionSource.indexOf('\n        }', bodyContentStart);
-  if (listEnd === -1) {
-    throw new Error('Could not find with_commands command list end');
+  for (const name of names) {
+    if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(name)) {
+      throw new Error(
+        `Tauri command names artifact contained a non-identifier line: ${JSON.stringify(name)}`
+      );
+    }
   }
-  const block = productionSource.slice(bodyContentStart, listEnd);
-  return block
-    .split('\n')
-    .map((line) => line.trim().replace(/[),]+$/, ''))
-    .map((line) => line.split(',').pop()?.trim() ?? '')
-    .filter((name) => /^[a-z][a-z0-9_]*$/.test(name));
+  return names;
 }
 
 export function buildTauriCommandNamesSource(commandNames) {
@@ -115,6 +108,10 @@ export function runGenerateBindings(projectRoot) {
   const tauriBindingsDir = path.join(projectRoot, 'src-tauri/bindings');
   const tempRoot = mkdtempSync(path.join(tmpdir(), 'bpp-bindings-'));
   const tempBindingsDir = path.join(tempRoot, 'bindings');
+  const commandNamesArtifactPath = path.join(
+    tempRoot,
+    'tauri-command-names.txt'
+  );
 
   mkdirSync(generatedDir, { recursive: true });
   mkdirSync(tempBindingsDir, { recursive: true });
@@ -136,10 +133,17 @@ export function runGenerateBindings(projectRoot) {
         env: {
           ...process.env,
           TS_RS_EXPORT_DIR: tempBindingsDir,
-          TS_RS_LARGE_INT: 'number'
+          TS_RS_LARGE_INT: 'number',
+          BPP_TAURI_COMMAND_NAMES_FILE: commandNamesArtifactPath
         }
       }
     );
+
+    if (!existsSync(commandNamesArtifactPath)) {
+      throw new Error(
+        'Tauri command names artifact was not written — expected the export_bindings_tauri_command_names cargo test to produce it'
+      );
+    }
 
     const typeFiles = readdirSync(tempBindingsDir)
       .filter((name) => name.endsWith('.ts'))
@@ -155,7 +159,9 @@ export function runGenerateBindings(projectRoot) {
       barrelPath,
       commandNamesPath,
       typeFiles,
-      commandNames: parseTauriCommandNames(projectRoot)
+      commandNames: parseCommandNamesArtifact(
+        readFileSync(commandNamesArtifactPath, 'utf8')
+      )
     });
   } finally {
     rmSync(tempRoot, { recursive: true, force: true });

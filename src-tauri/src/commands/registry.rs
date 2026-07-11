@@ -36,9 +36,8 @@ macro_rules! with_commands {
 
 macro_rules! bpp_command_names {
     ($(($mod:path, $name:ident)),* $(,)?) => {
-        /// Mirrors the `with_commands!` list; consumed by the test in this file.
-        /// (`scripts/generate-bindings.mjs` parses this file's `with_commands!`
-        /// source text directly — it does not read this constant.)
+        /// Exported to the frontend by the `export_bindings_tauri_command_names`
+        /// test; `scripts/generate-bindings.mjs` consumes that artifact.
         #[allow(dead_code)]
         pub const TAURI_COMMAND_NAMES: &[&str] = &[$(stringify!($name)),*];
     };
@@ -62,51 +61,30 @@ with_commands! { bpp_invoke_handler }
 mod tests {
     use super::TAURI_COMMAND_NAMES;
 
-    pub(crate) fn parse_with_commands_names(registry_source: &str) -> Vec<String> {
-        let production_source = registry_source
-            .split("#[cfg(test)]")
-            .next()
-            .expect("production registry source");
-        let list_start = production_source
-            .find("$macro! {")
-            .expect("with_commands command list")
-            + "$macro! {".len();
-        let list_end = production_source[list_start..]
-            .find("\n        }")
-            .expect("with_commands command list end");
-        let block = &production_source[list_start..list_start + list_end];
-
-        block
-            .lines()
-            .filter_map(|line| {
-                let line = line.trim();
-                if !line.starts_with('(') {
-                    return None;
-                }
-                let line = line.trim().trim_end_matches(',').trim_end_matches(')');
-                let name = line.split(',').last()?.trim();
-                if name.is_empty()
-                    || !name
-                        .chars()
-                        .all(|ch| ch.is_ascii_alphanumeric() || ch == '_')
-                {
-                    return None;
-                }
-                Some(name.to_string())
-            })
-            .collect()
+    /// Newline-delimited artifact consumed by scripts/generate-bindings.mjs.
+    fn command_names_artifact() -> String {
+        let mut contents = TAURI_COMMAND_NAMES.join("\n");
+        contents.push('\n');
+        contents
     }
 
     #[test]
-    fn tauri_command_names_match_with_commands_list() {
-        let registry_source = include_str!("registry.rs");
-        let parsed = parse_with_commands_names(registry_source);
-        let names = TAURI_COMMAND_NAMES
-            .iter()
-            .map(|name| (*name).to_string())
-            .collect::<Vec<_>>();
+    fn command_names_artifact_is_complete_and_terminated() {
+        let artifact = command_names_artifact();
+        assert!(artifact.ends_with('\n'));
+        assert_eq!(artifact.lines().count(), TAURI_COMMAND_NAMES.len());
+    }
 
-        assert_eq!(parsed, names);
-        assert_eq!(names.len(), 27);
+    /// Producer. `export_bindings` prefix is load-bearing: it matches the
+    /// `cargo test export_bindings` filter generate-bindings.mjs already runs
+    /// for ts-rs, so one cargo invocation emits both the .ts files and this
+    /// artifact. Env-gated: plain `cargo test` (npm run test:rust) writes nothing.
+    #[test]
+    fn export_bindings_tauri_command_names() {
+        let Ok(path) = std::env::var("BPP_TAURI_COMMAND_NAMES_FILE") else {
+            return;
+        };
+        std::fs::write(&path, command_names_artifact())
+            .unwrap_or_else(|err| panic!("write command names artifact {path}: {err}"));
     }
 }
