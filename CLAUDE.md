@@ -48,3 +48,17 @@ Release Notes:
 - Put immutable architecture or product choices in `docs/decisions/` using Context, Decision, Rejected alternatives, and Consequences.
 - Put only active future work in `docs/plans/`. Move implemented, superseded, abandoned, or unverified historical material to `docs/archive/` with frontmatter and preserve the archived body.
 - Keep generated audit reports and review artifacts under gitignored `tmp/`, not under `docs/`.
+
+## Agent skills
+
+### Issue tracker
+
+Issues are tracked as GitHub Issues on cauyxy/bazaarplusplus-installer via the `gh` CLI. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Default label vocabulary: needs-triage, needs-info, ready-for-agent, ready-for-human, wontfix. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: `CONTEXT.md` at the repo root plus ADRs in `docs/adr/`. See `docs/agents/domain.md`.
