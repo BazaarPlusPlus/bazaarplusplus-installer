@@ -1,7 +1,7 @@
 ---
 status: truth
 topic: verification
-last-verified: 8c9c6a4e0e337f7b7230b8936f9e8edd0d24cfd1
+last-verified: de01f2ace8066266d64dff3d1f02b402207de0cc
 ---
 
 # Verification
@@ -15,12 +15,12 @@ Use the smallest command that verifies the changed behavior.
 - `npm run test:rust` runs Cargo tests against `src-tauri/Cargo.toml` in `package.json:14-14`.
 - `npm run test` runs generated bindings, Rust tests, and unit tests in `package.json:13-15`.
 - `npm run prebuild-check` runs the release prebuild checker in `package.json:10-10`.
-- `./build.sh --prod` is the release-oriented bundle path; `run_release_prechecks` performs version sync in `build.sh:502-504`, and Tauri's `beforeBuildCommand` runs the single prebuild check before the frontend build in `src-tauri/tauri.conf.json:7-10`.
+- `./build.sh --prod` is the release-oriented bundle path; `run_release_prechecks` performs version sync in `build.sh:480-482`, and Tauri's `beforeBuildCommand` runs the single prebuild check before the frontend build in `src-tauri/tauri.conf.json:7-10`.
 
 ## Generated Binding Guard
 
-- `scripts/prebuild-check.mjs` runs `npm run generate:bindings`, then checks git porcelain under the generated types directory and errors if generated bindings are out of date in `scripts/prebuild-check.mjs:303-325`.
-- The full prebuild check calls binding, version, ZIP, and macOS trampoline stub checks in `scripts/prebuild-check.mjs:327-346`.
+- `scripts/prebuild-check.mjs` runs `npm run generate:bindings`, then checks git porcelain under the generated types directory and errors if generated bindings are out of date in `scripts/prebuild-check.mjs:302-324`.
+- The full prebuild check calls binding, version, ZIP, and macOS trampoline stub checks in `scripts/prebuild-check.mjs:326-346`.
 
 ## Version Guard
 

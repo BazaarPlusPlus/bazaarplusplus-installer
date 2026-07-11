@@ -1,7 +1,7 @@
 ---
 status: truth
 topic: updater-release
-last-verified: c77a96d328e88e251024b0fb843261dd9e241903
+last-verified: de01f2ace8066266d64dff3d1f02b402207de0cc
 ---
 
 # Updater And Release
@@ -26,6 +26,6 @@ last-verified: c77a96d328e88e251024b0fb843261dd9e241903
 ## Manifest Flow
 
 - Platform updater fragments contain version, platform key, URL, and signature; their URL derives from the module's R2 updater-key construction in `scripts/generate-platform-manifest.mjs:6-23` and `scripts/release-platforms.mjs:103-115`.
-- `build.sh` uploads installer artifacts, updater artifacts, signatures, and a per-platform `platform-manifest.json` to R2 under version/platform folders in `build.sh:500-544`.
-- `build.sh` fetches every module-declared platform fragment and existing `latest.json`, then calls the generator with named flags and uploads the new manifest in `build.sh:547-582`.
+- `build.sh` uploads installer artifacts, updater artifacts, signatures, and a per-platform `platform-manifest.json` to R2 under version/platform folders in `build.sh:499-544`.
+- `build.sh` fetches every module-declared platform fragment and existing `latest.json`, then calls the generator with named flags and uploads the new manifest in `build.sh:546-582`.
 - The latest manifest generator accepts only keys from `RELEASE_PLATFORM_KEYS`, preserves existing release notes/pub_date when rebuilding the same version, fails when no platform fragments are available, and exposes `--output`, `--version`, and `--temp-dir` in `scripts/generate-latest-manifest.mjs:5-145`.
