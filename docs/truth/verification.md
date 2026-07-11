@@ -1,7 +1,7 @@
 ---
 status: truth
 topic: verification
-last-verified: 91bb9c5adaacb94b8d30b21260752e2eb2ddda1b
+last-verified: 4366cda394fe304066b55564c3c44d1f917a2273
 ---
 
 # Verification

@@ -1,7 +1,7 @@
 ---
 status: truth
 topic: history-stream
-last-verified: 8ffb2b86dc255a585057138689c345fe69981b8d
+last-verified: 4366cda394fe304066b55564c3c44d1f917a2273
 ---
 
 # History And Stream
@@ -10,8 +10,8 @@ last-verified: 8ffb2b86dc255a585057138689c345fe69981b8d
 
 - History reads open the BazaarPlusPlus SQLite database read-only with a two-second busy timeout in `src-tauri/src/history/queries.rs:29-35`.
 - Write access is separate and uses `SQLITE_OPEN_READ_WRITE` in `src-tauri/src/history/queries.rs:37-43`.
-- History summary counts runs, completed runs, wins, latest run timestamp, and completed combat replay videos in `src-tauri/src/history/queries.rs:62-98`.
-- The run list orders by end/last-seen/start timestamp descending, with run id as tie-breaker, in `src-tauri/src/history/queries.rs:100-118`.
+- History summary counts runs, completed runs, wins, latest run timestamp, and completed combat replay videos in `src-tauri/src/history/queries.rs:73-109`.
+- The run list orders by end/last-seen/start timestamp descending, with run id as tie-breaker, in `src-tauri/src/history/queries.rs:111-129`.
 - Primary screenshots prefer explicit primary rows and fall back to latest `end_of_run_auto` screenshots in `src-tauri/src/history/screenshots.rs:27-86` and `src-tauri/src/history/screenshots.rs:88-136`.
 
 ## History UI

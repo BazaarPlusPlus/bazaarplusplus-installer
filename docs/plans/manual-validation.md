@@ -1,7 +1,7 @@
 ---
 status: active-plan
 topic: manual-validation
-last-verified: 386734973e69736d18e3c4a9417183a04994da33
+last-verified: 4366cda394fe304066b55564c3c44d1f917a2273
 ---
 
 # Manual Validation Backlog
@@ -10,9 +10,9 @@ These items are not promoted as truth. They are platform or service checks that 
 
 ## macOS Launch
 
-- Validate macOS 27+ install/reinstall/launch on a real machine with the current trampoline path. Code forces trampoline on macOS major version 27+ in `src-tauri/src/services/macos_version.rs:51-68` and applies the trampoline in `src-tauri/src/services/install/mod.rs:56-77`.
-- Validate macOS <= 26 compatibility-mode opt-in separately. Code exposes this as available only below the forced macOS 27 threshold in `src-tauri/src/services/macos_version.rs:75-80`.
-- Validate recovery when Steam verify or a game update reverts the bundle. Code compares desired/applied trampoline state and routes repairs through reinstall in `src-tauri/src/services/install/mod.rs:167-186`.
+- Validate macOS 27+ install/reinstall/launch on a real machine with the current trampoline path. Code forces trampoline on macOS major version 27+ in `src-tauri/src/services/launch_mode.rs:62-72` (threshold constant at `src-tauri/src/services/launch_mode.rs:18`) and applies the trampoline through the `InstallTrampoline` step in `src-tauri/src/services/install/mod.rs:91-92`.
+- Validate macOS <= 26 compatibility-mode opt-in separately. Code exposes this as available only below the forced macOS 27 threshold in `src-tauri/src/services/launch_mode.rs:87-101`.
+- Validate recovery when Steam verify or a game update reverts the bundle. Code compares desired/applied trampoline state and routes repairs through reinstall in `src-tauri/src/services/install/mod.rs:166-196`.
 
 ## Updater Release
 

@@ -1,13 +1,15 @@
-# BazaarPlusPlus
+# BazaarPlusPlus Installer
 
-Desktop app for BazaarPlusPlus, built with Tauri, React, Vite, and TypeScript.
+Desktop app for installing and managing the BazaarPlusPlus mod for *The Bazaar*. It detects the Steam install, installs BepInEx plus the mod payload, launches the game through Steam, shows the mod's local run history, serves an OBS overlay, and self-updates.
+
+Built with Tauri 2 (Rust backend) and React 19 + Vite + TypeScript (frontend).
 
 ## Development
 
 Requirements:
 
 - Node.js and npm
-- Rust toolchain
+- Rust via rustup (the toolchain is pinned to 1.97.0 by `rust-toolchain.toml`)
 
 Start the desktop app in development mode:
 
@@ -22,42 +24,46 @@ npm install
 npm run tauri dev
 ```
 
-## Build
+`npm run dev` starts a frontend-only Vite server without the Tauri shell.
 
-Build the desktop bundle:
+Common checks:
 
 ```bash
-./build.sh --prod
+npm run check           # generate bindings + tsc --noEmit
+npm run test            # cargo test (src-tauri) + vitest (frontend)
+npm run format          # prettier across configured globs
+npm run prebuild-check  # validates versioning, bundled resources, Tauri config
 ```
 
-On macOS, this builds an arm64 app bundle. The local Rust toolchain must have
-the Apple Silicon target installed:
+TypeScript bindings for Tauri commands are generated into `src/types/generated/` by `npm run generate:bindings` (run automatically by `dev`, `build`, `check`, and `test`); never edit them by hand.
+
+## Release build
+
+```bash
+./build.sh --prod               # release bundle for the current host platform
+./build.sh --prod --clean-deps  # reinstall npm dependencies first
+./build.sh --prod --upload      # build, then upload artifacts to Cloudflare R2
+./build.sh --upload             # upload previously built artifacts only
+```
+
+`--prod` runs version sync and prebuild checks, and requires updater signing secrets (from `signing-secrets/` or environment variables). On macOS it additionally needs a Developer ID Application identity and Apple notarization API credentials, plus the Apple Silicon Rust target:
 
 ```bash
 rustup target add aarch64-apple-darwin
 ```
 
-If you need a clean dependency reinstall first:
-
-```bash
-./build.sh --prod --clean-deps
-```
-
-Artifacts are written under `src-tauri/target/release/` on Windows and
-`src-tauri/target/aarch64-apple-darwin/release/` on macOS.
+Artifacts land under `src-tauri/target/release/bundle/nsis/` on Windows and `src-tauri/target/aarch64-apple-darwin/release/bundle/` (`app`, `dmg`) on macOS. Platform facts (bundle paths, updater keys, Rust targets) are defined in `scripts/release-platforms.mjs`.
 
 ## Structure
 
-- `src/`: React frontend
-- `src-tauri/`: native Tauri commands and packaging
-- `scripts/prebuild-check.mjs`: build-time validation
+- `src/` — React frontend
+- `src-tauri/` — Rust backend: native commands, services, packaging
+- `scripts/` — build tooling: bindings generation, version sync, prebuild checks, release manifests
+- `docs/` — project documentation (see below)
 
 ## Documentation
 
-- Start with `docs/INDEX.md`.
-- Current code-verified documentation lives in `docs/truth/`.
+- Start with `CONTEXT.md` (entry map + glossary), then `docs/INDEX.md` (manifest).
+- Current code-verified documentation lives in `docs/truth/`; architectural decisions in `docs/adr/`.
 - Historical specs, audits, and plans live in `docs/archive/` and are not current truth.
-
-## Known Verification Gaps
-
-- Platform smoke gaps are tracked in `docs/plans/manual-validation.md`.
+- Platform smoke-test gaps are tracked in `docs/plans/manual-validation.md`.
