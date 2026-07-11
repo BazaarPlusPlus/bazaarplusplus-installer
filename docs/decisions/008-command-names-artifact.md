@@ -1,0 +1,27 @@
+---
+status: decision
+topic: command-names-artifact
+---
+
+# Export Tauri Command Names as a Build Artifact
+
+## Context
+
+The Tauri command list is authored in the `with_commands!` macro, but the frontend binding generator and registry tests independently parsed the Rust source text to recover those names. A third Rust parser checked that the macro-expanded constant matched the source text, and a test also hardcoded the command count. These parsers depended on formatting details rather than Rust macro expansion and could treat commented tuples as commands.
+
+## Decision
+
+Keep `with_commands!` as the sole hand-edited command list. Its macro-expanded `TAURI_COMMAND_NAMES` constant is exported as a newline-delimited artifact by the env-gated `export_bindings_tauri_command_names` Rust test. The existing `cargo test export_bindings` invocation runs that producer alongside ts-rs exports, and `scripts/generate-bindings.mjs` validates and consumes the artifact without parsing Rust source text.
+
+## Rejected Alternatives
+
+- Keep the independent Rust, JavaScript, and TypeScript source parsers. This preserves three format-coupled interpretations of the macro grammar and the hardcoded command-count chore.
+- Keep one JavaScript parser and pin it with fixtures. Fixtures would reduce accidental parser regressions, but the generator would still infer Rust tokenization from source text, and removing the Rust cross-check would remove the only macro-vs-text oracle.
+
+## Consequences
+
+- The three source-text parsers and the only hardcoded command count are removed. Comments cannot become ghost commands because the compiler discards them before constructing `TAURI_COMMAND_NAMES`.
+- Artifact parsing fails explicitly on empty or malformed input. The artifact is temporary, generated beside the staged bindings directory, and removed with the generator's temporary root.
+- Generated TypeScript output remains byte-identical; the change only replaces how command names are obtained.
+- A hand-edited but internally consistent stale `tauri-command-names.ts` is caught by `generate:bindings`-prefixed npm commands and `prebuild-check`, but not by bare `npx vitest run`. This residual is accepted to avoid reintroducing source parsing.
+- Repository LF normalization keeps the generated TypeScript stable across platforms, while the parser also accepts CRLF artifact input.
