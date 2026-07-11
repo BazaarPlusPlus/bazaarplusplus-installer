@@ -7,7 +7,7 @@ use crate::history::{
     list_history_runs as list_runs_from_repo, load_battle_video_path, load_run_id_for_battle,
     load_run_screenshot_path, HistoryRunDetail, HistoryRunList, HistorySummary,
 };
-use crate::services::game_path::resolve_game_path_with_database;
+use crate::services::game_path::{resolve_game_path, GamePathAcceptance};
 use crate::services::paths;
 
 pub struct HistoryPaths {
@@ -21,7 +21,12 @@ pub fn resolve_history_paths(
     session_game_path: Option<PathBuf>,
     game_path: Option<String>,
 ) -> Option<HistoryPaths> {
-    let resolution = resolve_game_path_with_database(app, game_path, session_game_path)?;
+    let resolution = resolve_game_path(
+        app,
+        game_path,
+        session_game_path,
+        GamePathAcceptance::DatabaseExists,
+    )?;
     Some(history_paths_for_game_path(resolution.game_path))
 }
 

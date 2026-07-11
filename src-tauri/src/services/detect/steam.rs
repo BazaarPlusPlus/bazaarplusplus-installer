@@ -219,19 +219,12 @@ fn get_game_path_from_detected_steam_roots(
 
     #[cfg(target_os = "windows")]
     {
-        let fallback_candidates = crate::services::game_path::fallback_game_candidates();
-        crate::services::debug_log!(
-            "[detect::steam] probing common Windows candidates count={}",
-            fallback_candidates.len()
-        );
-        for path in fallback_candidates {
-            if path.exists() {
-                crate::services::debug_log!(
-                    "[detect::steam] hit from common Windows candidate game_path={}",
-                    path.display()
-                );
-                return Some(path);
-            }
+        if let Some(path) = crate::services::game_path::find_existing_fallback_game_path() {
+            crate::services::debug_log!(
+                "[detect::steam] hit from common Windows candidate game_path={}",
+                path.display()
+            );
+            return Some(path);
         }
     }
 
