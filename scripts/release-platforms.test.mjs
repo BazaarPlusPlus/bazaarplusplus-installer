@@ -29,7 +29,7 @@ test('grep gate: platform literals live only in release-platforms.mjs', () => {
       .filter(
         (f) =>
           f.endsWith('.mjs') &&
-          !f.includes('test') &&
+          !f.endsWith('.test.mjs') &&
           f !== 'release-platforms.mjs'
       )
       .map((f) => `scripts/${f}`)
