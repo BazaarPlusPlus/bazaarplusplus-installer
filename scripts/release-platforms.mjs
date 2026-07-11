@@ -63,13 +63,21 @@ function findByKey(platformKey) {
 }
 
 export function resolveBuildPlatform(platformEnv) {
-  return (
-    RELEASE_PLATFORMS.find(
+  const buildPlatforms = new Set(
+    RELEASE_PLATFORMS.filter(
       (platform) =>
         platform.buildPlatform === platformEnv ||
         platform.nodePlatform === platformEnv
-    )?.buildPlatform ?? null
+    ).map((platform) => platform.buildPlatform)
   );
+  if (buildPlatforms.size === 0) {
+    return null;
+  }
+  if (buildPlatforms.size !== 1) {
+    throw new Error(`Ambiguous release platform alias: ${platformEnv}`);
+  }
+  const [buildPlatform] = buildPlatforms;
+  return findByBuildPlatform(buildPlatform).buildPlatform;
 }
 
 export function defaultTargetBuildPlatforms() {

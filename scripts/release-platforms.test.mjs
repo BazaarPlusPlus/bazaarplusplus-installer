@@ -1,6 +1,5 @@
 import { test, expect } from 'vitest';
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { runShell, toBashPath } from './test-helpers.mjs';
@@ -70,8 +69,11 @@ test.each(RELEASE_PLATFORMS)(
 test.each(RELEASE_PLATFORMS)(
   'find_installer_artifact locates the $buildPlatform artifact',
   (p) => {
+    fs.mkdirSync(path.join(process.cwd(), 'src-tauri', 'target'), {
+      recursive: true
+    });
     const root = fs.mkdtempSync(
-      path.join(os.tmpdir(), 'bpp-release-platform-')
+      path.join(process.cwd(), 'src-tauri', 'target', '.bpp-release-platform-')
     );
     const rootBash = toBashPath(root);
     const dir = path.join(root, ...installerDir(p).split('/'));
