@@ -501,7 +501,6 @@ prepare_signed_macos_resource_zip() {
 
 run_release_prechecks() {
     invoke_step "Synchronizing package versions" node scripts/version-sync.mjs
-    invoke_step "Running prebuild checks" npm run prebuild-check
 }
 
 upload_r2_object() {

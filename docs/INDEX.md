@@ -19,8 +19,8 @@ Last consolidation audit: `2026-06-11` on `7b18f73d4718d3e1406de9f526d1fbba09ac5
 | `docs/truth/install-reset.md` | install-reset | truth | `e6e3f695a897973b0b3bc1e06ce3faf56261ecec` |
 | `docs/truth/launch-modes.md` | launch-modes | truth | `3d0c8c833169adde35bc9bca770ecc8b56fa8271` |
 | `docs/truth/history-stream.md` | history-stream | truth | `c811ba4e0b25c72792487bbe80e5d3b3094637a3` |
-| `docs/truth/updater-release.md` | updater-release | truth | `7b18f73d4718d3e1406de9f526d1fbba09ac567f` |
-| `docs/truth/verification.md` | verification | truth | `7b18f73d4718d3e1406de9f526d1fbba09ac567f` |
+| `docs/truth/updater-release.md` | updater-release | truth | `8c9c6a4e0e337f7b7230b8936f9e8edd0d24cfd1` |
+| `docs/truth/verification.md` | verification | truth | `8c9c6a4e0e337f7b7230b8936f9e8edd0d24cfd1` |
 | `docs/plans/manual-validation.md` | manual-validation | active-plan | `7b18f73d4718d3e1406de9f526d1fbba09ac567f` |
 | `docs/decisions/001-documentation-truth-boundaries.md` | documentation-truth-boundaries | decision | n/a |
 | `docs/decisions/002-in-app-updater.md` | in-app-updater | decision | n/a |
