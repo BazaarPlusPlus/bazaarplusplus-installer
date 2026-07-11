@@ -57,8 +57,7 @@ export function useStreamPage() {
   const error = actionError ?? pollError;
 
   const flashMessage = useCallback(
-    (next: string, tone: TransientTone = 'success') =>
-      setTransient(next, tone),
+    (next: string, tone: TransientTone = 'success') => setTransient(next, tone),
     [setTransient]
   );
 

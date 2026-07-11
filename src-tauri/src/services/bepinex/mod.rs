@@ -207,8 +207,8 @@ pub fn uninstall_bpp(
         )?;
     }
 
-    let keep_shared_bootstrap = payload::has_third_party_plugins(game_path)
-        || payload::has_third_party_patchers(game_path);
+    let keep_shared_bootstrap =
+        payload::has_third_party_plugins(game_path) || payload::has_third_party_patchers(game_path);
 
     // Restore the vanilla bundle only when BPP is the last installed mod. If
     // another mod remains — a plugin in BepInEx/plugins or a patcher-only mod

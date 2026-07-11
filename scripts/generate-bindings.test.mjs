@@ -57,10 +57,9 @@ test('generated bindings commit replaces the target from staged output', () => {
 });
 
 test('parseCommandNamesArtifact reads newline-delimited names', () => {
-  expect(parseCommandNamesArtifact('get_app_bootstrap\ninstall_mod\n')).toEqual([
-    'get_app_bootstrap',
-    'install_mod'
-  ]);
+  expect(parseCommandNamesArtifact('get_app_bootstrap\ninstall_mod\n')).toEqual(
+    ['get_app_bootstrap', 'install_mod']
+  );
 });
 
 test('parseCommandNamesArtifact tolerates CRLF and blank lines', () => {
@@ -74,7 +73,7 @@ test('parseCommandNamesArtifact throws on empty content', () => {
 });
 
 test('parseCommandNamesArtifact throws on a non-identifier line', () => {
-  expect(() =>
-    parseCommandNamesArtifact('install_mod\nbad-name\n')
-  ).toThrow(/non-identifier/);
+  expect(() => parseCommandNamesArtifact('install_mod\nbad-name\n')).toThrow(
+    /non-identifier/
+  );
 });

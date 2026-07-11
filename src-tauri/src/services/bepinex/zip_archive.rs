@@ -72,7 +72,9 @@ pub(super) fn extract_zip(zip_bytes: &[u8], dest_dir: &Path) -> Result<ExtractRe
         }
 
         std::fs::write(&output_path, contents).map_err(|err| err.to_string())?;
-        report.written.push(output_path.to_string_lossy().into_owned());
+        report
+            .written
+            .push(output_path.to_string_lossy().into_owned());
     }
 
     Ok(report)

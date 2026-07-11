@@ -21,7 +21,10 @@ pub struct OverlayRecord {
     pub rating: Option<i64>,
 }
 
-pub(super) fn to_overlay_record(game_path: Option<&Path>, row: OverlaySnapshotRow) -> OverlayRecord {
+pub(super) fn to_overlay_record(
+    game_path: Option<&Path>,
+    row: OverlaySnapshotRow,
+) -> OverlayRecord {
     let image_path =
         resolve_overlay_image_path(game_path.map(PathBuf::from), row.image_path.as_deref())
             .filter(|path| path.exists());
