@@ -14,7 +14,7 @@ Last consolidation audit: `2026-06-11` on `7b18f73d4718d3e1406de9f526d1fbba09ac5
 | `.trae/rules/git-commit-message.md` | ignored local rule | ignored-operational | n/a |
 | `docs/INDEX.md` | documentation manifest | manifest | 2026-06-11 |
 | `docs/truth/overview.md` | overview | truth | `7b18f73d4718d3e1406de9f526d1fbba09ac567f` |
-| `docs/truth/architecture.md` | architecture | truth | `a1461386ca7417a0fab4eff812fccdaef5420cec` |
+| `docs/truth/architecture.md` | architecture | truth | `04f925752aa583095782bd5e365b4c54bb9a303c` |
 | `docs/truth/frontend.md` | frontend | truth | `aaf01075c3e52acdd7940f3a41a4858c60dd851b` |
 | `docs/truth/install-reset.md` | install-reset | truth | `e6e3f695a897973b0b3bc1e06ce3faf56261ecec` |
 | `docs/truth/launch-modes.md` | launch-modes | truth | `3d0c8c833169adde35bc9bca770ecc8b56fa8271` |
@@ -29,6 +29,7 @@ Last consolidation audit: `2026-06-11` on `7b18f73d4718d3e1406de9f526d1fbba09ac5
 | `docs/decisions/005-reset-local-data-contract.md` | reset-local-data | decision | n/a |
 | `docs/decisions/006-steam-only-launch.md` | steam-only-launch | decision | n/a |
 | `docs/decisions/007-steam-branch-switch.md` | steam-branch-switch | superseded-removed | n/a |
+| `docs/decisions/008-command-names-artifact.md` | command-names-artifact | decision | n/a |
 | `docs/archive/README.md` | old documentation index | superseded | archived 2026-06-11 |
 | `docs/archive/architecture.md` | old architecture doc | superseded | archived 2026-06-11 |
 | `docs/archive/updater-release-plan.md` | old updater release doc | superseded | archived 2026-06-11 |

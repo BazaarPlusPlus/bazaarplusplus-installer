@@ -6,7 +6,8 @@ import { expect, test } from 'vitest';
 import {
   buildGeneratedBarrelSource,
   buildTauriCommandNamesSource,
-  commitGeneratedBindings
+  commitGeneratedBindings,
+  parseCommandNamesArtifact
 } from './generate-bindings.mjs';
 
 test('generated bindings commit replaces the target from staged output', () => {
@@ -53,4 +54,27 @@ test('generated bindings commit replaces the target from staged output', () => {
   } finally {
     fs.rmSync(rootDir, { recursive: true, force: true });
   }
+});
+
+test('parseCommandNamesArtifact reads newline-delimited names', () => {
+  expect(parseCommandNamesArtifact('get_app_bootstrap\ninstall_mod\n')).toEqual([
+    'get_app_bootstrap',
+    'install_mod'
+  ]);
+});
+
+test('parseCommandNamesArtifact tolerates CRLF and blank lines', () => {
+  expect(
+    parseCommandNamesArtifact('get_app_bootstrap\r\n\ninstall_mod\r\n')
+  ).toEqual(['get_app_bootstrap', 'install_mod']);
+});
+
+test('parseCommandNamesArtifact throws on empty content', () => {
+  expect(() => parseCommandNamesArtifact('\n   \n')).toThrow(/empty/);
+});
+
+test('parseCommandNamesArtifact throws on a non-identifier line', () => {
+  expect(() =>
+    parseCommandNamesArtifact('install_mod\nbad-name\n')
+  ).toThrow(/non-identifier/);
 });
