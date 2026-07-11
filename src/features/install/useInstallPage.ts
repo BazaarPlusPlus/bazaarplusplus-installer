@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { listen } from '@tauri-apps/api/event';
 import { hasTauriRuntime } from '../../api/runtime';
 import { emptyInstallState } from '../../api/previewDefaults';
@@ -10,6 +10,7 @@ import {
   toErrorMessage
 } from '../shared/errors';
 import { useAsyncAction } from '../shared/useAsyncAction';
+import { useTransientMessage } from '../shared/useTransientMessage';
 import {
   chooseGameDirectory,
   installMod,
@@ -35,34 +36,12 @@ export function useInstallPage() {
   const [selectedPath, setSelectedPath] = useState<string | undefined>(
     undefined
   );
-  const [message, setMessage] = useState<string | null>(null);
-  const flashTimer = useRef<number | null>(null);
+  const [transient, setTransient] = useTransientMessage(4000);
   const [resetDataFailurePaths, setResetDataFailurePaths] = useState<string[]>(
     []
   );
   const { action, error, run, busy } = useAsyncAction<InstallAction>();
 
-  // Discrete success confirmations (install/uninstall/reset done) should not
-  // linger forever.
-  const flashMessage = useCallback((next: string) => {
-    if (flashTimer.current !== null) {
-      window.clearTimeout(flashTimer.current);
-    }
-    setMessage(next);
-    flashTimer.current = window.setTimeout(() => {
-      setMessage(null);
-      flashTimer.current = null;
-    }, 4000);
-  }, []);
-
-  useEffect(
-    () => () => {
-      if (flashTimer.current !== null) {
-        window.clearTimeout(flashTimer.current);
-      }
-    },
-    []
-  );
   const refresh = useCallback(
     async (gamePath = selectedPath) => {
       await run(
@@ -72,10 +51,10 @@ export function useInstallPage() {
           setState(nextState);
           setSelectedPath(nextState.selected_game_path ?? gamePath);
         },
-        { onStart: () => setMessage(null) }
+        { onStart: () => setTransient(null) }
       );
     },
-    [run, selectedPath]
+    [run, selectedPath, setTransient]
   );
 
   useEffect(() => {
@@ -86,9 +65,9 @@ export function useInstallPage() {
         setState(nextState);
         setSelectedPath(nextState.selected_game_path ?? undefined);
       },
-      { onStart: () => setMessage(null) }
+      { onStart: () => setTransient(null) }
     );
-  }, [run]);
+  }, [run, setTransient]);
 
   // The backend warms up installer context in the background and emits
   // `startup-ready` when done. On slow first launches (Windows) the initial
@@ -122,11 +101,11 @@ export function useInstallPage() {
         async () => {
           const path = requireGamePath(state, t);
           setState(await installMod(path, compatOptIn));
-          flashMessage(t('installDone'));
+          setTransient(t('installDone'));
         },
-        { onStart: () => setMessage(null) }
+        { onStart: () => setTransient(null) }
       ),
-    [flashMessage, run, state, t]
+    [run, setTransient, state, t]
   );
 
   const resetData = useCallback(
@@ -136,7 +115,7 @@ export function useInstallPage() {
         async () => {
           if (!state.has_resettable_data) {
             setResetDataFailurePaths([]);
-            flashMessage(t('resetDataNothingToDelete'));
+            setTransient(t('resetDataNothingToDelete'));
             return;
           }
 
@@ -144,7 +123,7 @@ export function useInstallPage() {
           const result = await resetBppData(path);
           setState(result.state);
           setResetDataFailurePaths([]);
-          flashMessage(
+          setTransient(
             result.removed_data
               ? t('resetDataDone')
               : t('resetDataNothingToDelete')
@@ -152,14 +131,14 @@ export function useInstallPage() {
         },
         {
           onStart: () => {
-            setMessage(null);
+            setTransient(null);
             setResetDataFailurePaths([]);
           },
           errorMessage: (caught) =>
             formatResetBppDataError(caught, t, setResetDataFailurePaths)
         }
       ),
-    [flashMessage, run, state, t]
+    [run, setTransient, state, t]
   );
 
   const resetBepinexFolder = useCallback(
@@ -169,7 +148,7 @@ export function useInstallPage() {
         async () => {
           if (!state.has_bepinex_files) {
             setResetDataFailurePaths([]);
-            flashMessage(t('resetBepinexNothingToDelete'));
+            setTransient(t('resetBepinexNothingToDelete'));
             return;
           }
 
@@ -177,7 +156,7 @@ export function useInstallPage() {
           const result = await resetBepinex(path);
           setState(result.state);
           setResetDataFailurePaths([]);
-          flashMessage(
+          setTransient(
             result.removed
               ? t('resetBepinexDone')
               : t('resetBepinexNothingToDelete')
@@ -185,14 +164,14 @@ export function useInstallPage() {
         },
         {
           onStart: () => {
-            setMessage(null);
+            setTransient(null);
             setResetDataFailurePaths([]);
           },
           errorMessage: (caught) =>
             formatResetBepinexError(caught, t, setResetDataFailurePaths)
         }
       ),
-    [flashMessage, run, state, t]
+    [run, setTransient, state, t]
   );
 
   const uninstall = useCallback(
@@ -202,11 +181,11 @@ export function useInstallPage() {
         async () => {
           const path = requireGamePath(state, t);
           setState(await uninstallMod(path));
-          flashMessage(t('uninstallDone'));
+          setTransient(t('uninstallDone'));
         },
-        { onStart: () => setMessage(null) }
+        { onStart: () => setTransient(null) }
       ),
-    [flashMessage, run, state, t]
+    [run, setTransient, state, t]
   );
 
   const launch = useCallback(
@@ -216,9 +195,9 @@ export function useInstallPage() {
         async () => {
           await launchGame();
         },
-        { onStart: () => setMessage(null) }
+        { onStart: () => setTransient(null) }
       ),
-    [run]
+    [run, setTransient]
   );
 
   const status = useMemo(() => createInstallStatus(state, t), [state, t]);
@@ -229,7 +208,7 @@ export function useInstallPage() {
     action,
     busy,
     error,
-    message,
+    message: transient?.text ?? null,
     resetDataFailurePaths,
     refresh,
     chooseDirectory,

@@ -5,7 +5,8 @@ import { LoadingPanel } from '../components/ui/LoadingPanel';
 import { PageShell } from '../components/ui/PageShell';
 import {
   formatDateTime,
-  formatRunResultLabel
+  formatRunResultLabel,
+  toneColorClass
 } from '../features/history/format';
 import { StorageCleanupCard } from '../features/history/StorageCleanupCard';
 import { useHistoryPage } from '../features/history/useHistoryPage';
@@ -175,12 +176,6 @@ function RunRow({
       </div>
     </Link>
   );
-}
-
-function toneColorClass(tone: 'ok' | 'bad' | undefined): string {
-  if (tone === 'ok') return 'text-[#6dd9a0]';
-  if (tone === 'bad') return 'text-[#d96d6d]';
-  return 'text-[rgba(200,170,120,0.8)]';
 }
 
 function Metric({

@@ -11,7 +11,10 @@ import {
 } from '../../api/previewDefaults';
 import { toErrorMessage } from '../shared/errors';
 import { useAsyncAction } from '../shared/useAsyncAction';
-import { useTransientMessage } from '../shared/useTransientMessage';
+import {
+  useTransientMessage,
+  type TransientTone
+} from '../shared/useTransientMessage';
 import {
   applyCropCode,
   loadCropSettings,
@@ -43,10 +46,7 @@ export function useStreamPage() {
     useState<StreamOverlayCropSettingsPayload>(defaultCropSettings);
   const [cropCode, setCropCode] = useState(defaultCropSettings.code);
   const [loading, setLoading] = useState(true);
-  const [message, setMessage] = useTransientMessage();
-  const [messageTone, setMessageTone] = useState<'success' | 'error'>(
-    'success'
-  );
+  const [transient, setTransient] = useTransientMessage();
   const [pollError, setPollError] = useState<string | null>(null);
   const {
     action,
@@ -57,11 +57,9 @@ export function useStreamPage() {
   const error = actionError ?? pollError;
 
   const flashMessage = useCallback(
-    (next: string, tone: 'success' | 'error' = 'success') => {
-      setMessageTone(tone);
-      setMessage(next);
-    },
-    [setMessage]
+    (next: string, tone: TransientTone = 'success') =>
+      setTransient(next, tone),
+    [setTransient]
   );
 
   const refresh = useCallback(async () => {
@@ -138,9 +136,9 @@ export function useStreamPage() {
             flashMessage(t('streamCopyFailed'), 'error');
           }
         },
-        { onStart: () => setMessage(null) }
+        { onStart: () => setTransient(null) }
       ),
-    [flashMessage, run, setMessage, status.overlay_url, t]
+    [flashMessage, run, setTransient, status.overlay_url, t]
   );
 
   const openOverlay = useCallback(
@@ -181,9 +179,9 @@ export function useStreamPage() {
           setCropCode(payload.code);
           flashMessage(t('streamCropSaved'));
         },
-        { onStart: () => setMessage(null) }
+        { onStart: () => setTransient(null) }
       ),
-    [cropCode, flashMessage, run, setMessage, t]
+    [cropCode, flashMessage, run, setTransient, t]
   );
 
   const resetCropCode = useCallback(
@@ -196,9 +194,9 @@ export function useStreamPage() {
           setCropCode(payload.code);
           flashMessage(t('streamCropReset'));
         },
-        { onStart: () => setMessage(null) }
+        { onStart: () => setTransient(null) }
       ),
-    [flashMessage, run, setMessage, t]
+    [flashMessage, run, setTransient, t]
   );
 
   const moveWindow = useCallback(
@@ -223,8 +221,8 @@ export function useStreamPage() {
     viewModel,
     action,
     error,
-    message,
-    messageTone,
+    message: transient?.text ?? null,
+    messageTone: transient?.tone ?? 'success',
     setCropCode,
     restart,
     copyObsUrl,
