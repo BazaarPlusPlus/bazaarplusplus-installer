@@ -18,7 +18,7 @@ last-verified: 91bb9c5adaacb94b8d30b21260752e2eb2ddda1b
 
 ## Release Scripts
 
-- `scripts/version-sync.mjs` reads the version from `package.json`, writes the Tauri and Cargo versions, updates Cargo.lock when present, and asserts all versions align in `scripts/version-sync.mjs:33-175`.
+- `scripts/version-sync.mjs` reads the version from `package.json`, writes the Tauri and Cargo versions, updates Cargo.lock when present, and asserts all versions align in `scripts/version-sync.mjs:33-193`.
 - The release-platform set and its build, bundle, installer, updater-key, and Rust-target facts are defined once in `scripts/release-platforms.mjs:4-115`; `build.sh` queries them through `release_platforms_cli` in `build.sh:151-185`, while Node release scripts import the module directly.
 - `run_release_prechecks` runs version sync before release packaging in `build.sh:480-482`; Tauri's `beforeBuildCommand` then runs the single `npm run prebuild-check` gate before the frontend build in `src-tauri/tauri.conf.json:7-10`.
 - `scripts/prebuild-check.mjs` checks generated TypeScript bindings, version alignment, platform ZIP payloads, and on Darwin the compiled macOS trampoline stub in `scripts/prebuild-check.mjs:326-346`.
