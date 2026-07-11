@@ -2,6 +2,7 @@ use std::path::{Path, PathBuf};
 
 use serde::Serialize;
 
+use crate::history::mapper::strip_url_for_screenshot;
 use crate::history::screenshots::OverlaySnapshotRow;
 
 use super::image::resolve_overlay_image_path;
@@ -26,7 +27,7 @@ pub(super) fn to_overlay_record(game_path: Option<&Path>, row: OverlaySnapshotRo
             .filter(|path| path.exists());
     let strip_url = image_path
         .as_ref()
-        .map(|_| format!("/images/{}/strip", row.id));
+        .map(|_| strip_url_for_screenshot(&row.id));
 
     OverlayRecord {
         id: row.id,
