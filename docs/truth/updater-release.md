@@ -1,7 +1,7 @@
 ---
 status: truth
 topic: updater-release
-last-verified: de01f2ace8066266d64dff3d1f02b402207de0cc
+last-verified: 91bb9c5adaacb94b8d30b21260752e2eb2ddda1b
 ---
 
 # Updater And Release
@@ -9,7 +9,7 @@ last-verified: de01f2ace8066266d64dff3d1f02b402207de0cc
 ## In-App Updater
 
 - The Tauri bundle config creates updater artifacts in `src-tauri/tauri.conf.json:27-30`.
-- The updater endpoint is `https://bppinstaller.bazaarplusplus.com/latest.json`, and the public key is configured in `src-tauri/tauri.conf.json:31-35`.
+- The updater endpoint is `https://bppinstaller.bazaarplusplus.com/latest.json`, and the public key is configured in `src-tauri/tauri.conf.json:31-36`.
 - Runtime capabilities allow updater check, updater download/install, and process restart in `src-tauri/capabilities/default.json:6-11`.
 - The updater implementation keeps the `Update` handle alive across user interactions because `downloadAndInstall` must run on the same handle returned by `check()` in `src/features/about/updater.ts:6-14`.
 - `runCheck` returns `preview` outside Tauri runtime, `available` with version/notes/handle when a plugin update exists, or `current` when none exists in `src/features/about/updater.ts:42-56`.

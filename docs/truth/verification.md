@@ -1,7 +1,7 @@
 ---
 status: truth
 topic: verification
-last-verified: de01f2ace8066266d64dff3d1f02b402207de0cc
+last-verified: 91bb9c5adaacb94b8d30b21260752e2eb2ddda1b
 ---
 
 # Verification
@@ -25,4 +25,4 @@ Use the smallest command that verifies the changed behavior.
 ## Version Guard
 
 - `scripts/version-sync.mjs` reads `package.json` as the source version in `scripts/version-sync.mjs:33-35`.
-- It compares Tauri, Cargo.toml, and Cargo.lock versions against that source and throws a `Version mismatch` error on drift in `scripts/version-sync.mjs:135-165`.
+- It compares Tauri, Cargo.toml, and Cargo.lock versions against that source and throws a `Version mismatch` error on drift in `scripts/version-sync.mjs:175-193`.

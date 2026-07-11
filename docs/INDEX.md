@@ -14,14 +14,14 @@ Last consolidation audit: `2026-06-11` on `7b18f73d4718d3e1406de9f526d1fbba09ac5
 | `.trae/rules/git-commit-message.md` | ignored local rule | ignored-operational | n/a |
 | `docs/INDEX.md` | documentation manifest | manifest | 2026-06-11 |
 | `docs/truth/overview.md` | overview | truth | `7b18f73d4718d3e1406de9f526d1fbba09ac567f` |
-| `docs/truth/architecture.md` | architecture | truth | `e4291016e74e7eee625bacbee9b7c69fef4c995b` |
+| `docs/truth/architecture.md` | architecture | truth | `91bb9c5adaacb94b8d30b21260752e2eb2ddda1b` |
 | `docs/truth/frontend.md` | frontend | truth | `aaf01075c3e52acdd7940f3a41a4858c60dd851b` |
-| `docs/truth/install-reset.md` | install-reset | truth | `de01f2ace8066266d64dff3d1f02b402207de0cc` |
+| `docs/truth/install-reset.md` | install-reset | truth | `91bb9c5adaacb94b8d30b21260752e2eb2ddda1b` |
 | `docs/truth/launch-modes.md` | launch-modes | truth | `3d0c8c833169adde35bc9bca770ecc8b56fa8271` |
 | `docs/truth/history-stream.md` | history-stream | truth | `c811ba4e0b25c72792487bbe80e5d3b3094637a3` |
-| `docs/truth/updater-release.md` | updater-release | truth | `de01f2ace8066266d64dff3d1f02b402207de0cc` |
-| `docs/truth/verification.md` | verification | truth | `de01f2ace8066266d64dff3d1f02b402207de0cc` |
-| `docs/plans/manual-validation.md` | manual-validation | active-plan | `de01f2ace8066266d64dff3d1f02b402207de0cc` |
+| `docs/truth/updater-release.md` | updater-release | truth | `91bb9c5adaacb94b8d30b21260752e2eb2ddda1b` |
+| `docs/truth/verification.md` | verification | truth | `91bb9c5adaacb94b8d30b21260752e2eb2ddda1b` |
+| `docs/plans/manual-validation.md` | manual-validation | active-plan | `91bb9c5adaacb94b8d30b21260752e2eb2ddda1b` |
 | `docs/decisions/001-documentation-truth-boundaries.md` | documentation-truth-boundaries | decision | n/a |
 | `docs/decisions/002-in-app-updater.md` | in-app-updater | decision | n/a |
 | `docs/decisions/003-macos-launch-trampoline.md` | macos-launch-trampoline | decision | n/a |
