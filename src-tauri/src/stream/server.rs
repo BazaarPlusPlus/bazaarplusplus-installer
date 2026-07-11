@@ -7,7 +7,7 @@ use super::{
         StreamWindowStatus,
     },
 };
-use crate::services::game_path::{resolve_game_path_with_database, resolve_game_path_with_source};
+use crate::services::game_path::{resolve_game_path, GamePathAcceptance};
 use crate::services::paths;
 use chrono::{Local, SecondsFormat};
 use std::path::PathBuf;
@@ -41,12 +41,24 @@ pub async fn start(
     let urls = service_urls(HOST, PREFERRED_PORT);
     let status_with_start = state.mark_started(current_timestamp());
     let requested_game_path = requested_game_path.map(|path| path.to_string_lossy().into_owned());
-    let game_resolution = resolve_game_path_with_source(&app, requested_game_path.clone(), None);
+    let game_resolution = resolve_game_path(
+        &app,
+        requested_game_path.clone(),
+        None,
+        GamePathAcceptance::Any,
+    );
     let record_resolution = game_resolution
         .as_ref()
         .filter(|resolution| resolution.database_path.is_some())
         .cloned()
-        .or_else(|| resolve_game_path_with_database(&app, requested_game_path, None));
+        .or_else(|| {
+            resolve_game_path(
+                &app,
+                requested_game_path,
+                None,
+                GamePathAcceptance::DatabaseExists,
+            )
+        });
     let game_path = game_resolution
         .as_ref()
         .map(|resolution| resolution.game_path.clone());

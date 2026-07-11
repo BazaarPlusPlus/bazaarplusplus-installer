@@ -1,4 +1,4 @@
-use crate::services::game_path::resolve_game_path_with_database;
+use crate::services::game_path::{resolve_game_path, GamePathAcceptance};
 use crate::stream::{
     records::OverlayRecordRepository,
     state::{StreamRuntimeState, StreamServiceStatus},
@@ -19,8 +19,13 @@ pub fn apply_stream_window_offset(
         .started_at
         .clone()
         .ok_or_else(|| "Stream start time is unavailable.".to_string())?;
-    let resolved_game_path = resolve_game_path_with_database(app, game_path, state.get_game_path())
-        .map(|resolution| resolution.game_path);
+    let resolved_game_path = resolve_game_path(
+        app,
+        game_path,
+        state.get_game_path(),
+        GamePathAcceptance::DatabaseExists,
+    )
+    .map(|resolution| resolution.game_path);
     let repository = OverlayRecordRepository::new(resolved_game_path);
 
     if offset == 0 {

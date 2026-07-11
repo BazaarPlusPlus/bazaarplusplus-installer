@@ -9,10 +9,10 @@ use super::detect::detect_installation_paths;
 /// Startup-time installer context.
 ///
 /// These inputs don't change during a session, so we read them once, cache the
-/// result, and let every subsequent `detect_environment` call reuse the cached
-/// values. Before this split, each detect_environment re-read the bundled
-/// `BepInEx.zip`, which on Windows was a dominant source of detect-flow latency
-/// because Defender scans the zip on every `CreateFile`.
+/// result, and let every subsequent `resolve_game_path` or `detect_for_install`
+/// call reuse the cached values. Before this split, each detection pass re-read
+/// the bundled `BepInEx.zip`, which on Windows was a dominant source of
+/// detect-flow latency because Defender scans the zip on every `CreateFile`.
 pub(crate) struct InstallerStartup {
     pub(crate) bundled_bpp_version: Option<String>,
     pub(crate) steam_path: Option<PathBuf>,
