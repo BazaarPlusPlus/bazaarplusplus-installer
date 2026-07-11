@@ -1,7 +1,7 @@
 ---
 status: truth
 topic: updater-release
-last-verified: 8c9c6a4e0e337f7b7230b8936f9e8edd0d24cfd1
+last-verified: d17baa028f3915ad88c8ed054780a47aec60956b
 ---
 
 # Updater And Release
@@ -19,12 +19,13 @@ last-verified: 8c9c6a4e0e337f7b7230b8936f9e8edd0d24cfd1
 ## Release Scripts
 
 - `scripts/version-sync.mjs` reads the version from `package.json`, writes the Tauri and Cargo versions, updates Cargo.lock when present, and asserts all versions align in `scripts/version-sync.mjs:33-175`.
-- `run_release_prechecks` runs version sync before release packaging in `build.sh:502-504`; Tauri's `beforeBuildCommand` then runs the single `npm run prebuild-check` gate before the frontend build in `src-tauri/tauri.conf.json:7-10`.
-- `scripts/prebuild-check.mjs` checks generated TypeScript bindings, version alignment, platform ZIP payloads, and on Darwin the compiled macOS trampoline stub in `scripts/prebuild-check.mjs:327-346`.
+- The release-platform set and its build, bundle, installer, updater-key, and Rust-target facts are defined once in `scripts/release-platforms.mjs:4-107`; `build.sh` queries them through `release_platforms_cli` in `build.sh:151-185`, while Node release scripts import the module directly.
+- `run_release_prechecks` runs version sync before release packaging in `build.sh:480-482`; Tauri's `beforeBuildCommand` then runs the single `npm run prebuild-check` gate before the frontend build in `src-tauri/tauri.conf.json:7-10`.
+- `scripts/prebuild-check.mjs` checks generated TypeScript bindings, version alignment, platform ZIP payloads, and on Darwin the compiled macOS trampoline stub in `scripts/prebuild-check.mjs:326-346`.
 
 ## Manifest Flow
 
-- Platform updater fragments contain version, platform key, URL, and signature; URLs are based on `<baseUrl>/<version>/<platform>/updater/<artifact>` in `scripts/generate-platform-manifest.mjs:5-18`.
-- `build.sh` uploads installer artifacts, updater artifacts, signatures, and a per-platform `platform-manifest.json` to R2 under version/platform folders in `build.sh:486-530`.
-- `build.sh` fetches uploaded platform fragments and existing `latest.json`, then generates and uploads the new `latest.json` in `build.sh:533-565`.
-- The latest manifest generator accepts only known platform fragments for `windows-x86_64` and `darwin-aarch64`, preserves existing release notes/pub_date when rebuilding the same version, and fails when no platform fragments are available in `scripts/generate-latest-manifest.mjs:5-89`.
+- Platform updater fragments contain version, platform key, URL, and signature; their URL derives from the module's R2 updater-key construction in `scripts/generate-platform-manifest.mjs:6-23` and `scripts/release-platforms.mjs:95-107`.
+- `build.sh` uploads installer artifacts, updater artifacts, signatures, and a per-platform `platform-manifest.json` to R2 under version/platform folders in `build.sh:500-544`.
+- `build.sh` fetches every module-declared platform fragment and existing `latest.json`, then calls the generator with named flags and uploads the new manifest in `build.sh:547-582`.
+- The latest manifest generator accepts only keys from `RELEASE_PLATFORM_KEYS`, preserves existing release notes/pub_date when rebuilding the same version, fails when no platform fragments are available, and exposes `--output`, `--version`, and `--temp-dir` in `scripts/generate-latest-manifest.mjs:5-145`.

@@ -1,7 +1,7 @@
 ---
 status: active-plan
 topic: manual-validation
-last-verified: 7b18f73d4718d3e1406de9f526d1fbba09ac567f
+last-verified: 3fa42ea34dfa7142fe5e1e597ce0b80f381f2e82
 ---
 
 # Manual Validation Backlog
@@ -16,7 +16,7 @@ These items are not promoted as truth. They are platform or service checks that 
 
 ## Updater Release
 
-- Validate an end-to-end staged release against R2 with both `windows-x86_64` and `darwin-aarch64` fragments before relying on a public `latest.json`. The generator accepts those platform keys in `scripts/generate-latest-manifest.mjs:5-89`.
+- Validate an end-to-end staged release against R2 with a fragment for every key in `RELEASE_PLATFORM_KEYS` before relying on a public `latest.json`. The platform keys are defined in `scripts/release-platforms.mjs:10-43` and consumed in `scripts/generate-latest-manifest.mjs:69-88`.
 - Validate Windows NSIS close/restart behavior after `downloadAndInstall`; code treats `relaunch()` as a fallback on Windows in `src/features/about/updater.ts:221-230`.
 
 ## Security Follow-Up
