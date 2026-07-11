@@ -43,9 +43,9 @@ Release Notes:
 
 ## Documentation Structure
 
-- Current truth lives only in `docs/truth/` (see `docs/INDEX.md`). Never treat `docs/archive/` as current; read it only for historical context when explicitly needed. When code changes invalidate a truth doc, update the doc and its `last-verified` hash in the same change.
+- Current truth lives only in root `CONTEXT.md` (entry map + glossary) and `docs/truth/` (see `docs/INDEX.md`). Never treat `docs/archive/` as current; read it only for historical context when explicitly needed. When code changes invalidate a truth doc, update the doc and its `last-verified` hash in the same change.
 - Keep truth docs topic-sliced and code-cited. Prefer one focused file under `docs/truth/` over a broad chronological document.
-- Put immutable architecture or product choices in `docs/decisions/` using Context, Decision, Rejected alternatives, and Consequences.
+- Put immutable architecture or product choices in `docs/adr/` using Context, Decision, Rejected alternatives, and Consequences.
 - Put only active future work in `docs/plans/`. Move implemented, superseded, abandoned, or unverified historical material to `docs/archive/` with frontmatter and preserve the archived body.
 - Keep generated audit reports and review artifacts under gitignored `tmp/`, not under `docs/`.
 

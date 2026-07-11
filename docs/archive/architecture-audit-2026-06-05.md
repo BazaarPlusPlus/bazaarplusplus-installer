@@ -2,7 +2,7 @@
 status: implemented
 topic: architecture-audit
 archived: 2026-06-11
-superseded-by: docs/truth/overview.md
+superseded-by: CONTEXT.md
 ---
 # bazaarplusplus-installer 架构改进方案
 
