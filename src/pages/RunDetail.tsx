@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { ErrorBanner } from '../components/ui/ErrorBanner';
 import type { HistoryBattleRow } from '../types/backend';
 import { useRunDetailPage } from '../features/history/useRunDetailPage';
@@ -18,7 +19,6 @@ import {
   formatRunStatusKey,
   toneColorClass
 } from '../features/history/format';
-import { DeleteVideoConfirmModal } from '../features/history/DeleteVideoConfirmModal';
 import { useI18n } from '../i18n/LocaleProvider';
 
 // Shared 7-track grid for the battle table header + rows so columns align and
@@ -178,11 +178,19 @@ export default function RunDetail() {
       )}
 
       {pendingDelete && (
-        <DeleteVideoConfirmModal
+        <ConfirmDialog
+          titleId="delete-video-modal-title"
+          title={t('deleteVideoConfirmTitle')}
+          tone="danger"
+          confirmLabel={t('deleteVideoConfirmAction')}
           busy={page.action === `delete:${pendingDelete.battleId}`}
-          onClose={() => setPendingDelete(null)}
           onConfirm={confirmDelete}
-        />
+          onClose={() => setPendingDelete(null)}
+        >
+          <p className="m-0 text-[13px] leading-relaxed text-[rgba(245,220,220,0.86)]">
+            {t('deleteVideoConfirmBody')}
+          </p>
+        </ConfirmDialog>
       )}
     </div>
   );

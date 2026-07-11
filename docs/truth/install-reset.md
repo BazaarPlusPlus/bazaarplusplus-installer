@@ -1,7 +1,7 @@
 ---
 status: truth
 topic: install-reset
-last-verified: e6e3f695a897973b0b3bc1e06ce3faf56261ecec
+last-verified: 8ffb2b86dc255a585057138689c345fe69981b8d
 ---
 
 # Install And Reset
@@ -25,7 +25,7 @@ last-verified: e6e3f695a897973b0b3bc1e06ce3faf56261ecec
 
 ## Reset Local Data
 
-- The frontend opens a dedicated reset confirmation modal and requires an acknowledgement checkbox before confirming in `src/pages/Install.tsx:94-103` and `src/features/install/ResetDataConfirmModal.tsx:72-102`.
+- The frontend opens a dedicated reset confirmation modal and requires an acknowledgement checkbox before confirming in `src/pages/Install.tsx:93-100` and `src/features/install/ResetDataConfirmModal.tsx:21-55`.
 - The reset button is disabled when reset is not allowed, and the UI distinguishes "no resettable data" from the destructive action label in `src/features/install/InstallActionsPanel.tsx:97-109`.
 - `useInstallPage` treats an already-empty state as a no-op, calls `resetBppData`, refreshes install state from the typed result, and chooses success versus no-op copy from `removed_data` in `src/features/install/useInstallPage.ts:111-141`.
 - The Rust reset path stops the stream service before deletion to release SQLite/file handles, then runs blocking deletion in `src-tauri/src/services/bepinex/mod.rs:29-41`.

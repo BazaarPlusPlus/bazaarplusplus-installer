@@ -79,7 +79,7 @@ export default function Install() {
 
       {showInstallModal && (
         <InstallConfirmModal
-          page={page}
+          busy={page.action === 'install'}
           installAcknowledged={installAcknowledged}
           onAcknowledgedChange={setInstallAcknowledged}
           compat={page.state.compat}
@@ -92,7 +92,7 @@ export default function Install() {
 
       {showResetDataModal && (
         <ResetDataConfirmModal
-          page={page}
+          busy={page.action === 'resetData'}
           acknowledged={resetDataAcknowledged}
           onAcknowledgedChange={setResetDataAcknowledged}
           onClose={() => setShowResetDataModal(false)}
@@ -102,7 +102,7 @@ export default function Install() {
 
       {showResetBepinexModal && (
         <ResetBepinexConfirmModal
-          page={page}
+          busy={page.action === 'resetBepinex'}
           acknowledged={resetBepinexAcknowledged}
           onAcknowledgedChange={setResetBepinexAcknowledged}
           onClose={() => setShowResetBepinexModal(false)}

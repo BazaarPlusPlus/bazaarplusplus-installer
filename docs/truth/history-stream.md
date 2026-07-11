@@ -1,7 +1,7 @@
 ---
 status: truth
 topic: history-stream
-last-verified: 63783504d733039d18aa0278645457fe12064d63
+last-verified: 8ffb2b86dc255a585057138689c345fe69981b8d
 ---
 
 # History And Stream
@@ -16,10 +16,10 @@ last-verified: 63783504d733039d18aa0278645457fe12064d63
 
 ## History UI
 
-- The History page renders Runs, Videos, and Win Rate summary cards in `src/pages/History.tsx:34-39`.
-- History rows include optional preview images and link to `/history/:run_id` details in `src/pages/History.tsx:99-157`.
-- Run detail renders run metadata, screenshot reveal, summary stats, and a battle table with video reveal/delete controls in `src/pages/RunDetail.tsx:65-160` and `src/pages/RunDetail.tsx:190-285`.
-- The History page renders the storage cleanup card after the summary cards in `src/pages/History.tsx:51`; the card offers separate end-of-run screenshot and run-data rows in `src/features/history/StorageCleanupCard.tsx:90-101`.
+- The History page renders Runs, Videos, and Win Rate summary cards in `src/pages/History.tsx:37-50`.
+- History rows include optional preview images and link to `/history/:run_id` details in `src/pages/History.tsx:101-178`.
+- Run detail renders run metadata, screenshot reveal, summary stats, and a battle table with video reveal/delete controls in `src/pages/RunDetail.tsx:52-176` and `src/pages/RunDetail.tsx:222-319`.
+- The History page renders the storage cleanup card after the summary cards in `src/pages/History.tsx:52`; the card offers separate end-of-run screenshot and run-data rows in `src/features/history/StorageCleanupCard.tsx:80-115`, with its confirmation composed inline at `src/features/history/StorageCleanupCard.tsx:117-139`.
 
 ## Storage Cleanup
 

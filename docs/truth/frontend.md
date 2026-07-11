@@ -1,7 +1,7 @@
 ---
 status: truth
 topic: frontend
-last-verified: aaf01075c3e52acdd7940f3a41a4858c60dd851b
+last-verified: 8ffb2b86dc255a585057138689c345fe69981b8d
 ---
 
 # Frontend
@@ -18,6 +18,7 @@ last-verified: aaf01075c3e52acdd7940f3a41a4858c60dd851b
 - `.selectable` and `.user-content` opt content back into text selection in `src/styles/index.css:84-89`.
 - Reduced motion is honored through `prefers-reduced-motion` in `src/styles/index.css:91-99`.
 - App modals use the native `<dialog>` wrapper and top-layer dialog styling; dialog CSS is in `src/styles/index.css:101-128`, and the updater modal consumes the shared `Dialog` component in `src/layouts/ShellUpdateModal.tsx:40-45`.
+- The five install, reset, cleanup, and video-delete confirmation flows share the `Dialog`-composing `ConfirmDialog`, which owns tone-specific chrome, acknowledgement gating, and busy affordances in `src/components/ui/ConfirmDialog.tsx:52-170`; feature call sites provide direct body children so their rendered DOM stays unchanged.
 - The current Tauri security config has `csp: null` in `src-tauri/tauri.conf.json:23-25`; treat any CSP hardening claim as future work until code changes.
 
 ## Runtime Seam
@@ -28,12 +29,12 @@ last-verified: aaf01075c3e52acdd7940f3a41a4858c60dd851b
 
 ## Current Product Surfaces
 
-- Install renders status and action panels plus install and reset confirmation modals in `src/pages/Install.tsx:52-85`.
+- Install renders status and action panels plus install and reset confirmation modals in `src/pages/Install.tsx:68-111`.
 - Install facts currently show only BazaarPlusPlus, not the broader fact list from the historical design spec, in `src/features/install/InstallActionsPanel.tsx:49-58`.
 - The reset-local-data button is disabled unless backend action gates allow reset data, and its label switches to a no-data message when the game path is valid but no resettable data exists in `src/features/install/InstallActionsPanel.tsx:93-105`.
-- History summary cards are Runs, Videos, and Win Rate in `src/pages/History.tsx:34-39`.
-- History rows link to details, show lazy-decoded preview images when available, and display hero, date, result, progress, rank, and rating in `src/pages/History.tsx:99-157`.
-- Run detail shows a hero/result header, run stats, screenshot reveal, and a battle table with fixed columns and video reveal/delete actions in `src/pages/RunDetail.tsx:65-160` and `src/pages/RunDetail.tsx:190-285`.
+- History summary cards are Runs, Videos, and Win Rate in `src/pages/History.tsx:37-50`.
+- History rows link to details, show lazy-decoded preview images when available, and display hero, date, result, progress, rank, and rating in `src/pages/History.tsx:101-178`.
+- Run detail shows a hero/result header, run stats, screenshot reveal, and a battle table with fixed columns and video reveal/delete actions in `src/pages/RunDetail.tsx:52-176` and `src/pages/RunDetail.tsx:222-319`.
 
 ## Update Modal
 

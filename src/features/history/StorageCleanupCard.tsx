@@ -1,8 +1,8 @@
 import { ChevronRight, Trash2 } from 'lucide-react';
+import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 import { ErrorBanner } from '../../components/ui/ErrorBanner';
 import { useI18n } from '../../i18n/LocaleProvider';
 import type { CleanupPreset } from '../../types/backend';
-import { CleanupConfirmModal } from './CleanupConfirmModal';
 import { formatBytes } from './format';
 import {
   useStorageCleanup,
@@ -115,21 +115,27 @@ export function StorageCleanupCard({
       </details>
 
       {cleanup.pending && (
-        <CleanupConfirmModal
+        <ConfirmDialog
+          titleId="cleanup-confirm-modal-title"
           title={t('storageCleanupConfirmTitle')}
-          body={pendingBody(cleanup.pending)}
-          skippedNote={
-            cleanup.pending.preview.skipped_pending_uploads > 0
-              ? t('storageCleanupSkippedPending', {
-                  count: cleanup.pending.preview.skipped_pending_uploads
-                })
-              : null
-          }
+          tone="danger"
+          confirmLabel={t('storageCleanupConfirmAction')}
           busy={cleanup.busy}
           confirmDisabled={pendingItemCount(cleanup.pending) === 0}
-          onClose={cleanup.cancel}
           onConfirm={cleanup.confirm}
-        />
+          onClose={cleanup.cancel}
+        >
+          <p className="m-0 text-[13px] leading-relaxed text-[rgba(245,220,220,0.86)]">
+            {pendingBody(cleanup.pending)}
+          </p>
+          {cleanup.pending.preview.skipped_pending_uploads > 0 && (
+            <p className="m-0 text-[12px] leading-relaxed text-[rgba(200,170,120,0.8)]">
+              {t('storageCleanupSkippedPending', {
+                count: cleanup.pending.preview.skipped_pending_uploads
+              })}
+            </p>
+          )}
+        </ConfirmDialog>
       )}
     </>
   );

@@ -14,11 +14,11 @@ Last consolidation audit: `2026-06-11` on `7b18f73d4718d3e1406de9f526d1fbba09ac5
 | `.trae/rules/git-commit-message.md` | ignored local rule | ignored-operational | n/a |
 | `docs/INDEX.md` | documentation manifest | manifest | 2026-06-11 |
 | `docs/truth/overview.md` | overview | truth | `7b18f73d4718d3e1406de9f526d1fbba09ac567f` |
-| `docs/truth/architecture.md` | architecture | truth | `63783504d733039d18aa0278645457fe12064d63` |
-| `docs/truth/frontend.md` | frontend | truth | `aaf01075c3e52acdd7940f3a41a4858c60dd851b` |
-| `docs/truth/install-reset.md` | install-reset | truth | `e6e3f695a897973b0b3bc1e06ce3faf56261ecec` |
-| `docs/truth/launch-modes.md` | launch-modes | truth | `63783504d733039d18aa0278645457fe12064d63` |
-| `docs/truth/history-stream.md` | history-stream | truth | `63783504d733039d18aa0278645457fe12064d63` |
+| `docs/truth/architecture.md` | architecture | truth | `04f925752aa583095782bd5e365b4c54bb9a303c` |
+| `docs/truth/frontend.md` | frontend | truth | `8ffb2b86dc255a585057138689c345fe69981b8d` |
+| `docs/truth/install-reset.md` | install-reset | truth | `8ffb2b86dc255a585057138689c345fe69981b8d` |
+| `docs/truth/launch-modes.md` | launch-modes | truth | `3d0c8c833169adde35bc9bca770ecc8b56fa8271` |
+| `docs/truth/history-stream.md` | history-stream | truth | `8ffb2b86dc255a585057138689c345fe69981b8d` |
 | `docs/truth/updater-release.md` | updater-release | truth | `8c9c6a4e0e337f7b7230b8936f9e8edd0d24cfd1` |
 | `docs/truth/verification.md` | verification | truth | `8c9c6a4e0e337f7b7230b8936f9e8edd0d24cfd1` |
 | `docs/plans/manual-validation.md` | manual-validation | active-plan | `7b18f73d4718d3e1406de9f526d1fbba09ac567f` |
@@ -42,6 +42,7 @@ Last consolidation audit: `2026-06-11` on `7b18f73d4718d3e1406de9f526d1fbba09ac5
 | `docs/archive/superpowers/plans/2026-06-10-reset-local-data-ux.md` | reset local data plan | implemented | archived 2026-06-11 |
 | `docs/archive/2026-07-03-steam-branch-switch.md` | steam-branch-switch (forensics) | superseded-by-007 | archived 2026-07-03 |
 | `docs/archive/2026-07-03-steam-branch-switch-impl.md` | steam-branch-switch-impl (plan) | reverted-removed | archived 2026-07-04 |
+| `docs/archive/2026-07-02-storage-cleanup.md` | storage-cleanup (plan) | implemented | archived 2026-07-11 |
 
 ## Original Inventory
 
