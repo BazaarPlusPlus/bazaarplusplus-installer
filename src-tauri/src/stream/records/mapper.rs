@@ -2,8 +2,10 @@ use std::path::{Path, PathBuf};
 
 use serde::Serialize;
 
+use crate::history::mapper::strip_url_for_screenshot;
+use crate::history::screenshots::OverlaySnapshotRow;
+
 use super::image::resolve_overlay_image_path;
-use super::repo::OverlayRecordRow;
 
 #[derive(Clone, Debug, Serialize)]
 pub struct OverlayRecord {
@@ -19,13 +21,13 @@ pub struct OverlayRecord {
     pub rating: Option<i64>,
 }
 
-pub(super) fn to_overlay_record(game_path: Option<&Path>, row: OverlayRecordRow) -> OverlayRecord {
+pub(super) fn to_overlay_record(game_path: Option<&Path>, row: OverlaySnapshotRow) -> OverlayRecord {
     let image_path =
         resolve_overlay_image_path(game_path.map(PathBuf::from), row.image_path.as_deref())
             .filter(|path| path.exists());
     let strip_url = image_path
         .as_ref()
-        .map(|_| format!("/images/{}/strip", row.id));
+        .map(|_| strip_url_for_screenshot(&row.id));
 
     OverlayRecord {
         id: row.id,

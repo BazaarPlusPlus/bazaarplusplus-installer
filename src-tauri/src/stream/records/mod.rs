@@ -1,16 +1,15 @@
 mod image;
 mod locator;
 mod mapper;
-mod repo;
 
+use crate::history::screenshots::{
+    load_latest_overlay_snapshot, load_overlay_snapshot_by_id, load_overlay_snapshot_count,
+    load_overlay_snapshot_list,
+};
 use image::resolve_overlay_image_path;
 pub use locator::{find_database_path_anywhere, resolve_database_path};
 use mapper::to_overlay_record;
 pub use mapper::OverlayRecord;
-use repo::{
-    load_latest_overlay_record, load_overlay_record_by_id, load_overlay_record_count,
-    load_overlay_record_list,
-};
 use std::path::PathBuf;
 
 #[derive(Clone, Debug)]
@@ -29,13 +28,13 @@ impl OverlayRecordRepository {
         offset: usize,
     ) -> Result<Option<OverlayRecord>, String> {
         let database_path = self.database_path()?;
-        Ok(load_latest_overlay_record(&database_path, from, offset)?
+        Ok(load_latest_overlay_snapshot(&database_path, from, offset)?
             .map(|row| to_overlay_record(self.game_path.as_deref(), row)))
     }
 
     pub fn count_since(&self, from: Option<&str>) -> Result<usize, String> {
         let database_path = self.database_path()?;
-        load_overlay_record_count(&database_path, from)
+        load_overlay_snapshot_count(&database_path, from)
     }
 
     pub fn load_record_list(
@@ -44,7 +43,7 @@ impl OverlayRecordRepository {
         limit: Option<usize>,
     ) -> Result<Vec<OverlayRecord>, String> {
         let database_path = self.database_path()?;
-        Ok(load_overlay_record_list(&database_path, from, limit)?
+        Ok(load_overlay_snapshot_list(&database_path, from, limit)?
             .into_iter()
             .map(|row| to_overlay_record(self.game_path.as_deref(), row))
             .collect())
@@ -61,7 +60,7 @@ impl OverlayRecordRepository {
 
     pub fn load_image_path(&self, record_id: &str) -> Result<Option<PathBuf>, String> {
         let database_path = self.database_path()?;
-        let Some(row) = load_overlay_record_by_id(&database_path, record_id)? else {
+        let Some(row) = load_overlay_snapshot_by_id(&database_path, record_id)? else {
             return Ok(None);
         };
 
