@@ -1,3 +1,11 @@
+---
+status: implemented
+topic: storage-cleanup
+last-verified: 8ffb2b86dc255a585057138689c345fe69981b8d
+archived: 2026-07-11
+note: The storage-cleanup plan is implemented. Retained for historical context only; current behavior is documented in docs/truth/history-stream.md.
+---
+
 # Storage Cleanup (End-of-run Snapshots + Run Data) Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
