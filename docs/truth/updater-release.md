@@ -1,7 +1,7 @@
 ---
 status: truth
 topic: updater-release
-last-verified: 7b18f73d4718d3e1406de9f526d1fbba09ac567f
+last-verified: 8c9c6a4e0e337f7b7230b8936f9e8edd0d24cfd1
 ---
 
 # Updater And Release
@@ -19,7 +19,7 @@ last-verified: 7b18f73d4718d3e1406de9f526d1fbba09ac567f
 ## Release Scripts
 
 - `scripts/version-sync.mjs` reads the version from `package.json`, writes the Tauri and Cargo versions, updates Cargo.lock when present, and asserts all versions align in `scripts/version-sync.mjs:33-175`.
-- `run_release_prechecks` runs version sync and `npm run prebuild-check` before release packaging in `build.sh:466-469`.
+- `run_release_prechecks` runs version sync before release packaging in `build.sh:502-504`; Tauri's `beforeBuildCommand` then runs the single `npm run prebuild-check` gate before the frontend build in `src-tauri/tauri.conf.json:7-10`.
 - `scripts/prebuild-check.mjs` checks generated TypeScript bindings, version alignment, platform ZIP payloads, and on Darwin the compiled macOS trampoline stub in `scripts/prebuild-check.mjs:327-346`.
 
 ## Manifest Flow
