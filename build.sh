@@ -32,10 +32,6 @@ EOF
 }
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-WINDOWS_CONFIG="$SCRIPT_DIR/src-tauri/tauri.windows.conf.json"
-MACOS_CONFIG="$SCRIPT_DIR/src-tauri/tauri.macos.conf.json"
-WINDOWS_ZIP="$SCRIPT_DIR/src-tauri/resources/BepInExSource/windows/BepInEx.zip"
-MACOS_ZIP="$SCRIPT_DIR/src-tauri/resources/BepInExSource/macos/BepInEx.zip"
 MACOS_TRAMPOLINE_STUB="$SCRIPT_DIR/src-tauri/resources/Trampoline/macos/bpp_launcher"
 SIGNING_SECRETS_DIR="${BPP_SIGNING_SECRETS_DIR:-$SCRIPT_DIR/signing-secrets}"
 SIGNING_KEY_PATH="$SIGNING_SECRETS_DIR/tauri-updater.key"
@@ -152,55 +148,41 @@ public_base_url() {
     printf '%s\n' "${endpoint%/latest.json}"
 }
 
+release_platforms_cli() {
+    node "$SCRIPT_DIR/scripts/release-platforms.mjs" "$@"
+}
+
 platform_r2_key() {
     local platform="$1"
 
-    case "$platform" in
-        windows)
-            printf '%s' "windows-x86_64"
-            ;;
-        macos)
-            printf '%s' "darwin-aarch64"
-            ;;
-        *)
-            echo "Error: Unsupported platform for upload: $platform" >&2
-            exit 1
-            ;;
-    esac
+    if ! release_platforms_cli r2-key "$platform"; then
+        echo "Error: Unsupported platform for upload: $platform" >&2
+        return 1
+    fi
 }
 
 bundle_root_for_platform() {
     local platform="$1"
+    local relative_path=""
 
-    case "$platform" in
-        windows)
-            printf '%s' "$SCRIPT_DIR/src-tauri/target/release/bundle"
-            ;;
-        macos)
-            printf '%s' "$SCRIPT_DIR/src-tauri/target/aarch64-apple-darwin/release/bundle"
-            ;;
-        *)
-            echo "Error: Unsupported platform bundle root: $platform" >&2
-            exit 1
-            ;;
-    esac
+    if ! relative_path="$(release_platforms_cli bundle-root "$platform")"; then
+        echo "Error: Unsupported platform bundle root: $platform" >&2
+        return 1
+    fi
+    printf '%s' "$SCRIPT_DIR/$relative_path"
 }
 
 find_installer_artifact() {
     local platform="$1"
+    local installer_dir=""
+    local installer_glob=""
 
-    case "$platform" in
-        windows)
-            find "$SCRIPT_DIR/src-tauri/target/release/bundle/nsis" -maxdepth 1 -type f -name '*.exe' ! -name '*.sig' | sort | head -n 1
-            ;;
-        macos)
-            find "$SCRIPT_DIR/src-tauri/target/aarch64-apple-darwin/release/bundle/dmg" -maxdepth 1 -type f -name '*.dmg' | sort | head -n 1
-            ;;
-        *)
-            echo "Error: Unsupported platform installer artifact lookup: $platform" >&2
-            exit 1
-            ;;
-    esac
+    if ! installer_dir="$(release_platforms_cli installer-dir "$platform")" \
+        || ! installer_glob="$(release_platforms_cli installer-glob "$platform")"; then
+        echo "Error: Unsupported platform installer artifact lookup: $platform" >&2
+        return 1
+    fi
+    find "$SCRIPT_DIR/$installer_dir" -maxdepth 1 -type f -name "$installer_glob" ! -name '*.sig' | sort | head -n 1
 }
 
 find_updater_signature() {
@@ -251,21 +233,17 @@ install_dependencies() {
 required_rust_targets_for_platform() {
     local platform="$1"
 
-    case "$platform" in
-        macos)
-            printf '%s\n' aarch64-apple-darwin
-            ;;
-        *)
-            ;;
-    esac
+    release_platforms_cli rust-targets "$platform"
 }
 
 ensure_required_rust_targets() {
     local platform="$1"
     local installed_targets=""
+    local required_targets=""
     local required_target=""
 
     installed_targets="$(rustup target list --installed)"
+    required_targets="$(required_rust_targets_for_platform "$platform")"
     while IFS= read -r required_target; do
         [ -n "$required_target" ] || continue
         if ! grep -Fxq "$required_target" <<<"$installed_targets"; then
@@ -273,7 +251,7 @@ ensure_required_rust_targets() {
             echo "Run: rustup target add $required_target" >&2
             return 1
         fi
-    done < <(required_rust_targets_for_platform "$platform")
+    done <<<"$required_targets"
 }
 
 load_updater_signing_env() {
@@ -567,21 +545,23 @@ upload_release_assets() {
 
 generate_latest_manifest() {
     local version="$1"
-    local base_url="$2"
     local latest_file=""
     local temp_dir=""
+    local platform_list=""
     local platform=""
 
     latest_file="$(mktemp)"
     temp_dir="$(mktemp -d)"
+    platform_list="$(release_platforms_cli list)"
 
-    for platform in windows-x86_64 darwin-aarch64; do
+    while IFS= read -r platform; do
+        [ -n "$platform" ] || continue
         echo "==> Fetching platform fragment for $platform"
         npx wrangler r2 object get \
             "$R2_BUCKET/$version/$platform/updater/platform-manifest.json" \
             --file "$temp_dir/$platform.json" \
             --remote >/dev/null 2>&1 || true
-    done
+    done <<<"$platform_list"
 
     echo "==> Fetching existing latest.json if present"
     npx wrangler r2 object get \
@@ -590,7 +570,9 @@ generate_latest_manifest() {
         --remote >/dev/null 2>&1 || true
 
     node "$SCRIPT_DIR/scripts/generate-latest-manifest.mjs" \
-        "$latest_file" "$version" "$base_url" "$temp_dir"
+        --output "$latest_file" \
+        --version "$version" \
+        --temp-dir "$temp_dir"
 
     echo "==> Generated latest.json preview"
     cat "$latest_file"
@@ -612,29 +594,30 @@ build_prod() {
     local -a build_command
     local -a bundle_command
 
-    case "$platform" in
-        windows)
-            config="$WINDOWS_CONFIG"
-            resource_zip="$WINDOWS_ZIP"
-            bundle_target="nsis"
-            bundle_output="$SCRIPT_DIR/src-tauri/target/release/bundle/nsis"
-            bundle_cleanup_path="$bundle_output"
-            release_binary="$SCRIPT_DIR/src-tauri/target/release/bppinstaller.exe"
-            ;;
-        macos)
-            config="$MACOS_CONFIG"
-            resource_zip="$MACOS_ZIP"
-            bundle_target="app,dmg"
-            bundle_output="$SCRIPT_DIR/src-tauri/target/aarch64-apple-darwin/release/bundle/dmg"
-            bundle_cleanup_path="$SCRIPT_DIR/src-tauri/target/aarch64-apple-darwin/release/bundle"
-            release_binary="$SCRIPT_DIR/src-tauri/target/aarch64-apple-darwin/release/bppinstaller"
-            tauri_target="aarch64-apple-darwin"
-            ;;
-        *)
-            echo "Error: Unsupported platform: $platform" >&2
-            exit 1
-            ;;
-    esac
+    if ! {
+        IFS= read -r config
+        IFS= read -r resource_zip
+        IFS= read -r bundle_target
+        IFS= read -r bundle_output
+        IFS= read -r bundle_cleanup_path
+        IFS= read -r release_binary
+        IFS= read -r tauri_target
+    } < <(release_platforms_cli build-env "$platform"); then
+        echo "Error: Unsupported platform: $platform" >&2
+        exit 1
+    fi
+
+    if [ -z "$config" ] || [ -z "$resource_zip" ] || [ -z "$bundle_target" ] \
+        || [ -z "$bundle_output" ] || [ -z "$bundle_cleanup_path" ] || [ -z "$release_binary" ]; then
+        echo "Error: Unsupported platform: $platform" >&2
+        exit 1
+    fi
+
+    config="$SCRIPT_DIR/$config"
+    resource_zip="$SCRIPT_DIR/$resource_zip"
+    bundle_output="$SCRIPT_DIR/$bundle_output"
+    bundle_cleanup_path="$SCRIPT_DIR/$bundle_cleanup_path"
+    release_binary="$SCRIPT_DIR/$release_binary"
 
     assert_file "$config" "$platform Tauri config"
     assert_file "$resource_zip" "$platform resource zip"
@@ -763,7 +746,7 @@ main() {
     if [ "$UPLOAD" = true ]; then
         assert_command npx "Install Node.js/npm first so npx is available."
         upload_release_assets "$platform" "$version" "$platform_key" "$base_url"
-        generate_latest_manifest "$version" "$base_url"
+        generate_latest_manifest "$version"
     fi
 }
 
