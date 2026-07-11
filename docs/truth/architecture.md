@@ -1,7 +1,7 @@
 ---
 status: truth
 topic: architecture
-last-verified: 04f925752aa583095782bd5e365b4c54bb9a303c
+last-verified: 63783504d733039d18aa0278645457fe12064d63
 ---
 
 # Architecture
@@ -24,7 +24,7 @@ last-verified: 04f925752aa583095782bd5e365b4c54bb9a303c
 - Install state is produced by Rust detection and serialized through `InstallState`; the contract includes selected paths, game/mod state, macOS compatibility state, action gates, resettable-data and BepInEx-folder status, and warnings in `src-tauri/src/services/install/types.rs:3-19`.
 - Install planning and install/reset/uninstall/launch orchestration are owned by `src-tauri/src/services/install/plan.rs` and `src-tauri/src/services/install/mod.rs`; launch goes through the Steam client only (`launch_game_via_steam`), while install gathers facts, plans an ordered prefix or trampoline effect sequence, executes it, and rebuilds state in `src-tauri/src/services/install/mod.rs:36-104`.
 - History reads use SQLite read-only connections by default in `src-tauri/src/history/queries.rs:29-35`; the separate write connection is used only where mutation is needed in `src-tauri/src/history/queries.rs:37-43`.
-- The stream service is a local Axum HTTP service bound to `127.0.0.1:17654`, creates overlay repositories and settings stores, and exposes overlay/settings URLs in `src-tauri/src/stream/server.rs:16-99`.
+- The stream service is a local Axum HTTP service bound to `127.0.0.1:17654`, creates overlay repositories and settings stores, and exposes overlay/settings URLs in `src-tauri/src/stream/server.rs:16-112`.
 
 ## Build And Generated Artifacts
 

@@ -1,7 +1,7 @@
 ---
 status: truth
 topic: launch-modes
-last-verified: 3d0c8c833169adde35bc9bca770ecc8b56fa8271
+last-verified: 63783504d733039d18aa0278645457fe12064d63
 ---
 
 # Launch Modes
@@ -10,7 +10,7 @@ last-verified: 3d0c8c833169adde35bc9bca770ecc8b56fa8271
 
 - The installer launches the game exclusively through the Steam client. There is no other launch path — Steam detection is the substrate for every install and launch.
 - The launch command takes no arguments and calls `launch_game_via_steam()` directly in `src-tauri/src/commands/install.rs:76-81`, which opens `steam://rungameid/1617400` in `src-tauri/src/services/install/mod.rs:24` and `src-tauri/src/services/install/mod.rs:156-158`; the capability allows `steam://*` URLs in `src-tauri/capabilities/default.json:12-19`.
-- Game detection resolves Steam copies only, via `steamapps/libraryfolders.vdf` and Steam-library candidates in `src-tauri/src/services/detect/steam.rs:149-316` and well-known platform paths in `src-tauri/src/services/game_path.rs:125-153`.
+- Game detection resolves Steam copies only, via `steamapps/libraryfolders.vdf` and Steam-library candidates in `src-tauri/src/services/detect/steam.rs:149-316` and well-known platform paths in `src-tauri/src/services/game_path.rs:191-225`.
 
 ## macOS Prefix And Trampoline Modes
 

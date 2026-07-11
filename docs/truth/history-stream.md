@@ -1,7 +1,7 @@
 ---
 status: truth
 topic: history-stream
-last-verified: 9c85707db07ac4767dbff2a050f7c6ee103b4f20
+last-verified: 63783504d733039d18aa0278645457fe12064d63
 ---
 
 # History And Stream
@@ -33,11 +33,11 @@ last-verified: 9c85707db07ac4767dbff2a050f7c6ee103b4f20
 
 ## Stream Service
 
-- The stream service binds to `127.0.0.1:17654` in `src-tauri/src/stream/server.rs:16-18`.
-- Starting the service stops any existing different-path service, resolves game/database paths, constructs the overlay record repository and settings store, then serves the router with graceful shutdown in `src-tauri/src/stream/server.rs:19-99`.
-- The service reports database presence and path from the resolved game path in `src-tauri/src/stream/server.rs:102-111`.
-- The service reports window totals and current record from the overlay repository in `src-tauri/src/stream/server.rs:113-131`.
-- Stop and restart are explicit async service operations in `src-tauri/src/stream/server.rs:149-165`.
+- The stream service binds to `127.0.0.1:17654` in `src-tauri/src/stream/server.rs:16-17`.
+- Starting the service stops any existing different-path service, resolves game/database paths, constructs the overlay record repository and settings store, then serves the router with graceful shutdown in `src-tauri/src/stream/server.rs:19-112`.
+- The service reports database presence and path from the resolved game path in `src-tauri/src/stream/server.rs:114-123`.
+- The service reports window totals and current record from the overlay repository in `src-tauri/src/stream/server.rs:125-144`.
+- Stop and restart are explicit async service operations in `src-tauri/src/stream/server.rs:161-177`.
 
 ## HTTP Surface
 
