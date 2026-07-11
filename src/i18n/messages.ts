@@ -111,14 +111,14 @@ const zh = {
   resetBepinexConfirmReinstall:
     '删除后 BazaarPlusPlus 将不再生效，需要重新点击“安装”来恢复。',
   resetBepinexConfirmGameClosed: '请先退出 The Bazaar，避免文件仍被占用。',
-  resetBepinexConfirmAcknowledge:
-    '我知道整个 BepInEx 文件夹（含其他模组）会被删除。',
+  resetBepinexConfirmAcknowledge: '我知道整个 BepInEx 文件夹（含其他模组）会被删除。',
   resetBepinexConfirmAction: '删除 BepInEx 文件夹',
   resetBepinexDone: 'BepInEx 文件夹已删除',
   resetBepinexNothingToDelete: '未找到 BepInEx 文件夹',
   resetBepinexBlockedByGame:
     'The Bazaar 仍在运行。请先退出游戏，再重置 BepInEx 文件夹。',
-  resetBepinexPartialFailure: '有 {count} 个项目未能删除。请关闭游戏后重试。',
+  resetBepinexPartialFailure:
+    '有 {count} 个项目未能删除。请关闭游戏后重试。',
   uninstallDone: '卸载完成',
   selectGameDirFirst: '请先选择 The Bazaar 安装目录。',
 
