@@ -114,8 +114,11 @@ function RunRow({
       to={detailPath}
       className="group grid grid-cols-[14rem_minmax(0,1fr)_9rem_6.5rem_5rem_5.5rem_auto] items-center gap-6 p-3 bg-[rgba(18,11,5,0.88)] border border-[rgba(180,130,48,0.13)] rounded-sm hover:border-[rgba(200,148,55,0.4)] hover:bg-[rgba(200,148,55,0.04)] transition-all shadow-[0_4px_12px_rgba(0,0,0,0.2)] no-underline text-inherit"
     >
-      <div className="w-56 aspect-[2000/470] shrink-0 bg-[#000] border border-[rgba(200,148,55,0.2)] rounded-sm flex items-center justify-center text-[rgba(200,170,120,0.3)] group-hover:border-[rgba(200,148,55,0.5)] transition-colors overflow-hidden relative">
+      <div className="w-56 aspect-[2000/470] shrink-0 bg-[#000] outline outline-1 outline-[rgba(200,148,55,0.2)] rounded-sm flex items-center justify-center text-[rgba(200,170,120,0.3)] group-hover:outline-[rgba(200,148,55,0.5)] transition-colors overflow-hidden relative">
         {previewUrl ? (
+          // Rounded server crop dimensions can differ slightly from 2000:470.
+          // Cover intentionally stays full-bleed; the outline no longer changes
+          // this image viewport or adds another layer of crop.
           <img
             src={previewUrl}
             alt=""
