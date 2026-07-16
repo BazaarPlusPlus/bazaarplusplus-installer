@@ -1,7 +1,7 @@
 ---
 status: truth
 topic: architecture
-last-verified: 4366cda394fe304066b55564c3c44d1f917a2273
+last-verified: 8b496bb1a31a539c4e2db8cc1777346311657478
 ---
 
 # Architecture
@@ -33,4 +33,4 @@ last-verified: 4366cda394fe304066b55564c3c44d1f917a2273
 - Version sync treats `package.json` as the source, then writes package-lock.json (both root `version` fields), Tauri config, Cargo.toml, and Cargo.lock versions in `scripts/version-sync.mjs:195-206`; `npm run prebuild-check` fails on any misalignment via `collectVersionSnapshot` in `scripts/prebuild-check.mjs:329-331`.
 - `npm run prebuild-check` verifies generated bindings, version alignment, platform ZIP payloads, and the macOS trampoline stub when applicable in `scripts/prebuild-check.mjs:326-346`.
 - Tauri updater artifacts are enabled in the Tauri bundle config in `src-tauri/tauri.conf.json:27-30`.
-- The Rust toolchain is pinned to 1.97.0 (minimal profile with `clippy` and `rustfmt`) via `rust-toolchain.toml:1-4`; rustup selects it automatically for all `cargo`/Tauri builds.
+- The Rust toolchain is pinned to 1.96.0 (minimal profile with `clippy` and `rustfmt`) via `rust-toolchain.toml:1-4`; rustup selects it automatically for all `cargo`/Tauri builds.

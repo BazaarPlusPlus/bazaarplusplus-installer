@@ -9,7 +9,7 @@ Built with Tauri 2 (Rust backend) and React 19 + Vite + TypeScript (frontend).
 Requirements:
 
 - Node.js and npm
-- Rust via rustup (the toolchain is pinned to 1.97.0 by `rust-toolchain.toml`)
+- Rust via rustup (the toolchain is pinned to 1.96.0 by `rust-toolchain.toml`)
 
 Start the desktop app in development mode:
 
