@@ -1,4 +1,5 @@
-import { ChevronRight, Trash2 } from 'lucide-react';
+import { ChevronDown, Trash2 } from 'lucide-react';
+import { useState } from 'react';
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 import { ErrorBanner } from '../../components/ui/ErrorBanner';
 import { useI18n } from '../../i18n/LocaleProvider';
@@ -43,6 +44,7 @@ export function StorageCleanupCard({
 }) {
   const { t } = useI18n();
   const cleanup = useStorageCleanup(onCompleted);
+  const [expanded, setExpanded] = useState(true);
 
   const pendingBody = (pending: PendingCleanup): string => {
     if (pendingItemCount(pending) === 0) {
@@ -78,41 +80,53 @@ export function StorageCleanupCard({
 
   return (
     <>
-      <details className="bpp-panel group p-4">
-        <summary className="flex items-center gap-2 cursor-pointer list-none select-none [&::-webkit-details-marker]:hidden">
-          <ChevronRight
-            size={14}
-            className="shrink-0 text-[#8a8277] transition-transform group-open:rotate-90"
-          />
-          <Trash2 size={14} className="text-[#bb711d]" />
-          <span className="text-[10px] font-semibold uppercase tracking-[.14em] text-[#918b82]">
+      <section className={`bpp-history-cleanup ${expanded ? 'is-open' : ''}`}>
+        <button
+          type="button"
+          className="bpp-history-cleanup-toggle"
+          aria-expanded={expanded}
+          aria-controls="history-storage-cleanup-content"
+          onClick={() => setExpanded((open) => !open)}
+        >
+          <ChevronDown size={16} className="bpp-history-cleanup-chevron" />
+          <Trash2 size={19} className="bpp-history-cleanup-trash" />
+          <span className="bpp-history-cleanup-title">
             {t('storageCleanupTitle')}
           </span>
-        </summary>
+        </button>
 
-        <div className="mt-3 flex flex-col gap-3">
-          {cleanup.error && <ErrorBanner message={cleanup.error} />}
+        <div
+          id="history-storage-cleanup-content"
+          className="bpp-history-cleanup-reveal"
+          aria-hidden={!expanded}
+          inert={!expanded}
+        >
+          <div className="bpp-history-cleanup-content">
+            {cleanup.error && <ErrorBanner message={cleanup.error} />}
 
-          <CleanupRow
-            label={t('storageCleanupScreenshotsLabel')}
-            scope="screenshots"
-            busy={cleanup.busy}
-            onSelect={cleanup.requestCleanup}
-          />
-          <CleanupRow
-            label={t('storageCleanupRunDataLabel')}
-            scope="run_data"
-            busy={cleanup.busy}
-            onSelect={cleanup.requestCleanup}
-          />
+            <CleanupRow
+              label={t('storageCleanupScreenshotsLabel')}
+              description={t('storageCleanupScreenshotsDescription')}
+              scope="screenshots"
+              busy={cleanup.busy}
+              onSelect={cleanup.requestCleanup}
+            />
+            <CleanupRow
+              label={t('storageCleanupRunDataLabel')}
+              description={t('storageCleanupRunDataDescription')}
+              scope="run_data"
+              busy={cleanup.busy}
+              onSelect={cleanup.requestCleanup}
+            />
 
-          {cleanup.outcome && (
-            <p className="m-0 text-xs text-[rgba(200,170,120,0.8)]">
-              {outcomeText(cleanup.outcome)}
-            </p>
-          )}
+            {cleanup.outcome && (
+              <p className="bpp-history-cleanup-outcome">
+                {outcomeText(cleanup.outcome)}
+              </p>
+            )}
+          </div>
         </div>
-      </details>
+      </section>
 
       {cleanup.pending && (
         <ConfirmDialog
@@ -143,11 +157,13 @@ export function StorageCleanupCard({
 
 function CleanupRow({
   label,
+  description,
   scope,
   busy,
   onSelect
 }: {
   label: string;
+  description: string;
   scope: CleanupScope;
   busy: boolean;
   onSelect: (
@@ -158,16 +174,21 @@ function CleanupRow({
   const { t } = useI18n();
 
   return (
-    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
-      <span className="text-sm text-[#bdb8b0]">{label}</span>
-      <div className="flex flex-wrap gap-2 sm:justify-end">
+    <div className="bpp-history-cleanup-row">
+      <div className="bpp-history-cleanup-row-copy">
+        <span className="bpp-history-cleanup-row-label">{label}</span>
+        <span className="bpp-history-cleanup-row-description">
+          {description}
+        </span>
+      </div>
+      <div className="bpp-history-cleanup-actions">
         {PRESETS.map(({ preset, labelKey }) => (
           <button
             key={preset}
             type="button"
             disabled={busy}
             onClick={() => void onSelect(scope, preset)}
-            className="bpp-button !min-h-8 !px-3 text-[10px]"
+            className="bpp-button bpp-history-cleanup-action"
           >
             {t(labelKey)}
           </button>

@@ -12,11 +12,13 @@ import { useEffect, useRef, type ReactNode } from 'react';
 export function Dialog({
   onClose,
   labelledBy,
+  focusContainerOnOpen = false,
   className = '',
   children
 }: {
   onClose: () => void;
   labelledBy?: string;
+  focusContainerOnOpen?: boolean;
   className?: string;
   children: ReactNode;
 }) {
@@ -24,7 +26,10 @@ export function Dialog({
 
   useEffect(() => {
     const el = ref.current;
-    if (el && !el.open) el.showModal();
+    if (el && !el.open) {
+      el.showModal();
+      if (focusContainerOnOpen) el.focus({ preventScroll: true });
+    }
     return () => {
       if (el?.open) el.close();
     };
@@ -34,6 +39,7 @@ export function Dialog({
     <dialog
       ref={ref}
       className={`bpp-dialog ${className}`.trim()}
+      tabIndex={focusContainerOnOpen ? -1 : undefined}
       aria-labelledby={labelledBy}
       onCancel={(event) => {
         // Escape fires `cancel`; we own the close so the parent state stays in sync.

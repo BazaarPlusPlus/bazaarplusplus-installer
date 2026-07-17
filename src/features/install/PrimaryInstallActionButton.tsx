@@ -45,12 +45,9 @@ export function PrimaryInstallActionButton({
     >
       <span className="relative z-[2] flex min-w-0 items-center justify-center gap-3.5">
         {busy ? (
-          <Loader2
-            size={30}
-            className="bpp-primary-action-icon animate-spin text-[#f29a24]"
-          />
+          <Loader2 size={30} className="bpp-primary-action-icon animate-spin" />
         ) : (
-          <Icon size={30} className="bpp-primary-action-icon text-[#f29a24]" />
+          <Icon size={30} className="bpp-primary-action-icon" />
         )}
         <span className="text-[18px] font-semibold text-white">{label}</span>
       </span>

@@ -1,12 +1,12 @@
-import { NavLink, useLocation } from 'react-router-dom';
-import type { CSSProperties, ReactNode } from 'react';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
+import type { CSSProperties, MouseEvent, ReactNode } from 'react';
 import { Download, History, Info, MonitorPlay } from 'lucide-react';
 import clsx from 'clsx';
 import { useI18n } from '../i18n/LocaleProvider';
 import navActivePng from '../../static/navigation/nav-active.png';
 
 export function ShellNavRail() {
-  const { t } = useI18n();
+  const { locale, t } = useI18n();
   const { pathname } = useLocation();
   const activeIndex = pathname.startsWith('/history')
     ? 1
@@ -33,27 +33,35 @@ export function ShellNavRail() {
       </div>
       <RailItem
         to="/"
+        index={0}
+        activeIndex={activeIndex}
         icon={<Download size={20} />}
         label={t('navInstall')}
-        secondary="INSTALL"
+        secondary={locale === 'zh' ? 'INSTALL' : undefined}
       />
       <RailItem
         to="/history"
+        index={1}
+        activeIndex={activeIndex}
         icon={<History size={20} />}
         label={t('navHistory')}
-        secondary="RECORD"
+        secondary={locale === 'zh' ? 'RECORD' : undefined}
       />
       <RailItem
         to="/stream"
+        index={2}
+        activeIndex={activeIndex}
         icon={<MonitorPlay size={20} />}
         label={t('navStream')}
-        secondary="STREAM"
+        secondary={locale === 'zh' ? 'STREAM' : undefined}
       />
       <RailItem
         to="/about"
+        index={3}
+        activeIndex={activeIndex}
         icon={<Info size={20} />}
         label={t('navAbout')}
-        secondary="ABOUT"
+        secondary={locale === 'zh' ? 'ABOUT' : undefined}
       />
       <div className="bpp-nav-footer">
         <span>◆</span> Powered by
@@ -66,26 +74,87 @@ export function ShellNavRail() {
 
 function RailItem({
   to,
+  index,
+  activeIndex,
   icon,
   label,
   secondary
 }: {
   to: string;
+  index: number;
+  activeIndex: number;
   icon: ReactNode;
   label: string;
-  secondary: string;
+  secondary?: string;
 }) {
+  const navigate = useNavigate();
+
+  const navigateWithTransition = (event: MouseEvent<HTMLAnchorElement>) => {
+    if (
+      event.button !== 0 ||
+      event.metaKey ||
+      event.ctrlKey ||
+      event.shiftKey ||
+      event.altKey ||
+      index === activeIndex
+    ) {
+      return;
+    }
+
+    event.preventDefault();
+    const root = document.documentElement;
+    if (root.dataset.bppNavTransition === 'running') return;
+
+    const direction = index > activeIndex ? 'forward' : 'backward';
+    const page = document.querySelector<HTMLElement>('.bpp-route-page');
+    if (
+      !page ||
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    ) {
+      navigate(to);
+      return;
+    }
+
+    root.dataset.bppNavTransition = 'running';
+    page.classList.add(
+      direction === 'forward' ? 'is-leaving-up' : 'is-leaving-down'
+    );
+
+    let completed = false;
+    const finish = () => {
+      if (completed) return;
+      completed = true;
+      window.clearTimeout(fallbackTimer);
+      page.removeEventListener('animationend', onAnimationEnd);
+      delete root.dataset.bppNavTransition;
+      navigate(to);
+    };
+    const onAnimationEnd = (animationEvent: AnimationEvent) => {
+      if (
+        animationEvent.target === page &&
+        animationEvent.animationName.startsWith('bpp-page-leave-')
+      ) {
+        finish();
+      }
+    };
+    page.addEventListener('animationend', onAnimationEnd);
+    const fallbackTimer = window.setTimeout(finish, 240);
+  };
+
   return (
     <NavLink
       to={to}
+      onClick={navigateWithTransition}
       className={({ isActive }) =>
         clsx('bpp-nav-item', isActive && 'is-active')
       }
     >
-      <span className="relative z-[2] flex items-center">{icon}</span>
+      <span className="bpp-nav-icon relative z-[2] flex items-center">
+        {icon}
+      </span>
       <span className="relative z-[2]">
         <span className="bpp-nav-primary">{label}</span>
-        <span className="bpp-nav-secondary">{secondary}</span>
+        {secondary && <span className="bpp-nav-secondary">{secondary}</span>}
       </span>
     </NavLink>
   );

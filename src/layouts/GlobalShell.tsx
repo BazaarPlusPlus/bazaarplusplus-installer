@@ -1,5 +1,5 @@
-import { Outlet } from 'react-router-dom';
-import { useEffect, useState } from 'react';
+import { Outlet, useLocation } from 'react-router-dom';
+import { useEffect, useRef, useState } from 'react';
 import {
   AppBootstrapProvider,
   useAppBootstrap
@@ -78,7 +78,7 @@ function GlobalShellContent() {
         <ShellNavRail />
         <main className="bpp-main custom-scrollbar">
           <div className="bpp-main-inner">
-            <Outlet />
+            <AnimatedOutlet />
           </div>
         </main>
       </div>
@@ -87,6 +87,39 @@ function GlobalShellContent() {
         <ShellPaymentModal onClose={() => setShowPaymentModal(false)} />
       )}
       {isUpdateModalPhase(updater) && <ShellUpdateModal updater={updater} />}
+    </div>
+  );
+}
+
+function primaryPageIndex(pathname: string): number {
+  if (pathname.startsWith('/history')) return 1;
+  if (pathname.startsWith('/stream')) return 2;
+  if (pathname.startsWith('/about')) return 3;
+  return 0;
+}
+
+function AnimatedOutlet() {
+  const location = useLocation();
+  const currentIndex = primaryPageIndex(location.pathname);
+  const previousIndex = useRef(currentIndex);
+  const direction =
+    currentIndex > previousIndex.current
+      ? 'forward'
+      : currentIndex < previousIndex.current
+        ? 'backward'
+        : 'neutral';
+
+  useEffect(() => {
+    previousIndex.current = currentIndex;
+  }, [currentIndex]);
+
+  return (
+    <div
+      key={location.key}
+      className={`bpp-route-page is-${direction}`}
+      data-route-index={currentIndex}
+    >
+      <Outlet />
     </div>
   );
 }

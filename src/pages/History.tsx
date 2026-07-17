@@ -1,5 +1,13 @@
-import { ChevronRight, Image as ImageIcon, RefreshCw } from 'lucide-react';
+import {
+  ChevronRight,
+  Image as ImageIcon,
+  RefreshCw,
+  Swords,
+  UserRound,
+  Video
+} from 'lucide-react';
 import { Link } from 'react-router-dom';
+import type { ReactNode } from 'react';
 import { ErrorBanner } from '../components/ui/ErrorBanner';
 import { LoadingPanel } from '../components/ui/LoadingPanel';
 import { PageShell } from '../components/ui/PageShell';
@@ -21,6 +29,7 @@ export default function History() {
     <PageShell
       eyebrow="History"
       title={t('historyTitle')}
+      className="bpp-history-page"
       action={
         <button
           type="button"
@@ -28,24 +37,39 @@ export default function History() {
           disabled={page.loading}
           className="bpp-button"
         >
-          <RefreshCw size={14} className={page.loading ? 'animate-spin' : ''} />
+          <RefreshCw size={16} className={page.loading ? 'animate-spin' : ''} />
           {t('refresh')}
         </button>
       }
     >
-      <div className="flex min-h-0 w-full flex-1 flex-col gap-5">
-        <div className="grid shrink-0 grid-cols-3 gap-3">
+      <div className="flex min-h-0 w-full flex-1 flex-col gap-4">
+        <div className="bpp-history-summary-grid">
           <SummaryCard
+            icon={<Swords size={26} strokeWidth={1.75} />}
             label={t('historySummaryRuns')}
             value={page.summary.runs}
+            detail={t('historySummaryRunsDescription')}
           />
           <SummaryCard
+            icon={<Video size={26} strokeWidth={1.75} />}
             label={t('historySummaryVideos')}
             value={page.summary.videos}
+            detail={t('historySummaryVideosDescription')}
           />
           <SummaryCard
+            icon={
+              <>
+                <UserRound size={25} strokeWidth={1.75} />
+                <span className="bpp-history-win-mark" />
+              </>
+            }
             label={t('historySummaryWinRate')}
             value={page.summary.winRate}
+            detail={
+              page.payload.summary.win_rate === null
+                ? t('historySummaryWinRateUnavailable')
+                : t('historySummaryWinRateDescription')
+            }
           />
         </div>
 
@@ -76,24 +100,28 @@ export default function History() {
 }
 
 function SummaryCard({
+  icon,
   label,
   value,
-  isFira = false
+  detail
 }: {
+  icon: ReactNode;
   label: string;
   value: string;
-  isFira?: boolean;
+  detail: string;
 }) {
   return (
-    <div className="bpp-panel relative flex min-h-[82px] flex-col items-center justify-center gap-1 overflow-hidden p-4 before:absolute before:inset-y-3 before:left-0 before:w-[2px] before:bg-[#d47b16]">
-      <span className="text-[9px] uppercase tracking-[.14em] text-[#6c6c67]">
-        {label}
-      </span>
-      <span
-        className={`text-2xl text-[#df851b] ${isFira ? 'fira-code' : 'font-bold'}`}
-      >
-        {value}
-      </span>
+    <div className="bpp-history-summary-card">
+      <div className="bpp-history-stat-orbit" aria-hidden="true">
+        <span className="bpp-history-stat-tick is-top" />
+        <span className="bpp-history-stat-tick is-bottom" />
+        <span className="bpp-history-stat-glyph">{icon}</span>
+      </div>
+      <div className="bpp-history-stat-copy">
+        <span className="bpp-history-stat-label">{label}</span>
+        <strong className="bpp-history-stat-value fira-code">{value}</strong>
+        <span className="bpp-history-stat-detail">{detail}</span>
+      </div>
     </div>
   );
 }
@@ -110,11 +138,8 @@ function RunRow({
   const detailPath = `/history/${encodeURIComponent(run.run_id)}`;
 
   return (
-    <Link
-      to={detailPath}
-      className="bpp-panel group grid grid-cols-[11rem_minmax(0,1fr)_7rem_5rem_4rem_5rem_auto] items-center gap-5 p-3 text-inherit no-underline transition-all hover:border-[rgba(230,137,22,.42)] hover:bg-[rgba(222,128,17,.035)] max-[1040px]:grid-cols-[9rem_minmax(0,1fr)_6rem_4rem_4rem_auto]"
-    >
-      <div className="relative flex aspect-[2000/470] w-44 shrink-0 items-center justify-center overflow-hidden rounded-[2px] bg-[#030506] text-[#56544f] outline outline-1 outline-[rgba(211,130,26,.19)] transition-colors group-hover:outline-[rgba(230,137,22,.46)] max-[1040px]:w-36">
+    <Link to={detailPath} className="bpp-history-run-card group">
+      <div className="bpp-history-run-preview">
         {previewUrl ? (
           // Rounded server crop dimensions can differ slightly from 2000:470.
           // Cover intentionally stays full-bleed; the outline no longer changes
@@ -124,60 +149,58 @@ function RunRow({
             alt=""
             loading="lazy"
             decoding="async"
-            className="absolute inset-0 w-full h-full object-cover"
+            className="bpp-history-run-preview-image"
           />
         ) : (
           <>
-            <div className="absolute inset-0 opacity-20 bg-gradient-to-r from-transparent via-[rgba(200,148,55,0.2)] to-transparent" />
-            <ImageIcon size={20} />
+            <span className="bpp-history-run-preview-empty" />
+            <ImageIcon size={19} />
           </>
         )}
       </div>
 
-      <div className="flex flex-col gap-1 min-w-0">
-        <span className="cinzel font-bold text-lg text-[#e8dcc8] truncate">
-          {run.hero}
-        </span>
-        <span className="fira-code text-[10px] text-[rgba(200,170,120,0.8)] truncate">
-          {formatDateTime(run.started_at_utc)}
-        </span>
-      </div>
+      <div className="bpp-history-run-data">
+        <div className="bpp-history-run-heading">
+          <div className="bpp-history-run-identity">
+            <span className="bpp-history-run-hero cinzel">{run.hero}</span>
+            <span className="bpp-history-run-date fira-code">
+              {formatDateTime(run.started_at_utc)}
+            </span>
+          </div>
 
-      <span
-        className={`font-bold text-sm whitespace-nowrap ${toneColorClass(
-          result.tone
-        )}`}
-      >
-        {t(result.key)}
-      </span>
+          <span
+            className={`bpp-history-run-result ${toneColorClass(result.tone)}`}
+          >
+            {t(result.key)}
+          </span>
 
-      <Metric
-        label={t('runMetricProgress')}
-        value={`${run.victories ?? 0} / ${run.final_day ?? '-'}`}
-        fira
-      />
-      <Metric
-        label={t('runStatRank')}
-        value={run.final_player_rank ?? '-'}
-        gold
-      />
-      <div className="max-[1040px]:hidden">
-        <Metric
-          label={t('runStatRating')}
-          value={
-            run.final_player_rating === null
-              ? '-'
-              : String(run.final_player_rating)
-          }
-          fira
-        />
-      </div>
+          <span className="bpp-history-run-detail">
+            <span>{t('viewDetail')}</span>
+            <ChevronRight size={14} />
+          </span>
+        </div>
 
-      <div className="flex items-center gap-1 text-[rgba(200,170,120,0.55)] group-hover:text-[#e8c87a] transition-colors whitespace-nowrap">
-        <span className="cinzel text-[10px] tracking-widest uppercase">
-          {t('viewDetail')}
-        </span>
-        <ChevronRight size={14} />
+        <div className="bpp-history-run-metrics">
+          <Metric
+            label={t('runMetricProgress')}
+            value={`${run.victories ?? 0} / ${run.final_day ?? '-'}`}
+            fira
+          />
+          <Metric
+            label={t('runStatRank')}
+            value={run.final_player_rank ?? '-'}
+            gold
+          />
+          <Metric
+            label={t('runStatRating')}
+            value={
+              run.final_player_rating === null
+                ? '-'
+                : String(run.final_player_rating)
+            }
+            fira
+          />
+        </div>
       </div>
     </Link>
   );
@@ -195,14 +218,10 @@ function Metric({
   fira?: boolean;
 }) {
   return (
-    <div className="flex flex-col gap-1 items-end text-right">
-      <span className="cinzel text-[10px] tracking-widest text-[rgba(200,170,120,0.8)] uppercase">
-        {label}
-      </span>
+    <div className="bpp-history-run-metric">
+      <span className="bpp-history-run-metric-label cinzel">{label}</span>
       <span
-        className={`text-sm ${fira ? 'fira-code' : 'cinzel'} ${
-          gold ? 'text-[#e8c87a]' : 'text-[#e8dcc8]'
-        }`}
+        className={`bpp-history-run-metric-value ${fira ? 'fira-code' : 'cinzel'} ${gold ? 'is-gold' : ''}`}
       >
         {value}
       </span>
