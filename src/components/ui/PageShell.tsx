@@ -13,7 +13,7 @@ export function PageShell({
   children: ReactNode;
 }) {
   return (
-    <div className="flex flex-col gap-6 w-full h-full max-w-5xl mx-auto">
+    <div className="bpp-page">
       <PageHeader eyebrow={eyebrow} title={title} action={action} />
       {children}
     </div>

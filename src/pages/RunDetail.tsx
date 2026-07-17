@@ -50,11 +50,11 @@ export default function RunDetail() {
   };
 
   return (
-    <div className="flex flex-col gap-6 h-full overflow-hidden pb-8 max-w-5xl mx-auto w-full">
+    <div className="bpp-page h-full overflow-hidden pb-8">
       <button
         type="button"
         onClick={() => navigate('/history')}
-        className="flex items-center gap-2 text-[rgba(200,170,120,0.8)] hover:text-[#e8c87a] transition-colors w-fit cinzel text-sm tracking-wider uppercase"
+        className="bpp-button w-fit"
       >
         <ArrowLeft size={16} />
         {t('runDetailBack')}
@@ -66,14 +66,14 @@ export default function RunDetail() {
           <span>{t('runDetailLoading')}</span>
         </div>
       ) : !detail ? (
-        <div className="p-6 bg-[rgba(18,11,5,0.88)] border border-[rgba(180,130,48,0.13)] rounded-sm text-[rgba(200,170,120,0.8)]">
+        <div className="bpp-panel p-6 text-[#89847c]">
           {page.error ?? t('runDetailNotFound')}
         </div>
       ) : (
         <>
           {page.error && <ErrorBanner message={page.error} />}
 
-          <div className="p-6 bg-[rgba(18,11,5,0.88)] border border-[rgba(180,130,48,0.13)] rounded-sm shadow-[0_6px_28px_rgba(0,0,0,0.35)] flex flex-col gap-6">
+          <div className="bpp-panel flex flex-col gap-6 p-6">
             <div className="flex justify-between items-start">
               <div className="flex flex-col gap-1 min-w-0">
                 <h2 className="cinzel-decorative text-2xl font-bold text-[#e8dcc8] m-0 truncate">
@@ -107,7 +107,7 @@ export default function RunDetail() {
                   !detail.run.screenshot_id || page.action === 'screenshot'
                 }
                 onClick={page.revealScreenshot}
-                className="flex items-center gap-2 px-4 py-2 bg-[rgba(200,148,55,0.06)] border border-[rgba(180,130,48,0.2)] rounded-sm hover:bg-[rgba(200,148,55,0.12)] disabled:opacity-40 transition-colors text-sm text-[#e8dcc8]"
+                className="bpp-button"
               >
                 <ImageIcon size={16} /> {t('openScreenshotLocation')}
               </button>
@@ -140,7 +140,7 @@ export default function RunDetail() {
             </div>
           </div>
 
-          <div className="flex-1 flex flex-col bg-[rgba(18,11,5,0.88)] border border-[rgba(180,130,48,0.13)] rounded-sm shadow-[0_6px_28px_rgba(0,0,0,0.35)] overflow-hidden">
+          <div className="bpp-panel flex flex-1 flex-col overflow-hidden">
             <div className="flex-1 overflow-auto custom-scrollbar">
               <div className="min-w-[640px]">
                 <div

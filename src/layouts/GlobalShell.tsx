@@ -52,7 +52,8 @@ function GlobalShellContent() {
   }, [showBilibili, showSupport]);
 
   return (
-    <div className="flex flex-col h-full bg-[#0b0906] text-[#e8dcc8]">
+    <div className="bpp-app flex flex-col text-[#d9d4cb]">
+      <div className="bpp-app-vignette" aria-hidden="true" />
       <ShellHeader
         app={app}
         showBilibili={showBilibili}
@@ -73,17 +74,10 @@ function GlobalShellContent() {
         onCloseSupport={() => setShowSupport(false)}
       />
 
-      <div className="flex-1 flex overflow-hidden">
+      <div className="bpp-shell-body">
         <ShellNavRail />
-        <main className="flex-1 overflow-y-auto bg-transparent relative">
-          <div
-            className="absolute inset-0 pointer-events-none opacity-5"
-            style={{
-              backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='turbulence' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23g)'/%3E%3C/svg%3E")`,
-              backgroundRepeat: 'repeat'
-            }}
-          />
-          <div className="p-8 h-full w-full relative z-10">
+        <main className="bpp-main custom-scrollbar">
+          <div className="bpp-main-inner">
             <Outlet />
           </div>
         </main>

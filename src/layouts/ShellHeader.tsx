@@ -16,6 +16,7 @@ import { useUpdater } from '../features/about/UpdaterProvider';
 import { useI18n } from '../i18n/LocaleProvider';
 import douyinPng from '../../static/support/douyin.png';
 import xiaohongshuSvg from '../../static/support/xiaohongshu.svg';
+import { BrandMark } from '../components/brand/BrandMark';
 
 type ShellHeaderProps = {
   app: AppBootstrapController;
@@ -41,16 +42,7 @@ export function ShellHeader({
   const { bootstrap } = app;
 
   return (
-    <header
-      className="flex-none relative px-6 py-4 border-b border-[rgba(200,148,55,0.18)] z-20 flex flex-row items-center justify-between gap-4"
-      style={{
-        background:
-          'linear-gradient(175deg, rgba(36,22,9,0.9), rgba(15,9,5,0.86))',
-        boxShadow:
-          '0 0 0 1px rgba(200,148,55,0.06) inset, 0 16px 42px rgba(0,0,0,0.42)'
-      }}
-    >
-      <ShellHeaderCorners />
+    <header className="bpp-header">
       <ShellBrand />
       <ShellHeaderActions
         bootstrap={bootstrap}
@@ -66,84 +58,19 @@ export function ShellHeader({
   );
 }
 
-function ShellHeaderCorners() {
+function ShellBrand() {
+  const app = useAppBootstrapVersion();
   return (
-    <>
-      <div className="absolute top-2 left-2 text-[rgba(200,148,55,0.42)] pointer-events-none block">
-        <svg width="28" height="28" viewBox="0 0 40 40" fill="none">
-          <path
-            d="M2 2L2 16M2 2L16 2"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            strokeLinecap="square"
-          />
-          <circle cx="2" cy="2" r="1.5" fill="currentColor" />
-        </svg>
-      </div>
-      <div className="absolute top-2 right-2 text-[rgba(200,148,55,0.42)] pointer-events-none block">
-        <svg width="28" height="28" viewBox="0 0 40 40" fill="none">
-          <path
-            d="M38 2L38 16M38 2L24 2"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            strokeLinecap="square"
-          />
-          <circle cx="38" cy="2" r="1.5" fill="currentColor" />
-        </svg>
-      </div>
-    </>
+    <div className="flex min-w-0 items-center gap-3 z-10">
+      {/* <BrandMark /> */}
+      <h1 className="bpp-brand-title">BazaarPlusPlus</h1>
+      <span className="bpp-version-chip">v{app}</span>
+    </div>
   );
 }
 
-function ShellBrand() {
-  const { t } = useI18n();
-  return (
-    <div className="flex items-center gap-3 z-10 ml-6">
-      <div
-        className="text-[rgba(205,150,60,0.65)] flex-shrink-0"
-        style={{ filter: 'drop-shadow(0 0 7px rgba(205,150,60,0.22))' }}
-      >
-        <svg width="28" height="28" viewBox="0 0 44 44" fill="none">
-          <polygon
-            points="22,3 41,34 3,34"
-            stroke="currentColor"
-            strokeWidth="1"
-            fill="none"
-            opacity="0.55"
-          />
-          <polygon
-            points="22,11 35,31 9,31"
-            stroke="currentColor"
-            strokeWidth="0.5"
-            fill="none"
-            opacity="0.3"
-          />
-          <circle
-            cx="22"
-            cy="22"
-            r="5"
-            stroke="currentColor"
-            strokeWidth="0.8"
-            fill="none"
-          />
-          <circle cx="22" cy="22" r="2" fill="currentColor" opacity="0.75" />
-        </svg>
-      </div>
-      <div className="flex flex-row items-baseline gap-3">
-        <h1
-          className="cinzel-decorative text-2xl font-bold m-0 leading-none text-gold-text"
-          style={{
-            filter: 'drop-shadow(0 2px 10px rgba(205,150,60,0.28))'
-          }}
-        >
-          BazaarPlusPlus
-        </h1>
-        <p className="m-0 italic text-[13px] text-[rgba(200,170,120,0.8)]">
-          {t('kicker')}
-        </p>
-      </div>
-    </div>
-  );
+function useAppBootstrapVersion() {
+  return __FRONTEND_VERSION__;
 }
 
 type ShellHeaderActionsProps = {
@@ -195,7 +122,7 @@ function ShellHeaderActions({
   const CheckIcon = checkIcon;
 
   return (
-    <div className="flex items-center gap-3 z-10 justify-end mr-6">
+    <div className="flex min-w-0 items-center gap-2 z-10 justify-end">
       <ShellSocialLinks
         bootstrap={bootstrap}
         showBilibili={showBilibili}
@@ -208,15 +135,7 @@ function ShellHeaderActions({
         onClick={updater.checkNow}
         disabled={checking}
         title={checkTitle}
-        className="flex items-center gap-2 px-3 h-8 border border-[rgba(200,148,55,0.24)] rounded-[2px] cinzel text-[10px] tracking-widest uppercase transition-all hover:border-[rgba(200,148,55,0.4)] disabled:opacity-60"
-        style={{
-          background:
-            'linear-gradient(180deg, rgba(200,148,55,0.12), rgba(200,148,55,0.06))',
-          color: checkErrorTone
-            ? 'rgba(224,150,130,0.92)'
-            : 'rgba(228,216,191,0.82)',
-          boxShadow: '0 0 0 1px rgba(255,198,98,0.08) inset'
-        }}
+        className={`bpp-button h-9 cinzel text-[10px] tracking-wider uppercase disabled:opacity-60 ${checkErrorTone ? 'text-[#dc8c7d]' : ''}`}
       >
         <CheckIcon size={14} className={checking ? 'animate-pulse' : ''} />
         <span className="inline">{checkLabel}</span>
@@ -233,13 +152,7 @@ function ShellHeaderActions({
       <button
         type="button"
         onClick={toggle}
-        className="flex items-center justify-center size-8 border border-[rgba(200,148,55,0.24)] rounded-[2px] transition-all hover:border-[rgba(200,148,55,0.4)]"
-        style={{
-          background:
-            'linear-gradient(180deg, rgba(200,148,55,0.12), rgba(200,148,55,0.06))',
-          color: 'rgba(228,216,191,0.82)',
-          boxShadow: '0 0 0 1px rgba(255,198,98,0.08) inset'
-        }}
+        className="bpp-button size-9 p-0"
         title={t('languageToggle')}
         aria-label={t('languageToggle')}
       >
@@ -347,7 +260,7 @@ function ShellSocialLinks({
 }) {
   const { t } = useI18n();
   return (
-    <div className="flex items-center gap-1 mr-2">
+    <div className="bpp-header-socials flex items-center gap-1 mr-1">
       <a
         href={bootstrap.links.github}
         target="_blank"
@@ -444,13 +357,7 @@ function ShellSocialLinks({
         <button
           type="button"
           onClick={onToggleBilibili}
-          className="flex min-w-[66px] items-center justify-center gap-1.5 px-2.5 h-8 border border-[rgba(0,161,214,0.28)] rounded-[2px] text-[11px] font-medium tracking-[0.04em] transition-all hover:border-[rgba(0,161,214,0.55)] hover:text-[#7ad8ff]"
-          style={{
-            background:
-              'linear-gradient(180deg, rgba(0,161,214,0.1), rgba(200,148,55,0.05))',
-            color: 'rgba(228,216,191,0.82)',
-            boxShadow: '0 0 0 1px rgba(255,198,98,0.06) inset'
-          }}
+          className="bpp-button h-9 min-w-[68px] px-3 text-[11px] font-medium tracking-[0.04em]"
           aria-label={t('socialBilibili')}
           aria-expanded={showBilibili}
         >
@@ -542,13 +449,7 @@ function ShellSupportMenu({
     <div className="relative" data-dropdown>
       <button
         type="button"
-        className="flex items-center gap-2 px-3 h-8 border border-[rgba(200,148,55,0.24)] rounded-[2px] cinzel text-[10px] tracking-widest uppercase transition-all hover:border-[rgba(200,148,55,0.4)]"
-        style={{
-          background:
-            'linear-gradient(180deg, rgba(200,148,55,0.12), rgba(200,148,55,0.06))',
-          color: 'rgba(228,216,191,0.82)',
-          boxShadow: '0 0 0 1px rgba(255,198,98,0.08) inset'
-        }}
+        className="bpp-button h-9 cinzel text-[10px] tracking-wider uppercase"
         onClick={onToggleSupport}
       >
         <Heart size={14} />

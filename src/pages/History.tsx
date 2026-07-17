@@ -26,15 +26,15 @@ export default function History() {
           type="button"
           onClick={page.refresh}
           disabled={page.loading}
-          className="flex items-center gap-2 px-3 py-1.5 bg-[rgba(200,148,55,0.06)] border border-[rgba(180,130,48,0.2)] rounded-sm hover:bg-[rgba(200,148,55,0.12)] disabled:opacity-40 transition-colors text-xs text-[#e8dcc8]"
+          className="bpp-button"
         >
           <RefreshCw size={14} className={page.loading ? 'animate-spin' : ''} />
           {t('refresh')}
         </button>
       }
     >
-      <div className="flex flex-col gap-6 flex-1 min-h-0 w-full">
-        <div className="grid grid-cols-3 gap-4 shrink-0">
+      <div className="flex min-h-0 w-full flex-1 flex-col gap-5">
+        <div className="grid shrink-0 grid-cols-3 gap-3">
           <SummaryCard
             label={t('historySummaryRuns')}
             value={page.summary.runs}
@@ -53,11 +53,11 @@ export default function History() {
 
         {page.error && <ErrorBanner message={page.error} />}
 
-        <div className="flex flex-col gap-3 flex-1 min-h-0 overflow-y-auto custom-scrollbar pr-2">
+        <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto pr-2 custom-scrollbar">
           {page.loading ? (
             <LoadingPanel label={t('historyLoading')} />
           ) : page.payload.runs.length === 0 ? (
-            <div className="flex items-center justify-center h-48 text-[rgba(200,170,120,0.8)] border border-[rgba(180,130,48,0.12)] bg-[rgba(18,11,5,0.6)]">
+            <div className="bpp-panel flex h-48 items-center justify-center text-[#777871]">
               {t('noLocalRuns')}
             </div>
           ) : (
@@ -85,12 +85,12 @@ function SummaryCard({
   isFira?: boolean;
 }) {
   return (
-    <div className="p-4 bg-[rgba(18,11,5,0.88)] border border-[rgba(180,130,48,0.13)] rounded-sm shadow-[0_6px_28px_rgba(0,0,0,0.35)] flex flex-col items-center justify-center gap-1">
-      <span className="cinzel text-[10px] tracking-widest text-[rgba(200,170,120,0.8)] uppercase">
+    <div className="bpp-panel relative flex min-h-[82px] flex-col items-center justify-center gap-1 overflow-hidden p-4 before:absolute before:inset-y-3 before:left-0 before:w-[2px] before:bg-[#d47b16]">
+      <span className="text-[9px] uppercase tracking-[.14em] text-[#6c6c67]">
         {label}
       </span>
       <span
-        className={`text-2xl text-[#e8c87a] ${isFira ? 'fira-code' : 'cinzel font-bold'}`}
+        className={`text-2xl text-[#df851b] ${isFira ? 'fira-code' : 'font-bold'}`}
       >
         {value}
       </span>
@@ -112,9 +112,9 @@ function RunRow({
   return (
     <Link
       to={detailPath}
-      className="group grid grid-cols-[14rem_minmax(0,1fr)_9rem_6.5rem_5rem_5.5rem_auto] items-center gap-6 p-3 bg-[rgba(18,11,5,0.88)] border border-[rgba(180,130,48,0.13)] rounded-sm hover:border-[rgba(200,148,55,0.4)] hover:bg-[rgba(200,148,55,0.04)] transition-all shadow-[0_4px_12px_rgba(0,0,0,0.2)] no-underline text-inherit"
+      className="bpp-panel group grid grid-cols-[11rem_minmax(0,1fr)_7rem_5rem_4rem_5rem_auto] items-center gap-5 p-3 text-inherit no-underline transition-all hover:border-[rgba(230,137,22,.42)] hover:bg-[rgba(222,128,17,.035)] max-[1040px]:grid-cols-[9rem_minmax(0,1fr)_6rem_4rem_4rem_auto]"
     >
-      <div className="w-56 aspect-[2000/470] shrink-0 bg-[#000] outline outline-1 outline-[rgba(200,148,55,0.2)] rounded-sm flex items-center justify-center text-[rgba(200,170,120,0.3)] group-hover:outline-[rgba(200,148,55,0.5)] transition-colors overflow-hidden relative">
+      <div className="relative flex aspect-[2000/470] w-44 shrink-0 items-center justify-center overflow-hidden rounded-[2px] bg-[#030506] text-[#56544f] outline outline-1 outline-[rgba(211,130,26,.19)] transition-colors group-hover:outline-[rgba(230,137,22,.46)] max-[1040px]:w-36">
         {previewUrl ? (
           // Rounded server crop dimensions can differ slightly from 2000:470.
           // Cover intentionally stays full-bleed; the outline no longer changes
@@ -144,7 +144,7 @@ function RunRow({
       </div>
 
       <span
-        className={`cinzel font-bold text-lg whitespace-nowrap ${toneColorClass(
+        className={`font-bold text-sm whitespace-nowrap ${toneColorClass(
           result.tone
         )}`}
       >
@@ -161,15 +161,17 @@ function RunRow({
         value={run.final_player_rank ?? '-'}
         gold
       />
-      <Metric
-        label={t('runStatRating')}
-        value={
-          run.final_player_rating === null
-            ? '-'
-            : String(run.final_player_rating)
-        }
-        fira
-      />
+      <div className="max-[1040px]:hidden">
+        <Metric
+          label={t('runStatRating')}
+          value={
+            run.final_player_rating === null
+              ? '-'
+              : String(run.final_player_rating)
+          }
+          fira
+        />
+      </div>
 
       <div className="flex items-center gap-1 text-[rgba(200,170,120,0.55)] group-hover:text-[#e8c87a] transition-colors whitespace-nowrap">
         <span className="cinzel text-[10px] tracking-widest uppercase">

@@ -78,14 +78,14 @@ export function StorageCleanupCard({
 
   return (
     <>
-      <details className="group p-4 bg-[rgba(18,11,5,0.88)] border border-[rgba(180,130,48,0.13)] rounded-sm shadow-[0_6px_28px_rgba(0,0,0,0.35)]">
+      <details className="bpp-panel group p-4">
         <summary className="flex items-center gap-2 cursor-pointer list-none select-none [&::-webkit-details-marker]:hidden">
           <ChevronRight
             size={14}
-            className="shrink-0 text-[rgba(200,170,120,0.8)] transition-transform group-open:rotate-90"
+            className="shrink-0 text-[#8a8277] transition-transform group-open:rotate-90"
           />
-          <Trash2 size={14} className="text-[rgba(200,170,120,0.8)]" />
-          <span className="cinzel text-[10px] tracking-widest text-[rgba(200,170,120,0.8)] uppercase">
+          <Trash2 size={14} className="text-[#bb711d]" />
+          <span className="text-[10px] font-semibold uppercase tracking-[.14em] text-[#918b82]">
             {t('storageCleanupTitle')}
           </span>
         </summary>
@@ -159,7 +159,7 @@ function CleanupRow({
 
   return (
     <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
-      <span className="text-sm text-[#e8dcc8]">{label}</span>
+      <span className="text-sm text-[#bdb8b0]">{label}</span>
       <div className="flex flex-wrap gap-2 sm:justify-end">
         {PRESETS.map(({ preset, labelKey }) => (
           <button
@@ -167,7 +167,7 @@ function CleanupRow({
             type="button"
             disabled={busy}
             onClick={() => void onSelect(scope, preset)}
-            className="px-3 py-1.5 bg-[rgba(200,148,55,0.06)] border border-[rgba(180,130,48,0.2)] rounded-sm hover:bg-[rgba(200,148,55,0.12)] disabled:opacity-40 transition-colors text-xs text-[#e8dcc8]"
+            className="bpp-button !min-h-8 !px-3 text-[10px]"
           >
             {t(labelKey)}
           </button>

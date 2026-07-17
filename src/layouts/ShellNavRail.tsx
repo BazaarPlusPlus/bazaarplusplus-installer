@@ -3,23 +3,41 @@ import type { ReactNode } from 'react';
 import { Download, History, Info, MonitorPlay } from 'lucide-react';
 import clsx from 'clsx';
 import { useI18n } from '../i18n/LocaleProvider';
+import navActivePng from '../../static/navigation/nav-active.png';
 
 export function ShellNavRail() {
   const { t } = useI18n();
   return (
-    <nav className="flex-none w-48 border-r border-[rgba(200,148,55,0.18)] bg-[#0b0906] flex flex-col py-6 z-0">
-      <RailItem to="/" icon={<Download size={18} />} label={t('navInstall')} />
+    <nav className="bpp-nav" aria-label="Primary navigation">
+      <RailItem
+        to="/"
+        icon={<Download size={20} />}
+        label={t('navInstall')}
+        secondary="INSTALL"
+      />
       <RailItem
         to="/history"
-        icon={<History size={18} />}
+        icon={<History size={20} />}
         label={t('navHistory')}
+        secondary="RECORD"
       />
       <RailItem
         to="/stream"
-        icon={<MonitorPlay size={18} />}
+        icon={<MonitorPlay size={20} />}
         label={t('navStream')}
+        secondary="STREAM"
       />
-      <RailItem to="/about" icon={<Info size={18} />} label={t('navAbout')} />
+      <RailItem
+        to="/about"
+        icon={<Info size={20} />}
+        label={t('navAbout')}
+        secondary="ABOUT"
+      />
+      <div className="bpp-nav-footer">
+        <span>◆</span> Powered by
+        <br />
+        Bazaar Technology
+      </div>
     </nav>
   );
 }
@@ -27,26 +45,42 @@ export function ShellNavRail() {
 function RailItem({
   to,
   icon,
-  label
+  label,
+  secondary
 }: {
   to: string;
   icon: ReactNode;
   label: string;
+  secondary: string;
 }) {
   return (
     <NavLink
       to={to}
       className={({ isActive }) =>
-        clsx(
-          'flex items-center gap-3 px-6 py-3 cinzel tracking-widest transition-colors',
-          isActive
-            ? 'bg-[rgba(200,148,55,0.1)] text-[#e8c87a] border-r-2 border-[#e8c87a]'
-            : 'text-[rgba(228,216,191,0.6)] hover:bg-[rgba(200,148,55,0.05)] hover:text-[#e8dcc8] border-r-2 border-transparent'
-        )
+        clsx('bpp-nav-item', isActive && 'is-active')
       }
     >
-      {icon}
-      <span className="text-sm mt-0.5">{label}</span>
+      {({ isActive }) => (
+        <>
+          {isActive && (
+            <>
+              <img
+                src={navActivePng}
+                alt=""
+                aria-hidden="true"
+                draggable={false}
+                className="bpp-nav-active-image"
+              />
+              <span className="bpp-nav-active-glow" aria-hidden="true" />
+            </>
+          )}
+          <span className="relative z-[2] flex items-center">{icon}</span>
+          <span className="relative z-[2]">
+            <span className="bpp-nav-primary">{label}</span>
+            <span className="bpp-nav-secondary">{secondary}</span>
+          </span>
+        </>
+      )}
     </NavLink>
   );
 }

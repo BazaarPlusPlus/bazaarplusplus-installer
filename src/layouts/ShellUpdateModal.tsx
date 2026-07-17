@@ -42,7 +42,7 @@ export function ShellUpdateModal({ updater }: ShellUpdateModalProps) {
       onClose={dismissable ? updater.dismiss : () => undefined}
       labelledBy="update-modal-title"
     >
-      <div className="w-[min(460px,calc(100vw-32px))] border border-[rgba(200,148,55,0.26)] bg-[#130d08] shadow-[0_24px_70px_rgba(0,0,0,0.58)]">
+      <div className="bpp-modal-card w-[min(460px,calc(100vw-32px))]">
         <div className="border-b border-[rgba(200,148,55,0.18)] px-6 py-5">
           <div className="flex items-start gap-4">
             <div className="flex size-10 items-center justify-center rounded-[2px] border border-[rgba(200,148,55,0.28)] bg-[rgba(200,148,55,0.1)] text-[rgba(232,212,174,0.9)]">

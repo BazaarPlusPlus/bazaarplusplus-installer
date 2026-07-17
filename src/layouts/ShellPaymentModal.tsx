@@ -7,8 +7,8 @@ export function ShellPaymentModal({ onClose }: { onClose: () => void }) {
   const { t } = useI18n();
   return (
     <Dialog onClose={onClose} labelledBy="payment-modal-title">
-      <div className="bg-[#0b0906] border border-[rgba(200,148,55,0.18)] rounded-[4px] shadow-[0_24px_64px_rgba(0,0,0,0.5)] w-full max-w-md mx-4 relative">
-        <div className="flex justify-between items-center px-5 py-4 border-b border-[rgba(200,148,55,0.15)] bg-[rgba(200,148,55,0.02)]">
+      <div className="bpp-modal-card w-full max-w-md mx-4 relative">
+        <div className="bpp-modal-header flex justify-between items-center px-5 py-4">
           <div>
             <p className="cinzel text-[10px] tracking-[0.2em] text-[rgba(200,148,55,0.5)] uppercase m-0 mb-1">
               BazaarPlusPlus

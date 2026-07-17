@@ -14,10 +14,15 @@
     "windows": [
       {
         "title": "BazaarPlusPlus",
-        "width": 1000,
-        "height": 720,
-        "minWidth": 900,
-        "minHeight": 640
+        "width": 1080,
+        "height": 810,
+        "minWidth": 1080,
+        "minHeight": 810,
+        "maxWidth": 1080,
+        "maxHeight": 810,
+        "resizable": false,
+        "maximizable": false,
+        "fullscreen": false
       }
     ],
     "security": {

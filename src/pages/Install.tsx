@@ -66,7 +66,7 @@ export default function Install() {
 
   return (
     <PageShell eyebrow="Install" title={t('installTitle')}>
-      <div className="grid grid-cols-12 gap-8 w-full">
+      <div className="grid w-full grid-cols-[minmax(0,1fr)_300px] gap-9 max-[980px]:grid-cols-1 max-[980px]:gap-7">
         <InstallStatusPanel page={page} />
         <InstallActionsPanel
           page={page}

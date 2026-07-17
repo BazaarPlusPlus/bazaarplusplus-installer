@@ -52,8 +52,8 @@ export interface ConfirmDialogProps {
 const TONE = {
   gold: {
     Icon: DownloadCloud as LucideIcon,
-    card: 'bg-[#0b0906] border border-[rgba(200,148,55,0.18)] rounded-[4px] shadow-[0_24px_64px_rgba(0,0,0,0.5)] w-full max-w-md mx-4 relative',
-    bar: 'flex justify-between items-center px-5 py-4 border-b border-[rgba(200,148,55,0.15)] bg-[rgba(200,148,55,0.02)]',
+    card: 'bpp-modal-card w-full max-w-md mx-4 relative',
+    bar: 'bpp-modal-header flex justify-between items-center px-5 py-4',
     icon: 'text-[rgba(200,148,55,0.8)]',
     title: 'cinzel text-[1.1rem] text-[#e8dcc8] m-0 tracking-wider',
     close:
@@ -67,8 +67,8 @@ const TONE = {
   },
   danger: {
     Icon: AlertTriangle as LucideIcon,
-    card: 'bg-[#0b0906] border border-[rgba(190,80,80,0.24)] rounded-[4px] shadow-[0_24px_64px_rgba(0,0,0,0.5)] w-full max-w-md mx-4 relative',
-    bar: 'flex justify-between items-center px-5 py-4 border-b border-[rgba(190,80,80,0.18)] bg-[rgba(160,50,50,0.06)]',
+    card: 'bpp-modal-card bpp-modal-danger w-full max-w-md mx-4 relative',
+    bar: 'bpp-modal-header flex justify-between items-center px-5 py-4',
     icon: 'text-[rgba(232,120,120,0.9)]',
     title: 'cinzel text-[1.1rem] text-[#f0d8d8] m-0 tracking-wider',
     close:
