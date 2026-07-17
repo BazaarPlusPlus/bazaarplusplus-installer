@@ -1,7 +1,7 @@
 ---
 status: truth
 topic: frontend
-last-verified: 8d453b79679a4ab65f059fc89b35ab377ed67e58
+last-verified: aab7d3a159493555964fc43afcae470773ec850b
 ---
 
 # Frontend
@@ -11,8 +11,8 @@ last-verified: 8d453b79679a4ab65f059fc89b35ab377ed67e58
 - `GlobalShell` wraps the app in `AppBootstrapProvider` and `UpdaterProvider`, then renders the shell header, nav rail, page outlet, payment modal, and update modal in `src/layouts/GlobalShell.tsx:14-21` and `src/layouts/GlobalShell.tsx:54-90`.
 - Header dropdowns close on Escape and outside pointer-down events in `src/layouts/GlobalShell.tsx:31-52`.
 - The update modal is rendered only for updater phases considered modal phases by `isUpdateModalPhase` in `src/layouts/GlobalShell.tsx:86-89` and `src/features/about/updater.ts:90-103`.
-- The shell's dark industrial visual system, supplied background image, navigation rail, panels, buttons, and page headers are centralized in `src/styles/index.css:15-559`; individual product pages reuse those semantic classes.
-- The desktop window is fixed at 1080×810 and cannot be resized, maximized, or launched fullscreen in `src-tauri/tauri.conf.json:13-26`.
+- The shell's dark industrial visual system, supplied background image, navigation rail, panels, buttons, page headers, and install-dashboard effects are centralized in `src/styles/index.css`; individual product pages reuse those semantic classes.
+- The desktop window is fixed at 1080×760 and cannot be resized, maximized, or launched fullscreen in `src-tauri/tauri.conf.json:13-26`.
 
 ## Native-Feel Rules
 
@@ -31,9 +31,9 @@ last-verified: 8d453b79679a4ab65f059fc89b35ab377ed67e58
 
 ## Current Product Surfaces
 
-- Install renders a two-column game/mod status and action layout plus install and reset confirmation modals in `src/pages/Install.tsx:67-112`.
-- Install action status shows BazaarPlusPlus, while reset-data, reset-BepInEx, and uninstall remain separate gated actions in `src/features/install/InstallActionsPanel.tsx:33-93`.
-- The reset-local-data action is disabled unless backend action gates allow reset data, and its label switches to a no-data message when the game path is valid but no resettable data exists in `src/features/install/InstallActionsPanel.tsx:63-75`.
+- Install renders an overall status hero, real install-directory controls, an app-version card, and four maintenance tools, followed by the existing install and reset confirmation modals in `src/pages/Install.tsx` and `src/features/install/InstallStatusPanel.tsx`.
+- Copy path uses the browser clipboard, open directory uses the Tauri opener plugin, and the page-level check-update tool shares the shell's `UpdaterProvider` flow in `src/features/install/InstallStatusPanel.tsx` and `src/pages/Install.tsx`.
+- Reset-data, reset-BepInEx, and uninstall remain separately gated maintenance actions; reset data switches to a no-data label when the game path is valid but no resettable data exists in `src/features/install/InstallActionsPanel.tsx`.
 - Stream retains service restart/open, OBS URL copying, active-window controls, display modes, crop-code actions, and settings access in `src/pages/Stream.tsx:52-258`.
 - About groups the app versions, GitHub link, contributor/acknowledgement credits, expandable licenses, and verification badge in `src/pages/About.tsx:36-133`.
 - History summary cards are Runs, Videos, and Win Rate in `src/pages/History.tsx:36-50`.

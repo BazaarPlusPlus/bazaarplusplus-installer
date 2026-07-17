@@ -5,7 +5,6 @@ import { useI18n } from '../i18n/LocaleProvider';
 import type { MessageKey } from '../i18n/messages';
 import type { AppCredit } from '../types/backend';
 import fableVerifiedBadge from '../../static/about/fable-5-verified.webp';
-import { BrandMark } from '../components/brand/BrandMark';
 
 // Credits are split into ordered groups by their `group` field so contributors
 // stay separate from the external data/inspiration sources we acknowledge.
@@ -42,13 +41,9 @@ export default function About() {
           <div className="absolute right-5 top-4 text-[10px] tracking-[.24em] text-[rgba(220,128,18,.34)]">
             B++
           </div>
-          <div className="flex items-center gap-8">
-            <div className="relative flex size-[150px] shrink-0 items-center justify-center rounded-[4px] border border-[rgba(218,132,26,.22)] bg-[rgba(5,9,11,.56)]">
-              <div className="absolute inset-3 border border-[rgba(218,132,26,.09)]" />
-              <BrandMark className="!size-[105px]" />
-            </div>
+          <div className="flex items-center gap-6">
             <div className="min-w-0 flex-1">
-              <h3 className="m-0 text-[26px] font-[760] tracking-[.02em] text-[#dcd7cf]">
+              <h3 className="bpp-mod-name m-0 text-[26px] text-[#dcd7cf]">
                 BazaarPlusPlus
               </h3>
               <p className="mt-2 text-[12px] text-[#77766f]">

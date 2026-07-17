@@ -1,7 +1,7 @@
 ---
 status: truth
 topic: install-reset
-last-verified: 8d453b79679a4ab65f059fc89b35ab377ed67e58
+last-verified: aab7d3a159493555964fc43afcae470773ec850b
 ---
 
 # Install And Reset
@@ -26,7 +26,7 @@ last-verified: 8d453b79679a4ab65f059fc89b35ab377ed67e58
 ## Reset Local Data
 
 - The frontend opens a dedicated reset confirmation modal and requires an acknowledgement checkbox before confirming in `src/pages/Install.tsx:93-100` and `src/features/install/ResetDataConfirmModal.tsx:21-55`.
-- The reset action is disabled when reset is not allowed, and the UI distinguishes "no resettable data" from the destructive action label in `src/features/install/InstallActionsPanel.tsx:63-75`.
+- The reset action is disabled when reset is not allowed, and the maintenance-tools UI distinguishes "no resettable data" from the destructive action label in `src/features/install/InstallActionsPanel.tsx`.
 - `useInstallPage` treats an already-empty state as a no-op, calls `resetBppData`, refreshes install state from the typed result, and chooses success versus no-op copy from `removed_data` in `src/features/install/useInstallPage.ts:111-141`.
 - The Rust reset path stops the stream service before deletion to release SQLite/file handles, then runs blocking deletion in `src-tauri/src/services/bepinex/mod.rs:29-41`.
 - Reset refuses to run while The Bazaar is detected as running, records whether the data directory existed before cleanup, and returns stable error-code prefixes for blocked or partial-failure cases in `src-tauri/src/services/bepinex/mod.rs:18-27` and `src-tauri/src/services/bepinex/mod.rs:43-69`.

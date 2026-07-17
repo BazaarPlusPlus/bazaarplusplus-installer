@@ -1,5 +1,5 @@
-import { NavLink } from 'react-router-dom';
-import type { ReactNode } from 'react';
+import { NavLink, useLocation } from 'react-router-dom';
+import type { CSSProperties, ReactNode } from 'react';
 import { Download, History, Info, MonitorPlay } from 'lucide-react';
 import clsx from 'clsx';
 import { useI18n } from '../i18n/LocaleProvider';
@@ -7,8 +7,30 @@ import navActivePng from '../../static/navigation/nav-active.png';
 
 export function ShellNavRail() {
   const { t } = useI18n();
+  const { pathname } = useLocation();
+  const activeIndex = pathname.startsWith('/history')
+    ? 1
+    : pathname.startsWith('/stream')
+      ? 2
+      : pathname.startsWith('/about')
+        ? 3
+        : 0;
+
   return (
     <nav className="bpp-nav" aria-label="Primary navigation">
+      <div
+        className="bpp-nav-active-slider"
+        aria-hidden="true"
+        style={{ '--bpp-nav-index': activeIndex } as CSSProperties}
+      >
+        <img
+          src={navActivePng}
+          alt=""
+          draggable={false}
+          className="bpp-nav-active-image"
+        />
+        <span className="bpp-nav-active-glow" />
+      </div>
       <RailItem
         to="/"
         icon={<Download size={20} />}
@@ -60,27 +82,11 @@ function RailItem({
         clsx('bpp-nav-item', isActive && 'is-active')
       }
     >
-      {({ isActive }) => (
-        <>
-          {isActive && (
-            <>
-              <img
-                src={navActivePng}
-                alt=""
-                aria-hidden="true"
-                draggable={false}
-                className="bpp-nav-active-image"
-              />
-              <span className="bpp-nav-active-glow" aria-hidden="true" />
-            </>
-          )}
-          <span className="relative z-[2] flex items-center">{icon}</span>
-          <span className="relative z-[2]">
-            <span className="bpp-nav-primary">{label}</span>
-            <span className="bpp-nav-secondary">{secondary}</span>
-          </span>
-        </>
-      )}
+      <span className="relative z-[2] flex items-center">{icon}</span>
+      <span className="relative z-[2]">
+        <span className="bpp-nav-primary">{label}</span>
+        <span className="bpp-nav-secondary">{secondary}</span>
+      </span>
     </NavLink>
   );
 }

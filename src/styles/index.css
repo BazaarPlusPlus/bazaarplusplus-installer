@@ -176,11 +176,11 @@ body {
 .bpp-brand-title {
   margin: 0;
   color: #ded9d0;
+  font-family: 'Cinzel', 'Noto Sans SC', sans-serif;
   font-size: clamp(17px, 1.7vw, 23px);
-  font-weight: 760;
+  font-weight: 700;
   letter-spacing: 0.015em;
   line-height: 1;
-  text-transform: uppercase;
   text-shadow: 0 2px 14px rgba(0, 0, 0, 0.7);
 }
 .bpp-version-chip {
@@ -194,6 +194,11 @@ body {
   font-size: 9px;
   line-height: 1;
 }
+.bpp-mod-name {
+  font-family: 'Cinzel', 'Noto Sans SC', sans-serif;
+  font-weight: 700;
+  letter-spacing: 0.025em;
+}
 .bpp-shell-body {
   display: flex;
   min-height: 0;
@@ -203,7 +208,7 @@ body {
   position: relative;
   z-index: 20;
   display: flex;
-  width: 166px;
+  width: 184px;
   flex: none;
   flex-direction: column;
   padding: 28px 8px 18px;
@@ -216,6 +221,7 @@ body {
 }
 .bpp-nav-item {
   position: relative;
+  z-index: 1;
   display: grid;
   min-height: 78px;
   grid-template-columns: 32px 1fr;
@@ -229,6 +235,18 @@ body {
     color 160ms ease,
     border-color 160ms ease,
     background 160ms ease;
+}
+.bpp-nav-active-slider {
+  position: absolute;
+  z-index: 0;
+  top: 28px;
+  right: 8px;
+  left: 8px;
+  height: 78px;
+  pointer-events: none;
+  transform: translateY(calc(var(--bpp-nav-index) * 78px));
+  transition: transform 360ms cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform;
 }
 .bpp-nav-item:hover {
   color: #beb9b1;
@@ -464,37 +482,373 @@ body {
   opacity: 0.62;
   filter: saturate(0.72);
 }
-.bpp-button-primary-image {
-  min-height: 0;
-  aspect-ratio: 1659 / 532;
-  border-color: transparent;
-  background: transparent;
-  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.28);
-}
-.bpp-button-primary-image:hover:not(:disabled) {
-  border-color: transparent;
-  background: transparent;
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.3);
-  filter: brightness(1.06);
-}
-.bpp-primary-action-image {
-  position: absolute;
-  z-index: 0;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  object-fit: contain;
-}
-.bpp-button-primary-content {
-  width: 100%;
-  justify-content: flex-start;
-  padding-left: 32px;
-}
 .bpp-primary-action-icon {
-  filter:
-    drop-shadow(0 0 4px rgba(242, 154, 36, 0.75))
+  filter: drop-shadow(0 0 4px rgba(242, 154, 36, 0.75))
     drop-shadow(0 0 10px rgba(226, 126, 14, 0.38));
+}
+
+/* ── Install dashboard ──────────────────────────────────────────────── */
+.bpp-main:has(.bpp-install-page)::before {
+  content: '';
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 42% 12%, rgba(21, 55, 79, 0.14), transparent 40%),
+    linear-gradient(rgba(3, 11, 18, 0.43), rgba(3, 10, 16, 0.58));
+}
+.bpp-install-hero {
+  position: relative;
+  display: grid;
+  min-height: 136px;
+  grid-template-columns: minmax(0, 1fr) 1px minmax(270px, 0.78fr);
+  align-items: center;
+  gap: 28px;
+  overflow: hidden;
+  padding: 22px 30px;
+  border: 1px solid var(--bpp-line);
+  border-radius: 5px;
+  background:
+    radial-gradient(
+      circle at 82% 47%,
+      rgba(232, 123, 12, 0.13),
+      transparent 30%
+    ),
+    radial-gradient(
+      circle at 10% 48%,
+      rgba(226, 128, 17, 0.045),
+      transparent 31%
+    ),
+    linear-gradient(108deg, rgba(17, 22, 24, 0.95), rgba(10, 14, 17, 0.92));
+  box-shadow:
+    inset 0 1px rgba(255, 228, 189, 0.026),
+    inset 0 0 54px rgba(226, 128, 17, 0.025),
+    0 15px 36px rgba(0, 0, 0, 0.24);
+}
+.bpp-install-hero::before,
+.bpp-install-hero::after {
+  content: '';
+  position: absolute;
+  pointer-events: none;
+}
+.bpp-install-hero::before {
+  inset: 0;
+  opacity: 0.16;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.018) 1px, transparent 1px);
+  background-size: 22px 22px;
+  mask-image: linear-gradient(90deg, transparent 45%, #000 74%, transparent);
+}
+.bpp-install-hero::after {
+  top: 0;
+  right: 5%;
+  width: 24%;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(235, 135, 18, 0.75),
+    transparent
+  );
+  box-shadow: 0 0 13px rgba(235, 135, 18, 0.48);
+}
+.bpp-install-hero-summary {
+  position: relative;
+  z-index: 2;
+  min-width: 0;
+  padding-left: 8px;
+}
+.bpp-install-hero-divider {
+  position: relative;
+  z-index: 2;
+  width: 1px;
+  height: 92px;
+  background: linear-gradient(
+    transparent,
+    rgba(142, 157, 168, 0.22),
+    transparent
+  );
+}
+.bpp-install-primary-slot {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  min-width: 0;
+  padding: 7px;
+  border: 1px solid rgba(232, 130, 14, 0.24);
+  border-radius: 7px;
+  background: rgba(213, 105, 2, 0.035);
+  box-shadow: 0 0 18px rgba(235, 127, 8, 0.13);
+}
+.bpp-install-primary-button {
+  position: relative;
+  display: flex;
+  min-height: 58px;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  padding: 0 20px;
+  border: 1px solid #ffad38;
+  border-radius: 4px;
+  color: #fff;
+  background:
+    radial-gradient(
+      circle at 92% 6%,
+      rgba(255, 226, 180, 0.3),
+      transparent 22%
+    ),
+    linear-gradient(110deg, #d66e05, #ef870e 53%, #db6f04);
+  box-shadow:
+    inset 0 1px rgba(255, 242, 215, 0.43),
+    inset 0 -2px 5px rgba(116, 44, 0, 0.32),
+    inset 0 0 23px rgba(255, 182, 65, 0.17),
+    0 0 17px rgba(239, 132, 9, 0.42),
+    0 8px 22px rgba(0, 0, 0, 0.26);
+  transition:
+    filter 150ms ease,
+    box-shadow 150ms ease,
+    transform 150ms ease;
+}
+.bpp-install-primary-button::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0.23;
+  background-image:
+    radial-gradient(
+      circle,
+      rgba(255, 244, 218, 0.55) 0 0.7px,
+      transparent 0.9px
+    ),
+    linear-gradient(90deg, transparent, rgba(255, 246, 222, 0.14), transparent);
+  background-size:
+    4px 4px,
+    100% 100%;
+  mask-image: linear-gradient(90deg, #000, transparent 44%, #000);
+}
+.bpp-install-primary-button:hover:not(:disabled) {
+  filter: brightness(1.07);
+  box-shadow:
+    inset 0 1px rgba(255, 242, 218, 0.38),
+    inset 0 -1px rgba(112, 48, 0, 0.3),
+    0 0 24px rgba(232, 128, 13, 0.28),
+    0 10px 22px rgba(0, 0, 0, 0.22);
+  transform: translateY(0px);
+}
+.bpp-install-primary-button:disabled {
+  opacity: 0.5;
+  filter: saturate(0.65);
+}
+.bpp-install-primary-button .bpp-primary-action-icon {
+  color: #fff3dd;
+}
+.bpp-install-info-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(280px, 0.7fr);
+  gap: 16px;
+}
+.bpp-install-info-card {
+  position: relative;
+  display: flex;
+  min-height: 152px;
+  min-width: 0;
+  flex-direction: column;
+  padding: 21px 22px 19px;
+  overflow: hidden;
+  border: 1px solid var(--bpp-line);
+  border-radius: 5px;
+  background:
+    radial-gradient(
+      circle at 7% 8%,
+      rgba(240, 151, 42, 0.045),
+      transparent 47%
+    ),
+    linear-gradient(145deg, rgba(18, 22, 24, 0.92), rgba(10, 14, 17, 0.88));
+  box-shadow:
+    inset 0 1px rgba(255, 228, 189, 0.026),
+    inset 0 0 31px rgba(226, 128, 17, 0.018),
+    0 10px 25px rgba(0, 0, 0, 0.16);
+}
+.bpp-install-info-card::after {
+  content: '';
+  position: absolute;
+  right: -24px;
+  bottom: -28px;
+  width: 100px;
+  height: 70px;
+  border-radius: 50%;
+  background: rgba(226, 128, 17, 0.035);
+  filter: blur(18px);
+}
+.bpp-install-info-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 14px;
+  color: #aaa9ad;
+  font-size: 12px;
+  font-weight: 600;
+}
+.bpp-install-path {
+  display: -webkit-box;
+  margin: 0;
+  overflow: hidden;
+  color: #d2ceca;
+  font-size: 12px;
+  line-height: 1.45;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+.bpp-install-secondary-button {
+  display: flex;
+  min-height: 36px;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border: 1px solid rgba(205, 137, 50, 0.34);
+  border-radius: 4px;
+  color: #c6c2bf;
+  background: #1c2325b0;
+  box-shadow:
+    inset 0 1px rgba(255, 255, 255, 0.025),
+    0 5px 12px rgba(0, 0, 0, 0.14);
+  font-size: 10px;
+  transition:
+    border-color 150ms ease,
+    color 150ms ease,
+    background 150ms ease;
+}
+.bpp-install-secondary-button:hover:not(:disabled) {
+  border-color: rgba(226, 139, 28, 0.44);
+  color: #eee7de;
+  background: rgba(226, 128, 17, 0.06);
+}
+.bpp-install-secondary-button:disabled {
+  opacity: 0.35;
+}
+.bpp-install-build-badge {
+  padding: 4px 8px;
+  border: 1px solid rgba(231, 133, 18, 0.43);
+  border-radius: 4px;
+  color: #e78a1a;
+  background: rgba(231, 133, 18, 0.05);
+  font-size: 10px;
+  box-shadow: inset 0 0 11px rgba(231, 133, 18, 0.035);
+}
+.bpp-install-section-title {
+  margin: 0 0 9px;
+  color: #99989d;
+  font-size: 13px;
+  font-weight: 600;
+}
+.bpp-install-maintenance-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+.bpp-install-maintenance-action {
+  display: grid;
+  min-height: 94px;
+  grid-template-columns: 42px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  padding: 16px 18px;
+  border: 1px solid rgba(220, 131, 20, 0.34);
+  border-radius: 5px;
+  color: #f08b15;
+  text-align: left;
+  background:
+    radial-gradient(
+      circle at 4% 44%,
+      rgba(225, 132, 20, 0.085),
+      transparent 34%
+    ),
+    linear-gradient(145deg, rgba(25, 25, 23, 0.84), rgba(12, 18, 22, 0.84));
+  box-shadow:
+    inset 0 1px rgba(255, 226, 185, 0.035),
+    inset 0 0 24px rgba(228, 127, 12, 0.022),
+    0 8px 20px rgba(0, 0, 0, 0.16);
+  transition:
+    border-color 150ms ease,
+    background 150ms ease,
+    transform 150ms ease;
+}
+.bpp-install-maintenance-action:hover:not(:disabled) {
+  border-color: rgba(241, 144, 23, 0.66);
+  background:
+    radial-gradient(
+      circle at 4% 44%,
+      rgba(225, 132, 20, 0.14),
+      transparent 38%
+    ),
+    linear-gradient(145deg, rgba(30, 27, 22, 0.9), rgba(14, 19, 23, 0.88));
+  transform: translateY(-1px);
+}
+.bpp-install-maintenance-action:disabled {
+  opacity: 0.36;
+}
+.bpp-install-maintenance-action.is-danger {
+  color: #ec6658;
+  border-color: rgba(208, 72, 58, 0.42);
+  background:
+    radial-gradient(circle at 6% 50%, rgba(194, 58, 46, 0.13), transparent 40%),
+    linear-gradient(145deg, rgba(37, 20, 21, 0.87), rgba(20, 15, 18, 0.84));
+  box-shadow:
+    inset 0 1px rgba(255, 205, 197, 0.03),
+    inset 0 0 24px rgba(204, 60, 47, 0.035),
+    0 8px 20px rgba(0, 0, 0, 0.16);
+}
+.bpp-install-maintenance-action.is-danger:hover:not(:disabled) {
+  border-color: rgba(219, 83, 64, 0.52);
+}
+.bpp-install-maintenance-icon {
+  display: flex;
+  width: 42px;
+  height: 42px;
+  align-items: center;
+  justify-content: center;
+  filter: drop-shadow(
+    0 0 7px color-mix(in srgb, currentColor 34%, transparent)
+  );
+}
+.bpp-install-notices {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 13px 15px;
+  border: 1px solid rgba(210, 133, 31, 0.15);
+  border-radius: 4px;
+  color: #c68b43;
+  background: rgba(225, 132, 20, 0.035);
+  font-size: 11px;
+}
+
+@media (max-width: 980px) {
+  .bpp-install-hero {
+    grid-template-columns: minmax(0, 1fr) 1px minmax(250px, 280px);
+    gap: 20px;
+  }
+  .bpp-install-info-grid {
+    grid-template-columns: minmax(0, 1.25fr) minmax(250px, 0.75fr);
+  }
+}
+
+@media (max-width: 800px) {
+  .bpp-install-hero {
+    grid-template-columns: 1fr;
+  }
+  .bpp-install-hero-divider {
+    display: none;
+  }
+  .bpp-install-primary-slot {
+    max-width: 360px;
+  }
+  .bpp-install-info-grid,
+  .bpp-install-maintenance-grid {
+    grid-template-columns: 1fr;
+  }
 }
 .bpp-button-filled {
   border-color: rgba(205, 137, 50, 0.34);
@@ -591,7 +945,7 @@ body {
     padding: 0 16px;
   }
   .bpp-nav {
-    width: 146px;
+    width: 176px;
   }
   .bpp-nav-item {
     padding: 0 12px;

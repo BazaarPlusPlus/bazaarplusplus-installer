@@ -15,11 +15,11 @@
       {
         "title": "BazaarPlusPlus",
         "width": 1080,
-        "height": 810,
+        "height": 760,
         "minWidth": 1080,
-        "minHeight": 810,
+        "minHeight": 760,
         "maxWidth": 1080,
-        "maxHeight": 810,
+        "maxHeight": 760,
         "resizable": false,
         "maximizable": false,
         "fullscreen": false

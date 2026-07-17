@@ -1,15 +1,20 @@
 import { useState } from 'react';
 import { PageShell } from '../components/ui/PageShell';
+import { useAppBootstrap } from '../features/about/AppBootstrapProvider';
+import { useUpdater } from '../features/about/UpdaterProvider';
 import { InstallActionsPanel } from '../features/install/InstallActionsPanel';
 import { InstallConfirmModal } from '../features/install/InstallConfirmModal';
 import { InstallStatusPanel } from '../features/install/InstallStatusPanel';
 import { ResetBepinexConfirmModal } from '../features/install/ResetBepinexConfirmModal';
 import { ResetDataConfirmModal } from '../features/install/ResetDataConfirmModal';
 import { useInstallPage } from '../features/install/useInstallPage';
+import type { PrimaryInstallMode } from '../features/install/PrimaryInstallActionButton';
 import { useI18n } from '../i18n/LocaleProvider';
 
 export default function Install() {
   const { t } = useI18n();
+  const { bootstrap } = useAppBootstrap();
+  const updater = useUpdater();
   const page = useInstallPage();
   const [showInstallModal, setShowInstallModal] = useState(false);
   const [showResetDataModal, setShowResetDataModal] = useState(false);
@@ -19,8 +24,7 @@ export default function Install() {
   const [resetBepinexAcknowledged, setResetBepinexAcknowledged] =
     useState(false);
   const [compatOptIn, setCompatOptIn] = useState(false);
-  const primaryMode: 'install' | 'reinstall' | 'launch' = !page.state.mod_state
-    .installed
+  const primaryMode: PrimaryInstallMode = !page.state.mod_state.installed
     ? 'install'
     : page.state.mod_state.version_matches
       ? 'launch'
@@ -64,18 +68,29 @@ export default function Install() {
     setResetBepinexAcknowledged(false);
   };
 
+  const checkForUpdates = () => {
+    updater.checkNow();
+  };
+
   return (
-    <PageShell eyebrow="Install" title={t('installTitle')}>
-      <div className="grid w-full grid-cols-[minmax(0,1fr)_300px] gap-9 max-[980px]:grid-cols-1 max-[980px]:gap-7">
-        <InstallStatusPanel page={page} />
-        <InstallActionsPanel
-          page={page}
-          primaryMode={primaryMode}
-          onOpenInstallModal={openInstallModal}
-          onOpenResetDataModal={openResetDataModal}
-          onOpenResetBepinexModal={openResetBepinexModal}
-        />
-      </div>
+    <PageShell
+      eyebrow="Install"
+      title={t('installTitle')}
+      className="bpp-install-page"
+    >
+      <InstallStatusPanel
+        page={page}
+        primaryMode={primaryMode}
+        appVersion={bootstrap.app_version}
+        onOpenInstallModal={openInstallModal}
+      />
+      <InstallActionsPanel
+        page={page}
+        updateChecking={updater.phase === 'checking'}
+        onCheckUpdate={checkForUpdates}
+        onOpenResetDataModal={openResetDataModal}
+        onOpenResetBepinexModal={openResetBepinexModal}
+      />
 
       {showInstallModal && (
         <InstallConfirmModal
