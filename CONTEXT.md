@@ -1,7 +1,7 @@
 ---
 status: truth
 topic: context
-last-verified: 2bf15726776492127c3eca2162dd26306c3ab310
+last-verified: 506e85b363a53511d14a44db22804a53331f2c03
 ---
 
 # BazaarPlusPlus Installer Context
@@ -32,6 +32,7 @@ Current behavior truth lives under `docs/truth/` (topic-sliced, code-cited, hash
 - **Confirmed operation** — the shared frontend lifecycle for a target-bearing destructive action: confirming, non-dismissible running, retained failure with retry/safe exit, and success-only closure. It refuses conflicting requests and repeated submission in `src/features/shared/confirmedOperation.ts:3-94`; cleanup, reset, and video deletion supply their actual targets and semantic problems.
 - **Modal coordinator** — the app-wide frontend owner that renders one registered native dialog at a time, using `critical > confirmation > system > informational` priority and FIFO within each priority. Sources can retain their queue position while changing priority/dismissal policy, and final dismissal restores focus to the connected trigger or the current page heading/main fallback (`src/features/shared/modalCoordinator.ts:1-125`, `src/components/ui/ModalCoordinator.tsx:25-126`).
 - **Updater snapshot** — the discriminated frontend contract for checking, available, downloading, installing, ready-to-restart, restarting, and semantic failure states. Only downloading can carry progress; failure carries a stable updater problem while preserving the installed version for restart recovery (`src/features/about/updater.ts:61-120`, `src/features/about/updaterProblems.ts:9-63`).
+- **About bootstrap snapshot** — the frontend resource contract that distinguishes initial loading, authoritative native data, packaged fallback data, and no-data blocking failure. Fallback state identifies unavailable fields, retains a semantic problem separately from localized copy, and can retry in place until native data replaces it (`src/features/about/appBootstrap.ts:18-55`, `src/features/about/appBootstrap.ts:90-178`, `src/features/about/aboutProblems.ts:8-25`).
 - **Stream runtime / overlay** — the single serialized owner of the local Axum service lifecycle, window selection, and exclusive maintenance; the production service remains on `127.0.0.1:17654` and serves the OBS overlay and settings pages (`src-tauri/src/stream/runtime.rs:43-108`, `src-tauri/src/stream/server.rs:16-69`).
 - **Stream workflow** — the framework-neutral frontend owner of independent service, polling freshness, window, crop, and one-off action capabilities. It keeps semantic state and derives one snapshot; browser/Tauri concerns enter through injected ports, while React creates the workflow once and only attaches lifecycle and subscription (`src/features/stream/streamWorkflow.ts:53-122`, `src/features/stream/streamWorkflow.ts:185-320`, `src/features/stream/streamWorkflow.ts:640-733`, `src/features/stream/useStreamPage.ts:20-42`).
 - **Storage cleanup** — preset-driven deletion of old screenshots and run data with upload-safety and referenced-file protections; its IPC is the two scope-tagged, semantic-problem preview/execute operations (`src-tauri/src/commands/history.rs:61-79`, `src-tauri/src/services/history.rs:25-44`, `src-tauri/src/services/history.rs:337-353`).

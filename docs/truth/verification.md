@@ -1,7 +1,7 @@
 ---
 status: truth
 topic: verification
-last-verified: 2bf15726776492127c3eca2162dd26306c3ab310
+last-verified: 506e85b363a53511d14a44db22804a53331f2c03
 ---
 
 # Verification
@@ -47,6 +47,7 @@ Use the smallest command that verifies the changed behavior; use the authoritati
 - Install tests cover explicit initial detection, preserved refresh failure and retry, each primary-action branch, shared disabled/loading derivation, bilingual semantic warnings/problems, partial-failure recovery parameters, and native-adapter preservation in `src/features/install/installPageState.test.ts:43-228`, `src/features/install/installProblems.test.ts:10-89`, and `src/api/commandClient.dispatch.test.ts:57-76`. Rust tests pin Install semantic serialization and service-boundary classification in `src-tauri/src/problem.rs:46-84` and `src-tauri/src/services/install/mod.rs:282-366`.
 - Modal-coordinator tests cover strict priority, equal-priority FIFO, queued-source unregistration, non-preempting update/support dialogs, active confirmation upgrades, critical preemption, and connected/fallback focus restoration in `src/features/shared/modalCoordinator.test.ts:17-110`. The shell/route integration case covers a routed confirmation upgrading to blocked critical work, route-source unmount, and ordered handoff to update then payment in `src/features/shared/modalCoordinator.integration.test.ts:4-40`; controlled disclosure semantics are rendered in `src/layouts/ShellHeader.test.tsx:88-100`.
 - Updater state tests cover manual/silent checks, mutually consistent phases, determinate/indeterminate progress, download-versus-install classification, fresh-handle retry, blocked dismissal, restart failure retention, and recovery in `src/features/about/updater.test.ts:58-353`. Presentation tests cover shared header/modal derivation and confirmation collision in `src/features/about/updaterPresentation.test.ts:15-111`; bilingual semantic presentation and optional diagnostics are covered in `src/features/about/updaterProblems.test.ts:10-53`, while modal markup tests cover progress ARIA and manual restart recovery in `src/layouts/ShellUpdateModal.test.tsx:33-89`.
+- About bootstrap tests cover initial loading, native success, packaged fallback, retry success, repeated failure, no-data blocking failure, and Preview provenance in `src/features/about/appBootstrap.test.ts:34-168`. The same semantic problem is presented in Chinese and English without exposing diagnostics as user copy in `src/features/about/aboutProblems.test.ts:8-35`; rendered markup tests cover live-region feedback, native retry/disclosure controls, selectable versions, and explicit unavailable values in `src/pages/About.test.tsx:34-73`.
 
 ## Version And Platform Guards
 
