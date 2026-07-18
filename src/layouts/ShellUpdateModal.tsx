@@ -1,41 +1,32 @@
 import { Download, LoaderCircle, RefreshCw } from 'lucide-react';
 import { Dialog } from '../components/ui/Dialog';
+import { ProblemBanner } from '../components/ui/ProblemBanner';
 import type { UpdaterController } from '../features/about/useUpdater';
+import type { UpdaterUiContract } from '../features/about/updaterPresentation';
+import { presentUpdaterProblem } from '../features/about/updaterProblems';
+import { formatProblemDiagnostic } from '../features/shared/problems';
 import { useI18n } from '../i18n/LocaleProvider';
-import type { MessageKey } from '../i18n/messages';
 
 type ShellUpdateModalProps = {
   updater: UpdaterController;
-};
-
-const PHASE_TITLES: Partial<Record<UpdaterController['phase'], MessageKey>> = {
-  available: 'updateModalTitle',
-  downloading: 'updateDownloading',
-  installing: 'updateInstalling',
-  ready: 'updateReady',
-  error: 'updateError'
+  presentation: NonNullable<UpdaterUiContract['modal']>;
 };
 
 function formatMegabytes(bytes: number): string {
   return (bytes / (1024 * 1024)).toFixed(1);
 }
 
-export function ShellUpdateModal({ updater }: ShellUpdateModalProps) {
+export function ShellUpdateModal({
+  updater,
+  presentation
+}: ShellUpdateModalProps) {
   const { t } = useI18n();
-  // downloadAndInstall cannot be cancelled cleanly, so the modal is not
-  // dismissable while it runs.
-  const dismissable =
-    updater.phase !== 'downloading' && updater.phase !== 'installing';
-
-  const laterButton = (
-    <button
-      type="button"
-      onClick={updater.dismiss}
-      className="h-9 px-4 border border-[rgba(200,148,55,0.22)] rounded-[2px] text-[11px] uppercase text-[rgba(232,220,200,0.72)] transition-colors hover:border-[rgba(200,148,55,0.38)]"
-    >
-      {t('updateModalLater')}
-    </button>
-  );
+  const dismissible = presentation.dismissalPolicy === 'dismissible';
+  const action = presentation.action;
+  const actionHandler =
+    action === 'install' || action === 'retry-install'
+      ? updater.install
+      : updater.restart;
 
   return (
     <Dialog onClose={updater.dismiss} labelledBy="update-modal-title">
@@ -44,9 +35,12 @@ export function ShellUpdateModal({ updater }: ShellUpdateModalProps) {
           <div className="flex items-start gap-4">
             <div className="flex size-10 items-center justify-center rounded-[2px] border border-[rgba(200,148,55,0.28)] bg-[rgba(200,148,55,0.1)] text-[rgba(232,212,174,0.9)]">
               {updater.phase === 'downloading' ||
-              updater.phase === 'installing' ? (
+              updater.phase === 'installing' ||
+              updater.phase === 'restarting' ? (
                 <LoaderCircle size={18} className="animate-spin" />
-              ) : updater.phase === 'ready' ? (
+              ) : updater.phase === 'ready-to-restart' ||
+                (updater.phase === 'failed' &&
+                  updater.problem.code === 'updater_restart_failed') ? (
                 <RefreshCw size={18} />
               ) : (
                 <Download size={18} />
@@ -60,7 +54,7 @@ export function ShellUpdateModal({ updater }: ShellUpdateModalProps) {
                 id="update-modal-title"
                 className="m-0 mt-2 cinzel text-xl leading-tight text-[#f2e4c8]"
               >
-                {t(PHASE_TITLES[updater.phase] ?? 'updateModalTitle')}
+                {t(presentation.titleKey)}
               </h2>
             </div>
           </div>
@@ -70,7 +64,7 @@ export function ShellUpdateModal({ updater }: ShellUpdateModalProps) {
           {updater.phase === 'available' && (
             <>
               <p className="m-0 text-sm leading-6 text-[rgba(232,220,200,0.82)]">
-                {t('updateModalBody', { version: updater.version ?? '' })}
+                {t('updateModalBody', { version: updater.version })}
               </p>
               {updater.notes && (
                 <div className="mt-4">
@@ -90,67 +84,66 @@ export function ShellUpdateModal({ updater }: ShellUpdateModalProps) {
           )}
 
           {updater.phase === 'installing' && (
+            <p
+              role="status"
+              aria-live="polite"
+              className="m-0 text-sm leading-6 text-[rgba(232,220,200,0.82)]"
+            >
+              {t('updateInstallingBody', { version: updater.version })}
+            </p>
+          )}
+
+          {updater.phase === 'ready-to-restart' && (
             <p className="m-0 text-sm leading-6 text-[rgba(232,220,200,0.82)]">
-              {t('updateModalBody', { version: updater.version ?? '' })}
+              {t('updateReadyBody', { version: updater.version })}
             </p>
           )}
 
-          {updater.phase === 'ready' && updater.error && (
+          {updater.phase === 'restarting' && (
             <p
-              className="m-0 text-sm leading-6 text-[rgba(220,140,120,0.9)] break-words line-clamp-3"
-              title={updater.error}
+              role="status"
+              aria-live="polite"
+              className="m-0 text-sm leading-6 text-[rgba(232,220,200,0.82)]"
             >
-              {updater.error}
+              {t('updateRestarting')}
             </p>
           )}
 
-          {updater.phase === 'error' && (
-            <p
-              className="m-0 text-sm leading-6 text-[rgba(220,140,120,0.9)] break-words line-clamp-3"
-              title={updater.error ?? undefined}
-            >
-              {updater.error}
-            </p>
+          {updater.phase === 'failed' && (
+            <ProblemBanner
+              message={presentUpdaterProblem(updater.problem, t)}
+              diagnostic={
+                updater.problem.diagnostic
+                  ? formatProblemDiagnostic(updater.problem)
+                  : null
+              }
+              diagnosticLabel={t('problemDiagnostics')}
+            />
           )}
         </div>
 
-        {dismissable && (
+        {dismissible && (
           <div className="flex justify-end gap-3 border-t border-[rgba(200,148,55,0.14)] px-6 py-4">
-            {updater.phase === 'available' && (
-              <>
-                {laterButton}
-                <button
-                  type="button"
-                  onClick={updater.install}
-                  className="inline-flex h-9 items-center gap-2 rounded-[2px] border border-[rgba(255,198,98,0.38)] bg-[rgba(200,148,55,0.16)] px-4 cinzel text-[11px] uppercase text-[#f2e4c8] transition-colors hover:bg-[rgba(200,148,55,0.24)]"
-                >
-                  <Download size={14} />
-                  {t('updateInstall')}
-                </button>
-              </>
-            )}
-            {updater.phase === 'ready' && (
+            <button
+              type="button"
+              onClick={updater.dismiss}
+              className="h-9 px-4 border border-[rgba(200,148,55,0.22)] rounded-[2px] text-[11px] uppercase text-[rgba(232,220,200,0.72)] transition-colors hover:border-[rgba(200,148,55,0.38)]"
+            >
+              {t('updateModalLater')}
+            </button>
+            {action && presentation.actionLabelKey && (
               <button
                 type="button"
-                onClick={updater.restart}
+                onClick={actionHandler}
                 className="inline-flex h-9 items-center gap-2 rounded-[2px] border border-[rgba(255,198,98,0.38)] bg-[rgba(200,148,55,0.16)] px-4 cinzel text-[11px] uppercase text-[#f2e4c8] transition-colors hover:bg-[rgba(200,148,55,0.24)]"
               >
-                <RefreshCw size={14} />
-                {t('updateRestartNow')}
-              </button>
-            )}
-            {updater.phase === 'error' && (
-              <>
-                {laterButton}
-                <button
-                  type="button"
-                  onClick={updater.install}
-                  className="inline-flex h-9 items-center gap-2 rounded-[2px] border border-[rgba(255,198,98,0.38)] bg-[rgba(200,148,55,0.16)] px-4 cinzel text-[11px] uppercase text-[#f2e4c8] transition-colors hover:bg-[rgba(200,148,55,0.24)]"
-                >
+                {action === 'install' ? (
+                  <Download size={14} />
+                ) : (
                   <RefreshCw size={14} />
-                  {t('updateRetry')}
-                </button>
-              </>
+                )}
+                {t(presentation.actionLabelKey)}
+              </button>
             )}
           </div>
         )}
@@ -159,21 +152,42 @@ export function ShellUpdateModal({ updater }: ShellUpdateModalProps) {
   );
 }
 
-function UpdateDownloadProgress({
+export function UpdateDownloadProgress({
   progress
 }: {
   progress: UpdaterController['progress'];
 }) {
+  const { t } = useI18n();
   const downloaded = progress?.downloaded ?? 0;
   const total = progress?.total ?? null;
   const percent =
     total && total > 0
       ? Math.min(100, Math.round((downloaded / total) * 100))
       : null;
+  const accessibleValue =
+    total === null ? undefined : Math.min(downloaded, total);
+  const status =
+    percent === null
+      ? t('updateDownloadProgressUnknown', {
+          downloaded: formatMegabytes(downloaded)
+        })
+      : t('updateDownloadProgressKnown', {
+          downloaded: formatMegabytes(downloaded),
+          total: formatMegabytes(total ?? 0),
+          percent
+        });
 
   return (
     <div>
-      <div className="h-1.5 w-full overflow-hidden rounded-[2px] bg-[rgba(200,148,55,0.14)]">
+      <div
+        role="progressbar"
+        aria-label={t('updateDownloadProgressLabel')}
+        aria-valuemin={0}
+        aria-valuemax={total ?? undefined}
+        aria-valuenow={accessibleValue}
+        aria-valuetext={status}
+        className="h-1.5 w-full overflow-hidden rounded-[2px] bg-[rgba(200,148,55,0.14)]"
+      >
         <div
           className={`h-full bg-[rgba(228,178,88,0.85)] transition-[width] duration-200 ${
             percent === null ? 'w-1/3 animate-pulse' : ''
@@ -181,10 +195,12 @@ function UpdateDownloadProgress({
           style={percent === null ? undefined : { width: `${percent}%` }}
         />
       </div>
-      <p className="m-0 mt-3 text-[12px] tabular-nums text-[rgba(232,220,200,0.72)]">
-        {percent === null
-          ? `${formatMegabytes(downloaded)} MB`
-          : `${formatMegabytes(downloaded)} / ${formatMegabytes(total ?? 0)} MB (${percent}%)`}
+      <p
+        role="status"
+        aria-live="polite"
+        className="m-0 mt-3 text-[12px] tabular-nums text-[rgba(232,220,200,0.72)]"
+      >
+        {status}
       </p>
     </div>
   );

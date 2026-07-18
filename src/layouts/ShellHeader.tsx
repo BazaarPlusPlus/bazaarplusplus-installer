@@ -8,11 +8,14 @@ import {
   Heart,
   MonitorPlay,
   QrCode,
+  RefreshCw,
   Users
 } from 'lucide-react';
 import type { CSSProperties, ReactNode, RefObject } from 'react';
 import type { AppBootstrapController } from '../features/about/useAppBootstrap';
 import { useUpdater } from '../features/about/UpdaterProvider';
+import { getUpdaterUiContract } from '../features/about/updaterPresentation';
+import { presentUpdaterProblem } from '../features/about/updaterProblems';
 import { useI18n } from '../i18n/LocaleProvider';
 import douyinPng from '../../static/support/douyin.png';
 import xiaohongshuSvg from '../../static/support/xiaohongshu.svg';
@@ -179,30 +182,22 @@ function ShellHeaderActions({
 }: ShellHeaderActionsProps) {
   const { t, toggle } = useI18n();
   const updater = useUpdater();
-  const checking = updater.phase === 'checking';
-
-  // The check button folds its own result in: "检查中" → a brief result flash
-  // ("已是最新" / "浏览器预览" / "检查失败"), then auto-reverts once useUpdater
-  // clears the result phase on a timer. Install errors render in the modal.
-  let checkIcon = Download;
-  let checkLabel = t('headerCheckUpdate');
-  let checkTitle: string | undefined;
-  let checkErrorTone = false;
-  if (checking) {
-    checkLabel = t('headerCheckingUpdate');
-  } else if (updater.phase === 'current') {
-    checkIcon = Check;
-    checkLabel = t('updaterCurrent');
-  } else if (updater.phase === 'preview') {
-    checkIcon = Eye;
-    checkLabel = t('updaterPreview');
-  } else if (updater.phase === 'error' && updater.errorSource === 'check') {
-    checkIcon = AlertCircle;
-    checkLabel = t('headerCheckFailed');
-    checkTitle = updater.error ?? undefined;
-    checkErrorTone = true;
-  }
-  const CheckIcon = checkIcon;
+  const updaterUi = getUpdaterUiContract(updater);
+  const checkLabel = t(updaterUi.header.labelKey);
+  const checkTitle =
+    updater.phase === 'failed'
+      ? presentUpdaterProblem(updater.problem, t)
+      : undefined;
+  const CheckIcon =
+    updaterUi.header.icon === 'current'
+      ? Check
+      : updaterUi.header.icon === 'preview'
+        ? Eye
+        : updaterUi.header.icon === 'restart'
+          ? RefreshCw
+          : updaterUi.header.icon === 'error'
+            ? AlertCircle
+            : Download;
 
   return (
     <div className="flex items-center gap-3 z-10 justify-end mr-6">
@@ -217,20 +212,30 @@ function ShellHeaderActions({
       <button
         type="button"
         onClick={updater.checkNow}
-        disabled={checking}
+        disabled={updaterUi.header.disabled}
         title={checkTitle}
+        aria-label={checkTitle ? `${checkLabel}: ${checkTitle}` : checkLabel}
         className="flex items-center gap-2 px-3 h-8 border border-[rgba(200,148,55,0.24)] rounded-[2px] cinzel text-[10px] tracking-widest uppercase transition-all hover:border-[rgba(200,148,55,0.4)] disabled:opacity-60"
         style={{
           background:
             'linear-gradient(180deg, rgba(200,148,55,0.12), rgba(200,148,55,0.06))',
-          color: checkErrorTone
-            ? 'rgba(224,150,130,0.92)'
-            : 'rgba(228,216,191,0.82)',
+          color:
+            updaterUi.header.tone === 'error'
+              ? 'rgba(224,150,130,0.92)'
+              : 'rgba(228,216,191,0.82)',
           boxShadow: '0 0 0 1px rgba(255,198,98,0.08) inset'
         }}
       >
-        <CheckIcon size={14} className={checking ? 'animate-pulse' : ''} />
+        <CheckIcon
+          size={14}
+          className={updaterUi.header.busy ? 'animate-pulse' : ''}
+        />
         <span className="inline">{checkLabel}</span>
+        {checkTitle && (
+          <span role="alert" className="sr-only">
+            {checkTitle}
+          </span>
+        )}
       </button>
 
       <ShellSupportMenu

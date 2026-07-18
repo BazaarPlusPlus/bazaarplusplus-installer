@@ -5,7 +5,7 @@ import {
   useAppBootstrap
 } from '../features/about/AppBootstrapProvider';
 import { UpdaterProvider, useUpdater } from '../features/about/UpdaterProvider';
-import { isUpdateModalPhase } from '../features/about/updater';
+import { getUpdaterUiContract } from '../features/about/updaterPresentation';
 import { ShellHeader } from './ShellHeader';
 import { ShellNavRail } from './ShellNavRail';
 import { ShellPaymentModal } from './ShellPaymentModal';
@@ -35,6 +35,7 @@ function GlobalShellContent() {
   const supportTriggerRef = useRef<HTMLButtonElement>(null);
   const app = useAppBootstrap();
   const updater = useUpdater();
+  const updaterUi = getUpdaterUiContract(updater);
 
   // Close the header popovers on Escape or a click outside them — the native
   // behaviour these controlled dropdowns were missing.
@@ -117,19 +118,13 @@ function GlobalShellContent() {
       </ModalSource>
       <ModalSource
         id="shell:update"
-        open={isUpdateModalPhase(updater)}
-        priority={
-          updater.phase === 'downloading' || updater.phase === 'installing'
-            ? 'critical'
-            : 'system'
-        }
-        dismissalPolicy={
-          updater.phase === 'downloading' || updater.phase === 'installing'
-            ? 'blocked'
-            : 'dismissible'
-        }
+        open={updaterUi.modal !== null}
+        priority={updaterUi.modal?.priority ?? 'system'}
+        dismissalPolicy={updaterUi.modal?.dismissalPolicy ?? 'dismissible'}
       >
-        <ShellUpdateModal updater={updater} />
+        {updaterUi.modal && (
+          <ShellUpdateModal updater={updater} presentation={updaterUi.modal} />
+        )}
       </ModalSource>
     </div>
   );

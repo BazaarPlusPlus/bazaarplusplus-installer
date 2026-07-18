@@ -175,6 +175,7 @@ const zh = {
   updaterPreview: '浏览器预览',
   updaterCurrent: '已是最新',
   headerCheckFailed: '检查失败',
+  updateHeaderAvailable: '发现更新',
   updateModalKicker: '应用更新',
   updateModalTitle: '发现新版本',
   updateModalBody: 'BazaarPlusPlus {version} 已可用。',
@@ -183,10 +184,24 @@ const zh = {
   updateNotesLabel: '更新内容',
   updateDownloading: '正在下载…',
   updateInstalling: '正在安装…',
+  updateInstallingBody: '下载已完成，正在安装 BazaarPlusPlus {version}。',
   updateReady: '更新完成，重启后生效',
+  updateReadyBody: 'BazaarPlusPlus {version} 已安装完成。重启应用后即可使用。',
   updateRestartNow: '立即重启',
+  updateRestarting: '正在重启…',
   updateError: '自动更新失败',
+  updateRestartFailedTitle: '更新已安装，需要手动重启',
   updateRetry: '重试',
+  updateRetryRestart: '再次尝试重启',
+  updateDownloadProgressLabel: '更新下载进度',
+  updateDownloadProgressUnknown: '已下载 {downloaded} MB',
+  updateDownloadProgressKnown: '已下载 {downloaded} / {total} MB（{percent}%）',
+  updaterProblemCheckFailed: '无法检查更新。请检查网络连接后重试。',
+  updaterProblemDownloadFailed: '更新下载失败。请检查网络连接后重试。',
+  updaterProblemInstallFailed:
+    '更新安装失败。请重试；如果问题持续，请重新打开应用后再次检查更新。',
+  updaterProblemRestartFailed:
+    '自动重启失败，但 BazaarPlusPlus {version} 已安装完成。请退出 BazaarPlusPlus Installer，再从“应用程序”中重新打开。',
 
   // History page
   historyLoading: '读取战绩中',
@@ -515,6 +530,7 @@ const en: Record<MessageKey, string> = {
   updaterPreview: 'Preview mode',
   updaterCurrent: 'Up to date',
   headerCheckFailed: 'Check failed',
+  updateHeaderAvailable: 'Update available',
   updateModalKicker: 'App Update',
   updateModalTitle: 'Update Available',
   updateModalBody: 'BazaarPlusPlus {version} is available.',
@@ -523,10 +539,29 @@ const en: Record<MessageKey, string> = {
   updateNotesLabel: "What's new",
   updateDownloading: 'Downloading…',
   updateInstalling: 'Installing…',
+  updateInstallingBody:
+    'The download is complete. Installing BazaarPlusPlus {version}.',
   updateReady: 'Update ready — restart to apply',
+  updateReadyBody:
+    'BazaarPlusPlus {version} is installed. Restart the app to use it.',
   updateRestartNow: 'Restart Now',
+  updateRestarting: 'Restarting…',
   updateError: 'Update failed',
+  updateRestartFailedTitle: 'Update installed — manual restart needed',
   updateRetry: 'Retry',
+  updateRetryRestart: 'Try Restart Again',
+  updateDownloadProgressLabel: 'Update download progress',
+  updateDownloadProgressUnknown: 'Downloaded {downloaded} MB',
+  updateDownloadProgressKnown:
+    'Downloaded {downloaded} / {total} MB ({percent}%)',
+  updaterProblemCheckFailed:
+    'Could not check for updates. Check your network connection, then retry.',
+  updaterProblemDownloadFailed:
+    'The update could not be downloaded. Check your network connection, then retry.',
+  updaterProblemInstallFailed:
+    'The update could not be installed. Retry; if the problem continues, reopen the app and check again.',
+  updaterProblemRestartFailed:
+    'Automatic restart failed, but BazaarPlusPlus {version} is installed. Quit BazaarPlusPlus Installer, then open it again from Applications.',
 
   historyLoading: 'Loading runs',
   noLocalRuns: 'No local runs yet',
