@@ -1,7 +1,7 @@
 ---
 status: truth
 topic: architecture
-last-verified: 0f609de844c0cbc48e7fb53396a90d5f32776c2b
+last-verified: 838d5d6bf30e16a277e5b367b648333e8923759a
 ---
 
 # Architecture
@@ -31,6 +31,7 @@ last-verified: 0f609de844c0cbc48e7fb53396a90d5f32776c2b
 - Stream Tauri commands map service, window, and crop failures into the shared semantic problem contract before crossing IPC in `src-tauri/src/commands/stream.rs:12-110`; stable codes are part of the generated `SemanticProblemCode` union from `src-tauri/src/problem.rs:3-42`.
 - The frontend Stream workflow depends inward on command, scheduler, clipboard, and opener ports and exposes capability-oriented semantic snapshots in `src/features/stream/streamWorkflow.ts:25-122`. It owns response ordering and capability gates in `src/features/stream/streamWorkflow.ts:185-320` and `src/features/stream/streamWorkflow.ts:640-733`; the React hook provides outer adapters and only subscribes, starts, and disposes one locale-independent workflow in `src/features/stream/useStreamPage.ts:9-42`.
 - Frontend destructive confirmation state is centralized in a framework-neutral external-store controller rather than page-local booleans. It owns target retention, single-flight execution, success-only closure, and semantic failure retention in `src/features/shared/confirmedOperation.ts:3-94`; React only memoizes and subscribes to the controller at `src/features/shared/confirmedOperation.ts:82-94`.
+- Frontend modal scheduling is a separate framework-neutral external store. It owns priority/FIFO ordering, active-source retention, updates, and safe unregistration in `src/features/shared/modalCoordinator.ts:1-113`; the React provider only registers sources, renders the active one, carries dismissal policy into `Dialog`, and restores focus after the queue drains in `src/components/ui/ModalCoordinator.tsx:25-126` and `src/components/ui/Dialog.tsx:13-55`.
 
 ## Build And Generated Artifacts
 

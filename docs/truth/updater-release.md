@@ -1,7 +1,7 @@
 ---
 status: truth
 topic: updater-release
-last-verified: 45764680a4476063a46a92f4606dd520f0ce29ef
+last-verified: 838d5d6bf30e16a277e5b367b648333e8923759a
 ---
 
 # Updater And Release
@@ -14,6 +14,7 @@ last-verified: 45764680a4476063a46a92f4606dd520f0ce29ef
 - The updater implementation keeps the `Update` handle alive across user interactions because `downloadAndInstall` must run on the same handle returned by `check()` in `src/features/about/updater.ts:6-14`.
 - `runCheck` returns `preview` outside Tauri runtime, `available` with version/notes/handle when a plugin update exists, or `current` when none exists in `src/features/about/updater.ts:42-56`.
 - The state machine deduplicates checks, surfaces manual check errors in the header, keeps startup checks silent, tracks download progress, drops consumed handles after `downloadAndInstall`, and transitions to ready/error in `src/features/about/updater.ts:139-240`.
+- The update dialog registers with the global modal coordinator at system priority, so it cannot interrupt an active destructive confirmation; downloading/installing upgrades the same source to critical blocked policy because the native updater operation cannot be cancelled in `src/layouts/GlobalShell.tsx:118-133` and `src/layouts/ShellUpdateModal.tsx:23-41`.
 - On Windows, `downloadAndInstall` tries `relaunch()` as a fallback while expecting the NSIS installer to own close/restart behavior in `src/features/about/updater.ts:221-230`.
 
 ## Reproducible Release Inputs
