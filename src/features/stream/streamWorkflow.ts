@@ -153,6 +153,7 @@ class DefaultStreamWorkflow implements StreamWorkflow {
   private snapshot: StreamPageSnapshot;
   private started = false;
   private disposed = false;
+  private lifecycleEpoch = 0;
   private statusEpoch = 0;
   private latestPollRequest = 0;
   private consecutivePollFailures = 0;
@@ -183,14 +184,25 @@ class DefaultStreamWorkflow implements StreamWorkflow {
   };
 
   async start() {
-    if (this.started || this.disposed) return;
+    if (this.started) return;
     this.started = true;
+    this.disposed = false;
+    const lifecycle = ++this.lifecycleEpoch;
+    this.state.loading = true;
+    this.state.action = null;
+    this.state.actionError = null;
+    this.state.statusLoadError = null;
+    this.state.cropLoadError = null;
+    this.state.pollError = null;
+    this.consecutivePollFailures = 0;
+    this.clearTransient();
+    this.publish();
     const epoch = ++this.statusEpoch;
     const [statusResult, cropResult] = await Promise.allSettled([
       this.ports.commands.ensureSession(),
       this.ports.commands.loadCropSettings()
     ]);
-    if (this.disposed) return;
+    if (!this.isCurrentLifecycle(lifecycle)) return;
 
     if (statusResult.status === 'fulfilled' && epoch === this.statusEpoch) {
       this.state.status = statusResult.value;
@@ -217,8 +229,11 @@ class DefaultStreamWorkflow implements StreamWorkflow {
   dispose() {
     if (this.disposed) return;
     this.disposed = true;
+    this.started = false;
+    this.lifecycleEpoch += 1;
     this.statusEpoch += 1;
     this.latestPollRequest += 1;
+    this.state.action = null;
     if (this.intervalHandle !== null) {
       this.ports.scheduler.clearInterval(this.intervalHandle);
       this.intervalHandle = null;
@@ -229,12 +244,13 @@ class DefaultStreamWorkflow implements StreamWorkflow {
 
   private async poll() {
     if (this.disposed || this.state.action !== null) return;
+    const lifecycle = this.lifecycleEpoch;
     const epoch = this.statusEpoch;
     const request = ++this.latestPollRequest;
     try {
       const status = await this.ports.commands.getStatus();
       if (
-        this.disposed ||
+        !this.isCurrentLifecycle(lifecycle) ||
         epoch !== this.statusEpoch ||
         request !== this.latestPollRequest
       )
@@ -246,7 +262,7 @@ class DefaultStreamWorkflow implements StreamWorkflow {
       this.publish();
     } catch (caught) {
       if (
-        this.disposed ||
+        !this.isCurrentLifecycle(lifecycle) ||
         epoch !== this.statusEpoch ||
         request !== this.latestPollRequest
       )
@@ -262,10 +278,10 @@ class DefaultStreamWorkflow implements StreamWorkflow {
   private restart() {
     return this.runAction(
       'restart',
-      async () => {
+      async (lifecycle) => {
         await this.ports.commands.restartSession();
         const status = await this.ports.commands.getStatus();
-        if (this.disposed) return;
+        if (!this.isCurrentLifecycle(lifecycle)) return;
         this.state.status = status;
         this.state.statusLoadError = null;
         this.state.pollError = null;
@@ -278,16 +294,16 @@ class DefaultStreamWorkflow implements StreamWorkflow {
   private copyObsUrl() {
     return this.runAction(
       'copy',
-      async () => {
+      async (lifecycle) => {
         const url = this.state.status.overlay_url;
         if (!url) return;
         try {
           await this.ports.clipboard.writeText(url);
-          if (!this.disposed) {
+          if (this.isCurrentLifecycle(lifecycle)) {
             this.showTransient(this.ports.copy.copied, 'success');
           }
         } catch {
-          if (!this.disposed) {
+          if (this.isCurrentLifecycle(lifecycle)) {
             this.showTransient(this.ports.copy.copyFailed, 'error');
           }
         }
@@ -311,9 +327,9 @@ class DefaultStreamWorkflow implements StreamWorkflow {
   }
 
   private changeDisplayMode(displayMode: StreamOverlayDisplayMode) {
-    return this.runAction('display_mode', async () => {
+    return this.runAction('display_mode', async (lifecycle) => {
       const settings = await this.ports.commands.saveDisplayMode(displayMode);
-      if (this.disposed) return;
+      if (!this.isCurrentLifecycle(lifecycle)) return;
       this.applyCropSettings(settings, false);
       this.state.cropLoadError = null;
     });
@@ -328,11 +344,11 @@ class DefaultStreamWorkflow implements StreamWorkflow {
   private submitCropCode() {
     return this.runAction(
       'crop',
-      async () => {
+      async (lifecycle) => {
         const settings = await this.ports.commands.applyCropCode(
           this.state.cropCode.trim()
         );
-        if (this.disposed) return;
+        if (!this.isCurrentLifecycle(lifecycle)) return;
         this.applyCropSettings(settings);
         this.state.cropLoadError = null;
         this.showTransient(this.ports.copy.cropSaved, 'success');
@@ -344,9 +360,9 @@ class DefaultStreamWorkflow implements StreamWorkflow {
   private resetCropCode() {
     return this.runAction(
       'crop',
-      async () => {
+      async (lifecycle) => {
         const settings = await this.ports.commands.resetCropSettings();
-        if (this.disposed) return;
+        if (!this.isCurrentLifecycle(lifecycle)) return;
         this.applyCropSettings(settings);
         this.state.cropLoadError = null;
         this.showTransient(this.ports.copy.cropReset, 'success');
@@ -358,13 +374,13 @@ class DefaultStreamWorkflow implements StreamWorkflow {
   private moveWindow(delta: number) {
     return this.runAction(
       'window',
-      async () => {
+      async (lifecycle) => {
         const offset = Math.max(
           0,
           Math.trunc(this.state.status.active_window_offset + delta)
         );
         const status = await this.ports.commands.setWindow(offset);
-        if (this.disposed) return;
+        if (!this.isCurrentLifecycle(lifecycle)) return;
         this.state.status = status;
         this.state.statusLoadError = null;
         this.state.pollError = null;
@@ -375,10 +391,11 @@ class DefaultStreamWorkflow implements StreamWorkflow {
 
   private async runAction(
     action: StreamAction,
-    task: () => Promise<void>,
+    task: (lifecycle: number) => Promise<void>,
     options: { clearTransient?: boolean; invalidateStatus?: boolean } = {}
   ) {
     if (this.disposed || this.state.action !== null) return false;
+    const lifecycle = this.lifecycleEpoch;
     this.state.action = action;
     this.state.actionError = null;
     if (options.invalidateStatus) {
@@ -389,15 +406,15 @@ class DefaultStreamWorkflow implements StreamWorkflow {
     this.publish();
 
     try {
-      await task();
+      await task(lifecycle);
       return true;
     } catch (caught) {
-      if (!this.disposed) {
+      if (this.isCurrentLifecycle(lifecycle)) {
         this.state.actionError = toErrorMessage(caught);
       }
       return false;
     } finally {
-      if (!this.disposed) {
+      if (this.isCurrentLifecycle(lifecycle)) {
         this.state.action = null;
         this.publish();
       }
@@ -413,11 +430,12 @@ class DefaultStreamWorkflow implements StreamWorkflow {
   }
 
   private showTransient(text: string, tone: StreamFeedbackTone) {
+    const lifecycle = this.lifecycleEpoch;
     this.clearMessageTimer();
     this.state.transient = { text, tone };
     this.messageTimeoutHandle = this.ports.scheduler.setTimeout(() => {
       this.messageTimeoutHandle = null;
-      if (this.disposed) return;
+      if (!this.isCurrentLifecycle(lifecycle)) return;
       this.state.transient = null;
       this.publish();
     }, TRANSIENT_MESSAGE_MS);
@@ -443,6 +461,10 @@ class DefaultStreamWorkflow implements StreamWorkflow {
       this.state.pollError ??
       this.state.status.last_error
     );
+  }
+
+  private isCurrentLifecycle(lifecycle: number) {
+    return !this.disposed && lifecycle === this.lifecycleEpoch;
   }
 
   private deriveSnapshot(): StreamPageSnapshot {

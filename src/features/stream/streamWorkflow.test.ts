@@ -355,6 +355,42 @@ describe('stream workflow', () => {
     expect(workflow.getSnapshot()).toBe(before);
   });
 
+  it('supports a dispose-start lifecycle replay without accepting the old initialization', async () => {
+    const firstStatus = deferred<StreamServiceStatus>();
+    const firstCrop = deferred<StreamOverlayCropSettingsPayload>();
+    const secondStatus = deferred<StreamServiceStatus>();
+    const secondCrop = deferred<StreamOverlayCropSettingsPayload>();
+    const ensureSession = vi
+      .fn()
+      .mockImplementationOnce(() => firstStatus.promise)
+      .mockImplementationOnce(() => secondStatus.promise);
+    const loadCropSettings = vi
+      .fn()
+      .mockImplementationOnce(() => firstCrop.promise)
+      .mockImplementationOnce(() => secondCrop.promise);
+    const { workflow, scheduler } = setup({
+      ensureSession,
+      loadCropSettings
+    });
+
+    const firstStart = workflow.start();
+    workflow.dispose();
+    const secondStart = workflow.start();
+
+    firstStatus.resolve(runningStatus({ active_window_offset: 1 }));
+    firstCrop.resolve({ ...defaultCropSettings, code: 'stale' });
+    await firstStart;
+    expect(workflow.getSnapshot().phase).toBe('starting');
+
+    secondStatus.resolve(runningStatus({ active_window_offset: 2 }));
+    secondCrop.resolve({ ...defaultCropSettings, code: 'current' });
+    await secondStart;
+
+    expect(workflow.getSnapshot().status.active_window_offset).toBe(2);
+    expect(workflow.getSnapshot().cropCode).toBe('current');
+    expect(scheduler.intervals.size).toBe(1);
+  });
+
   it('runs unchanged with generated/native-shaped and Preview semantic adapters', async () => {
     const nativeLike = {
       ensureStreamSession: vi.fn().mockResolvedValue(runningStatus()),
