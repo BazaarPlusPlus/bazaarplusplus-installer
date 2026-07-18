@@ -12,8 +12,6 @@ Build workflow citation refresh: `2026-07-18` on `45764680a4476063a46a92f4606dd5
 
 History page-state citation refresh: `2026-07-19` on `b07adb2e67f03480d039352837037c25a75f3472` — the context glossary plus architecture, frontend, History/Stream, and verification topics were checked against the semantic-problem and independent History loading implementation after review fixes.
 
-Windows verification citation refresh: `2026-07-19` on `a3c3caff279c6d789e4439edb115455ea8863298` — the verification topic was checked against the cross-platform npm child-process fix and its behavior test.
-
 ## Current Manifest
 
 | Path | Topic | Status | Last verified |
@@ -30,7 +28,7 @@ Windows verification citation refresh: `2026-07-19` on `a3c3caff279c6d789e4439ed
 | `docs/truth/launch-modes.md` | launch-modes | truth | `4366cda394fe304066b55564c3c44d1f917a2273` |
 | `docs/truth/history-stream.md` | history-stream | truth | `b07adb2e67f03480d039352837037c25a75f3472` |
 | `docs/truth/updater-release.md` | updater-release | truth | `45764680a4476063a46a92f4606dd520f0ce29ef` |
-| `docs/truth/verification.md` | verification | truth | `a3c3caff279c6d789e4439edb115455ea8863298` |
+| `docs/truth/verification.md` | verification | truth | `b07adb2e67f03480d039352837037c25a75f3472` |
 | `docs/plans/manual-validation.md` | manual-validation | active-plan | `7500016b1c4adfc7b5d0206c7def0ceabae514d5` |
 | `docs/agents/issue-tracker.md` | agent skills: issue tracker | operational | 2026-07-11 |
 | `docs/agents/triage-labels.md` | agent skills: triage labels | operational | 2026-07-11 |
