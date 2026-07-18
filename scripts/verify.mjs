@@ -94,17 +94,24 @@ export function runVerification({
   mode,
   releasePlatform,
   platform = process.platform,
+  nodeExecutable = process.execPath,
+  npmExecPath = process.env.npm_execpath,
   run = spawnSync,
   log = console.log
 }) {
   for (const step of verificationSteps({ mode, releasePlatform })) {
     log(`==> ${step.label}`);
     const isWindowsNpm = platform === 'win32' && step.command === 'npm';
-    const command = isWindowsNpm ? 'npm.cmd' : step.command;
-    const result = run(command, step.args, {
+    if (isWindowsNpm && !npmExecPath) {
+      console.error('npm_execpath is required to run verification on Windows.');
+      return 1;
+    }
+    const command = isWindowsNpm ? nodeExecutable : step.command;
+    const args = isWindowsNpm ? [npmExecPath, ...step.args] : step.args;
+    const result = run(command, args, {
       cwd: rootDir,
       stdio: step.stdio ?? 'inherit',
-      shell: isWindowsNpm,
+      shell: false,
       env: { ...process.env, ...step.env }
     });
     if (result.error) {
