@@ -1,39 +1,47 @@
 import { openUrl } from '@tauri-apps/plugin-opener';
-import { invokeOrFallback } from '../../api/tauri';
+import { commandClient } from '../../api/commandClient';
+import type { CommandAdapter } from '../../api/commandAdapter';
 import { hasTauriRuntime } from '../../api/runtime';
-import type { StreamOverlayDisplayMode } from '../../types/backend';
+import type { StreamCommandPort, StreamOpener } from './streamWorkflow';
 
-export async function restartStreamSession() {
-  return invokeOrFallback('restart_stream_session', {});
+type StreamCommandAdapter = Pick<
+  CommandAdapter,
+  | 'ensureStreamSession'
+  | 'getStreamStatus'
+  | 'restartStreamSession'
+  | 'setStreamWindow'
+  | 'getOverlaySettings'
+  | 'applyOverlayCropCode'
+  | 'saveOverlayDisplayMode'
+  | 'resetOverlayCrop'
+>;
+
+/** Semantic adapter shared by native and Browser Preview command clients. */
+export function createStreamCommandPort(
+  commands: StreamCommandAdapter
+): StreamCommandPort {
+  return {
+    ensureSession: () => commands.ensureStreamSession(null),
+    getStatus: () => commands.getStreamStatus(),
+    restartSession: () => commands.restartStreamSession(null),
+    setWindow: (offset) => commands.setStreamWindow(offset),
+    loadCropSettings: () => commands.getOverlaySettings(),
+    applyCropCode: (code) => commands.applyOverlayCropCode(code),
+    saveDisplayMode: (displayMode) =>
+      commands.saveOverlayDisplayMode(displayMode),
+    resetCropSettings: () => commands.resetOverlayCrop()
+  };
 }
 
-export async function setStreamWindowOffset(offset: number) {
-  return invokeOrFallback('set_stream_window', {
-    offset: Math.max(0, Math.trunc(offset))
-  });
-}
+export const streamCommandPort = createStreamCommandPort(commandClient);
 
-export async function loadCropSettings() {
-  return invokeOrFallback('get_overlay_settings');
-}
+export const streamOpener: StreamOpener = {
+  async open(url) {
+    if (hasTauriRuntime()) {
+      await openUrl(url);
+      return;
+    }
 
-export async function applyCropCode(code: string) {
-  return invokeOrFallback('apply_overlay_crop_code', { code });
-}
-
-export async function saveDisplayMode(displayMode: StreamOverlayDisplayMode) {
-  return invokeOrFallback('save_overlay_display_mode', { displayMode });
-}
-
-export async function resetCropSettings() {
-  return invokeOrFallback('reset_overlay_crop');
-}
-
-export async function openExternal(url: string) {
-  if (hasTauriRuntime()) {
-    await openUrl(url);
-    return;
+    window.open(url, '_blank', 'noopener,noreferrer');
   }
-
-  window.open(url, '_blank', 'noopener,noreferrer');
-}
+};

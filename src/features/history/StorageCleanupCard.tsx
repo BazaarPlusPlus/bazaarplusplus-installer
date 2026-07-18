@@ -1,10 +1,16 @@
 import { ChevronDown, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
-import { ErrorBanner } from '../../components/ui/ErrorBanner';
+import { ModalSource } from '../../components/ui/ModalCoordinator';
+import { ProblemBanner } from '../../components/ui/ProblemBanner';
 import { useI18n } from '../../i18n/LocaleProvider';
-import type { CleanupPreset } from '../../types/backend';
+import type { StorageCleanupPreset } from '../../types/backend';
 import { formatBytes } from './format';
+import { formatProblemDiagnostic } from '../shared/problems';
+import {
+  presentStorageCleanupProblem,
+  type StorageCleanupProblem
+} from './storageCleanupProblems';
 import {
   useStorageCleanup,
   type CleanupOutcome,
@@ -13,7 +19,7 @@ import {
 } from './useStorageCleanup';
 
 const PRESETS: Array<{
-  preset: CleanupPreset;
+  preset: StorageCleanupPreset;
   labelKey:
     | 'storageCleanupPresetBeforeThisMonth'
     | 'storageCleanupPresetOlderThan7Days'
@@ -42,7 +48,7 @@ export function StorageCleanupCard({
 }: {
   onCompleted: () => Promise<void> | void;
 }) {
-  const { t } = useI18n();
+  const { locale, t } = useI18n();
   const cleanup = useStorageCleanup(onCompleted);
   const [expanded, setExpanded] = useState(false);
 
@@ -53,14 +59,14 @@ export function StorageCleanupCard({
     if (pending.scope === 'screenshots') {
       return t('storageCleanupScreenshotsConfirmBody', {
         count: pending.preview.screenshots + pending.preview.orphan_files,
-        size: formatBytes(pending.preview.estimated_bytes)
+        size: formatBytes(pending.preview.estimated_bytes, locale)
       });
     }
     return t('storageCleanupRunDataConfirmBody', {
       runs: pending.preview.runs,
       battles: pending.preview.battles,
       videos: pending.preview.videos,
-      size: formatBytes(pending.preview.estimated_bytes)
+      size: formatBytes(pending.preview.estimated_bytes, locale)
     });
   };
 
@@ -68,13 +74,13 @@ export function StorageCleanupCard({
     if (outcome.scope === 'screenshots') {
       return t('storageCleanupScreenshotsDone', {
         files: outcome.result.deleted_files,
-        size: formatBytes(outcome.result.freed_bytes)
+        size: formatBytes(outcome.result.freed_bytes, locale)
       });
     }
     return t('storageCleanupRunDataDone', {
       runs: outcome.result.deleted_runs,
       files: outcome.result.deleted_files,
-      size: formatBytes(outcome.result.freed_bytes)
+      size: formatBytes(outcome.result.freed_bytes, locale)
     });
   };
 
@@ -102,7 +108,9 @@ export function StorageCleanupCard({
           inert={!expanded}
         >
           <div className="bpp-history-cleanup-content">
-            {cleanup.error && <ErrorBanner message={cleanup.error} />}
+            {cleanup.previewProblem && (
+              <StorageCleanupProblemBanner problem={cleanup.previewProblem} />
+            )}
 
             <CleanupRow
               label={t('storageCleanupScreenshotsLabel')}
@@ -128,30 +136,83 @@ export function StorageCleanupCard({
         </div>
       </section>
 
-      {cleanup.pending && (
-        <ConfirmDialog
-          titleId="cleanup-confirm-modal-title"
-          title={t('storageCleanupConfirmTitle')}
-          tone="danger"
-          confirmLabel={t('storageCleanupConfirmAction')}
-          busy={cleanup.busy}
-          confirmDisabled={pendingItemCount(cleanup.pending) === 0}
-          onConfirm={cleanup.confirm}
-          onClose={cleanup.cancel}
-        >
-          <p className="m-0 text-[13px] leading-relaxed text-[rgba(245,220,220,0.86)]">
-            {pendingBody(cleanup.pending)}
-          </p>
-          {cleanup.pending.preview.skipped_pending_uploads > 0 && (
-            <p className="m-0 text-[12px] leading-relaxed text-[rgba(200,170,120,0.8)]">
-              {t('storageCleanupSkippedPending', {
-                count: cleanup.pending.preview.skipped_pending_uploads
+      <ModalSource
+        id="route:storage-cleanup"
+        open={cleanup.pending !== null}
+        priority={
+          cleanup.operation?.phase === 'running' ? 'critical' : 'confirmation'
+        }
+        dismissalPolicy={
+          cleanup.operation?.phase === 'running' ? 'blocked' : 'dismissible'
+        }
+      >
+        {cleanup.pending && (
+          <ConfirmDialog
+            titleId="cleanup-confirm-modal-title"
+            title={t('storageCleanupConfirmTitle')}
+            tone="danger"
+            confirmLabel={
+              cleanup.problem ? t('retry') : t('storageCleanupConfirmAction')
+            }
+            busyLabel={
+              cleanup.pending.scope === 'screenshots'
+                ? t('storageCleanupRunningScreenshots')
+                : t('storageCleanupRunningRunData')
+            }
+            busy={cleanup.busy}
+            activeDismissalPolicy={{ kind: 'blocked' }}
+            dismissLabel={
+              cleanup.operation?.phase === 'failed' ? t('close') : undefined
+            }
+            confirmDisabled={pendingItemCount(cleanup.pending) === 0}
+            onConfirm={cleanup.confirm}
+            onClose={cleanup.cancel}
+          >
+            <p className="m-0 text-[12px] leading-relaxed text-[rgba(232,200,122,0.86)] fira-code selectable">
+              {t('storageCleanupTarget', {
+                scope:
+                  cleanup.pending.scope === 'screenshots'
+                    ? t('storageCleanupScreenshotsLabel')
+                    : t('storageCleanupRunDataLabel'),
+                preset: t(
+                  PRESETS.find(
+                    ({ preset }) => preset === cleanup.pending?.preset
+                  )?.labelKey ?? 'storageCleanupPresetAll'
+                )
               })}
             </p>
-          )}
-        </ConfirmDialog>
-      )}
+            <p className="m-0 text-[13px] leading-relaxed text-[rgba(245,220,220,0.86)]">
+              {pendingBody(cleanup.pending)}
+            </p>
+            {cleanup.pending.preview.skipped_pending_uploads > 0 && (
+              <p className="m-0 text-[12px] leading-relaxed text-[rgba(200,170,120,0.8)]">
+                {t('storageCleanupSkippedPending', {
+                  count: cleanup.pending.preview.skipped_pending_uploads
+                })}
+              </p>
+            )}
+            {cleanup.problem && (
+              <StorageCleanupProblemBanner problem={cleanup.problem} />
+            )}
+          </ConfirmDialog>
+        )}
+      </ModalSource>
     </>
+  );
+}
+
+function StorageCleanupProblemBanner({
+  problem
+}: {
+  problem: StorageCleanupProblem;
+}) {
+  const { t } = useI18n();
+  return (
+    <ProblemBanner
+      message={presentStorageCleanupProblem(problem, t)}
+      diagnostic={problem.diagnostic ? formatProblemDiagnostic(problem) : null}
+      diagnosticLabel={t('problemDiagnostics')}
+    />
   );
 }
 
@@ -168,7 +229,7 @@ function CleanupRow({
   busy: boolean;
   onSelect: (
     scope: CleanupScope,
-    preset: CleanupPreset
+    preset: StorageCleanupPreset
   ) => Promise<boolean> | void;
 }) {
   const { t } = useI18n();

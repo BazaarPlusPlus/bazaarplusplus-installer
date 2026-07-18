@@ -11,7 +11,7 @@ pub(crate) use zip_archive::read_bundled_bpp_version;
 use std::path::{Path, PathBuf};
 use tauri::Manager;
 
-use crate::stream::state::StreamRuntimeState;
+use crate::stream::runtime::StreamRuntime;
 
 use super::{debug_error, debug_log};
 
@@ -27,17 +27,18 @@ pub(crate) const RESET_BEPINEX_ERR_GAME_RUNNING: &str = "bepinex_reset_blocked_b
 pub(crate) const RESET_BEPINEX_ERR_PARTIAL_FAILURE: &str = "bepinex_reset_partial_failure";
 
 pub async fn reset_bpp_data(
-    stream_state: tauri::State<'_, StreamRuntimeState>,
+    stream_runtime: tauri::State<'_, StreamRuntime>,
     game_path: String,
 ) -> Result<bool, String> {
-    // Drop our own SQLite connections before touching the data directory.
-    // Without this, OBS overlay polling keeps the SQLite database open and
-    // Windows refuses to delete it (the headline customer complaint).
-    let _ = crate::stream::server::stop(stream_state.inner()).await;
-
-    tauri::async_runtime::spawn_blocking(move || reset_bpp_data_blocking(Path::new(&game_path)))
+    stream_runtime
+        .exclusive_maintenance(|| async move {
+            tauri::async_runtime::spawn_blocking(move || {
+                reset_bpp_data_blocking(Path::new(&game_path))
+            })
+            .await
+            .map_err(|err| format!("failed to reset BazaarPlusPlus data: {err}"))?
+        })
         .await
-        .map_err(|err| format!("failed to reset BazaarPlusPlus data: {err}"))?
 }
 
 fn reset_bpp_data_blocking(game_path: &Path) -> Result<bool, String> {
@@ -89,7 +90,7 @@ fn join_failure_paths(paths: &[PathBuf]) -> String {
 /// (including any third-party mod under it) and leaves the doorstop/trampoline
 /// bootstrap untouched, so the game stays launchable and the user reinstalls
 /// manually afterward. Unlike [`reset_bpp_data`] this touches no SQLite database,
-/// so it needs neither the stream-server stop nor `StreamRuntimeState`.
+/// so it needs no exclusive stream-runtime maintenance.
 pub async fn reset_bepinex_folder(game_path: String) -> Result<bool, String> {
     tauri::async_runtime::spawn_blocking(move || {
         reset_bepinex_folder_blocking(Path::new(&game_path))

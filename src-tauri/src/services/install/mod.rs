@@ -1,9 +1,12 @@
+mod operation;
 mod plan;
 mod types;
 
+pub(crate) use operation::{install, InstallRequest};
 pub use types::{
     FileActionResult, GameDirectorySelection, InstallActions, InstallCompatState, InstallGameState,
-    InstallModState, InstallState, InstallWarning, ResetBepinexResult, ResetBppDataResult,
+    InstallModState, InstallState, InstallWarning, InstallWarningCode, ResetBepinexResult,
+    ResetBppDataResult,
 };
 
 use std::process::Command;
@@ -13,18 +16,30 @@ use tauri::Manager;
 use std::path::Path;
 
 use crate::services::{
-    bepinex::{self, install_bepinex, reset_bepinex_folder, reset_bpp_data, uninstall_bpp},
+    bepinex::{
+        reset_bepinex_folder, reset_bpp_data, uninstall_bpp, RESET_BEPINEX_ERR_GAME_RUNNING,
+        RESET_BEPINEX_ERR_PARTIAL_FAILURE, RESET_BPP_DATA_ERR_GAME_RUNNING,
+        RESET_BPP_DATA_ERR_PARTIAL_FAILURE,
+    },
     detect::detect_for_install,
-    launch_mode::LaunchModeGate,
     startup::InstallerContextState,
-    steam::prepare_steam_for_launch_option_update,
-    vdf::{clear_launch_options_for_steam, patch_launch_options},
 };
-use crate::stream::state::StreamRuntimeState;
+use crate::{
+    problem::{SemanticProblem, SemanticProblemCode},
+    stream::runtime::StreamRuntime,
+};
 
 const STEAM_BAZAAR_URL: &str = "steam://rungameid/1617400";
 
 pub fn build_install_state(
+    app: tauri::AppHandle,
+    state: tauri::State<'_, InstallerContextState>,
+    game_path: Option<String>,
+) -> Result<InstallState, SemanticProblem> {
+    build_install_state_raw(app, state, game_path).map_err(install_detection_problem)
+}
+
+pub(super) fn build_install_state_raw(
     app: tauri::AppHandle,
     state: tauri::State<'_, InstallerContextState>,
     game_path: Option<String>,
@@ -33,83 +48,15 @@ pub fn build_install_state(
     Ok(install_state_from_snapshot(snapshot))
 }
 
-pub async fn run_install(
-    app: tauri::AppHandle,
-    state: tauri::State<'_, InstallerContextState>,
-    game_path: String,
-    compat_opt_in: bool,
-) -> Result<InstallState, String> {
-    // ---- gather (async runtime; the ONLY detect before mutation) ----
-    let before = detect_for_install(app.clone(), state, Some(game_path.clone()))?;
-    let steam_path = before.steam_path.clone().unwrap_or_default();
-
-    // ---- plan (pure; ordering contract lives in plan.rs + its table tests) ----
-    // Version-forced on macOS 27+, or <= 26 opt-in. Always Prefix off macOS.
-    let plan = plan::plan_install(plan::InstallPlanInputs {
-        requested: LaunchModeGate::current().requested_mode(compat_opt_in),
-        was_trampolined: bepinex::is_trampolined(Path::new(&game_path)).unwrap_or(false),
-        has_steam_path: !steam_path.trim().is_empty(),
-        steam_launch_options_supported: before.steam_launch_options_supported,
-    });
-
-    // ---- execute (blocking thread; first Err aborts, same as master's `?`s) ----
-    let app_for_task = app.clone();
-    let game_path_for_task = game_path.clone();
-    tauri::async_runtime::spawn_blocking(move || {
-        for step in &plan {
-            execute_install_step(step, &app_for_task, &steam_path, &game_path_for_task)?;
-        }
-        Ok::<(), String>(())
-    })
-    .await
-    .map_err(|err| format!("failed to run install task: {err}"))??;
-
-    // ---- rebuild state from a FRESH detect (never mutate `before`) ----
-    let app_for_state = app.clone();
-    let state = app_for_state.state::<InstallerContextState>();
-    build_install_state(app, state, Some(game_path))
-}
-
-/// Orderless step interpreter. Every arm is ONE unconditional effect call —
-/// decisions and ordering belong to `plan::plan_install` (see its table
-/// tests). Contract: no conditionals, no error wrapping (error strings pass
-/// through raw to the frontend), no fan-out; per-arm argument literals are
-/// load-bearing and documented on the matching `InstallStep` variant.
-fn execute_install_step(
-    step: &plan::InstallStep,
-    app: &tauri::AppHandle,
-    steam_path: &str,
-    game_path: &str,
-) -> Result<(), String> {
-    let steam = Path::new(steam_path);
-    let game = Path::new(game_path);
-    match step {
-        plan::InstallStep::CloseSteam => prepare_steam_for_launch_option_update(steam, false),
-        plan::InstallStep::InstallBepInEx => {
-            install_bepinex(app.clone(), steam_path.to_string(), game_path.to_string())
-        }
-        plan::InstallStep::InstallTrampoline => bepinex::install_trampoline(app, game),
-        plan::InstallStep::UninstallTrampoline => bepinex::uninstall_trampoline(game),
-        plan::InstallStep::WriteLaunchModeMarker(mode) => {
-            bepinex::write_launch_mode_marker(game, *mode)
-        }
-        plan::InstallStep::ClearLaunchOptions => clear_launch_options_for_steam(steam),
-        // Discard only the Ok LaunchOptionsPatchResult (verified:false is NOT
-        // an error); a hard Err still aborts — master's `let _ = …?` shape.
-        plan::InstallStep::PatchLaunchOptions => {
-            patch_launch_options(app.clone(), steam_path.to_string(), game_path.to_string())
-                .map(|_| ())
-        }
-    }
-}
-
 pub async fn run_reset_bpp_data(
     app: tauri::AppHandle,
     install_state: tauri::State<'_, InstallerContextState>,
-    stream_state: tauri::State<'_, StreamRuntimeState>,
+    stream_runtime: tauri::State<'_, StreamRuntime>,
     game_path: String,
-) -> Result<ResetBppDataResult, String> {
-    let removed_data = reset_bpp_data(stream_state, game_path.clone()).await?;
+) -> Result<ResetBppDataResult, SemanticProblem> {
+    let removed_data = reset_bpp_data(stream_runtime, game_path.clone())
+        .await
+        .map_err(|diagnostic| install_action_problem("reset_bpp_data", diagnostic))?;
     let state = build_install_state(app, install_state, Some(game_path))?;
     Ok(ResetBppDataResult {
         state,
@@ -121,8 +68,10 @@ pub async fn run_reset_bepinex(
     app: tauri::AppHandle,
     install_state: tauri::State<'_, InstallerContextState>,
     game_path: String,
-) -> Result<ResetBepinexResult, String> {
-    let removed = reset_bepinex_folder(game_path.clone()).await?;
+) -> Result<ResetBepinexResult, SemanticProblem> {
+    let removed = reset_bepinex_folder(game_path.clone())
+        .await
+        .map_err(|diagnostic| install_action_problem("reset_bepinex", diagnostic))?;
     let state = build_install_state(app, install_state, Some(game_path))?;
     Ok(ResetBepinexResult { state, removed })
 }
@@ -131,8 +80,9 @@ pub async fn run_uninstall(
     app: tauri::AppHandle,
     state: tauri::State<'_, InstallerContextState>,
     game_path: String,
-) -> Result<InstallState, String> {
-    let before = detect_for_install(app.clone(), state, Some(game_path.clone()))?;
+) -> Result<InstallState, SemanticProblem> {
+    let before = detect_for_install(app.clone(), state, Some(game_path.clone()))
+        .map_err(install_detection_problem)?;
     let app_for_task = app.clone();
     let steam_path = before.steam_path.clone().unwrap_or_default();
     let game_path_for_task = game_path.clone();
@@ -140,7 +90,10 @@ pub async fn run_uninstall(
         uninstall_bpp(app_for_task, steam_path, game_path_for_task)
     })
     .await
-    .map_err(|err| format!("failed to run uninstall task: {err}"))??;
+    .map_err(|err| {
+        install_action_problem("uninstall", format!("failed to run uninstall task: {err}"))
+    })?
+    .map_err(|diagnostic| install_action_problem("uninstall", diagnostic))?;
 
     let app_for_state = app.clone();
     let state = app_for_state.state::<InstallerContextState>();
@@ -174,26 +127,12 @@ fn install_state_from_snapshot(
     let can_launch = game_found && env.game_path_valid;
     let has_resettable_data = has_resettable_bpp_data(env.game_path.as_deref());
     let has_bepinex_files = has_bepinex_directory(env.game_path.as_deref());
-    let mut warnings = Vec::new();
-    if !game_found || !env.game_path_valid {
-        warnings.push(InstallWarning {
-            code: "game_missing".to_string(),
-            message: "未找到有效的 The Bazaar 安装目录。".to_string(),
-        });
-    }
-    if !env.steam_launch_options_supported {
-        warnings.push(InstallWarning {
-            code: "launch_options_unsupported".to_string(),
-            message: "当前平台或 Steam 目录不支持自动写入启动项。".to_string(),
-        });
-    }
-    if needs_trampoline_repair {
-        warnings.push(InstallWarning {
-            code: "trampoline_reverted".to_string(),
-            message: "检测到游戏文件已被还原，BazaarPlusPlus 的启动配置需要修复，请点击重新安装。"
-                .to_string(),
-        });
-    }
+    let warnings = install_warnings(
+        game_found,
+        env.game_path_valid,
+        env.steam_launch_options_supported,
+        needs_trampoline_repair,
+    );
 
     InstallState {
         selected_game_path,
@@ -230,6 +169,71 @@ fn install_state_from_snapshot(
     }
 }
 
+fn install_warnings(
+    game_found: bool,
+    game_path_valid: bool,
+    steam_launch_options_supported: bool,
+    needs_trampoline_repair: bool,
+) -> Vec<InstallWarning> {
+    let mut warnings = Vec::new();
+    if !game_found || !game_path_valid {
+        warnings.push(InstallWarning {
+            code: InstallWarningCode::GameMissing,
+            params: Default::default(),
+        });
+    }
+    if !steam_launch_options_supported {
+        warnings.push(InstallWarning {
+            code: InstallWarningCode::LaunchOptionsUnsupported,
+            params: Default::default(),
+        });
+    }
+    if needs_trampoline_repair {
+        warnings.push(InstallWarning {
+            code: InstallWarningCode::TrampolineReverted,
+            params: Default::default(),
+        });
+    }
+    warnings
+}
+
+fn install_detection_problem(diagnostic: String) -> SemanticProblem {
+    SemanticProblem::new(SemanticProblemCode::InstallDetectionFailed)
+        .with_param("operation", "detect_state")
+        .with_diagnostic(diagnostic)
+}
+
+pub(crate) fn install_action_problem(operation: &str, diagnostic: String) -> SemanticProblem {
+    if diagnostic == RESET_BPP_DATA_ERR_GAME_RUNNING || diagnostic == RESET_BEPINEX_ERR_GAME_RUNNING
+    {
+        return SemanticProblem::new(SemanticProblemCode::InstallGameRunning)
+            .with_param("operation", operation);
+    }
+
+    for prefix in [
+        RESET_BPP_DATA_ERR_PARTIAL_FAILURE,
+        RESET_BEPINEX_ERR_PARTIAL_FAILURE,
+    ] {
+        if let Some(paths) = diagnostic
+            .strip_prefix(prefix)
+            .and_then(|remainder| remainder.strip_prefix(':'))
+        {
+            let count = paths
+                .split('\u{1f}')
+                .filter(|path| !path.trim().is_empty())
+                .count();
+            return SemanticProblem::new(SemanticProblemCode::InstallPartialFailure)
+                .with_param("operation", operation)
+                .with_param("count", count.to_string())
+                .with_param("paths", paths);
+        }
+    }
+
+    SemanticProblem::new(SemanticProblemCode::InstallActionFailed)
+        .with_param("operation", operation)
+        .with_diagnostic(diagnostic)
+}
+
 fn has_resettable_bpp_data(game_path: Option<&str>) -> bool {
     game_path
         .map(Path::new)
@@ -251,7 +255,7 @@ fn open_url(url: &str) -> Result<(), String> {
             .args(["/C", "start", "", url])
             .spawn()
             .map_err(|err| format!("failed to open URL: {err}"))?;
-        return Ok(());
+        Ok(())
     }
 
     #[cfg(target_os = "macos")]
@@ -260,7 +264,7 @@ fn open_url(url: &str) -> Result<(), String> {
             .arg(url)
             .spawn()
             .map_err(|err| format!("failed to open URL: {err}"))?;
-        return Ok(());
+        Ok(())
     }
 
     #[cfg(all(not(target_os = "windows"), not(target_os = "macos")))]
@@ -275,7 +279,14 @@ fn open_url(url: &str) -> Result<(), String> {
 
 #[cfg(test)]
 mod tests {
-    use super::{has_bepinex_directory, has_resettable_bpp_data};
+    use super::{
+        has_bepinex_directory, has_resettable_bpp_data, install_action_problem, install_warnings,
+        InstallWarningCode,
+    };
+    use crate::problem::SemanticProblemCode;
+    use crate::services::bepinex::{
+        RESET_BEPINEX_ERR_GAME_RUNNING, RESET_BPP_DATA_ERR_PARTIAL_FAILURE,
+    };
 
     #[test]
     fn test_has_resettable_bpp_data_detects_existing_data_directory() {
@@ -305,5 +316,51 @@ mod tests {
 
         assert!(has_bepinex_directory(Some(path.as_str())));
         assert!(!has_bepinex_directory(None));
+    }
+
+    #[test]
+    fn install_warnings_are_semantic_codes_without_backend_copy() {
+        let warnings = install_warnings(false, false, false, true);
+
+        assert_eq!(
+            warnings
+                .iter()
+                .map(|warning| warning.code)
+                .collect::<Vec<_>>(),
+            vec![
+                InstallWarningCode::GameMissing,
+                InstallWarningCode::LaunchOptionsUnsupported,
+                InstallWarningCode::TrampolineReverted,
+            ]
+        );
+        assert!(warnings.iter().all(|warning| warning.params.is_empty()));
+    }
+
+    #[test]
+    fn install_failures_classify_known_reset_conditions_and_generic_actions() {
+        let blocked =
+            install_action_problem("reset_bepinex", RESET_BEPINEX_ERR_GAME_RUNNING.to_string());
+        assert_eq!(blocked.code, SemanticProblemCode::InstallGameRunning);
+        assert_eq!(
+            blocked.params.get("operation").map(String::as_str),
+            Some("reset_bepinex")
+        );
+        assert_eq!(blocked.diagnostic, None);
+
+        let partial = install_action_problem(
+            "reset_bpp_data",
+            format!("{RESET_BPP_DATA_ERR_PARTIAL_FAILURE}:/tmp/a\u{1f}/tmp/b"),
+        );
+        assert_eq!(partial.code, SemanticProblemCode::InstallPartialFailure);
+        assert_eq!(partial.params.get("count").map(String::as_str), Some("2"));
+        assert_eq!(
+            partial.params.get("paths").map(String::as_str),
+            Some("/tmp/a\u{1f}/tmp/b")
+        );
+        assert_eq!(partial.diagnostic, None);
+
+        let generic = install_action_problem("install", "permission denied".to_string());
+        assert_eq!(generic.code, SemanticProblemCode::InstallActionFailed);
+        assert_eq!(generic.diagnostic.as_deref(), Some("permission denied"));
     }
 }

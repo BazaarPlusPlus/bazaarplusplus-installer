@@ -1,93 +1,79 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import type {
-  CleanupPreset,
-  RunDataCleanupPreview,
-  RunDataCleanupResult,
-  ScreenshotCleanupPreview,
-  ScreenshotCleanupResult
+  StorageCleanupExecution,
+  StorageCleanupPreset,
+  StorageCleanupPreview,
+  StorageCleanupScope
 } from '../../types/backend';
-import { useAsyncAction } from '../shared/useAsyncAction';
+import { useConfirmedOperation } from '../shared/confirmedOperation';
+import { executeStorageCleanup, previewStorageCleanup } from './historyApi';
 import {
-  executeRunDataCleanup,
-  executeScreenshotCleanup,
-  previewRunDataCleanup,
-  previewScreenshotCleanup
-} from './historyApi';
+  storageCleanupProblemFromError,
+  type StorageCleanupProblem
+} from './storageCleanupProblems';
 
-export type CleanupScope = 'screenshots' | 'run_data';
+export type CleanupScope = StorageCleanupScope;
 
-export type PendingCleanup =
-  | {
-      scope: 'screenshots';
-      preset: CleanupPreset;
-      preview: ScreenshotCleanupPreview;
-    }
-  | {
-      scope: 'run_data';
-      preset: CleanupPreset;
-      preview: RunDataCleanupPreview;
-    };
+export type PendingCleanup = StorageCleanupPreview & {
+  preset: StorageCleanupPreset;
+};
 
-export type CleanupOutcome =
-  | { scope: 'screenshots'; result: ScreenshotCleanupResult }
-  | { scope: 'run_data'; result: RunDataCleanupResult };
+export type CleanupOutcome = StorageCleanupExecution;
 
 export function useStorageCleanup(onCompleted: () => Promise<void> | void) {
-  const [pending, setPending] = useState<PendingCleanup | null>(null);
   const [outcome, setOutcome] = useState<CleanupOutcome | null>(null);
-  const { busy, error, clearError, run } = useAsyncAction<
-    'preview' | 'execute'
+  const [previewing, setPreviewing] = useState(false);
+  const [previewProblem, setPreviewProblem] =
+    useState<StorageCleanupProblem | null>(null);
+  const previewInFlight = useRef(false);
+  const operation = useConfirmedOperation<
+    PendingCleanup,
+    StorageCleanupProblem
   >();
 
-  const requestCleanup = (scope: CleanupScope, preset: CleanupPreset) =>
-    run('preview', async () => {
-      setOutcome(null);
-      if (scope === 'screenshots') {
-        const preview = await previewScreenshotCleanup(preset);
-        if (preview) {
-          setPending({ scope, preset, preview });
-        }
-        return;
-      }
-
-      const preview = await previewRunDataCleanup(preset);
-      if (preview) {
-        setPending({ scope, preset, preview });
-      }
-    });
-
-  const confirm = () => {
-    const target = pending;
-    if (!target) {
-      return;
+  const requestCleanup = async (
+    scope: CleanupScope,
+    preset: StorageCleanupPreset
+  ) => {
+    if (previewInFlight.current || operation.controller.getSnapshot()) {
+      return false;
     }
-    void run('execute', async () => {
-      setPending(null);
-      if (target.scope === 'screenshots') {
-        const result = await executeScreenshotCleanup(target.preset);
-        if (result) {
-          setOutcome({ scope: 'screenshots', result });
-        }
-      } else {
-        const result = await executeRunDataCleanup(target.preset);
-        if (result) {
-          setOutcome({ scope: 'run_data', result });
-        }
-      }
-      await onCompleted();
-    });
+    previewInFlight.current = true;
+    setPreviewing(true);
+    setPreviewProblem(null);
+    setOutcome(null);
+    try {
+      const preview = await previewStorageCleanup(scope, preset);
+      return operation.controller.request({ ...preview, preset });
+    } catch (caught) {
+      setPreviewProblem(storageCleanupProblemFromError(caught));
+      return false;
+    } finally {
+      previewInFlight.current = false;
+      setPreviewing(false);
+    }
   };
 
-  const cancel = () => setPending(null);
+  const confirm = () =>
+    operation.controller.run(async (target) => {
+      const result = await executeStorageCleanup(target.scope, target.preset);
+      await onCompleted();
+      setOutcome(result);
+      return { ok: true };
+    }, storageCleanupProblemFromError);
+
+  const pending = operation.state?.target ?? null;
 
   return {
     pending,
     outcome,
-    busy,
-    error,
-    clearError,
+    operation: operation.state,
+    problem:
+      operation.state?.phase === 'failed' ? operation.state.problem : null,
+    previewProblem,
+    busy: previewing || operation.state?.phase === 'running',
     requestCleanup,
     confirm,
-    cancel
+    cancel: operation.controller.dismiss
   };
 }

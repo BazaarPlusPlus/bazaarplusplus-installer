@@ -20,11 +20,11 @@ Usage:
 
   ./build.sh --upload
       Upload the current host platform release artifacts to Cloudflare R2
-      using npx wrangler.
+      using the project-pinned Wrangler CLI.
 
   ./build.sh --prod --upload
       Build the current host platform release artifacts, then upload them
-      to Cloudflare R2 using npx wrangler.
+      to Cloudflare R2 using the project-pinned Wrangler CLI.
 
   ./build.sh --prod --clean-deps
       Reinstall npm dependencies before building.
@@ -172,48 +172,10 @@ bundle_root_for_platform() {
     printf '%s' "$SCRIPT_DIR/$relative_path"
 }
 
-find_installer_artifact() {
-    local platform="$1"
-    local installer_dir=""
-    local installer_glob=""
-
-    if ! installer_dir="$(release_platforms_cli installer-dir "$platform")" \
-        || ! installer_glob="$(release_platforms_cli installer-glob "$platform")"; then
-        echo "Error: Unsupported platform installer artifact lookup: $platform" >&2
-        return 1
-    fi
-    find "$SCRIPT_DIR/$installer_dir" -maxdepth 1 -type f -name "$installer_glob" ! -name '*.sig' | sort | head -n 1
-}
-
-find_updater_signature() {
-    local platform="$1"
-    local bundle_root
-
-    bundle_root="$(bundle_root_for_platform "$platform")"
-    find "$bundle_root" -type f -name '*.sig' | sort | head -n 1
-}
-
-find_updater_artifact() {
-    local platform="$1"
-    local updater_sig
-    local updater_file
-
-    updater_sig="$(find_updater_signature "$platform")"
-    if [ -z "$updater_sig" ]; then
-        return
-    fi
-
-    updater_file="${updater_sig%.sig}"
-    if [ ! -f "$updater_file" ]; then
-        echo "Error: Missing updater artifact for signature: $updater_sig" >&2
-        exit 1
-    fi
-
-    printf '%s\n' "$updater_file"
-}
-
 install_dependencies() {
-    if [ "$CLEAN_DEPS" = false ] \
+    local allow_reuse="${1:-false}"
+    if [ "$allow_reuse" = true ] \
+        && [ "$CLEAN_DEPS" = false ] \
         && [ -d "$SCRIPT_DIR/node_modules" ] \
         && [ -d "$SCRIPT_DIR/node_modules/@tauri-apps/cli" ] \
         && { [ -f "$SCRIPT_DIR/node_modules/.bin/tauri" ] || [ -f "$SCRIPT_DIR/node_modules/.bin/tauri.cmd" ]; } \
@@ -223,11 +185,12 @@ install_dependencies() {
         return
     fi
 
-    if [ "$CLEAN_DEPS" = true ] && [ -f "$SCRIPT_DIR/package-lock.json" ]; then
-        invoke_step "Installing npm dependencies" npm ci
-    else
-        invoke_step "Installing npm dependencies" npm install
+    if [ ! -f "$SCRIPT_DIR/package-lock.json" ]; then
+        echo "Error: package-lock.json is required for a reproducible dependency install; refusing to run npm install." >&2
+        return 1
     fi
+
+    invoke_step "Installing npm dependencies" npm ci
 }
 
 required_rust_targets_for_platform() {
@@ -242,8 +205,12 @@ ensure_required_rust_targets() {
     local required_targets=""
     local required_target=""
 
-    installed_targets="$(rustup target list --installed)"
     required_targets="$(required_rust_targets_for_platform "$platform")"
+    if [ -z "${required_targets//[[:space:]]/}" ]; then
+        return 0
+    fi
+
+    installed_targets="$(rustup target list --installed)"
     while IFS= read -r required_target; do
         [ -n "$required_target" ] || continue
         if ! grep -Fxq "$required_target" <<<"$installed_targets"; then
@@ -440,11 +407,11 @@ prepare_signed_macos_resource_binary() {
 create_zip_from_directory() {
     local source_dir="$1"
     local output_zip="$2"
+    local output_manifest="$3"
 
-    (
-        cd "$source_dir"
-        zip -qry -X "$output_zip" .
-    )
+    node "$SCRIPT_DIR/scripts/payload-zip.mjs" pack \
+        --source "$source_dir" --output "$output_zip" \
+        --manifest-output "$output_manifest" --platform macos
 }
 
 prepare_signed_macos_resource_zip() {
@@ -452,9 +419,10 @@ prepare_signed_macos_resource_zip() {
     local temp_dir=""
     local payload_dir=""
     local signed_zip=""
+    local signed_manifest=""
+    local resource_manifest="${resource_zip}.manifest.json"
 
     assert_command ditto "Install macOS command line tools first."
-    assert_command zip "Install zip first."
     assert_command file "Install file first."
     assert_command codesign "Install Xcode command line tools first."
     assert_file "$resource_zip" "macOS resource zip"
@@ -462,6 +430,7 @@ prepare_signed_macos_resource_zip() {
     temp_dir="$(mktemp -d)"
     payload_dir="$temp_dir/payload"
     signed_zip="$temp_dir/BepInEx.zip"
+    signed_manifest="$temp_dir/BepInEx.zip.manifest.json"
     mkdir -p "$payload_dir"
     trap 'rm -rf "$temp_dir"' RETURN
 
@@ -469,16 +438,22 @@ prepare_signed_macos_resource_zip() {
         ditto -x -k "$resource_zip" "$payload_dir"
     sign_macos_resource_binaries "$payload_dir"
     invoke_step "Repacking signed macOS resource zip" \
-        create_zip_from_directory "$payload_dir" "$signed_zip"
-    invoke_step "Replacing macOS resource zip with signed copy" \
+        create_zip_from_directory "$payload_dir" "$signed_zip" "$signed_manifest"
+    invoke_step "Replacing macOS resource zip and checksum manifest with signed copies" \
         mv "$signed_zip" "$resource_zip"
+    mv "$signed_manifest" "$resource_manifest"
 
     rm -rf "$temp_dir"
     trap - RETURN
 }
 
 run_release_prechecks() {
+    local platform="$1"
     invoke_step "Synchronizing package versions" node scripts/version-sync.mjs
+    invoke_step "Preparing $platform release resources" \
+        npm run prepare:resources -- --platform "$platform"
+    invoke_step "Running authoritative release verification" \
+        npm run verify -- --release-platform "$platform"
 }
 
 upload_r2_object() {
@@ -489,11 +464,16 @@ upload_r2_object() {
     assert_file "$file_path" "upload artifact"
     if [ -n "$content_type" ]; then
         invoke_step "Uploading $(basename "$file_path") to $object_key" \
-            npx wrangler r2 object put "$R2_BUCKET/$object_key" --file "$file_path" --content-type "$content_type" --remote
+            wrangler_cli r2 object put "$R2_BUCKET/$object_key" --file "$file_path" --content-type "$content_type" --remote
     else
         invoke_step "Uploading $(basename "$file_path") to $object_key" \
-            npx wrangler r2 object put "$R2_BUCKET/$object_key" --file "$file_path" --remote
+            wrangler_cli r2 object put "$R2_BUCKET/$object_key" --file "$file_path" --remote
     fi
+}
+
+artifact_manifest_paths() {
+    local platform="$1"
+    node "$SCRIPT_DIR/scripts/artifact-manifest.mjs" paths --platform "$platform"
 }
 
 upload_release_assets() {
@@ -506,17 +486,12 @@ upload_release_assets() {
     local updater_sig=""
     local fragment_file=""
 
-    installer_file="$(find_installer_artifact "$platform")"
-    updater_file="$(find_updater_artifact "$platform")"
-    updater_sig="$(find_updater_signature "$platform")"
-
-    if [ -z "$installer_file" ]; then
-        echo "Error: No installer artifact found for platform: $platform" >&2
-        exit 1
-    fi
-
-    if [ -z "$updater_file" ] || [ -z "$updater_sig" ]; then
-        echo "Error: No updater artifact/signature pair found for platform: $platform" >&2
+    if ! {
+        IFS= read -r installer_file
+        IFS= read -r updater_file
+        IFS= read -r updater_sig
+    } < <(artifact_manifest_paths "$platform"); then
+        echo "Error: No valid artifact manifest for platform: $platform" >&2
         exit 1
     fi
 
@@ -557,14 +532,14 @@ generate_latest_manifest() {
     while IFS= read -r platform; do
         [ -n "$platform" ] || continue
         echo "==> Fetching platform fragment for $platform"
-        npx wrangler r2 object get \
+        wrangler_cli r2 object get \
             "$R2_BUCKET/$version/$platform/updater/platform-manifest.json" \
             --file "$temp_dir/$platform.json" \
             --remote >/dev/null 2>&1 || true
     done <<<"$platform_list"
 
     echo "==> Fetching existing latest.json if present"
-    npx wrangler r2 object get \
+    wrangler_cli r2 object get \
         "$R2_BUCKET/latest.json" \
         --file "$temp_dir/existing-latest.json" \
         --remote >/dev/null 2>&1 || true
@@ -581,6 +556,15 @@ generate_latest_manifest() {
     rm -rf "$temp_dir"
 }
 
+wrangler_cli() {
+    local executable="$SCRIPT_DIR/node_modules/.bin/wrangler"
+    if [ ! -f "$executable" ]; then
+        echo "Error: Missing project-pinned Wrangler CLI: $executable" >&2
+        return 1
+    fi
+    "$executable" "$@"
+}
+
 build_prod() {
     local platform="$1"
     local config=""
@@ -590,6 +574,7 @@ build_prod() {
     local bundle_cleanup_path=""
     local release_binary=""
     local tauri_target=""
+    local release_config="$SCRIPT_DIR/src-tauri/tauri.release.conf.json"
     local step_status=0
     local -a build_command
     local -a bundle_command
@@ -621,16 +606,17 @@ build_prod() {
 
     assert_file "$config" "$platform Tauri config"
     assert_file "$resource_zip" "$platform resource zip"
+    assert_file "$release_config" "release Tauri config"
 
     if [ -d "$bundle_cleanup_path" ]; then
         invoke_step "Removing stale $platform bundle artifacts" rm -rf "$bundle_cleanup_path"
     fi
 
     build_command=(
-        npm run tauri build -- --no-bundle --config "$config"
+        npm run tauri build -- --no-bundle --config "$config" --config "$release_config"
     )
     bundle_command=(
-        npm run tauri bundle -- --bundles "$bundle_target" --config "$config"
+        npm run tauri bundle -- --bundles "$bundle_target" --config "$config" --config "$release_config"
     )
 
     if [ -n "$tauri_target" ]; then
@@ -662,6 +648,9 @@ build_prod() {
         step_status="$?"
         exit "$step_status"
     fi
+
+    invoke_step "Writing $platform artifact manifest" \
+        node "$SCRIPT_DIR/scripts/artifact-manifest.mjs" generate --platform "$platform"
 
     echo
     echo "Build complete."
@@ -700,16 +689,21 @@ main() {
     local version=""
     local platform_key=""
     local base_url=""
+    local node_version=""
+    local npm_version=""
 
     parse_args "$@"
 
     cd "$SCRIPT_DIR"
 
     assert_command node "Install Node.js first."
+    assert_command npm "Install Node.js/npm first."
+    node_version="$(node --version)"
+    npm_version="$(npm --version)"
+    node scripts/check-toolchain.mjs "$node_version" "$npm_version"
     if [ "$PROD" = false ] && [ "$UPLOAD" = false ]; then
-        assert_command npm "Install Node.js/npm first."
         assert_command cargo "Install Rust toolchain first."
-        install_dependencies
+        install_dependencies true
         invoke_step "Starting dev server" npm run tauri dev
         exit 0
     fi
@@ -725,9 +719,8 @@ main() {
     base_url="$(public_base_url)"
 
     if [ "$PROD" = true ]; then
-        assert_command npm "Install Node.js/npm first."
         assert_command cargo "Install Rust toolchain first."
-        install_dependencies
+        install_dependencies false
 
         if [ "$platform" = "macos" ]; then
             assert_command rustup "Install rustup first so the macOS Rust target can be managed."
@@ -737,14 +730,16 @@ main() {
         if [ "$platform" = "macos" ]; then
             load_macos_developer_id_env
         fi
-        run_release_prechecks
+        run_release_prechecks "$platform"
         ensure_required_rust_targets "$platform"
         version="$(package_version)"
         build_prod "$platform"
     fi
 
     if [ "$UPLOAD" = true ]; then
-        assert_command npx "Install Node.js/npm first so npx is available."
+        if [ "$PROD" = false ]; then
+            install_dependencies false
+        fi
         upload_release_assets "$platform" "$version" "$platform_key" "$base_url"
         generate_latest_manifest "$version"
     fi

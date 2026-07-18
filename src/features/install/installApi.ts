@@ -1,29 +1,29 @@
-import { invokeOrFallback } from '../../api/tauri';
+import { commandClient } from '../../api/commandClient';
 
 export async function loadInstallState(gamePath?: string) {
-  return invokeOrFallback('get_install_state', { gamePath });
+  return commandClient.getInstallState(gamePath ?? null);
 }
 
 export async function chooseGameDirectory() {
-  return invokeOrFallback('choose_game_directory');
+  return commandClient.chooseGameDirectory();
 }
 
 export async function installMod(gamePath: string, compatOptIn: boolean) {
-  return invokeOrFallback('install_mod', { gamePath, compatOptIn });
+  return commandClient.installMod(gamePath, compatOptIn);
 }
 
 export async function resetBppData(gamePath: string) {
-  return invokeOrFallback('reset_bpp_data', { gamePath });
+  return commandClient.resetBppData(gamePath);
 }
 
 export async function resetBepinex(gamePath: string) {
-  return invokeOrFallback('reset_bepinex', { gamePath });
+  return commandClient.resetBepinex(gamePath);
 }
 
 export async function uninstallMod(gamePath: string) {
-  return invokeOrFallback('uninstall_mod', { gamePath });
+  return commandClient.uninstallMod(gamePath);
 }
 
 export async function launchGame() {
-  return invokeOrFallback('launch_game');
+  return commandClient.launchGame();
 }

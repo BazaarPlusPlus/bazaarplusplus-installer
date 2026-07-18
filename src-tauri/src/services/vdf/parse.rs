@@ -43,8 +43,8 @@ pub(crate) fn verify_launch_options_in_content(
         return Ok(None);
     };
 
-    for idx in app_open + 1..app_close {
-        if let Some((_indent, key, value)) = parse_line_pair(&lines[idx]) {
+    for line in &lines[app_open + 1..app_close] {
+        if let Some((_indent, key, value)) = parse_line_pair(line) {
             if key == LAUNCH_OPTIONS_KEY {
                 return Ok(Some(value == escape_vdf_string(expected)));
             }
@@ -104,8 +104,8 @@ fn find_apps_block(lines: &[String]) -> Option<(usize, usize)> {
     let open = (start + 1..lines.len()).find(|&idx| lines[idx].trim() == "{")?;
     let mut depth = 0usize;
 
-    for idx in open..lines.len() {
-        match lines[idx].trim() {
+    for (idx, line) in lines.iter().enumerate().skip(open) {
+        match line.trim() {
             "{" => depth += 1,
             "}" => {
                 depth = depth.saturating_sub(1);
@@ -130,8 +130,9 @@ fn find_named_block(
         if lines[idx].trim() == format!("\"{key}\"") {
             let open = (idx + 1..=*range.end()).find(|&line_idx| lines[line_idx].trim() == "{")?;
             let mut depth = 0usize;
-            for line_idx in open..=*range.end() {
-                match lines[line_idx].trim() {
+            for (offset, line) in lines[open..=*range.end()].iter().enumerate() {
+                let line_idx = open + offset;
+                match line.trim() {
                     "{" => depth += 1,
                     "}" => {
                         depth = depth.saturating_sub(1);
@@ -217,6 +218,15 @@ fn cleanup_malformed_bpp_launch_options(lines: &mut Vec<String>) {
     }
 }
 
+fn find_launch_options_line(lines: &[String], app_open: usize, app_close: usize) -> Option<usize> {
+    lines[app_open + 1..app_close]
+        .iter()
+        .position(|line| {
+            parse_line_pair(line).is_some_and(|(_indent, key, _value)| key == LAUNCH_OPTIONS_KEY)
+        })
+        .map(|offset| app_open + 1 + offset)
+}
+
 fn upsert_launch_options_text(vdf_content: &str, args: &str) -> Result<Option<String>, String> {
     let mut lines = vdf_content.lines().map(str::to_string).collect::<Vec<_>>();
     let Some((apps_open, apps_close)) = find_apps_block(&lines) else {
@@ -228,15 +238,7 @@ fn upsert_launch_options_text(vdf_content: &str, args: &str) -> Result<Option<St
         return Ok(None);
     };
 
-    let mut launch_line_idx = None;
-    for idx in app_open + 1..app_close {
-        if let Some((_indent, key, _value)) = parse_line_pair(&lines[idx]) {
-            if key == LAUNCH_OPTIONS_KEY {
-                launch_line_idx = Some(idx);
-                break;
-            }
-        }
-    }
+    let launch_line_idx = find_launch_options_line(&lines, app_open, app_close);
 
     let escape_args = escape_vdf_string(args);
     let property_indent = (app_open + 1..app_close)
@@ -270,17 +272,7 @@ fn remove_launch_options_text(vdf_content: &str) -> Result<Option<String>, Strin
         return Ok(None);
     };
 
-    let mut launch_line_idx = None;
-    for idx in app_open + 1..app_close {
-        if let Some((_indent, key, _value)) = parse_line_pair(&lines[idx]) {
-            if key == LAUNCH_OPTIONS_KEY {
-                launch_line_idx = Some(idx);
-                break;
-            }
-        }
-    }
-
-    let Some(idx) = launch_line_idx else {
+    let Some(idx) = find_launch_options_line(&lines, app_open, app_close) else {
         return Ok(None);
     };
 

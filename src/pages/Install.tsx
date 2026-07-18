@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { PageShell } from '../components/ui/PageShell';
+import { LoadingPanel } from '../components/ui/LoadingPanel';
 import { useAppBootstrap } from '../features/about/AppBootstrapProvider';
 import { useUpdater } from '../features/about/UpdaterProvider';
 import { InstallActionsPanel } from '../features/install/InstallActionsPanel';
@@ -8,68 +9,92 @@ import { InstallStatusPanel } from '../features/install/InstallStatusPanel';
 import { ResetBepinexConfirmModal } from '../features/install/ResetBepinexConfirmModal';
 import { ResetDataConfirmModal } from '../features/install/ResetDataConfirmModal';
 import { useInstallPage } from '../features/install/useInstallPage';
-import type { PrimaryInstallMode } from '../features/install/PrimaryInstallActionButton';
 import { useI18n } from '../i18n/LocaleProvider';
+import { InstallProblemBanner } from '../features/install/InstallProblemBanner';
+import { useConfirmedOperation } from '../features/shared/confirmedOperation';
+import {
+  installProblemFromError,
+  type InstallProblem
+} from '../features/install/installProblems';
+import { ModalSource } from '../components/ui/ModalCoordinator';
+import type { PrimaryInstallMode } from '../features/install/PrimaryInstallActionButton';
+
+type InstallResetTarget = {
+  kind: 'reset-data' | 'reset-bepinex';
+  gamePath: string;
+};
 
 export default function Install() {
   const { t } = useI18n();
-  const { bootstrap } = useAppBootstrap();
+  const app = useAppBootstrap();
   const updater = useUpdater();
   const page = useInstallPage();
   const [showInstallModal, setShowInstallModal] = useState(false);
-  const [showResetDataModal, setShowResetDataModal] = useState(false);
-  const [showResetBepinexModal, setShowResetBepinexModal] = useState(false);
+  const resetOperation = useConfirmedOperation<
+    InstallResetTarget,
+    InstallProblem
+  >();
   const [installAcknowledged, setInstallAcknowledged] = useState(false);
   const [resetDataAcknowledged, setResetDataAcknowledged] = useState(false);
   const [resetBepinexAcknowledged, setResetBepinexAcknowledged] =
     useState(false);
   const [compatOptIn, setCompatOptIn] = useState(false);
-  const primaryMode: PrimaryInstallMode = !page.state.mod_state.installed
+  const primaryMode: PrimaryInstallMode = !page.installState?.mod_state
+    .installed
     ? 'install'
-    : page.state.mod_state.version_matches
+    : page.installState.mod_state.version_matches
       ? 'launch'
       : 'reinstall';
+  const appVersion =
+    app.resource.data?.app_version ?? app.bootstrap.app_version;
 
   const openInstallModal = () => {
     setShowInstallModal(true);
     setInstallAcknowledged(false);
     // Seed the checkbox from the current desired mode: forced (checked + locked) on
     // macOS 27+, the persisted choice on <= 26, off elsewhere.
-    setCompatOptIn(page.state.compat.desired);
+    setCompatOptIn(page.installState?.compat.desired ?? false);
   };
 
   const confirmInstall = async () => {
     const installed = await page.install(compatOptIn);
-    if (installed) {
+    if (installed.ok) {
       setShowInstallModal(false);
       setInstallAcknowledged(false);
     }
   };
 
   const openResetDataModal = () => {
-    setShowResetDataModal(true);
-    setResetDataAcknowledged(false);
-  };
-
-  const confirmResetData = async () => {
-    await page.resetData();
-    setShowResetDataModal(false);
+    const gamePath = page.installState?.selected_game_path;
+    if (!gamePath) return;
+    resetOperation.controller.request({ kind: 'reset-data', gamePath });
     setResetDataAcknowledged(false);
   };
 
   const openResetBepinexModal = () => {
-    setShowResetBepinexModal(true);
+    const gamePath = page.installState?.selected_game_path;
+    if (!gamePath) return;
+    resetOperation.controller.request({ kind: 'reset-bepinex', gamePath });
     setResetBepinexAcknowledged(false);
   };
 
-  const confirmResetBepinex = async () => {
-    await page.resetBepinex();
-    setShowResetBepinexModal(false);
-    setResetBepinexAcknowledged(false);
+  const confirmReset = async () => {
+    const completed = await resetOperation.controller.run(
+      (target) =>
+        target.kind === 'reset-data' ? page.resetData() : page.resetBepinex(),
+      installProblemFromError
+    );
+    if (completed) {
+      setResetDataAcknowledged(false);
+      setResetBepinexAcknowledged(false);
+    }
   };
 
-  const checkForUpdates = () => {
-    updater.checkNow();
+  const closeReset = () => {
+    if (resetOperation.controller.dismiss()) {
+      setResetDataAcknowledged(false);
+      setResetBepinexAcknowledged(false);
+    }
   };
 
   return (
@@ -78,52 +103,114 @@ export default function Install() {
       title={t('installTitle')}
       className="bpp-install-page"
     >
-      <InstallStatusPanel
-        page={page}
-        primaryMode={primaryMode}
-        appVersion={bootstrap.app_version}
-        onOpenInstallModal={openInstallModal}
-      />
-      <InstallActionsPanel
-        page={page}
-        updateChecking={updater.phase === 'checking'}
-        onCheckUpdate={checkForUpdates}
-        onOpenResetDataModal={openResetDataModal}
-        onOpenResetBepinexModal={openResetBepinexModal}
-      />
-
-      {showInstallModal && (
-        <InstallConfirmModal
-          busy={page.action === 'install'}
-          installAcknowledged={installAcknowledged}
-          onAcknowledgedChange={setInstallAcknowledged}
-          compat={page.state.compat}
-          compatOptIn={compatOptIn}
-          onCompatOptInChange={setCompatOptIn}
-          onClose={() => setShowInstallModal(false)}
-          onConfirm={confirmInstall}
+      {page.pageState.phase === 'initial-loading' ? (
+        <LoadingPanel label={t('installDetecting')} className="h-64" />
+      ) : page.pageState.phase === 'blocking-failure' ? (
+        <InstallProblemBanner
+          problem={page.pageState.problem}
+          onRetry={() => void page.refresh()}
         />
-      )}
+      ) : page.installState ? (
+        <>
+          {page.pageState.refresh.phase === 'failed' && (
+            <InstallProblemBanner
+              problem={page.pageState.refresh.problem}
+              onRetry={() => void page.refresh()}
+            />
+          )}
+          {page.pageState.refresh.phase === 'refreshing' && (
+            <p
+              role="status"
+              aria-live="polite"
+              className="m-0 text-xs text-[rgba(200,170,120,0.8)]"
+            >
+              {t('installRefreshing')}
+            </p>
+          )}
+          <InstallStatusPanel
+            page={page}
+            state={page.installState}
+            primaryMode={primaryMode}
+            appVersion={appVersion}
+            onOpenInstallModal={openInstallModal}
+          />
+          <InstallActionsPanel
+            page={page}
+            updateChecking={updater.phase === 'checking'}
+            onCheckUpdate={updater.checkNow}
+            onOpenResetDataModal={openResetDataModal}
+            onOpenResetBepinexModal={openResetBepinexModal}
+          />
+        </>
+      ) : null}
 
-      {showResetDataModal && (
-        <ResetDataConfirmModal
-          busy={page.action === 'resetData'}
-          acknowledged={resetDataAcknowledged}
-          onAcknowledgedChange={setResetDataAcknowledged}
-          onClose={() => setShowResetDataModal(false)}
-          onConfirm={confirmResetData}
-        />
-      )}
+      <ModalSource
+        id="route:install-confirmation"
+        open={showInstallModal && page.installState !== null}
+        priority={page.action === 'install' ? 'critical' : 'confirmation'}
+        dismissalPolicy={page.action === 'install' ? 'blocked' : 'dismissible'}
+      >
+        {showInstallModal && page.installState && (
+          <InstallConfirmModal
+            busy={page.action === 'install'}
+            installAcknowledged={installAcknowledged}
+            onAcknowledgedChange={setInstallAcknowledged}
+            compat={page.installState.compat}
+            compatOptIn={compatOptIn}
+            onCompatOptInChange={setCompatOptIn}
+            onClose={() => setShowInstallModal(false)}
+            onConfirm={confirmInstall}
+          />
+        )}
+      </ModalSource>
 
-      {showResetBepinexModal && (
-        <ResetBepinexConfirmModal
-          busy={page.action === 'resetBepinex'}
-          acknowledged={resetBepinexAcknowledged}
-          onAcknowledgedChange={setResetBepinexAcknowledged}
-          onClose={() => setShowResetBepinexModal(false)}
-          onConfirm={confirmResetBepinex}
-        />
-      )}
+      <ModalSource
+        id="route:install-reset"
+        open={resetOperation.state !== null && page.installState !== null}
+        priority={
+          resetOperation.state?.phase === 'running'
+            ? 'critical'
+            : 'confirmation'
+        }
+        dismissalPolicy={
+          resetOperation.state?.phase === 'running' ? 'blocked' : 'dismissible'
+        }
+      >
+        {resetOperation.state?.target.kind === 'reset-data' &&
+          page.installState && (
+            <ResetDataConfirmModal
+              busy={resetOperation.state.phase === 'running'}
+              acknowledged={resetDataAcknowledged}
+              targetPath={resetOperation.state.target.gamePath}
+              problem={
+                resetOperation.state.phase === 'failed'
+                  ? resetOperation.state.problem
+                  : null
+              }
+              failurePaths={page.resetDataFailurePaths}
+              onAcknowledgedChange={setResetDataAcknowledged}
+              onClose={closeReset}
+              onConfirm={confirmReset}
+            />
+          )}
+
+        {resetOperation.state?.target.kind === 'reset-bepinex' &&
+          page.installState && (
+            <ResetBepinexConfirmModal
+              busy={resetOperation.state.phase === 'running'}
+              acknowledged={resetBepinexAcknowledged}
+              targetPath={resetOperation.state.target.gamePath}
+              problem={
+                resetOperation.state.phase === 'failed'
+                  ? resetOperation.state.problem
+                  : null
+              }
+              onAcknowledgedChange={setResetBepinexAcknowledged}
+              onClose={closeReset}
+              onConfirm={confirmReset}
+            />
+          )}
+      </ModalSource>
     </PageShell>
   );
 }

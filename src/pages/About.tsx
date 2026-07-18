@@ -1,9 +1,16 @@
 import { ExternalLink } from 'lucide-react';
 import { PageHeader } from '../components/ui/PageHeader';
+import { ProblemBanner } from '../components/ui/ProblemBanner';
 import { useAppBootstrap } from '../features/about/AppBootstrapProvider';
+import type {
+  AppBootstrapSnapshot,
+  AppBootstrapUnavailableField
+} from '../features/about/appBootstrap';
+import { presentAboutProblem } from '../features/about/aboutProblems';
+import { formatProblemDiagnostic } from '../features/shared/problems';
 import { useI18n } from '../i18n/LocaleProvider';
 import type { MessageKey } from '../i18n/messages';
-import type { AppCredit } from '../types/backend';
+import type { AppBootstrap, AppCredit } from '../types/backend';
 import fableVerifiedBadge from '../../static/about/fable-5-verified.webp';
 
 // Credits are split into ordered groups by their `group` field so contributors
@@ -29,113 +36,249 @@ function groupCredits(
 }
 
 export default function About() {
-  const { bootstrap } = useAppBootstrap();
+  const { resource, retry } = useAppBootstrap();
+
+  return <AboutView resource={resource} onRetry={retry} />;
+}
+
+export function AboutView({
+  resource,
+  onRetry
+}: {
+  resource: AppBootstrapSnapshot;
+  onRetry: () => void;
+}) {
   const { t } = useI18n();
+  const bootstrap = resource.data;
 
   return (
     <div className="bpp-page pb-8">
       <PageHeader eyebrow="About" title={t('aboutTitle')} />
 
       <div className="flex min-h-0 w-full flex-1 flex-col gap-4">
-        <section className="bpp-panel relative overflow-hidden p-5">
-          <div className="absolute right-5 top-4 text-[10px] tracking-[.24em] text-[rgba(220,128,18,.34)]">
-            B++
-          </div>
-          <div className="flex items-center gap-5">
-            <div className="min-w-0 flex-1">
-              <h3 className="bpp-mod-name m-0 text-[26px] text-[#dcd7cf]">
-                BazaarPlusPlus
-              </h3>
-              <p className="mt-1.5 text-[12px] text-[#77766f]">
-                {t('aboutTagline')}
-              </p>
-              <div className="bpp-about-version-row mt-5 selectable">
-                <span className="text-[11px] text-[#858079]">
-                  {t('aboutAppLabel')}
-                </span>
-                <span className="bpp-version-chip w-fit">
-                  v{bootstrap.app_version}
-                </span>
-                <span
-                  className="bpp-about-version-separator"
-                  aria-hidden="true"
-                />
-                <span className="text-[11px] text-[#858079]">
-                  {t('aboutBppLabel')}
-                </span>
-                <span className="bpp-version-chip w-fit">
-                  {bootstrap.bundled_bpp_version ?? '-'}
-                </span>
-              </div>
-            </div>
-            <a
-              href={bootstrap.links.github}
-              target="_blank"
-              rel="noreferrer"
-              className="bpp-about-github-button"
-            >
-              <GithubMark />
-              <span>GitHub</span>
-              <ExternalLink
-                size={12}
-                className="bpp-about-github-external"
-                aria-hidden="true"
-              />
-            </a>
-          </div>
-        </section>
+        <AboutBootstrapFeedback resource={resource} onRetry={onRetry} />
 
-        <section className="bpp-panel p-5">
-          <h3 className="bpp-section-label">{t('aboutCredits')}</h3>
-          <div className="flex flex-col gap-5">
-            {groupCredits(bootstrap.credits).map((group) => (
-              <div key={group.key} className="flex flex-col gap-3">
-                <h4 className="m-0 text-[9px] uppercase tracking-[.14em] text-[#a06b2c]">
-                  {t(CREDIT_GROUP_LABELS[group.key] ?? 'aboutCredits')}
-                </h4>
-                <ul className="m-0 grid list-none grid-cols-2 gap-1 p-0 max-[900px]:grid-cols-1">
-                  {group.items.map((credit) => (
-                    <ListItem
-                      key={`${credit.name}:${credit.role}`}
-                      name={credit.name}
-                      role={credit.role}
-                      href={credit.href}
-                    />
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        <details className="bpp-panel group p-5">
-          <summary className="list-none text-[11px] font-semibold uppercase tracking-[.12em] text-[#8f8a82] [&::-webkit-details-marker]:hidden">
-            {t('aboutLicenses')}
-            <span className="ml-2 text-[#d17b18]">+</span>
-          </summary>
-          <ul className="m-0 mt-4 grid list-none grid-cols-2 gap-1 p-0">
-            {bootstrap.licenses.map((license) => (
-              <ListItem
-                key={`${license.name}:${license.category}`}
-                name={license.name}
-                role={license.license}
-                isLicense
-              />
-            ))}
-          </ul>
-        </details>
-
-        <footer className="mt-1 flex flex-col items-center opacity-55">
-          <img
-            src={fableVerifiedBadge}
-            alt={t('aboutVerifiedBadge')}
-            draggable={false}
-            className="h-auto w-full max-w-[300px] select-none"
-          />
-        </footer>
+        {bootstrap ? (
+          <AboutBootstrapContent bootstrap={bootstrap} resource={resource} />
+        ) : null}
       </div>
     </div>
   );
+}
+
+function AboutBootstrapContent({
+  bootstrap,
+  resource
+}: {
+  bootstrap: AppBootstrap;
+  resource: AppBootstrapSnapshot;
+}) {
+  const { t } = useI18n();
+
+  return (
+    <>
+      <section className="bpp-panel relative overflow-hidden p-5">
+        <div className="absolute right-5 top-4 text-[10px] tracking-[.24em] text-[rgba(220,128,18,.34)]">
+          B++
+        </div>
+        <div className="flex items-center gap-5">
+          <div className="min-w-0 flex-1">
+            <h3 className="bpp-mod-name m-0 text-[26px] text-[#dcd7cf]">
+              BazaarPlusPlus
+            </h3>
+            <p className="mt-1.5 text-[12px] text-[#77766f]">
+              {t('aboutTagline')}
+            </p>
+            <div className="bpp-about-version-row mt-5 selectable">
+              <span className="text-[11px] text-[#858079]">
+                {t('aboutAppLabel')}
+              </span>
+              <span
+                aria-label={`${t('aboutAppLabel')} ${bootstrap.app_version}`}
+                className="bpp-version-chip w-fit"
+              >
+                v{bootstrap.app_version}
+              </span>
+              <span
+                className="bpp-about-version-separator"
+                aria-hidden="true"
+              />
+              <span className="text-[11px] text-[#858079]">
+                {t('aboutBppLabel')}
+              </span>
+              <span
+                aria-label={`${t('aboutBppLabel')} ${bootstrap.bundled_bpp_version ?? t('aboutUnavailableValue')}`}
+                className="bpp-version-chip w-fit"
+              >
+                {bootstrap.bundled_bpp_version ?? t('aboutUnavailableValue')}
+              </span>
+            </div>
+            <div className="mt-3">
+              <BootstrapProvenance resource={resource} />
+            </div>
+          </div>
+          <a
+            href={bootstrap.links.github}
+            target="_blank"
+            rel="noreferrer"
+            className="bpp-about-github-button"
+          >
+            <GithubMark />
+            <span>GitHub</span>
+            <ExternalLink
+              size={12}
+              className="bpp-about-github-external"
+              aria-hidden="true"
+            />
+          </a>
+        </div>
+      </section>
+
+      <section className="bpp-panel p-5">
+        <h3 className="bpp-section-label">{t('aboutCredits')}</h3>
+        <div className="flex flex-col gap-5">
+          {groupCredits(bootstrap.credits).map((group) => (
+            <div key={group.key} className="flex flex-col gap-3">
+              <h4 className="m-0 text-[9px] uppercase tracking-[.14em] text-[#a06b2c]">
+                {t(CREDIT_GROUP_LABELS[group.key] ?? 'aboutCredits')}
+              </h4>
+              <ul className="m-0 grid list-none grid-cols-2 gap-1 p-0 max-[900px]:grid-cols-1">
+                {group.items.map((credit) => (
+                  <ListItem
+                    key={`${credit.name}:${credit.role}`}
+                    name={credit.name}
+                    role={credit.role}
+                    href={credit.href}
+                  />
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <details className="bpp-panel group p-5">
+        <summary className="list-none text-[11px] font-semibold uppercase tracking-[.12em] text-[#8f8a82] [&::-webkit-details-marker]:hidden">
+          {t('aboutLicenses')}
+          <span className="ml-2 text-[#d17b18]">+</span>
+        </summary>
+        <ul className="m-0 mt-4 grid list-none grid-cols-2 gap-1 p-0">
+          {bootstrap.licenses.map((license) => (
+            <ListItem
+              key={`${license.name}:${license.category}`}
+              name={license.name}
+              role={license.license}
+              isLicense
+            />
+          ))}
+        </ul>
+      </details>
+
+      <footer className="mt-1 flex flex-col items-center opacity-55">
+        <img
+          src={fableVerifiedBadge}
+          alt={t('aboutVerifiedBadge')}
+          draggable={false}
+          className="h-auto w-full max-w-[300px] select-none"
+        />
+      </footer>
+    </>
+  );
+}
+
+function AboutBootstrapFeedback({
+  resource,
+  onRetry
+}: {
+  resource: AppBootstrapSnapshot;
+  onRetry: () => void;
+}) {
+  const { t } = useI18n();
+  if (resource.phase === 'authoritative') return null;
+
+  if (resource.phase === 'initial-loading') {
+    return (
+      <ProblemBanner
+        tone="warning"
+        message={t(
+          resource.data ? 'aboutLoadingBootstrap' : 'aboutLoadingBootstrapOnly'
+        )}
+      />
+    );
+  }
+
+  const diagnostic = resource.problem?.diagnostic
+    ? formatProblemDiagnostic(resource.problem)
+    : null;
+  const retryAction = resource.problem ? (
+    <button
+      type="button"
+      onClick={onRetry}
+      disabled={resource.retrying}
+      aria-busy={resource.retrying}
+      className="underline underline-offset-2 disabled:opacity-60"
+    >
+      {resource.retrying ? t('aboutRetrying') : t('retry')}
+    </button>
+  ) : null;
+
+  if (resource.phase === 'blocking-failure') {
+    return (
+      <ProblemBanner
+        message={t('aboutBlockingFailure')}
+        diagnostic={diagnostic}
+        diagnosticLabel={t('problemDiagnostics')}
+        actions={retryAction}
+      />
+    );
+  }
+
+  return (
+    <ProblemBanner
+      tone={resource.problem ? 'error' : 'warning'}
+      message={
+        resource.problem
+          ? presentAboutProblem(resource.problem, t)
+          : t('aboutFallbackPreview')
+      }
+      diagnostic={diagnostic}
+      diagnosticLabel={t('problemDiagnostics')}
+      actions={retryAction}
+    />
+  );
+}
+
+function BootstrapProvenance({ resource }: { resource: AppBootstrapSnapshot }) {
+  const { t } = useI18n();
+  const source =
+    resource.source === 'native'
+      ? t('aboutDataSourceNative')
+      : t('aboutDataSourceFallback');
+  const unavailable = resource.unavailableFields
+    .map((field) => t(bootstrapFieldLabel(field)))
+    .join(', ');
+
+  return (
+    <div className="flex flex-col gap-1 text-[10px] text-[rgba(200,170,120,0.68)]">
+      <p className="m-0">
+        {t('aboutDataSourceLabel')}:{' '}
+        <span className="selectable">{source}</span>
+      </p>
+      {unavailable && (
+        <p className="m-0">
+          {t('aboutUnavailableFieldsLabel')}:{' '}
+          <span className="selectable">{unavailable}</span>
+        </p>
+      )}
+    </div>
+  );
+}
+
+function bootstrapFieldLabel(field: AppBootstrapUnavailableField): MessageKey {
+  switch (field) {
+    case 'bundled_bpp_version':
+      return 'aboutBppLabel';
+  }
 }
 
 function ListItem({

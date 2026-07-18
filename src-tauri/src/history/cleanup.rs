@@ -7,9 +7,8 @@ use crate::history::files::resolve_cleanup_file_path;
 use crate::history::queries::{open_cleanup_connection, open_connection, table_exists};
 
 /// Wire strings are a stable contract with the frontend preset buttons.
-#[derive(Clone, Copy, Debug, PartialEq, serde::Serialize, serde::Deserialize, ts_rs::TS)]
-#[ts(export)]
-pub enum CleanupPreset {
+#[derive(Clone, Copy, Debug, PartialEq, serde::Serialize, serde::Deserialize, specta::Type)]
+pub enum StorageCleanupPreset {
     #[serde(rename = "all")]
     All,
     #[serde(rename = "older_than_7_days")]
@@ -29,13 +28,13 @@ pub struct CleanupCutoff {
 
 impl CleanupCutoff {
     pub fn for_preset<Tz: TimeZone>(
-        preset: CleanupPreset,
+        preset: StorageCleanupPreset,
         now: DateTime<Tz>,
     ) -> Option<CleanupCutoff> {
         let instant = match preset {
-            CleanupPreset::All => return None,
-            CleanupPreset::OlderThan7Days => now.clone() - Duration::days(7),
-            CleanupPreset::BeforeThisMonth => {
+            StorageCleanupPreset::All => return None,
+            StorageCleanupPreset::OlderThan7Days => now.clone() - Duration::days(7),
+            StorageCleanupPreset::BeforeThisMonth => {
                 let first_of_month = now
                     .date_naive()
                     .with_day(1)
@@ -90,8 +89,7 @@ pub struct ScreenshotCleanupPlan {
     pub skipped_pending_uploads: i64,
 }
 
-#[derive(Clone, Debug, PartialEq, serde::Serialize, ts_rs::TS)]
-#[ts(export)]
+#[derive(Clone, Debug, PartialEq, serde::Serialize, specta::Type)]
 pub struct ScreenshotCleanupPreview {
     pub screenshots: i64,
     pub orphan_files: i64,
@@ -175,8 +173,7 @@ pub fn plan_screenshot_cleanup(
 
 const CLEANUP_CHUNK_SIZE: usize = 200;
 
-#[derive(Clone, Debug, PartialEq, serde::Serialize, ts_rs::TS)]
-#[ts(export)]
+#[derive(Clone, Debug, PartialEq, serde::Serialize, specta::Type)]
 pub struct ScreenshotCleanupResult {
     pub deleted_rows: i64,
     pub deleted_files: i64,
@@ -274,8 +271,7 @@ pub struct RunDataCleanupPlan {
     pub skipped_pending_uploads: i64,
 }
 
-#[derive(Clone, Debug, PartialEq, serde::Serialize, ts_rs::TS)]
-#[ts(export)]
+#[derive(Clone, Debug, PartialEq, serde::Serialize, specta::Type)]
 pub struct RunDataCleanupPreview {
     pub runs: i64,
     pub battles: i64,
@@ -402,8 +398,7 @@ pub fn plan_run_data_cleanup(
 /// may also be writing to the WAL database.
 const RUN_CLEANUP_CHUNK_SIZE: usize = 25;
 
-#[derive(Clone, Debug, PartialEq, serde::Serialize, ts_rs::TS)]
-#[ts(export)]
+#[derive(Clone, Debug, PartialEq, serde::Serialize, specta::Type)]
 pub struct RunDataCleanupResult {
     pub deleted_runs: i64,
     pub deleted_files: i64,
@@ -789,7 +784,7 @@ fn remaining_video_relative_paths_after_run_cleanup(
     Ok(paths)
 }
 
-/// Replay payload path: <CombatReplays>/<battleId>.payload.mpack.gz.
+/// Replay payload path: `<CombatReplays>/<battleId>.payload.mpack.gz`.
 fn replay_payload_path(replays_dir: &Path, battle_id: &str) -> Option<PathBuf> {
     let trimmed = battle_id.trim();
     // `:` guards against a Windows drive-relative id like `C:target`, which has
@@ -1231,7 +1226,7 @@ fn remove_empty_dated_directories(screenshots_dir: &Path) {
 
 #[cfg(test)]
 mod tests {
-    use super::{plan_screenshot_cleanup, CleanupCutoff, CleanupPreset};
+    use super::{plan_screenshot_cleanup, CleanupCutoff, StorageCleanupPreset};
     use chrono::{FixedOffset, NaiveDate, TimeZone};
     use rusqlite::Connection;
     use std::fs;
@@ -1329,14 +1324,14 @@ mod tests {
     fn cutoff_for_all_preset_is_none() {
         let tz = FixedOffset::east_opt(8 * 3600).unwrap();
         let now = tz.with_ymd_and_hms(2026, 7, 15, 10, 0, 0).unwrap();
-        assert!(CleanupCutoff::for_preset(CleanupPreset::All, now).is_none());
+        assert!(CleanupCutoff::for_preset(StorageCleanupPreset::All, now).is_none());
     }
 
     #[test]
     fn cutoff_older_than_7_days_subtracts_from_now() {
         let tz = FixedOffset::east_opt(8 * 3600).unwrap();
         let now = tz.with_ymd_and_hms(2026, 7, 15, 10, 0, 0).unwrap();
-        let cutoff = CleanupCutoff::for_preset(CleanupPreset::OlderThan7Days, now).unwrap();
+        let cutoff = CleanupCutoff::for_preset(StorageCleanupPreset::OlderThan7Days, now).unwrap();
         assert_eq!(cutoff.utc, "2026-07-08T02:00:00Z");
         assert_eq!(
             cutoff.local_date,
@@ -1348,7 +1343,7 @@ mod tests {
     fn cutoff_before_this_month_is_local_month_start_in_utc() {
         let tz = FixedOffset::east_opt(8 * 3600).unwrap();
         let now = tz.with_ymd_and_hms(2026, 7, 15, 10, 0, 0).unwrap();
-        let cutoff = CleanupCutoff::for_preset(CleanupPreset::BeforeThisMonth, now).unwrap();
+        let cutoff = CleanupCutoff::for_preset(StorageCleanupPreset::BeforeThisMonth, now).unwrap();
         // Local 2026-07-01T00:00:00+08:00 == 2026-06-30T16:00:00Z
         assert_eq!(cutoff.utc, "2026-06-30T16:00:00Z");
         assert_eq!(

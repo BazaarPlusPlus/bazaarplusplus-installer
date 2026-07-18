@@ -1,8 +1,13 @@
 import { renderToStaticMarkup } from 'react-dom/server';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { LocaleProvider } from '../../i18n/LocaleProvider';
 import { messages } from '../../i18n/messages';
-import { ConfirmDialog, type ConfirmDialogProps } from './ConfirmDialog';
+import {
+  ConfirmDialog,
+  requestConfirmDialogDismiss,
+  type ConfirmDialogDismissReason,
+  type ConfirmDialogProps
+} from './ConfirmDialog';
 
 function render(overrides: Partial<ConfirmDialogProps> = {}) {
   return renderToStaticMarkup(
@@ -13,6 +18,7 @@ function render(overrides: Partial<ConfirmDialogProps> = {}) {
         tone="danger"
         confirmLabel="Confirm It"
         busy={false}
+        activeDismissalPolicy={{ kind: 'blocked' }}
         onConfirm={() => undefined}
         onClose={() => undefined}
         {...overrides}
@@ -93,5 +99,108 @@ describe('ConfirmDialog', () => {
 
   it('confirmDisabled disables confirm even when idle (Cleanup nothing-to-clean)', () => {
     expect(render({ confirmDisabled: true })).toContain('disabled=""');
+  });
+
+  it('blocks Escape, backdrop, close, and secondary dismissal during non-cancelable work', () => {
+    const onClose = vi.fn();
+    for (const reason of [
+      'escape',
+      'backdrop',
+      'close-button',
+      'secondary-action'
+    ] satisfies ConfirmDialogDismissReason[]) {
+      expect(
+        requestConfirmDialogDismiss({
+          busy: true,
+          activeDismissalPolicy: { kind: 'blocked' },
+          reason,
+          onClose
+        })
+      ).toBe(false);
+    }
+
+    expect(onClose).not.toHaveBeenCalled();
+    const html = render({ busy: true });
+    expect(html).toContain(messages.zh.operationCannotBeCancelled);
+    expect(html).not.toContain(`>${messages.zh.cancel}</button>`);
+  });
+
+  it('routes every active dismissal surface through the detachable policy', () => {
+    const onClose = vi.fn();
+    for (const reason of [
+      'escape',
+      'backdrop',
+      'close-button',
+      'secondary-action'
+    ] satisfies ConfirmDialogDismissReason[]) {
+      expect(
+        requestConfirmDialogDismiss({
+          busy: true,
+          activeDismissalPolicy: {
+            kind: 'detachable',
+            label: 'Hide and continue'
+          },
+          reason,
+          onClose
+        })
+      ).toBe(true);
+    }
+
+    expect(onClose).toHaveBeenCalledTimes(4);
+    expect(
+      render({
+        busy: true,
+        activeDismissalPolicy: {
+          kind: 'detachable',
+          label: 'Hide and continue'
+        }
+      })
+    ).toContain('Hide and continue');
+  });
+
+  it('routes every active dismissal surface through genuine cancellation', () => {
+    const onClose = vi.fn();
+    const onCancel = vi.fn();
+    for (const reason of [
+      'escape',
+      'backdrop',
+      'close-button',
+      'secondary-action'
+    ] satisfies ConfirmDialogDismissReason[]) {
+      expect(
+        requestConfirmDialogDismiss({
+          busy: true,
+          activeDismissalPolicy: {
+            kind: 'cancelable',
+            label: 'Cancel operation',
+            onCancel
+          },
+          reason,
+          onClose
+        })
+      ).toBe(true);
+    }
+
+    expect(onCancel).toHaveBeenCalledTimes(4);
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it('uses ordinary close semantics before an operation starts', () => {
+    const onClose = vi.fn();
+    const onCancel = vi.fn();
+    expect(
+      requestConfirmDialogDismiss({
+        busy: false,
+        activeDismissalPolicy: {
+          kind: 'cancelable',
+          label: 'Cancel operation',
+          onCancel
+        },
+        reason: 'escape',
+        onClose
+      })
+    ).toBe(true);
+    expect(onClose).toHaveBeenCalledOnce();
+    expect(onCancel).not.toHaveBeenCalled();
   });
 });

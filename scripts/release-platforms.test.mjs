@@ -17,34 +17,30 @@ import {
 import { resolveBundleCleanupPath } from './before-bundle-cleanup.mjs';
 import { resolveTargetPlatforms } from './prebuild-check.mjs';
 
-test('grep gate: platform literals live only in release-platforms.mjs', () => {
-  const literals = RELEASE_PLATFORMS.flatMap((p) => [
-    p.key,
-    p.rustTarget
-  ]).filter(Boolean);
-  const files = [
-    'build.sh',
-    ...fs
-      .readdirSync('scripts')
-      .filter(
-        (f) =>
-          f.endsWith('.mjs') &&
-          !f.endsWith('.test.mjs') &&
-          f !== 'release-platforms.mjs'
-      )
-      .map((f) => `scripts/${f}`)
-  ];
-  for (const file of files) {
-    const text = fs.readFileSync(file, 'utf8');
-    for (const lit of literals) {
-      expect({ file, lit, hit: text.includes(lit) }).toEqual({
-        file,
-        lit,
-        hit: false
-      });
-    }
+test.each(RELEASE_PLATFORMS)(
+  'Tauri overlay and target layout agree with $key',
+  (platform) => {
+    const overlay = JSON.parse(fs.readFileSync(platform.tauriConfig, 'utf8'));
+    expect(overlay.bundle.targets).toEqual(platform.bundleTargets.split(','));
+
+    const resourceSource = platform.resourceZip.replace(/^src-tauri\//, '');
+    expect(overlay.bundle.resources[resourceSource]).toBe(
+      'BepInExSource/BepInEx.zip'
+    );
+
+    const releaseRoot = platform.rustTarget
+      ? `src-tauri/target/${platform.rustTarget}/release`
+      : 'src-tauri/target/release';
+    expect(platform.releaseBinary.startsWith(`${releaseRoot}/`)).toBe(true);
+    expect(platform.bundleRoot).toBe(`${releaseRoot}/bundle`);
+    expect(platform.installerDir.startsWith(`${platform.bundleRoot}/`)).toBe(
+      true
+    );
+    expect(resolveBuildPlatform(platform.buildPlatform)).toBe(
+      platform.buildPlatform
+    );
   }
-});
+);
 
 test.each(RELEASE_PLATFORMS)(
   'build.sh facts for $buildPlatform come from the module',
@@ -63,36 +59,6 @@ test.each(RELEASE_PLATFORMS)(
     expect(out).toContain(`instdir=${installerDir(p)}`);
     expect(out).toContain(`glob=${p.installerNameGlob}`);
     expect(out).toContain(`rust=[${p.rustTarget ?? ''}]`);
-  }
-);
-
-test.each(RELEASE_PLATFORMS)(
-  'find_installer_artifact locates the $buildPlatform artifact',
-  (p) => {
-    fs.mkdirSync(path.join(process.cwd(), 'src-tauri', 'target'), {
-      recursive: true
-    });
-    const root = fs.mkdtempSync(
-      path.join(process.cwd(), 'src-tauri', 'target', '.bpp-release-platform-')
-    );
-    const rootBash = toBashPath(root);
-    const dir = path.join(root, ...installerDir(p).split('/'));
-    const name = p.installerNameGlob.replace('*', 'Fixture_9.9.9');
-    fs.mkdirSync(dir, { recursive: true });
-    fs.writeFileSync(path.join(dir, name), 'x');
-    try {
-      const out = runShell(`
-        set -euo pipefail
-        source ./build.sh
-        release_platforms_module="$SCRIPT_DIR/scripts/release-platforms.mjs"
-        release_platforms_cli() { node "$release_platforms_module" "$@"; }
-        SCRIPT_DIR="${rootBash}"
-        find_installer_artifact ${p.buildPlatform}
-      `);
-      expect(out).toContain(name);
-    } finally {
-      fs.rmSync(root, { recursive: true, force: true });
-    }
   }
 );
 
@@ -142,8 +108,8 @@ test('generate_latest_manifest end-to-end emits every table platform in order', 
     runShell(`
       set -euo pipefail
       source ./build.sh
-      npx() {
-        local key="$5" file="$7"
+      wrangler_cli() {
+        local key="$4" file="$6"
         case "$key" in
           "$R2_BUCKET"/9.9.9/*/updater/platform-manifest.json)
             local pk="\${key#$R2_BUCKET/9.9.9/}"; pk="\${pk%%/*}"

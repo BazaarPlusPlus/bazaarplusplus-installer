@@ -32,6 +32,7 @@ const zh = {
   socialBilibili: 'B 站',
   bilibiliProjectSubtitle: '教程、演示和项目内容',
   bilibiliAuthorSubtitle: 'BazaarLine 作者',
+  bilibiliCoreDevSubtitle: 'CoreDev',
 
   // Support menu + payment modal
   wechatPay: '微信支付',
@@ -54,6 +55,8 @@ const zh = {
   cancel: '取消',
   copy: '复制',
   refresh: '刷新',
+  retry: '重试',
+  problemDiagnostics: '查看诊断信息',
 
   // Page titles
   installTitle: '安装',
@@ -63,50 +66,23 @@ const zh = {
 
   // Install page
   installActionsHeading: '安装操作',
-  installOverviewInstalled: 'BazaarPlusPlus 已安装',
-  installOverviewUpdateRequired: 'BazaarPlusPlus 需要重新安装',
-  installOverviewNotInstalled: 'BazaarPlusPlus 尚未安装',
-  installOverviewHealthy: '所有核心组件运行正常，可以直接启动游戏',
-  installOverviewHealthyShort: '所有组件运行正常',
-  installOverviewUpdateDescription: '当前组件版本不一致，重新安装即可完成更新',
-  installOverviewNotInstalledDescription: '选择游戏目录后即可安装插件',
-  installEnvironmentHeading: '安装环境',
-  versionInformationHeading: '版本信息',
-  gameVersionLabel: '游戏版本',
-  installedModVersionLabel: '已安装插件',
-  bundledModVersionLabel: '安装器内置',
-  maintenanceOperationsHeading: '维护操作',
-  installationDirectoryHeading: '安装目录',
-  copyPath: '复制路径',
-  pathCopied: '已复制',
-  openDirectory: '打开目录',
-  applicationVersionHeading: '应用版本',
-  developmentBuild: '开发版',
-  stableBuild: '正式版',
-  maintenanceToolsHeading: '维护工具',
-  maintenanceResetDataDescription: '清除缓存与设置',
-  maintenanceResetBepinexDescription: '重置插件环境',
-  checkUpdateDescription: '获取最新版本信息',
-  maintenanceUninstallDescription: '移除所有组件',
   currentStatusHeading: '当前状态',
   gamePathHeading: '游戏路径',
   gamePathEmpty: '未选择 The Bazaar 安装目录',
   notSelected: '未选择',
   chooseAgain: '重新选择',
   recheck: '重新检测',
+  installDetecting: '正在检测 The Bazaar 与 BazaarPlusPlus',
+  installRefreshing: '正在重新检测安装状态',
+  actionChooseDirectory: '选择游戏目录',
   actionInstall: '安装',
-  actionInstallDescription: '安装插件至游戏目录',
   actionReinstall: '重新安装',
-  actionReinstallDescription: '将覆盖当前版本并保留本地数据',
+  actionRepair: '修复安装',
   actionResetData: '重置本地数据',
-  resetDataDescription: '清除缓存、数据库与本地配置',
   actionNoResettableData: '暂无本地数据',
   actionResetBepinex: '重置 BepInEx',
-  resetBepinexDescription: '移除扩展框架及其内容',
   actionUninstall: '卸载',
-  uninstallDescription: '移除模组文件并保留游戏本体',
   launchGame: '启动游戏',
-  launchGameDescription: '通过当前插件启动游戏',
   installed: '已安装',
   notInstalled: '未安装',
   ready: '就绪',
@@ -118,6 +94,7 @@ const zh = {
   modNotInstalled: '尚未安装',
   installDone: '安装完成',
   resetDataConfirmTitle: '重置本地数据',
+  resetDataTarget: '目标：{path} 内的 BazaarPlusPlusV4 文件夹',
   resetDataConfirmBody:
     '这会删除 The Bazaar 安装目录中 BazaarPlusPlusV4 下的本地数据库、截图和战斗回放视频。',
   resetDataConfirmKeepsInstall:
@@ -125,6 +102,7 @@ const zh = {
   resetDataConfirmGameClosed: '请先退出 The Bazaar，避免数据文件仍被占用。',
   resetDataConfirmAcknowledge: '我知道这些本地数据会被删除。',
   resetDataConfirmAction: '删除本地数据',
+  resetDataRunning: '正在删除目标本地数据…',
   resetDataDone: '本地数据已删除',
   resetDataNothingToDelete: '未找到可重置的本地数据',
   resetDataBlockedByGame: 'The Bazaar 仍在运行。请先退出游戏，再重置本地数据。',
@@ -135,6 +113,7 @@ const zh = {
   resetDataFailureCopied: '已复制',
   resetDataFailureCopyFailed: '复制失败，请手动选择文本复制',
   resetBepinexConfirmTitle: '重置 BepInEx 文件夹',
+  resetBepinexTarget: '目标：{path} 内的 BepInEx 文件夹',
   resetBepinexConfirmBody:
     '这会删除 The Bazaar 安装目录中的整个 BepInEx 文件夹。',
   resetBepinexConfirmOtherMods:
@@ -145,17 +124,38 @@ const zh = {
   resetBepinexConfirmAcknowledge:
     '我知道整个 BepInEx 文件夹（含其他模组）会被删除。',
   resetBepinexConfirmAction: '删除 BepInEx 文件夹',
+  resetBepinexRunning: '正在删除目标 BepInEx 文件夹…',
   resetBepinexDone: 'BepInEx 文件夹已删除',
   resetBepinexNothingToDelete: '未找到 BepInEx 文件夹',
   resetBepinexBlockedByGame:
     'The Bazaar 仍在运行。请先退出游戏，再重置 BepInEx 文件夹。',
   resetBepinexPartialFailure: '有 {count} 个项目未能删除。请关闭游戏后重试。',
+  operationCannotBeCancelled: '操作已开始，完成前无法取消或关闭此窗口。',
   uninstallDone: '卸载完成',
   selectGameDirFirst: '请先选择 The Bazaar 安装目录。',
+  installWarningGameMissing:
+    '未找到有效的 The Bazaar 安装目录，请选择游戏目录。',
+  installWarningLaunchOptionsUnsupported:
+    '当前 Steam 安装不支持自动写入启动项，请检查 Steam 目录后重试。',
+  installWarningTrampolineReverted:
+    '游戏文件已还原，BazaarPlusPlus 的启动配置需要修复。',
+  installWarningUnexpected: '检测到未知的安装警告。',
+  installProblemDetectionFailed: '检测安装状态失败，请重试。',
+  installProblemChooseDirectoryFailed: '无法打开游戏目录选择器，请重试。',
+  installProblemInstallFailed:
+    '安装或修复失败。请退出 The Bazaar 与 Steam，检查目录权限后重试。',
+  installProblemResetDataFailed:
+    '重置本地数据失败，请关闭占用文件的程序后重试。',
+  installProblemResetBepinexFailed:
+    '重置 BepInEx 失败，请退出 The Bazaar 后重试。',
+  installProblemUninstallFailed:
+    '卸载失败，请退出 The Bazaar 与 Steam 后重试。',
+  installProblemLaunchFailed:
+    '无法通过 Steam 启动游戏，请确认 Steam 正在运行后重试。',
+  installProblemUnexpected: '处理安装状态时发生意外错误，请重试。',
 
   // Install confirmation modal
   installModalTitle: '安装 BazaarPlusPlus',
-  installModalSubtitle: '安装前确认与环境检查',
   tutorialKicker: '使用教程',
   installModalBody:
     '安装会写入 BazaarPlusPlus 与 BepInEx 组件（BepInEx 用于让插件在游戏内运行）。',
@@ -175,6 +175,7 @@ const zh = {
   updaterPreview: '浏览器预览',
   updaterCurrent: '已是最新',
   headerCheckFailed: '检查失败',
+  updateHeaderAvailable: '发现更新',
   updateModalKicker: '应用更新',
   updateModalTitle: '发现新版本',
   updateModalBody: 'BazaarPlusPlus {version} 已可用。',
@@ -183,10 +184,24 @@ const zh = {
   updateNotesLabel: '更新内容',
   updateDownloading: '正在下载…',
   updateInstalling: '正在安装…',
+  updateInstallingBody: '下载已完成，正在安装 BazaarPlusPlus {version}。',
   updateReady: '更新完成，重启后生效',
+  updateReadyBody: 'BazaarPlusPlus {version} 已安装完成。重启应用后即可使用。',
   updateRestartNow: '立即重启',
+  updateRestarting: '正在重启…',
   updateError: '自动更新失败',
+  updateRestartFailedTitle: '更新已安装，需要手动重启',
   updateRetry: '重试',
+  updateRetryRestart: '再次尝试重启',
+  updateDownloadProgressLabel: '更新下载进度',
+  updateDownloadProgressUnknown: '已下载 {downloaded} MB',
+  updateDownloadProgressKnown: '已下载 {downloaded} / {total} MB（{percent}%）',
+  updaterProblemCheckFailed: '无法检查更新。请检查网络连接后重试。',
+  updaterProblemDownloadFailed: '更新下载失败。请检查网络连接后重试。',
+  updaterProblemInstallFailed:
+    '更新安装失败。请重试；如果问题持续，请重新打开应用后再次检查更新。',
+  updaterProblemRestartFailed:
+    '自动重启失败，但 BazaarPlusPlus {version} 已安装完成。请退出 BazaarPlusPlus Installer，再从“应用程序”中重新打开。',
 
   // History page
   historyLoading: '读取战绩中',
@@ -195,10 +210,16 @@ const zh = {
   historySummaryRuns: '对局数',
   historySummaryVideos: '视频数',
   historySummaryWinRate: '胜率',
-  historySummaryRunsDescription: '总对局场次',
-  historySummaryVideosDescription: '已录制视频',
-  historySummaryWinRateDescription: '全部对局胜率',
-  historySummaryWinRateUnavailable: '胜率暂无数据',
+  historyProblemUnavailable:
+    '未找到可用的本地战绩数据库。请先在安装页选择正确的游戏目录。',
+  historyProblemReadFailed:
+    '读取本地战绩失败。请关闭可能占用数据库的程序后重试。',
+  historyProblemPreviewUnavailable:
+    '战绩已载入，但缩略图服务当前不可用。可前往直播页启动本地服务。',
+  historyProblemUnexpected: '加载本地战绩时发生意外错误。请重试。',
+  historyOpenInstall: '前往安装页',
+  historyOpenStream: '前往直播页',
+  historyPreviewFallback: '缩略图不可用；刷新页面可重试。',
   runResultVictory: '胜利',
   runResultDefeat: '失败',
   runResultAbandoned: '放弃',
@@ -211,6 +232,16 @@ const zh = {
   runDetailBack: '返回战绩列表',
   runDetailLoading: '读取详情中',
   runDetailNotFound: '没有找到这局战绩',
+  runDetailRefreshing: '正在刷新详情',
+  runDetailProblemUnavailable:
+    '未找到可用的本地战绩数据库。请先在安装页选择正确的游戏目录。',
+  runDetailProblemReadFailed:
+    '读取这局战绩失败。请关闭可能占用数据库的程序后重试。',
+  runDetailProblemRevealScreenshotFailed:
+    '无法打开这局战绩的截图位置，请重试。',
+  runDetailProblemRevealVideoFailed: '无法打开这场战斗的视频位置，请重试。',
+  runDetailProblemDeleteVideoFailed: '删除这场战斗的视频失败，请重试。',
+  runDetailProblemUnexpected: '处理这局战绩时发生意外错误，请重试。',
   runDetailPlayer: '玩家',
   runStatusCompleted: '已完成',
   runStatusAbandoned: '已放弃',
@@ -234,19 +265,20 @@ const zh = {
   openVideoLocation: '打开视频位置',
   deleteVideo: '删除视频',
   deleteVideoConfirmTitle: '删除视频',
+  deleteVideoTarget: '目标：战斗 {battleId} · 视频 {videoId}',
   deleteVideoConfirmBody: '这会永久删除该场战斗的回放视频文件，且无法恢复。',
   deleteVideoConfirmAction: '删除视频',
+  deleteVideoRunning: '正在删除目标视频…',
 
   // Storage cleanup (History page)
   storageCleanupTitle: '存储清理',
   storageCleanupScreenshotsLabel: '对局结算截图',
   storageCleanupRunDataLabel: '对局数据',
-  storageCleanupScreenshotsDescription: '保存对局结算时的截图文件',
-  storageCleanupRunDataDescription: '保存对局产生的各类数据文件',
   storageCleanupPresetAll: '清理全部',
   storageCleanupPresetOlderThan7Days: '清理 7 天前',
   storageCleanupPresetBeforeThisMonth: '仅保留本月',
   storageCleanupConfirmTitle: '确认清理',
+  storageCleanupTarget: '目标：{scope} · 范围：{preset}',
   storageCleanupScreenshotsConfirmBody:
     '将删除 {count} 张结算截图（约 {size}），删除后无法恢复。',
   storageCleanupRunDataConfirmBody:
@@ -254,13 +286,20 @@ const zh = {
   storageCleanupSkippedPending: '另有 {count} 项尚未完成上传，将自动跳过。',
   storageCleanupNothingToClean: '没有符合条件的可清理数据。',
   storageCleanupConfirmAction: '确认清理',
+  storageCleanupRunningScreenshots: '正在删除结算截图…',
+  storageCleanupRunningRunData: '正在删除对局数据…',
+  storageCleanupProblemUnavailable:
+    '未找到可清理的本地战绩数据库，请先在安装页选择正确的游戏目录。',
+  storageCleanupProblemPreviewFailed: '无法预览清理范围，请重试。',
+  storageCleanupProblemExecuteFailed:
+    '清理未完成，目标和范围已保留；请查看诊断后重试或安全关闭。',
+  storageCleanupProblemUnexpected: '清理存储时发生意外错误，请重试。',
   storageCleanupScreenshotsDone: '已删除 {files} 个文件，释放约 {size}。',
   storageCleanupRunDataDone:
     '已删除 {runs} 局对局和 {files} 个文件，释放约 {size}。',
   noVideo: '无视频',
 
   // Stream page
-  streamServiceSection: '直播服务运行状态',
   streamModeCurrent: '战斗场数',
   streamModeHero: '完整英雄',
   streamModeHeroHalf: '半高英雄',
@@ -287,24 +326,97 @@ const zh = {
   streamStatusStarting: '正在启动叠加层',
   streamStatusRunning: '叠加层运行中',
   streamStatusIdle: '叠加层空闲',
+  streamStatusStale: '叠加层状态可能已过期',
+  streamStatusUnavailable: '叠加层状态不可用',
   streamStarting: '正在启动本地服务',
   streamIdleDetail: '服务尚未启动',
+  streamStaleRunningDetail: '上次检测为运行中，正在等待最新状态',
+  streamStaleIdleDetail: '上次检测为未运行，正在等待最新状态',
+  streamStatusUnavailableDetail: '尚未取得可信的服务状态',
   streamPortDetail: '端口 {port}',
+  streamRetryStatus: '重新获取状态',
+  streamRetryCrop: '重新加载配置',
   streamCopied: 'OBS 地址已复制',
   streamCopyFailed: '复制失败，请手动选择文本复制',
   streamCropSaved: '裁切代码已保存',
   streamCropReset: '裁切设置已恢复默认',
+  streamProblemServiceFailed:
+    '叠加层服务未能启动。请确认端口 17654 可用后重试。',
+  streamProblemRestartFailed:
+    '叠加层服务重启失败。请确认端口 17654 可用后重试。',
+  streamProblemPollFailed:
+    '暂时无法确认叠加层的最新状态；上次状态已标记为过期，请重新获取。',
+  streamProblemWindowFailed: '无法调整展示窗口，请重试。',
+  streamProblemCropLoadFailed:
+    '无法加载叠加层配置；其他直播控制仍可使用，请重新加载。',
+  streamProblemCropSaveFailed: '无法保存叠加层配置；请检查裁切代码并重试。',
+  streamProblemOpenOverlayFailed: '无法打开叠加层预览，请重试。',
+  streamProblemOpenSettingsFailed: '无法打开叠加层校准页，请重试。',
+  streamProblemUnexpected: '处理直播功能时发生意外错误，请重试。',
   dbConnected: '数据库已连接',
   dbMissing: '数据库未找到',
 
   // About page
-  aboutTagline: 'The Bazaar 数据增强与分析工具',
   aboutAppLabel: '应用',
   aboutBppLabel: '插件',
   aboutCredits: '致谢',
   aboutAcknowledgements: '数据与灵感',
   aboutLicenses: '开源许可',
-  aboutVerifiedBadge: 'Fable 5 认证'
+  aboutVerifiedBadge: 'Fable 5 认证',
+  aboutLoadingBootstrapOnly: '正在获取本机应用信息。',
+  aboutLoadingBootstrap: '正在获取本机应用信息，暂时显示随应用打包的备用数据。',
+  aboutFallbackPreview: '当前为浏览器预览，显示随应用打包的备用数据。',
+  aboutProblemBootstrapFailed:
+    '无法获取本机应用信息。已保留可用的备用数据，请重试。',
+  aboutDataSourceLabel: '数据来源',
+  aboutDataSourceNative: '本机运行时',
+  aboutDataSourceFallback: '应用内置备用数据',
+  aboutUnavailableFieldsLabel: '不可用字段',
+  aboutUnavailableValue: '不可用',
+  aboutRetrying: '正在重试',
+  aboutBlockingFailure: '无法获取应用信息，且没有可用的备用数据。请重试。',
+
+  // Refined dashboard copy
+  installOverviewInstalled: 'BazaarPlusPlus 已安装',
+  installOverviewUpdateRequired: 'BazaarPlusPlus 需要重新安装',
+  installOverviewNotInstalled: 'BazaarPlusPlus 尚未安装',
+  installOverviewHealthy: '所有核心组件运行正常，可以直接启动游戏',
+  installOverviewHealthyShort: '所有组件运行正常',
+  installOverviewUpdateDescription: '当前组件版本不一致，重新安装即可完成更新',
+  installOverviewNotInstalledDescription: '选择游戏目录后即可安装插件',
+  installEnvironmentHeading: '安装环境',
+  versionInformationHeading: '版本信息',
+  gameVersionLabel: '游戏版本',
+  installedModVersionLabel: '已安装插件',
+  bundledModVersionLabel: '安装器内置',
+  maintenanceOperationsHeading: '维护操作',
+  installationDirectoryHeading: '安装目录',
+  copyPath: '复制路径',
+  pathCopied: '已复制',
+  openDirectory: '打开目录',
+  applicationVersionHeading: '应用版本',
+  developmentBuild: '开发版',
+  stableBuild: '正式版',
+  maintenanceToolsHeading: '维护工具',
+  maintenanceResetDataDescription: '清除缓存与设置',
+  maintenanceResetBepinexDescription: '重置插件环境',
+  checkUpdateDescription: '获取最新版本信息',
+  maintenanceUninstallDescription: '移除所有组件',
+  actionInstallDescription: '安装插件至游戏目录',
+  actionReinstallDescription: '将覆盖当前版本并保留本地数据',
+  resetDataDescription: '清除缓存、数据库与本地配置',
+  resetBepinexDescription: '移除扩展框架及其内容',
+  uninstallDescription: '移除模组文件并保留游戏本体',
+  launchGameDescription: '通过当前插件启动游戏',
+  installModalSubtitle: '安装前确认与环境检查',
+  historySummaryRunsDescription: '总对局场次',
+  historySummaryVideosDescription: '已录制视频',
+  historySummaryWinRateDescription: '全部对局胜率',
+  historySummaryWinRateUnavailable: '胜率暂无数据',
+  storageCleanupScreenshotsDescription: '保存对局结算时的截图文件',
+  storageCleanupRunDataDescription: '保存对局产生的各类数据文件',
+  streamServiceSection: '直播服务运行状态',
+  aboutTagline: 'The Bazaar 数据增强与分析工具'
 } as const;
 
 export type MessageKey = keyof typeof zh;
@@ -327,6 +439,7 @@ const en: Record<MessageKey, string> = {
   socialBilibili: 'Bilibili',
   bilibiliProjectSubtitle: 'Tutorials, demos, and project content',
   bilibiliAuthorSubtitle: 'BazaarLine author',
+  bilibiliCoreDevSubtitle: 'CoreDev',
 
   wechatPay: 'WeChat Pay',
   wechatPayOpen: 'Open QR code',
@@ -346,6 +459,8 @@ const en: Record<MessageKey, string> = {
   cancel: 'Cancel',
   copy: 'Copy',
   refresh: 'Refresh',
+  retry: 'Retry',
+  problemDiagnostics: 'Show diagnostics',
 
   installTitle: 'Install',
   historyTitle: 'History',
@@ -353,53 +468,23 @@ const en: Record<MessageKey, string> = {
   aboutTitle: 'About',
 
   installActionsHeading: 'Actions',
-  installOverviewInstalled: 'BazaarPlusPlus is installed',
-  installOverviewUpdateRequired: 'BazaarPlusPlus needs reinstalling',
-  installOverviewNotInstalled: 'BazaarPlusPlus is not installed',
-  installOverviewHealthy: 'All core components are healthy and ready to launch',
-  installOverviewHealthyShort: 'All components are running normally',
-  installOverviewUpdateDescription:
-    'Component versions differ; reinstall to finish updating',
-  installOverviewNotInstalledDescription:
-    'Choose the game directory to install the plugin',
-  installEnvironmentHeading: 'Installation Environment',
-  versionInformationHeading: 'Version Information',
-  gameVersionLabel: 'Game',
-  installedModVersionLabel: 'Installed plugin',
-  bundledModVersionLabel: 'Bundled plugin',
-  maintenanceOperationsHeading: 'Maintenance',
-  installationDirectoryHeading: 'Install Directory',
-  copyPath: 'Copy Path',
-  pathCopied: 'Copied',
-  openDirectory: 'Open Folder',
-  applicationVersionHeading: 'App Version',
-  developmentBuild: 'Development',
-  stableBuild: 'Stable',
-  maintenanceToolsHeading: 'Maintenance Tools',
-  maintenanceResetDataDescription: 'Clear cache and settings',
-  maintenanceResetBepinexDescription: 'Reset the plugin environment',
-  checkUpdateDescription: 'Fetch the latest version information',
-  maintenanceUninstallDescription: 'Remove all components',
   currentStatusHeading: 'Current Status',
   gamePathHeading: 'Game Path',
   gamePathEmpty: 'No The Bazaar install directory selected',
   notSelected: 'Not selected',
   chooseAgain: 'Choose again',
   recheck: 'Re-detect',
+  installDetecting: 'Detecting The Bazaar and BazaarPlusPlus',
+  installRefreshing: 'Re-detecting installation state',
+  actionChooseDirectory: 'Choose Game Directory',
   actionInstall: 'Install',
-  actionInstallDescription: 'Install the plugin to the game directory',
   actionReinstall: 'Reinstall',
-  actionReinstallDescription:
-    'Overwrite the current version and keep local data',
+  actionRepair: 'Repair Installation',
   actionResetData: 'Reset Local Data',
-  resetDataDescription: 'Clear cache, database, and local settings',
   actionNoResettableData: 'No Local Data',
   actionResetBepinex: 'Reset BepInEx',
-  resetBepinexDescription: 'Remove the extension framework and its contents',
   actionUninstall: 'Uninstall',
-  uninstallDescription: 'Remove mod files and keep the base game',
   launchGame: 'Launch Game',
-  launchGameDescription: 'Launch the game with the current plugin',
   installed: 'Installed',
   notInstalled: 'Not Installed',
   ready: 'Ready',
@@ -411,6 +496,7 @@ const en: Record<MessageKey, string> = {
   modNotInstalled: 'Not installed yet',
   installDone: 'Install complete',
   resetDataConfirmTitle: 'Reset Local Data',
+  resetDataTarget: 'Target: the BazaarPlusPlusV4 folder inside {path}',
   resetDataConfirmBody:
     'This deletes the local database, screenshots, and combat replay videos under BazaarPlusPlusV4 in The Bazaar install directory.',
   resetDataConfirmKeepsInstall:
@@ -419,6 +505,7 @@ const en: Record<MessageKey, string> = {
     'Quit The Bazaar first so data files are not held open.',
   resetDataConfirmAcknowledge: 'I understand this local data will be deleted.',
   resetDataConfirmAction: 'Delete Local Data',
+  resetDataRunning: 'Deleting the target local data…',
   resetDataDone: 'Local data deleted',
   resetDataNothingToDelete: 'No resettable local data found',
   resetDataBlockedByGame:
@@ -430,6 +517,7 @@ const en: Record<MessageKey, string> = {
   resetDataFailureCopied: 'Copied',
   resetDataFailureCopyFailed: 'Copy failed. Select the text and copy manually.',
   resetBepinexConfirmTitle: 'Reset BepInEx Folder',
+  resetBepinexTarget: 'Target: the BepInEx folder inside {path}',
   resetBepinexConfirmBody:
     'This deletes the entire BepInEx folder in The Bazaar install directory.',
   resetBepinexConfirmOtherMods:
@@ -441,17 +529,42 @@ const en: Record<MessageKey, string> = {
   resetBepinexConfirmAcknowledge:
     'I understand the entire BepInEx folder (including other mods) will be deleted.',
   resetBepinexConfirmAction: 'Delete BepInEx Folder',
+  resetBepinexRunning: 'Deleting the target BepInEx folder…',
   resetBepinexDone: 'BepInEx folder deleted',
   resetBepinexNothingToDelete: 'No BepInEx folder found',
   resetBepinexBlockedByGame:
     'The Bazaar is still running. Quit the game before resetting the BepInEx folder.',
   resetBepinexPartialFailure:
     '{count} item(s) could not be deleted. Close the game, then try again.',
+  operationCannotBeCancelled:
+    'This operation has started and cannot be canceled or dismissed until it finishes.',
   uninstallDone: 'Uninstall complete',
   selectGameDirFirst: 'Select The Bazaar install directory first.',
+  installWarningGameMissing:
+    'No valid The Bazaar installation was found. Choose the game directory.',
+  installWarningLaunchOptionsUnsupported:
+    'This Steam installation cannot update launch options automatically. Check the Steam directory and retry.',
+  installWarningTrampolineReverted:
+    'Game files were restored and the BazaarPlusPlus launch configuration needs repair.',
+  installWarningUnexpected: 'An unknown installation warning was detected.',
+  installProblemDetectionFailed:
+    'Installation state could not be detected. Please retry.',
+  installProblemChooseDirectoryFailed:
+    'The game directory picker could not be opened. Please retry.',
+  installProblemInstallFailed:
+    'Install or repair failed. Quit The Bazaar and Steam, check folder permissions, then retry.',
+  installProblemResetDataFailed:
+    'Local data could not be reset. Close apps using those files, then retry.',
+  installProblemResetBepinexFailed:
+    'BepInEx could not be reset. Quit The Bazaar, then retry.',
+  installProblemUninstallFailed:
+    'Uninstall failed. Quit The Bazaar and Steam, then retry.',
+  installProblemLaunchFailed:
+    'The game could not be launched through Steam. Make sure Steam is running, then retry.',
+  installProblemUnexpected:
+    'Something unexpected happened while handling installation state. Please retry.',
 
   installModalTitle: 'Install BazaarPlusPlus',
-  installModalSubtitle: 'Pre-install confirmation and environment check',
   tutorialKicker: 'Tutorial',
   installModalBody:
     'Installation writes the BazaarPlusPlus and BepInEx components (BepInEx lets the plugin run inside the game).',
@@ -471,6 +584,7 @@ const en: Record<MessageKey, string> = {
   updaterPreview: 'Preview mode',
   updaterCurrent: 'Up to date',
   headerCheckFailed: 'Check failed',
+  updateHeaderAvailable: 'Update available',
   updateModalKicker: 'App Update',
   updateModalTitle: 'Update Available',
   updateModalBody: 'BazaarPlusPlus {version} is available.',
@@ -479,10 +593,29 @@ const en: Record<MessageKey, string> = {
   updateNotesLabel: "What's new",
   updateDownloading: 'Downloading…',
   updateInstalling: 'Installing…',
+  updateInstallingBody:
+    'The download is complete. Installing BazaarPlusPlus {version}.',
   updateReady: 'Update ready — restart to apply',
+  updateReadyBody:
+    'BazaarPlusPlus {version} is installed. Restart the app to use it.',
   updateRestartNow: 'Restart Now',
+  updateRestarting: 'Restarting…',
   updateError: 'Update failed',
+  updateRestartFailedTitle: 'Update installed — manual restart needed',
   updateRetry: 'Retry',
+  updateRetryRestart: 'Try Restart Again',
+  updateDownloadProgressLabel: 'Update download progress',
+  updateDownloadProgressUnknown: 'Downloaded {downloaded} MB',
+  updateDownloadProgressKnown:
+    'Downloaded {downloaded} / {total} MB ({percent}%)',
+  updaterProblemCheckFailed:
+    'Could not check for updates. Check your network connection, then retry.',
+  updaterProblemDownloadFailed:
+    'The update could not be downloaded. Check your network connection, then retry.',
+  updaterProblemInstallFailed:
+    'The update could not be installed. Retry; if the problem continues, reopen the app and check again.',
+  updaterProblemRestartFailed:
+    'Automatic restart failed, but BazaarPlusPlus {version} is installed. Quit BazaarPlusPlus Installer, then open it again from Applications.',
 
   historyLoading: 'Loading runs',
   noLocalRuns: 'No local runs yet',
@@ -490,10 +623,17 @@ const en: Record<MessageKey, string> = {
   historySummaryRuns: 'Runs',
   historySummaryVideos: 'Videos',
   historySummaryWinRate: 'Win Rate',
-  historySummaryRunsDescription: 'Total recorded runs',
-  historySummaryVideosDescription: 'Recorded videos',
-  historySummaryWinRateDescription: 'Win rate across all runs',
-  historySummaryWinRateUnavailable: 'No win-rate data yet',
+  historyProblemUnavailable:
+    'No local History database is available. Select the correct game folder on the Install page.',
+  historyProblemReadFailed:
+    'Local History could not be read. Close apps that may be using the database, then retry.',
+  historyProblemPreviewUnavailable:
+    'Runs are loaded, but thumbnails are unavailable. Start the local service from the Stream page.',
+  historyProblemUnexpected:
+    'Something unexpected happened while loading local History. Please retry.',
+  historyOpenInstall: 'Open Install',
+  historyOpenStream: 'Open Stream',
+  historyPreviewFallback: 'Thumbnail unavailable; refresh to retry.',
   runResultVictory: 'VICTORY',
   runResultDefeat: 'DEFEAT',
   runResultAbandoned: 'ABANDONED',
@@ -505,6 +645,19 @@ const en: Record<MessageKey, string> = {
   runDetailBack: 'Back to History',
   runDetailLoading: 'Loading details',
   runDetailNotFound: 'This run was not found',
+  runDetailRefreshing: 'Refreshing details',
+  runDetailProblemUnavailable:
+    'No local History database is available. Select the correct game folder on the Install page.',
+  runDetailProblemReadFailed:
+    'This run could not be read. Close apps that may be using the database, then retry.',
+  runDetailProblemRevealScreenshotFailed:
+    'The screenshot location could not be opened. Please retry.',
+  runDetailProblemRevealVideoFailed:
+    'The video location could not be opened. Please retry.',
+  runDetailProblemDeleteVideoFailed:
+    'The battle video could not be deleted. Please retry.',
+  runDetailProblemUnexpected:
+    'Something unexpected happened while handling this run. Please retry.',
   runDetailPlayer: 'Player',
   runStatusCompleted: 'Completed',
   runStatusAbandoned: 'Abandoned',
@@ -528,19 +681,20 @@ const en: Record<MessageKey, string> = {
   openVideoLocation: 'Open video location',
   deleteVideo: 'Delete video',
   deleteVideoConfirmTitle: 'Delete Video',
+  deleteVideoTarget: 'Target: battle {battleId} · video {videoId}',
   deleteVideoConfirmBody:
     'This permanently deletes the replay video file for this battle and cannot be undone.',
   deleteVideoConfirmAction: 'Delete Video',
+  deleteVideoRunning: 'Deleting the target video…',
 
   storageCleanupTitle: 'Storage Cleanup',
   storageCleanupScreenshotsLabel: 'End-of-run screenshots',
   storageCleanupRunDataLabel: 'Run data',
-  storageCleanupScreenshotsDescription: 'Screenshot files saved at run end',
-  storageCleanupRunDataDescription: 'Data files generated by completed runs',
   storageCleanupPresetAll: 'Clean all',
   storageCleanupPresetOlderThan7Days: 'Older than 7 days',
   storageCleanupPresetBeforeThisMonth: 'Keep this month only',
   storageCleanupConfirmTitle: 'Confirm Cleanup',
+  storageCleanupTarget: 'Target: {scope} · Range: {preset}',
   storageCleanupScreenshotsConfirmBody:
     'This will permanently delete {count} end-of-run screenshots (about {size}). This cannot be undone.',
   storageCleanupRunDataConfirmBody:
@@ -549,6 +703,16 @@ const en: Record<MessageKey, string> = {
     '{count} items are still pending upload and will be skipped.',
   storageCleanupNothingToClean: 'Nothing matches the selected range.',
   storageCleanupConfirmAction: 'Clean Up',
+  storageCleanupRunningScreenshots: 'Deleting end-of-run screenshots…',
+  storageCleanupRunningRunData: 'Deleting run data…',
+  storageCleanupProblemUnavailable:
+    'No local History database is available to clean. Select the correct game folder on the Install page.',
+  storageCleanupProblemPreviewFailed:
+    'The cleanup range could not be previewed. Please retry.',
+  storageCleanupProblemExecuteFailed:
+    'Cleanup did not finish. The target and range are preserved; review diagnostics, then retry or close safely.',
+  storageCleanupProblemUnexpected:
+    'Something unexpected happened while cleaning storage. Please retry.',
   storageCleanupScreenshotsDone: 'Deleted {files} files, freed about {size}.',
   storageCleanupRunDataDone:
     'Deleted {runs} runs and {files} files, freed about {size}.',
@@ -580,25 +744,108 @@ const en: Record<MessageKey, string> = {
   streamStatusError: 'Overlay Error',
   streamStatusStarting: 'Overlay Starting',
   streamStatusRunning: 'Overlay Running',
-  streamServiceSection: 'Stream service status',
   streamStatusIdle: 'Overlay Idle',
+  streamStatusStale: 'Overlay Status May Be Stale',
+  streamStatusUnavailable: 'Overlay Status Unavailable',
   streamStarting: 'Starting local service',
   streamIdleDetail: 'Service not started',
+  streamStaleRunningDetail:
+    'Last seen running; waiting for an up-to-date service status',
+  streamStaleIdleDetail:
+    'Last seen stopped; waiting for an up-to-date service status',
+  streamStatusUnavailableDetail: 'No authoritative service status is available',
   streamPortDetail: 'Port {port}',
+  streamRetryStatus: 'Refresh Status',
+  streamRetryCrop: 'Reload Config',
   streamCopied: 'OBS URL copied',
   streamCopyFailed: 'Copy failed. Select the text and copy manually.',
   streamCropSaved: 'Crop code saved',
   streamCropReset: 'Crop settings reset to default',
+  streamProblemServiceFailed:
+    'The overlay service could not start. Make sure port 17654 is available, then retry.',
+  streamProblemRestartFailed:
+    'The overlay service could not restart. Make sure port 17654 is available, then retry.',
+  streamProblemPollFailed:
+    'The latest overlay status could not be confirmed. The previous value is marked stale; refresh it.',
+  streamProblemWindowFailed: 'The display window could not be changed. Retry.',
+  streamProblemCropLoadFailed:
+    'Overlay configuration could not be loaded. Other stream controls remain available; reload it.',
+  streamProblemCropSaveFailed:
+    'Overlay configuration could not be saved. Check the crop code and retry.',
+  streamProblemOpenOverlayFailed:
+    'The overlay preview could not be opened. Retry.',
+  streamProblemOpenSettingsFailed:
+    'The overlay calibration page could not be opened. Retry.',
+  streamProblemUnexpected:
+    'Something unexpected happened while handling Stream. Please retry.',
   dbConnected: 'DB Connected',
   dbMissing: 'DB Missing',
 
-  aboutTagline: 'Data enhancement and analysis for The Bazaar',
   aboutAppLabel: 'App',
   aboutBppLabel: 'BPP',
   aboutCredits: 'Credits',
   aboutAcknowledgements: 'Data & Inspiration',
   aboutLicenses: 'Licenses',
-  aboutVerifiedBadge: 'Fable 5 Verified'
+  aboutVerifiedBadge: 'Fable 5 Verified',
+  aboutLoadingBootstrapOnly: 'Loading native app information.',
+  aboutLoadingBootstrap:
+    'Loading native app information. Packaged fallback data is shown for now.',
+  aboutFallbackPreview:
+    'Browser Preview is showing fallback data packaged with the app.',
+  aboutProblemBootstrapFailed:
+    'Native app information could not be loaded. Usable fallback data remains available; please retry.',
+  aboutDataSourceLabel: 'Data source',
+  aboutDataSourceNative: 'Native runtime',
+  aboutDataSourceFallback: 'Fallback data packaged with the app',
+  aboutUnavailableFieldsLabel: 'Unavailable fields',
+  aboutUnavailableValue: 'Unavailable',
+  aboutRetrying: 'Retrying',
+  aboutBlockingFailure:
+    'App information could not be loaded and no usable fallback data is available. Please retry.',
+
+  installOverviewInstalled: 'BazaarPlusPlus is installed',
+  installOverviewUpdateRequired: 'BazaarPlusPlus needs reinstalling',
+  installOverviewNotInstalled: 'BazaarPlusPlus is not installed',
+  installOverviewHealthy: 'All core components are healthy and ready to launch',
+  installOverviewHealthyShort: 'All components are running normally',
+  installOverviewUpdateDescription:
+    'Component versions differ; reinstall to finish updating',
+  installOverviewNotInstalledDescription:
+    'Choose the game directory to install the plugin',
+  installEnvironmentHeading: 'Installation Environment',
+  versionInformationHeading: 'Version Information',
+  gameVersionLabel: 'Game',
+  installedModVersionLabel: 'Installed plugin',
+  bundledModVersionLabel: 'Bundled plugin',
+  maintenanceOperationsHeading: 'Maintenance',
+  installationDirectoryHeading: 'Install Directory',
+  copyPath: 'Copy Path',
+  pathCopied: 'Copied',
+  openDirectory: 'Open Folder',
+  applicationVersionHeading: 'App Version',
+  developmentBuild: 'Development',
+  stableBuild: 'Stable',
+  maintenanceToolsHeading: 'Maintenance Tools',
+  maintenanceResetDataDescription: 'Clear cache and settings',
+  maintenanceResetBepinexDescription: 'Reset the plugin environment',
+  checkUpdateDescription: 'Fetch the latest version information',
+  maintenanceUninstallDescription: 'Remove all components',
+  actionInstallDescription: 'Install the plugin to the game directory',
+  actionReinstallDescription:
+    'Overwrite the current version and keep local data',
+  resetDataDescription: 'Clear cache, database, and local settings',
+  resetBepinexDescription: 'Remove the extension framework and its contents',
+  uninstallDescription: 'Remove mod files and keep the base game',
+  launchGameDescription: 'Launch the game with the current plugin',
+  installModalSubtitle: 'Pre-install confirmation and environment check',
+  historySummaryRunsDescription: 'Total recorded runs',
+  historySummaryVideosDescription: 'Recorded videos',
+  historySummaryWinRateDescription: 'Win rate across all runs',
+  historySummaryWinRateUnavailable: 'No win-rate data yet',
+  storageCleanupScreenshotsDescription: 'Screenshot files saved at run end',
+  storageCleanupRunDataDescription: 'Data files generated by completed runs',
+  streamServiceSection: 'Stream service status',
+  aboutTagline: 'Data enhancement and analysis for The Bazaar'
 };
 
 export const messages: Record<Locale, Record<MessageKey, string>> = { zh, en };

@@ -3,80 +3,131 @@ import {
   FileQuestion,
   Image as ImageIcon,
   Loader2,
+  RefreshCw,
   Trash2,
   Video
 } from 'lucide-react';
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
-import { ErrorBanner } from '../components/ui/ErrorBanner';
+import { LoadingPanel } from '../components/ui/LoadingPanel';
+import { ProblemBanner } from '../components/ui/ProblemBanner';
 import type { HistoryBattleRow } from '../types/backend';
 import { useRunDetailPage } from '../features/history/useRunDetailPage';
 import {
   formatBattleResult,
+  formatBytes,
   formatDateTime,
+  formatDuration,
   formatRunResultLabel,
   formatRunStatusKey,
   toneColorClass
 } from '../features/history/format';
+import {
+  presentRunDetailProblem,
+  runDetailProblemFromError,
+  type RunDetailProblem
+} from '../features/history/runDetailProblems';
+import { formatProblemDiagnostic } from '../features/shared/problems';
+import { useConfirmedOperation } from '../features/shared/confirmedOperation';
 import { useI18n } from '../i18n/LocaleProvider';
+import { ModalSource } from '../components/ui/ModalCoordinator';
 
 // Shared 7-track grid for the battle table header + rows so columns align and
-// the action column is a fixed 5rem (no reflow when the hover-only delete
-// button appears). Day · Result · OppHero · OppPlayer · Rank · Rating · Video.
+// the action/metadata column does not reflow when the hover-only delete button
+// appears. Day · Result · OppHero · OppPlayer · Rank · Rating · Video.
 const BATTLE_GRID =
-  'grid grid-cols-[3.5rem_4.5rem_minmax(0,1fr)_minmax(0,1fr)_5rem_5rem_5rem] gap-4';
+  'grid grid-cols-[3.5rem_4.5rem_minmax(0,1fr)_minmax(0,1fr)_5rem_5rem_9rem] gap-4';
 
 export default function RunDetail() {
   const navigate = useNavigate();
   const page = useRunDetailPage();
   const detail = page.detail;
-  const { t } = useI18n();
+  const { locale, t } = useI18n();
   const runResult = detail ? formatRunResultLabel(detail.run.result) : null;
-  const [pendingDelete, setPendingDelete] = useState<{
-    battleId: string;
-    videoId: string;
-  } | null>(null);
+  const deleteOperation = useConfirmedOperation<
+    { kind: 'delete-video'; battleId: string; videoId: string },
+    RunDetailProblem
+  >();
+  const pendingDelete = deleteOperation.state?.target ?? null;
+  const screenshotAvailability = page.availability('screenshot');
+  const screenshotFailure = page.problemFor('screenshot');
 
-  const confirmDelete = async () => {
-    if (!pendingDelete) return;
-    const deleted = await page.deleteVideo(
-      pendingDelete.battleId,
-      pendingDelete.videoId
+  const confirmDelete = () =>
+    deleteOperation.controller.run(
+      (target) => page.deleteVideo(target.battleId, target.videoId),
+      runDetailProblemFromError
     );
-    if (deleted) {
-      setPendingDelete(null);
-    }
-  };
 
   return (
     <div className="bpp-page h-full overflow-hidden pb-8">
-      <button
-        type="button"
-        onClick={() => navigate('/history')}
-        className="bpp-button w-fit"
-      >
-        <ArrowLeft size={16} />
-        {t('runDetailBack')}
-      </button>
+      <div className="flex items-center justify-between gap-4">
+        <button
+          type="button"
+          onClick={() => navigate('/history')}
+          className="bpp-button w-fit"
+        >
+          <ArrowLeft size={16} />
+          {t('runDetailBack')}
+        </button>
+        <button
+          type="button"
+          onClick={() => void page.refresh()}
+          disabled={page.busy}
+          className="bpp-button"
+        >
+          <RefreshCw
+            size={14}
+            className={page.refreshing ? 'animate-spin' : ''}
+          />
+          {t('refresh')}
+        </button>
+      </div>
 
-      {page.loading ? (
-        <div className="flex items-center justify-center h-64 text-[rgba(200,170,120,0.8)] gap-2">
-          <Loader2 size={18} className="animate-spin" />
-          <span>{t('runDetailLoading')}</span>
+      {page.state.phase === 'initial-loading' ? (
+        <LoadingPanel label={t('runDetailLoading')} className="h-64" />
+      ) : page.state.phase === 'not-found' ? (
+        <div
+          role="status"
+          className="p-6 flex items-center justify-between gap-4 bg-[rgba(18,11,5,0.88)] border border-[rgba(180,130,48,0.13)] rounded-sm text-[rgba(200,170,120,0.8)]"
+        >
+          <span>{t('runDetailNotFound')}</span>
+          <button
+            type="button"
+            onClick={() => void page.refresh()}
+            className="underline underline-offset-2 text-[#e8c87a]"
+          >
+            {t('retry')}
+          </button>
         </div>
-      ) : !detail ? (
-        <div className="bpp-panel p-6 text-[#89847c]">
-          {page.error ?? t('runDetailNotFound')}
-        </div>
-      ) : (
+      ) : page.state.phase === 'blocking-failure' ? (
+        <RunDetailProblemBanner
+          problem={page.state.problem}
+          onRetry={() => void page.refresh()}
+        />
+      ) : detail ? (
         <>
-          {page.error && <ErrorBanner message={page.error} />}
+          {page.state.refresh.phase === 'failed' && (
+            <RunDetailProblemBanner
+              problem={page.state.refresh.problem}
+              onRetry={() => void page.refresh()}
+            />
+          )}
+
+          {page.state.refresh.phase === 'refreshing' && (
+            <div
+              role="status"
+              aria-live="polite"
+              className="flex items-center gap-2 text-xs text-[rgba(200,170,120,0.8)]"
+            >
+              <Loader2 size={14} className="animate-spin" />
+              {t('runDetailRefreshing')}
+            </div>
+          )}
 
           <div className="bpp-panel flex flex-col gap-6 p-6">
             <div className="flex justify-between items-start">
               <div className="flex flex-col gap-1 min-w-0">
-                <h2 className="cinzel text-2xl font-bold text-[#e8dcc8] m-0 truncate">
+                <h2 className="cinzel-decorative text-2xl font-bold text-[#e8dcc8] m-0 truncate">
                   {detail.run.hero}
                   <span className={toneColorClass(runResult?.tone)}>
                     {' '}
@@ -91,8 +142,8 @@ export default function RunDetail() {
                   <span>{detail.run.game_mode}</span>
                   <span>•</span>
                   <span>
-                    {formatDateTime(detail.run.started_at_utc)} -{' '}
-                    {formatDateTime(detail.run.ended_at_utc)}
+                    {formatDateTime(detail.run.started_at_utc, locale)} -{' '}
+                    {formatDateTime(detail.run.ended_at_utc, locale)}
                   </span>
                   <span>•</span>
                   <span className="text-[rgba(200,170,120,0.8)]">
@@ -104,14 +155,26 @@ export default function RunDetail() {
               <button
                 type="button"
                 disabled={
-                  !detail.run.screenshot_id || page.action === 'screenshot'
+                  !detail.run.screenshot_id || screenshotAvailability.disabled
                 }
-                onClick={page.revealScreenshot}
+                onClick={() => void page.revealScreenshot()}
                 className="bpp-button"
               >
-                <ImageIcon size={16} /> {t('openScreenshotLocation')}
+                {screenshotAvailability.running ? (
+                  <Loader2 size={16} className="animate-spin" />
+                ) : (
+                  <ImageIcon size={16} />
+                )}{' '}
+                {t('openScreenshotLocation')}
               </button>
             </div>
+
+            {screenshotFailure && (
+              <RunDetailProblemBanner
+                problem={screenshotFailure.problem}
+                onRetry={() => void page.revealScreenshot()}
+              />
+            )}
 
             <div className="flex gap-12 border-t border-[rgba(200,148,55,0.1)] pt-5">
               <StatBlock
@@ -166,7 +229,11 @@ export default function RunDetail() {
                       battle={battle}
                       page={page}
                       onRequestDelete={(battleId, videoId) =>
-                        setPendingDelete({ battleId, videoId })
+                        deleteOperation.controller.request({
+                          kind: 'delete-video',
+                          battleId,
+                          videoId
+                        })
                       }
                     />
                   ))
@@ -175,23 +242,54 @@ export default function RunDetail() {
             </div>
           </div>
         </>
-      )}
+      ) : null}
 
-      {pendingDelete && (
-        <ConfirmDialog
-          titleId="delete-video-modal-title"
-          title={t('deleteVideoConfirmTitle')}
-          tone="danger"
-          confirmLabel={t('deleteVideoConfirmAction')}
-          busy={page.action === `delete:${pendingDelete.battleId}`}
-          onConfirm={confirmDelete}
-          onClose={() => setPendingDelete(null)}
-        >
-          <p className="m-0 text-[13px] leading-relaxed text-[rgba(245,220,220,0.86)]">
-            {t('deleteVideoConfirmBody')}
-          </p>
-        </ConfirmDialog>
-      )}
+      <ModalSource
+        id="route:delete-video"
+        open={pendingDelete !== null}
+        priority={
+          deleteOperation.state?.phase === 'running'
+            ? 'critical'
+            : 'confirmation'
+        }
+        dismissalPolicy={
+          deleteOperation.state?.phase === 'running' ? 'blocked' : 'dismissible'
+        }
+      >
+        {pendingDelete && (
+          <ConfirmDialog
+            titleId="delete-video-modal-title"
+            title={t('deleteVideoConfirmTitle')}
+            tone="danger"
+            confirmLabel={
+              deleteOperation.state?.phase === 'failed'
+                ? t('retry')
+                : t('deleteVideoConfirmAction')
+            }
+            busyLabel={t('deleteVideoRunning')}
+            busy={deleteOperation.state?.phase === 'running'}
+            activeDismissalPolicy={{ kind: 'blocked' }}
+            dismissLabel={
+              deleteOperation.state?.phase === 'failed' ? t('close') : undefined
+            }
+            onConfirm={confirmDelete}
+            onClose={deleteOperation.controller.dismiss}
+          >
+            <p className="m-0 text-[12px] leading-relaxed text-[rgba(232,200,122,0.86)] fira-code selectable">
+              {t('deleteVideoTarget', {
+                battleId: pendingDelete.battleId,
+                videoId: pendingDelete.videoId
+              })}
+            </p>
+            <p className="m-0 text-[13px] leading-relaxed text-[rgba(245,220,220,0.86)]">
+              {t('deleteVideoConfirmBody')}
+            </p>
+            {deleteOperation.state?.phase === 'failed' && (
+              <RunDetailProblemBanner problem={deleteOperation.state.problem} />
+            )}
+          </ConfirmDialog>
+        )}
+      </ModalSource>
     </div>
   );
 }
@@ -228,92 +326,159 @@ function BattleRow({
   page: ReturnType<typeof useRunDetailPage>;
   onRequestDelete: (battleId: string, videoId: string) => void;
 }) {
-  const { t } = useI18n();
+  const { locale, t } = useI18n();
   const battleResult = formatBattleResult(battle.result);
-  const videoAction = page.action === `video:${battle.battle_id}`;
-  const deleteAction = page.action === `delete:${battle.battle_id}`;
+  const videoAction = `video:${battle.battle_id}` as const;
+  const deleteAction = `delete:${battle.battle_id}` as const;
+  const videoAvailability = page.availability(videoAction);
+  const deleteAvailability = page.availability(deleteAction);
+  const failure = page.problemFor(`battle:${battle.battle_id}`);
+
+  const retryFailure = () => {
+    if (!battle.video || !failure) return;
+    if (failure.action === videoAction) {
+      void page.revealVideo(battle.battle_id, battle.video.video_id);
+      return;
+    }
+    onRequestDelete(battle.battle_id, battle.video.video_id);
+  };
 
   return (
-    <div
-      className={`${BATTLE_GRID} px-6 py-4 border-b border-[rgba(200,148,55,0.05)] items-center relative group hover:bg-[rgba(200,148,55,0.03)] transition-colors`}
-    >
-      <div
-        aria-hidden="true"
-        className="absolute inset-0 overflow-hidden pointer-events-none opacity-[0.02] flex items-center justify-center"
-      >
-        <span className="cinzel text-8xl font-bold text-[#e8c87a]">
-          {battle.opponent_hero ?? '-'}
-        </span>
-      </div>
-
-      <div className="fira-code text-sm text-[rgba(228,216,191,0.8)] relative z-10">
-        {battle.day === null ? '-' : String(battle.day)}
-      </div>
-      <div
-        className={`cinzel font-bold text-sm tracking-wider relative z-10 ${toneColorClass(battleResult.tone)}`}
-      >
-        {t(battleResult.key)}
-      </div>
-      <div className="cinzel text-sm text-[#e8dcc8] relative z-10 min-w-0 truncate">
-        {battle.opponent_hero ?? '-'}
-      </div>
-      <div className="fira-code text-sm text-[rgba(200,170,120,0.8)] relative z-10 min-w-0 truncate">
-        {battle.opponent_name ?? '-'}
-      </div>
-      <div className="cinzel text-sm text-[#e8c87a] relative z-10">
-        {battle.opponent_rank ?? '-'}
-      </div>
-      <div className="fira-code text-sm text-[rgba(228,216,191,0.8)] relative z-10">
-        {battle.opponent_rating === null ? '-' : battle.opponent_rating}
-      </div>
-
-      <div className="flex items-center justify-end gap-1.5 relative z-10">
-        {battle.video ? (
-          <>
-            <button
-              type="button"
-              disabled={videoAction}
-              onClick={() =>
-                page.revealVideo(battle.battle_id, battle.video?.video_id)
-              }
-              title={t('openVideoLocation')}
-              aria-label={t('openVideoLocation')}
-              className="flex items-center justify-center size-8 rounded-sm bg-[rgba(200,148,55,0.06)] border border-[rgba(180,130,48,0.2)] hover:bg-[rgba(200,148,55,0.12)] disabled:opacity-40 transition-colors text-[#e8dcc8]"
-            >
-              {videoAction ? (
-                <Loader2 size={14} className="animate-spin" />
-              ) : (
-                <Video size={14} />
-              )}
-            </button>
-            <button
-              type="button"
-              disabled={deleteAction}
-              onClick={() =>
-                battle.video &&
-                onRequestDelete(battle.battle_id, battle.video.video_id)
-              }
-              title={t('deleteVideo')}
-              aria-label={t('deleteVideo')}
-              className="flex items-center justify-center size-8 rounded-sm text-[rgba(200,170,120,0.72)] hover:text-[#ff4444] hover:bg-[rgba(255,68,68,0.1)] opacity-0 group-hover:opacity-100 focus-visible:opacity-100 disabled:opacity-40 transition-all"
-            >
-              {deleteAction ? (
-                <Loader2 size={14} className="animate-spin" />
-              ) : (
-                <Trash2 size={14} />
-              )}
-            </button>
-          </>
-        ) : (
-          <span
-            title={t('noVideo')}
-            aria-label={t('noVideo')}
-            className="flex items-center justify-center size-8 text-[rgba(200,170,120,0.6)]"
-          >
-            <FileQuestion size={14} />
+    <div className="border-b border-[rgba(200,148,55,0.05)] group hover:bg-[rgba(200,148,55,0.03)] transition-colors">
+      <div className={`${BATTLE_GRID} px-6 py-4 items-center relative`}>
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 overflow-hidden pointer-events-none opacity-[0.02] flex items-center justify-center"
+        >
+          <span className="cinzel-decorative text-8xl font-bold text-[#e8c87a]">
+            {battle.opponent_hero ?? '-'}
           </span>
-        )}
+        </div>
+
+        <div className="fira-code text-sm text-[rgba(228,216,191,0.8)] relative z-10">
+          {battle.day === null ? '-' : String(battle.day)}
+        </div>
+        <div
+          className={`cinzel font-bold text-sm tracking-wider relative z-10 ${toneColorClass(battleResult.tone)}`}
+        >
+          {t(battleResult.key)}
+        </div>
+        <div className="cinzel text-sm text-[#e8dcc8] relative z-10 min-w-0 truncate">
+          {battle.opponent_hero ?? '-'}
+        </div>
+        <div className="fira-code text-sm text-[rgba(200,170,120,0.8)] relative z-10 min-w-0 truncate">
+          {battle.opponent_name ?? '-'}
+        </div>
+        <div className="cinzel text-sm text-[#e8c87a] relative z-10">
+          {battle.opponent_rank ?? '-'}
+        </div>
+        <div className="fira-code text-sm text-[rgba(228,216,191,0.8)] relative z-10">
+          {battle.opponent_rating === null ? '-' : battle.opponent_rating}
+        </div>
+
+        <div className="flex flex-col items-end gap-1 relative z-10">
+          {battle.video ? (
+            <>
+              <div className="flex items-center justify-end gap-1.5">
+                <button
+                  type="button"
+                  disabled={videoAvailability.disabled}
+                  onClick={() =>
+                    void page.revealVideo(
+                      battle.battle_id,
+                      battle.video?.video_id
+                    )
+                  }
+                  title={t('openVideoLocation')}
+                  aria-label={t('openVideoLocation')}
+                  className="flex items-center justify-center size-8 rounded-sm bg-[rgba(200,148,55,0.06)] border border-[rgba(180,130,48,0.2)] hover:bg-[rgba(200,148,55,0.12)] disabled:opacity-40 transition-colors text-[#e8dcc8]"
+                >
+                  {videoAvailability.running ? (
+                    <Loader2 size={14} className="animate-spin" />
+                  ) : (
+                    <Video size={14} />
+                  )}
+                </button>
+                <button
+                  type="button"
+                  disabled={deleteAvailability.disabled}
+                  onClick={() =>
+                    battle.video &&
+                    onRequestDelete(battle.battle_id, battle.video.video_id)
+                  }
+                  title={t('deleteVideo')}
+                  aria-label={t('deleteVideo')}
+                  className="flex items-center justify-center size-8 rounded-sm text-[rgba(200,170,120,0.72)] hover:text-[#ff4444] hover:bg-[rgba(255,68,68,0.1)] opacity-0 group-hover:opacity-100 focus-visible:opacity-100 disabled:opacity-40 transition-all"
+                >
+                  {deleteAvailability.running ? (
+                    <Loader2 size={14} className="animate-spin" />
+                  ) : (
+                    <Trash2 size={14} />
+                  )}
+                </button>
+              </div>
+              <span className="fira-code text-[10px] text-[rgba(200,170,120,0.65)] whitespace-nowrap selectable">
+                {formatDuration(battle.video.duration_ms, locale)} ·{' '}
+                {formatBytes(battle.video.file_size_bytes, locale)}
+              </span>
+            </>
+          ) : (
+            <span
+              title={t('noVideo')}
+              aria-label={t('noVideo')}
+              className="flex items-center justify-center size-8 text-[rgba(200,170,120,0.6)]"
+            >
+              <FileQuestion size={14} />
+            </span>
+          )}
+        </div>
       </div>
+
+      {failure && (
+        <div className="px-6 pb-4">
+          <RunDetailProblemBanner
+            problem={failure.problem}
+            onRetry={retryFailure}
+          />
+        </div>
+      )}
     </div>
+  );
+}
+
+function RunDetailProblemBanner({
+  problem,
+  onRetry
+}: {
+  problem: RunDetailProblem;
+  onRetry?: () => void;
+}) {
+  const { t } = useI18n();
+  return (
+    <ProblemBanner
+      message={presentRunDetailProblem(problem, t)}
+      diagnostic={problem.diagnostic ? formatProblemDiagnostic(problem) : null}
+      diagnosticLabel={t('problemDiagnostics')}
+      actions={
+        problem.code === 'history_unavailable' || onRetry ? (
+          <>
+            {problem.code === 'history_unavailable' && (
+              <Link to="/" className="underline underline-offset-2">
+                {t('historyOpenInstall')}
+              </Link>
+            )}
+            {onRetry && (
+              <button
+                type="button"
+                onClick={onRetry}
+                className="underline underline-offset-2"
+              >
+                {t('retry')}
+              </button>
+            )}
+          </>
+        ) : undefined
+      }
+    />
   );
 }

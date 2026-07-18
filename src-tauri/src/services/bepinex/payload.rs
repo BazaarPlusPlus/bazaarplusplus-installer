@@ -748,20 +748,35 @@ mod tests {
     }
 
     #[test]
-    fn test_ownership_lists_match_shipped_payload() {
-        let manifest_dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-        let mut shipped = std::collections::BTreeSet::new();
-        for platform in ["macos", "windows"] {
-            let plugins_root = manifest_dir
-                .join("resources/SourceForBuild")
-                .join(platform)
-                .join("BepInEx/plugins");
-            collect_files_recursively(&plugins_root, &plugins_root, &mut shipped);
-        }
-        // Shipped placeholder, deliberately unowned; removed by the bootstrap
-        // teardown on last-mod uninstall instead.
-        shipped.remove(".gitkeep");
-
+    fn test_ownership_lists_match_release_contract() {
+        // This fixture is intentionally independent of the gitignored private
+        // release payload. Real payload/source agreement is a prebuild gate;
+        // ordinary Rust tests must remain runnable from a clean checkout.
+        let expected = [
+            "BazaarPlusPlus.dll",
+            "BazaarPlusPlus.Localization.dll",
+            "BazaarPlusPlus.ModApi.dll",
+            "BazaarPlusPlus.Storage.dll",
+            "BazaarPlusPlus.version",
+            "Microsoft.Data.Sqlite.dll",
+            "SQLitePCLRaw.batteries_v2.dll",
+            "SQLitePCLRaw.core.dll",
+            "SQLitePCLRaw.provider.e_sqlite3.dll",
+            "SixLabors.ImageSharp.dll",
+            "System.Buffers.dll",
+            "System.Memory.dll",
+            "System.Numerics.Vectors.dll",
+            "System.Text.Encoding.CodePages.dll",
+            "e_sqlite3.dll",
+            "ffmpeg",
+            "ffmpeg-LICENSE.txt",
+            "ffmpeg.exe",
+            "libBppMacAudio.dylib",
+            "libe_sqlite3.dylib",
+        ]
+        .into_iter()
+        .map(str::to_owned)
+        .collect::<std::collections::BTreeSet<_>>();
         let mut owned = std::collections::BTreeSet::new();
         for relative_path in super::BPP_PRIVATE_RELATIVE_PATHS
             .iter()
@@ -780,32 +795,9 @@ mod tests {
         }
 
         assert_eq!(
-            shipped, owned,
-            "payload.rs ownership lists drifted from resources/SourceForBuild; \
-             update BPP_PRIVATE_RELATIVE_PATHS / BPP_BUNDLED_DEPENDENCY_RELATIVE_PATHS"
+            expected, owned,
+            "payload ownership lists drifted from the release contract"
         );
-    }
-
-    fn collect_files_recursively(
-        root: &std::path::Path,
-        dir: &std::path::Path,
-        out: &mut std::collections::BTreeSet<String>,
-    ) {
-        let entries = std::fs::read_dir(dir)
-            .unwrap_or_else(|err| panic!("cannot read {}: {err}", dir.display()));
-        for entry in entries {
-            let path = entry.unwrap().path();
-            if path.is_dir() {
-                collect_files_recursively(root, &path, out);
-            } else {
-                out.insert(
-                    path.strip_prefix(root)
-                        .unwrap()
-                        .to_string_lossy()
-                        .replace('\\', "/"),
-                );
-            }
-        }
     }
 
     #[test]

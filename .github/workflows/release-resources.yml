@@ -1,0 +1,73 @@
+name: Validate release resources
+
+on:
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: Release payload platform
+        required: true
+        type: choice
+        options:
+          - macos
+          - windows
+      payload_run_id:
+        description: Workflow run ID containing the real private staging artifact
+        required: true
+        type: string
+      payload_artifact:
+        description: Artifact containing payload.tar rooted at the SourceForBuild platform directory
+        required: true
+        type: string
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  release-resource-validation:
+    runs-on: ${{ inputs.platform == 'macos' && 'macos-15' || 'windows-2025' }}
+    environment: release
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: .node-version
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install locked npm version
+        run: npm install --global npm@11.17.0
+
+      - name: Install repository Rust toolchain
+        run: rustup show active-toolchain
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri -> target
+          shared-key: release-resources-${{ inputs.platform }}
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Download real release staging payload
+        uses: actions/download-artifact@v5
+        with:
+          name: ${{ inputs.payload_artifact }}
+          path: tmp/release-payload
+          run-id: ${{ inputs.payload_run_id }}
+          github-token: ${{ github.token }}
+
+      - name: Extract staging payload with file modes
+        shell: bash
+        run: |
+          mkdir -p "src-tauri/resources/SourceForBuild/${{ inputs.platform }}"
+          tar -xf tmp/release-payload/payload.tar \
+            -C "src-tauri/resources/SourceForBuild/${{ inputs.platform }}"
+
+      - name: Prepare deterministic release payload
+        run: npm run prepare:resources -- --platform ${{ inputs.platform }}
+
+      - name: Run authoritative release-resource gate
+        run: npm run verify -- --release-platform ${{ inputs.platform }}

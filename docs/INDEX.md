@@ -6,6 +6,26 @@ Last consolidation audit: `2026-06-11` on `7b18f73d4718d3e1406de9f526d1fbba09ac5
 
 Last full citation verification: `2026-07-11` on `4366cda394fe304066b55564c3c44d1f917a2273` — every `file:line` claim in `CONTEXT.md`, `docs/truth/`, and `docs/plans/manual-validation.md` checked against code; stale line ranges corrected in `launch-modes.md`, `history-stream.md`, and `manual-validation.md`.
 
+Architecture deepening citation refresh: `2026-07-18` on `7500016b1c4adfc7b5d0206c7def0ceabae514d5` — `CONTEXT.md`, the six affected truth topics, and the retained manual-validation items were checked against the final implementation and review fixes.
+
+Build workflow citation refresh: `2026-07-18` on `45764680a4476063a46a92f4606dd520f0ce29ef` — the verification and updater-release truth topics were checked against the hardened build, resource, CI, and artifact-manifest implementation.
+
+History page-state citation refresh: `2026-07-19` on `b07adb2e67f03480d039352837037c25a75f3472` — the context glossary plus architecture, frontend, History/Stream, and verification topics were checked against the semantic-problem and independent History loading implementation after review fixes.
+
+Run Detail page-state citation refresh: `2026-07-19` on `68f2b1ef20e7c1c5c789bd5cde34821cf28efd57` — the context glossary plus architecture, frontend, History/Stream, and verification topics were checked against the nullable-detail, semantic-action, preserved-refresh, and single-flight implementation.
+
+Install page-state citation refresh: `2026-07-19` on `f23d786ab3bf1998f556f5fe05b6e47467a7ea48` — the context glossary plus architecture, frontend, Install/Reset, Launch Modes, and verification topics were checked against completed native detection, semantic Install problems, preserved refresh state, and the single derived primary action.
+
+Stream capability citation refresh: `2026-07-19` on `5bbe32c870bc06e35e5064f3c8403ff22b359d32` — the context glossary plus architecture, frontend, History/Stream, and verification topics were checked against the independent Stream capability states, stale polling contract, semantic problem presentation, and locale-stable workflow lifecycle.
+
+Destructive-operation citation refresh: `2026-07-19` on `0f609de844c0cbc48e7fb53396a90d5f32776c2b` — the context glossary plus architecture, frontend, Install/Reset, History/Stream, and verification topics were checked against the target-bearing confirmation lifecycle, explicit active dismissal policies, retained semantic failures, and cleanup semantic native contract.
+
+Modal-coordination citation refresh: `2026-07-19` on `838d5d6bf30e16a277e5b367b648333e8923759a` — the context glossary plus architecture, frontend, updater, and verification topics were checked against the global modal priority queue, source lifecycle, dismissal policy, focus restoration, and controlled shell disclosures.
+
+Updater-recovery citation refresh: `2026-07-19` on `2bf15726776492127c3eca2162dd26306c3ab310` — the context glossary plus architecture, frontend, updater, and verification topics were checked against the explicit updater snapshot, semantic problems, shared header/modal presentation, accessible progress, and manual restart recovery.
+
+About-bootstrap citation refresh: `2026-07-19` on `506e85b363a53511d14a44db22804a53331f2c03` — the context glossary plus architecture, frontend, and verification topics were checked against the explicit bootstrap resource states, packaged fallback provenance, semantic recovery, and accessible About feedback.
+
 ## Current Manifest
 
 | Path | Topic | Status | Last verified |
@@ -14,16 +34,16 @@ Last full citation verification: `2026-07-11` on `4366cda394fe304066b55564c3c44d
 | `CLAUDE.md` | agent instructions | operational | 2026-06-11 |
 | `README.md` | project entrypoint | current-entrypoint | 2026-07-11 |
 | `.trae/rules/git-commit-message.md` | ignored local rule | ignored-operational | n/a |
-| `docs/INDEX.md` | documentation manifest | manifest | 2026-07-11 |
-| `CONTEXT.md` | entry map + glossary | truth | `4366cda394fe304066b55564c3c44d1f917a2273` |
-| `docs/truth/architecture.md` | architecture | truth | `2c1d70e` |
-| `docs/truth/frontend.md` | frontend | truth | `2c1d70e` |
-| `docs/truth/install-reset.md` | install-reset | truth | `8d453b79679a4ab65f059fc89b35ab377ed67e58` |
-| `docs/truth/launch-modes.md` | launch-modes | truth | `4366cda394fe304066b55564c3c44d1f917a2273` |
-| `docs/truth/history-stream.md` | history-stream | truth | `8d453b79679a4ab65f059fc89b35ab377ed67e58` |
-| `docs/truth/updater-release.md` | updater-release | truth | `4366cda394fe304066b55564c3c44d1f917a2273` |
-| `docs/truth/verification.md` | verification | truth | `4366cda394fe304066b55564c3c44d1f917a2273` |
-| `docs/plans/manual-validation.md` | manual-validation | active-plan | `4366cda394fe304066b55564c3c44d1f917a2273` |
+| `docs/INDEX.md` | documentation manifest | manifest | 2026-07-19 |
+| `CONTEXT.md` | entry map + glossary | truth | `506e85b363a53511d14a44db22804a53331f2c03` |
+| `docs/truth/architecture.md` | architecture | truth | `506e85b363a53511d14a44db22804a53331f2c03` |
+| `docs/truth/frontend.md` | frontend | truth | `506e85b363a53511d14a44db22804a53331f2c03` |
+| `docs/truth/install-reset.md` | install-reset | truth | `0f609de844c0cbc48e7fb53396a90d5f32776c2b` |
+| `docs/truth/launch-modes.md` | launch-modes | truth | `f23d786ab3bf1998f556f5fe05b6e47467a7ea48` |
+| `docs/truth/history-stream.md` | history-stream | truth | `0f609de844c0cbc48e7fb53396a90d5f32776c2b` |
+| `docs/truth/updater-release.md` | updater-release | truth | `2bf15726776492127c3eca2162dd26306c3ab310` |
+| `docs/truth/verification.md` | verification | truth | `506e85b363a53511d14a44db22804a53331f2c03` |
+| `docs/plans/manual-validation.md` | manual-validation | active-plan | `7500016b1c4adfc7b5d0206c7def0ceabae514d5` |
 | `docs/agents/issue-tracker.md` | agent skills: issue tracker | operational | 2026-07-11 |
 | `docs/agents/triage-labels.md` | agent skills: triage labels | operational | 2026-07-11 |
 | `docs/agents/domain.md` | agent skills: domain doc rules | operational | 2026-07-11 |
@@ -34,8 +54,9 @@ Last full citation verification: `2026-07-11` on `4366cda394fe304066b55564c3c44d
 | `docs/adr/005-reset-local-data-contract.md` | reset-local-data | decision | n/a |
 | `docs/adr/006-steam-only-launch.md` | steam-only-launch | decision | n/a |
 | `docs/adr/007-steam-branch-switch.md` | steam-branch-switch | superseded-removed | n/a |
-| `docs/adr/008-command-names-artifact.md` | command-names-artifact | decision | n/a |
+| `docs/adr/008-command-names-artifact.md` | command-names-artifact | superseded-by-010 | n/a |
 | `docs/adr/009-agent-skills-doc-layout.md` | agent-skills-doc-layout | decision | n/a |
+| `docs/adr/010-tauri-specta-command-bindings.md` | tauri-specta-command-bindings | decision | n/a |
 | `docs/archive/README.md` | old documentation index | superseded | archived 2026-06-11 |
 | `docs/archive/architecture.md` | old architecture doc | superseded | archived 2026-06-11 |
 | `docs/archive/updater-release-plan.md` | old updater release doc | superseded | archived 2026-06-11 |
@@ -51,6 +72,7 @@ Last full citation verification: `2026-07-11` on `4366cda394fe304066b55564c3c44d
 | `docs/archive/2026-07-03-steam-branch-switch-impl.md` | steam-branch-switch-impl (plan) | reverted-removed | archived 2026-07-04 |
 | `docs/archive/2026-07-02-payload-ownership-hardening.md` | payload-ownership (plan) | implemented | archived 2026-07-02 |
 | `docs/archive/2026-07-02-storage-cleanup.md` | storage-cleanup (plan) | implemented | archived 2026-07-11 |
+| `docs/archive/2026-07-18-architecture-deepening.md` | architecture-deepening (plan) | implemented | `7500016b1c4adfc7b5d0206c7def0ceabae514d5` |
 
 ## Pending Decisions
 

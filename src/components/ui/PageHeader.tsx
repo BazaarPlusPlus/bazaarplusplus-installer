@@ -25,5 +25,9 @@ export function PageHeader({
 }
 
 function Title({ children }: { children: ReactNode }) {
-  return <h2 className="bpp-page-title">{children}</h2>;
+  return (
+    <h2 data-page-heading tabIndex={-1} className="bpp-page-title">
+      {children}
+    </h2>
+  );
 }

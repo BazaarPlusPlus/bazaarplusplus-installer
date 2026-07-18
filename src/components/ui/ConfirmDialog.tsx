@@ -5,11 +5,21 @@ import {
   X,
   type LucideIcon
 } from 'lucide-react';
-import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { Dialog } from './Dialog';
+import type { ReactNode } from 'react';
+import { Dialog, type DialogCloseReason } from './Dialog';
 import { useI18n } from '../../i18n/LocaleProvider';
 
 export type ConfirmTone = 'gold' | 'danger';
+
+export type ConfirmDialogDismissReason =
+  | DialogCloseReason
+  | 'close-button'
+  | 'secondary-action';
+
+export type ActiveDismissalPolicy =
+  | { kind: 'blocked' }
+  | { kind: 'detachable'; label: string }
+  | { kind: 'cancelable'; label: string; onCancel: () => void };
 
 export interface ConfirmAcknowledge {
   /** Already-localized label (pass t('...')). */
@@ -41,22 +51,23 @@ export interface ConfirmDialogProps {
    *  Absent => the four danger modals: busy prepends Loader2 animate-spin to
    *  confirmLabel. Presence is the switch. */
   busyLabel?: string;
-  /** Disables confirm + triggers busy affordance. Escape/backdrop/X/cancel
-   *  stay active while busy. */
+  /** Disables confirm + triggers busy affordance. */
   busy: boolean;
+  /** Explicitly defines what every dismiss surface means while busy. */
+  activeDismissalPolicy: ActiveDismissalPolicy;
+  /** Replaces ordinary Cancel wording after a failed operation. */
+  dismissLabel?: string;
   /** Extra gate (for example, Cleanup having nothing to clean). */
   confirmDisabled?: boolean;
-  onConfirm: () => void | Promise<void>;
+  onConfirm: () => unknown;
   onClose: () => void;
 }
 
 const TONE = {
   gold: {
     Icon: DownloadCloud as LucideIcon,
-    card:
-      'bpp-modal-card bpp-install-confirm-card w-full max-w-[560px] mx-4 relative',
-    bar:
-      'bpp-modal-header bpp-install-confirm-header flex justify-between items-center px-5 py-4',
+    card: 'bpp-modal-card bpp-install-confirm-card w-full max-w-[560px] mx-4 relative',
+    bar: 'bpp-modal-header bpp-install-confirm-header flex justify-between items-center px-5 py-4',
     icon: 'text-[rgba(200,148,55,0.8)]',
     title: 'cinzel text-[1.1rem] text-[#e8dcc8] m-0 tracking-wider',
     close:
@@ -95,6 +106,8 @@ export function ConfirmDialog({
   confirmLabel,
   busyLabel,
   busy,
+  activeDismissalPolicy,
+  dismissLabel,
   confirmDisabled,
   onConfirm,
   onClose
@@ -102,41 +115,30 @@ export function ConfirmDialog({
   const { t } = useI18n();
   const s = TONE[tone];
   const Icon = s.Icon;
-  const [closing, setClosing] = useState(false);
-  const closeTimer = useRef<number | null>(null);
-
-  useEffect(
-    () => () => {
-      if (closeTimer.current !== null) window.clearTimeout(closeTimer.current);
-    },
-    []
-  );
-
-  const requestClose = () => {
-    if (
-      tone !== 'gold' ||
-      window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    ) {
-      onClose();
-      return;
-    }
-    if (closing) return;
-    setClosing(true);
-    closeTimer.current = window.setTimeout(onClose, 190);
-  };
+  const dismissAllowed = !busy || activeDismissalPolicy.kind !== 'blocked';
+  const activeDismissLabel =
+    activeDismissalPolicy.kind === 'blocked'
+      ? null
+      : activeDismissalPolicy.label;
+  const secondaryLabel = busy
+    ? activeDismissLabel
+    : (dismissLabel ?? t('cancel'));
+  const requestDismiss = (reason: ConfirmDialogDismissReason) =>
+    requestConfirmDialogDismiss({
+      busy,
+      activeDismissalPolicy,
+      reason,
+      onClose
+    });
 
   return (
     <Dialog
-      onClose={requestClose}
+      onClose={requestDismiss}
       labelledBy={titleId}
       focusContainerOnOpen={tone === 'gold'}
-      className={
-        tone === 'gold'
-          ? `bpp-install-confirm-dialog${closing ? ' is-closing' : ''}`
-          : undefined
-      }
+      className={tone === 'gold' ? 'bpp-install-confirm-dialog' : undefined}
     >
-      <div className={`${s.card}${closing ? ' is-closing' : ''}`}>
+      <div className={s.card}>
         <div className={s.bar}>
           <div className="flex items-center gap-4">
             <Icon size={tone === 'gold' ? 30 : 18} className={s.icon} />
@@ -151,9 +153,12 @@ export function ConfirmDialog({
           </div>
           <button
             type="button"
-            onClick={requestClose}
-            className={s.close}
-            aria-label={t('close')}
+            onClick={() => requestDismiss('close-button')}
+            disabled={!dismissAllowed}
+            className={`${s.close} disabled:opacity-40 disabled:pointer-events-none`}
+            aria-label={
+              busy && activeDismissLabel ? activeDismissLabel : t('close')
+            }
           >
             <X size={20} />
           </button>
@@ -166,19 +171,30 @@ export function ConfirmDialog({
                 type="checkbox"
                 className="mt-1"
                 checked={acknowledge.checked}
+                disabled={busy}
                 onChange={(event) => acknowledge.onChange(event.target.checked)}
               />
               <span className={s.ackText}>{acknowledge.label}</span>
             </label>
           )}
           <div className="bpp-confirm-footer flex justify-end gap-3 pt-2">
-            <button
-              type="button"
-              onClick={requestClose}
-              className="bpp-confirm-cancel px-5 py-2 bg-[rgba(200,148,55,0.04)] border border-[rgba(180,130,48,0.2)] rounded-sm hover:bg-[rgba(200,148,55,0.1)] transition-colors text-sm text-[#e8dcc8]"
-            >
-              {t('cancel')}
-            </button>
+            {secondaryLabel ? (
+              <button
+                type="button"
+                onClick={() => requestDismiss('secondary-action')}
+                className="bpp-confirm-cancel px-5 py-2 bg-[rgba(200,148,55,0.04)] border border-[rgba(180,130,48,0.2)] rounded-sm hover:bg-[rgba(200,148,55,0.1)] transition-colors text-sm text-[#e8dcc8]"
+              >
+                {secondaryLabel}
+              </button>
+            ) : (
+              <p
+                role="status"
+                aria-live="polite"
+                className="m-0 mr-auto text-xs text-[rgba(232,200,122,0.8)]"
+              >
+                {t('operationCannotBeCancelled')}
+              </p>
+            )}
             <button
               type="button"
               disabled={
@@ -209,4 +225,31 @@ export function ConfirmDialog({
       </div>
     </Dialog>
   );
+}
+
+export function requestConfirmDialogDismiss({
+  busy,
+  activeDismissalPolicy,
+  onClose
+}: {
+  busy: boolean;
+  activeDismissalPolicy: ActiveDismissalPolicy;
+  reason: ConfirmDialogDismissReason;
+  onClose: () => void;
+}): boolean {
+  if (!busy) {
+    onClose();
+    return true;
+  }
+
+  switch (activeDismissalPolicy.kind) {
+    case 'blocked':
+      return false;
+    case 'detachable':
+      onClose();
+      return true;
+    case 'cancelable':
+      activeDismissalPolicy.onCancel();
+      return true;
+  }
 }

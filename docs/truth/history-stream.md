@@ -1,13 +1,17 @@
 ---
 status: truth
 topic: history-stream
-last-verified: 8d453b79679a4ab65f059fc89b35ab377ed67e58
+last-verified: 0f609de844c0cbc48e7fb53396a90d5f32776c2b
 ---
 
 # History And Stream
 
 ## History Data Access
 
+- The History facade resolves the current Selected game installation, privately derives database/game/video storage paths, and owns list, detail, reveal, delete, and cleanup operations in `src-tauri/src/services/history.rs:48-288`; it does not borrow Stream runtime state.
+- List/detail resolution emits `history_unavailable`, while SQLite/query failures emit `history_read_failed` with a stable operation parameter and optional diagnostic in `src-tauri/src/services/history.rs:74-102`. Screenshot reveal, video reveal, and video delete failures emit `history_action_failed` with their target operation in `src-tauri/src/services/history.rs:109-188` and `src-tauri/src/services/history.rs:363-366`. Their shared serialized contract is defined in `src-tauri/src/problem.rs:3-38` and crosses the Tauri command boundary at `src-tauri/src/commands/history.rs:7-49`.
+- `get_history_run_detail` returns a successful nullable detail, so an absent run is distinct from an unavailable installation or failed read in `src-tauri/src/commands/history.rs:16-23` and `src-tauri/src/services/history.rs:93-107`.
+- Tauri History commands pass only domain inputs such as ids, limits, cleanup scope, and preset to the facade; command signatures contain no database, game, video-directory, cutoff, or cleanup-plan values in `src-tauri/src/commands/history.rs:7-79`. Cleanup preview/execute now return `SemanticProblem`, with unavailable selection classified separately and native failures carrying stable `preview_storage_cleanup` or `execute_storage_cleanup` operation parameters in `src-tauri/src/services/history.rs:258-274` and `src-tauri/src/services/history.rs:337-366`.
 - History reads open the BazaarPlusPlus SQLite database read-only with a two-second busy timeout in `src-tauri/src/history/queries.rs:29-35`.
 - Write access is separate and uses `SQLITE_OPEN_READ_WRITE` in `src-tauri/src/history/queries.rs:37-43`.
 - History summary counts runs, completed runs, wins, latest run timestamp, and completed combat replay videos in `src-tauri/src/history/queries.rs:73-109`.
@@ -16,17 +20,22 @@ last-verified: 8d453b79679a4ab65f059fc89b35ab377ed67e58
 
 ## History UI
 
-- The History page renders Runs, Videos, and Win Rate summary cards in `src/pages/History.tsx:36-50`.
-- History rows include optional preview images and link to `/history/:run_id` details in `src/pages/History.tsx:101-182`.
-- Run detail renders run metadata, screenshot reveal, summary stats, and a battle table with video reveal/delete controls in `src/pages/RunDetail.tsx:52-193` and `src/pages/RunDetail.tsx:215-319`.
-- The History page renders the storage cleanup card after the summary cards in `src/pages/History.tsx:52`; the card offers separate end-of-run screenshot and run-data rows in `src/features/history/StorageCleanupCard.tsx:79-115`, with its confirmation composed inline at `src/features/history/StorageCleanupCard.tsx:117-139`.
+- History independently starts list loading and status-only preview discovery; it never ensures or starts a Stream session in `src/features/history/useHistoryPage.ts:37-68`. Stopped/failed Stream status becomes a non-blocking preview problem, and image load failures fall back inside the row in `src/features/history/historyPreview.ts:14-45` and `src/pages/History.tsx:194-230`.
+- The History page state union makes initial loading, blocking failure, ready-empty, and ready-content exclusive, while refreshing and refresh failure retain successful data in `src/features/shared/pageState.ts:1-60`, `src/features/history/historyPageState.ts:10-42`, and `src/pages/History.tsx:42-97`.
+- The History page renders Runs, Videos, and Win Rate summary cards in `src/pages/History.tsx:50-64`.
+- History rows include optional preview images and link to `/history/:run_id` details in `src/pages/History.tsx:125-230`.
+- Run detail makes initial loading, not-found, blocking failure, and ready content exclusive; refresh failure retains the last successful detail and stale completions are ignored in `src/features/history/runDetailPageState.ts:5-90` and `src/pages/RunDetail.tsx:66-130`.
+- Detail refresh, screenshot reveal, video reveal, and video deletion share one visible single-flight gate. Action failures stay scoped to the screenshot or affected battle and clear when that target retries in `src/features/history/runDetailPageState.ts:93-167`, `src/features/history/useRunDetailPage.ts:46-165`, `src/pages/RunDetail.tsx:160-181`, and `src/pages/RunDetail.tsx:306-432`.
+- Run detail formats dates, replay durations, and replay sizes through shared locale-aware helpers in `src/features/history/format.ts:4-61` and `src/features/history/format.ts:113-150`, with replay metadata rendered beside each video action in `src/pages/RunDetail.tsx:365-409`.
+- The History page renders the storage cleanup card after the summary cards only in a successful ready state in `src/pages/History.tsx:50-67`; the card offers separate end-of-run screenshot and run-data rows, then confirms the exact scope, preset, counts, and consequence. Execute failure keeps that target and localized semantic problem in place for retry or safe close; success alone closes and refreshes History in `src/features/history/StorageCleanupCard.tsx:84-171` and `src/features/history/useStorageCleanup.ts:23-78`.
 
 ## Storage Cleanup
 
-- Tauri exposes preview and execute commands for screenshot cleanup and run-data cleanup in `src-tauri/src/commands/history.rs:103-145`, and all four commands are registered in `src-tauri/src/commands/registry.rs:29-32`.
-- The cleanup presets are the wire strings `all`, `older_than_7_days`, and `before_this_month`; `CleanupCutoff::for_preset` computes non-`all` cutoffs from local time and stores UTC strings for SQL comparisons in `src-tauri/src/history/cleanup.rs:9-73`. A non-`all` preset never collapses to `None` (the wire meaning of `all`): a spring-forward DST gap at local month-start falls back to local noon.
+- Tauri exposes only `preview_storage_cleanup(scope, preset)` and `execute_storage_cleanup(scope, preset)` in `src-tauri/src/commands/history.rs:61-79`. Their Specta-generated success results are Serde scope-tagged unions for `screenshots` and `run_data` in `src-tauri/src/services/history.rs:25-44`; failures use the shared semantic problem contract.
+- The facade derives the same preset cutoff for preview and execute before dispatching on scope in `src-tauri/src/services/history.rs:200-256`; its tempfile-backed behavior test covers list/detail/reveal/delete and both cleanup scopes against real SQLite rows and files in `src-tauri/src/services/history.rs:675-781`.
+- The cleanup presets are the wire strings `all`, `older_than_7_days`, and `before_this_month`; `CleanupCutoff::for_preset` computes non-`all` cutoffs from local time and stores UTC strings for SQL comparisons in `src-tauri/src/history/cleanup.rs:9-71`. A non-`all` preset never collapses to `None` (the wire meaning of `all`): a spring-forward DST gap at local month-start falls back to local noon.
 - Screenshot cleanup plans and executes against `end_of_run_auto` rows, skips pending BazaarDB screenshot uploads, compares captured timestamps with `datetime()`, protects files still referenced by surviving rows, and sweeps orphan dated-folder files plus stale `UploadCache` copies in `src-tauri/src/history/cleanup.rs:123-174` and `src-tauri/src/history/cleanup.rs:187-255`.
-- The orphan sweep skips any folder whose local date is at or after `min(cutoff_date, today_local_date)`, so today's local-date folder is always protected — even under preset `all`, where there is no cutoff — because the mod writes a screenshot's PNG (through an atomic `<name>.png.<guid>.tmp` rename) before it inserts the matching `run_screenshots` row, and an in-flight, not-yet-rowed file would otherwise be swept. `today_local_date` is derived from the same `chrono::Local::now()` that builds the cutoff in `src-tauri/src/services/history.rs:100-129` and threaded into `scan_orphan_screenshot_files` at `src-tauri/src/history/cleanup.rs:992-1056` (a capture straddling local midnight into yesterday's folder is a known, unclosed sub-second window).
+- The orphan sweep skips any folder whose local date is at or after `min(cutoff_date, today_local_date)`, so today's local-date folder is always protected — even under preset `all`, where there is no cutoff — because the mod writes a screenshot's PNG (through an atomic `<name>.png.<guid>.tmp` rename) before it inserts the matching `run_screenshots` row, and an in-flight, not-yet-rowed file would otherwise be swept. `today_local_date` is derived from the same `chrono::Local::now()` that builds the cutoff in `src-tauri/src/services/history.rs:200-256` and threaded into `scan_orphan_screenshot_files` at `src-tauri/src/history/cleanup.rs:992-1056` (a capture straddling local midnight into yesterday's folder is a known, unclosed sub-second window).
 - Run-data cleanup plans only non-active runs, skips upload-unsafe completed Ranked dirty runs, replay-dirty battles, and pending screenshot uploads, and protects screenshot/video files still referenced by kept rows in `src-tauri/src/history/cleanup.rs:308-398`.
 - Run-data execution opens the FK-enabled cleanup connection, validates required cascade foreign keys before removing files, deletes replay videos, replay payloads, and eligible screenshots before deleting rows, then removes video rows, screenshot rows, and `runs` rows without directly deleting `battles`; cleanup file resolution refuses drive-relative escapes in `src-tauri/src/history/cleanup.rs:411-524`.
 - The FK-enabled cleanup connection turns on `PRAGMA foreign_keys = ON` in `src-tauri/src/history/queries.rs:49-54`, so current-schema `runs` deletes cascade to run-owned child rows while ghost battles remain outside run cleanup.
@@ -34,12 +43,20 @@ last-verified: 8d453b79679a4ab65f059fc89b35ab377ed67e58
 ## Stream Service
 
 - The stream service binds to `127.0.0.1:17654` in `src-tauri/src/stream/server.rs:16-17`.
-- Starting the service stops any existing different-path service, resolves game/database paths, constructs the overlay record repository and settings store, then serves the router with graceful shutdown in `src-tauri/src/stream/server.rs:19-112`.
-- The service reports database presence and path from the resolved game path in `src-tauri/src/stream/server.rs:114-123`.
-- The service reports window totals and current record from the overlay repository in `src-tauri/src/stream/server.rs:125-144`.
-- Stop and restart are explicit async service operations in `src-tauri/src/stream/server.rs:161-177`.
+- `StreamRuntime` is the single lifecycle owner. Its async lifecycle mutex serializes ensure, restart, stop, window changes, and exclusive maintenance; task handles and captured installation paths remain private in `src-tauri/src/stream/runtime.rs:43-108` and `src-tauri/src/stream/runtime.rs:188-280`.
+- Ensure and restart resolve one Selected game installation snapshot while holding the lifecycle gate; window changes reuse the captured record path instead of re-resolving a possibly changed selection in `src-tauri/src/stream/runtime.rs:66-98`, `src-tauri/src/stream/runtime.rs:203-220`, and `src-tauri/src/stream/runtime.rs:300-357`.
+- The production server adapter constructs the overlay repository and settings store, reports database/window status, and serves the router with graceful shutdown in `src-tauri/src/stream/server.rs:19-102`; stop sends shutdown and awaits the task before publishing idle state in `src-tauri/src/stream/runtime.rs:188-201`.
+- Startup, stream commands, tray stop/quit, and window-close behavior use the runtime rather than composing server mutations directly in `src-tauri/src/lib.rs:41-75`, `src-tauri/src/commands/stream.rs:12-92`, and `src-tauri/src/tray.rs:32-48`.
+- Stream commands return `SemanticProblem`: service, display-window, and crop-setting failures keep stable capability and operation codes while native details remain optional diagnostics in `src-tauri/src/commands/stream.rs:12-110` and `src-tauri/src/problem.rs:3-42`.
+
+## Stream UI Capabilities
+
+- The Stream snapshot keeps service, polling freshness, display window, crop settings, and clipboard/opener actions as independent capability states with their own phase, operation, problem, and action gates in `src/features/stream/streamWorkflow.ts:53-103` and `src/features/stream/streamWorkflow.ts:640-733`.
+- Service and crop initialization run independently; crop loading or failure does not block service/window controls, and crop plus one-off operations use separate single-flight gates in `src/features/stream/streamWorkflow.ts:185-268` and `src/features/stream/streamWorkflow.ts:509-590`.
+- Three consecutive status-poll failures preserve the last value but mark it stale, disable actions that require an authoritative running service, and expose a manual refresh; a successful poll restores freshness in `src/features/stream/streamWorkflow.ts:271-320` and `src/features/stream/streamWorkflow.ts:640-733`.
+- Workflow state stores semantic problems and notices rather than localized copy. Translation is a pure presentation step, and `useStreamPage` creates the workflow independently of locale so language switches do not dispose, restart, or re-ensure the session in `src/features/stream/streamProblems.ts:7-105`, `src/features/stream/streamPresentation.ts:20-80`, and `src/features/stream/useStreamPage.ts:20-42`.
 
 ## HTTP Surface
 
-- The local HTTP router exposes `/overlay`, `/settings`, stream record APIs, crop-config APIs, record images, and static overlay/settings assets in `src-tauri/src/stream/http.rs:63-91`.
-- CORS is narrowed to Tauri origins and the local Vite dev origins `http://localhost:14207` and `http://127.0.0.1:14207` in `src-tauri/src/stream/http.rs:99-110`.
+- The local HTTP router exposes `/overlay`, `/settings`, stream record APIs, crop-config APIs, record images, and static overlay/settings assets in `src-tauri/src/stream/http.rs:29-40` and `src-tauri/src/stream/http.rs:75-109`.
+- CORS is narrowed to Tauri origins and the local Vite dev origins `http://localhost:14207` and `http://127.0.0.1:14207` in `src-tauri/src/stream/http.rs:111-122`.

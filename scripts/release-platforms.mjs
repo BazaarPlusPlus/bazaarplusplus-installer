@@ -1,3 +1,4 @@
+import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -112,6 +113,41 @@ export function updaterFragmentUrl({
   updaterFileName
 }) {
   return `${baseUrl}/${r2UpdaterKey({ version, platformKey, updaterFileName })}`;
+}
+
+export function assertPlatformCoherence(rootDir) {
+  for (const platform of RELEASE_PLATFORMS) {
+    const overlayPath = path.join(rootDir, platform.tauriConfig);
+    const overlay = JSON.parse(fs.readFileSync(overlayPath, 'utf8'));
+    const overlayTargets = overlay.bundle?.targets;
+    const expectedTargets = platform.bundleTargets.split(',');
+    if (JSON.stringify(overlayTargets) !== JSON.stringify(expectedTargets)) {
+      throw new Error(
+        `${platform.key} bundle targets drifted: ${overlayPath} has ${JSON.stringify(overlayTargets)}, expected ${JSON.stringify(expectedTargets)}`
+      );
+    }
+
+    const resourceSource = platform.resourceZip.replace(/^src-tauri\//, '');
+    if (
+      overlay.bundle?.resources?.[resourceSource] !==
+      'BepInExSource/BepInEx.zip'
+    ) {
+      throw new Error(
+        `${platform.key} resource ZIP mapping drifted in ${overlayPath}`
+      );
+    }
+
+    const releaseRoot = platform.rustTarget
+      ? `src-tauri/target/${platform.rustTarget}/release`
+      : 'src-tauri/target/release';
+    if (
+      platform.bundleRoot !== `${releaseRoot}/bundle` ||
+      !platform.installerDir.startsWith(`${platform.bundleRoot}/`) ||
+      !platform.releaseBinary.startsWith(`${releaseRoot}/`)
+    ) {
+      throw new Error(`${platform.key} target layout is incoherent`);
+    }
+  }
 }
 
 function printLines(values) {

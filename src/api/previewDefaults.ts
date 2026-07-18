@@ -1,11 +1,14 @@
 // LEAF MODULE: value-mirrors of generated types, consumed as BOTH useState seeds
-// (features/**) and preview fallbacks (previewFallbacks.ts). MUST NOT import from
-// src/api/tauri.ts, src/api/previewFallbacks.ts, or src/features/** — that would
-// recreate the api <-> features runtime import cycle this file exists to kill.
+// (features/**) and preview command results. MUST NOT import from command clients
+// or features/** — that would recreate the runtime import cycle this file avoids.
 import type {
   AppBootstrap,
   HistoryRunList,
   InstallState,
+  RunDataCleanupPreview,
+  RunDataCleanupResult,
+  ScreenshotCleanupPreview,
+  ScreenshotCleanupResult,
   StreamOverlayCropSettingsPayload,
   StreamServiceStatus
 } from '../types/backend';
@@ -43,7 +46,10 @@ export const emptyInstallState: InstallState = {
   },
   has_resettable_data: false,
   has_bepinex_files: false,
-  warnings: []
+  warnings: [
+    { code: 'game_missing', params: {} },
+    { code: 'launch_options_unsupported', params: {} }
+  ]
 };
 
 export const idleStreamStatus: StreamServiceStatus = {
@@ -91,6 +97,35 @@ export const emptyHistoryRunList: HistoryRunList = {
     win_rate: null
   },
   runs: []
+};
+
+export const emptyScreenshotCleanupPreview: ScreenshotCleanupPreview = {
+  screenshots: 0,
+  orphan_files: 0,
+  estimated_bytes: 0,
+  skipped_pending_uploads: 0
+};
+
+export const emptyRunDataCleanupPreview: RunDataCleanupPreview = {
+  runs: 0,
+  battles: 0,
+  videos: 0,
+  estimated_bytes: 0,
+  skipped_pending_uploads: 0
+};
+
+export const emptyScreenshotCleanupResult: ScreenshotCleanupResult = {
+  deleted_rows: 0,
+  deleted_files: 0,
+  freed_bytes: 0,
+  skipped_pending_uploads: 0
+};
+
+export const emptyRunDataCleanupResult: RunDataCleanupResult = {
+  deleted_runs: 0,
+  deleted_files: 0,
+  freed_bytes: 0,
+  skipped_pending_uploads: 0
 };
 
 export const fallbackBootstrap: AppBootstrap = {

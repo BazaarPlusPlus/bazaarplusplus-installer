@@ -134,41 +134,111 @@ pub fn map_run_to_detail_row(
     }
 }
 
-pub fn map_battle_row(
-    battle_id: String,
-    day: Option<i64>,
-    hour: Option<i64>,
-    result: Option<String>,
-    opponent_hero: Option<String>,
-    opponent_name: Option<String>,
-    opponent_rank: Option<String>,
-    opponent_rating: Option<i64>,
-    video_id: Option<String>,
-    video_status: Option<String>,
-    file_size_bytes: Option<i64>,
-    duration_ms: Option<i64>,
+pub(super) struct BattleFields {
+    pub(super) battle_id: String,
+    pub(super) day: Option<i64>,
+    pub(super) hour: Option<i64>,
+    pub(super) result: Option<String>,
+    pub(super) opponent_hero: Option<String>,
+    pub(super) opponent_name: Option<String>,
+    pub(super) opponent_rank: Option<String>,
+    pub(super) opponent_rating: Option<i64>,
+}
+
+pub(super) struct BattleVideoFields {
+    pub(super) video_id: String,
+    pub(super) status: Option<String>,
+    pub(super) file_size_bytes: Option<i64>,
+    pub(super) duration_ms: Option<i64>,
+}
+
+pub(super) fn map_battle_row(
+    battle: BattleFields,
+    video: Option<BattleVideoFields>,
 ) -> HistoryBattleRow {
     HistoryBattleRow {
-        battle_id,
-        day,
-        hour,
-        result: map_battle_result(result.as_deref()),
-        opponent_hero,
-        opponent_name,
-        opponent_rank,
-        opponent_rating,
-        video: video_id.map(|video_id| HistoryBattleVideo {
-            video_id,
-            status: video_status.unwrap_or_else(|| "COMPLETED".to_string()),
-            file_size_bytes,
-            duration_ms,
+        battle_id: battle.battle_id,
+        day: battle.day,
+        hour: battle.hour,
+        result: map_battle_result(battle.result.as_deref()),
+        opponent_hero: battle.opponent_hero,
+        opponent_name: battle.opponent_name,
+        opponent_rank: battle.opponent_rank,
+        opponent_rating: battle.opponent_rating,
+        video: video.map(|video| HistoryBattleVideo {
+            video_id: video.video_id,
+            status: video.status.unwrap_or_else(|| "COMPLETED".to_string()),
+            file_size_bytes: video.file_size_bytes,
+            duration_ms: video.duration_ms,
         }),
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::map_battle_result;
+    use super::{map_battle_result, map_battle_row, BattleFields, BattleVideoFields};
+    use crate::history::dto::{HistoryBattleRow, HistoryBattleVideo};
+
+    #[test]
+    fn map_battle_row_preserves_battle_and_video_fields_with_default_status() {
+        let mapped = map_battle_row(
+            BattleFields {
+                battle_id: "battle-1".to_string(),
+                day: Some(8),
+                hour: Some(1),
+                result: Some("Won".to_string()),
+                opponent_hero: Some("Dooley".to_string()),
+                opponent_name: Some("Opponent A".to_string()),
+                opponent_rank: Some("Diamond III".to_string()),
+                opponent_rating: Some(1410),
+            },
+            Some(BattleVideoFields {
+                video_id: "video-1".to_string(),
+                status: None,
+                file_size_bytes: Some(2200),
+                duration_ms: Some(1200),
+            }),
+        );
+
+        assert_eq!(
+            mapped,
+            HistoryBattleRow {
+                battle_id: "battle-1".to_string(),
+                day: Some(8),
+                hour: Some(1),
+                result: "win".to_string(),
+                opponent_hero: Some("Dooley".to_string()),
+                opponent_name: Some("Opponent A".to_string()),
+                opponent_rank: Some("Diamond III".to_string()),
+                opponent_rating: Some(1410),
+                video: Some(HistoryBattleVideo {
+                    video_id: "video-1".to_string(),
+                    status: "COMPLETED".to_string(),
+                    file_size_bytes: Some(2200),
+                    duration_ms: Some(1200),
+                }),
+            }
+        );
+    }
+
+    #[test]
+    fn map_battle_row_omits_video_without_video_id() {
+        let mapped = map_battle_row(
+            BattleFields {
+                battle_id: "battle-1".to_string(),
+                day: None,
+                hour: None,
+                result: None,
+                opponent_hero: None,
+                opponent_name: None,
+                opponent_rank: None,
+                opponent_rating: None,
+            },
+            None,
+        );
+
+        assert_eq!(mapped.video, None);
+    }
 
     #[test]
     fn map_battle_result_resolves_known_outcomes_case_insensitively() {

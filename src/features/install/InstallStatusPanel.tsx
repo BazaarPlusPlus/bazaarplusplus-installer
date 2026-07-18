@@ -3,28 +3,32 @@ import { CircleAlert, Copy, Folder } from 'lucide-react';
 import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { useI18n } from '../../i18n/LocaleProvider';
+import type { InstallState } from '../../types/backend';
 import { PrimaryInstallActionButton } from './PrimaryInstallActionButton';
 import type { PrimaryInstallMode } from './PrimaryInstallActionButton';
+import { presentInstallWarning } from './installProblems';
 import type { useInstallPage } from './useInstallPage';
 
 type InstallPage = ReturnType<typeof useInstallPage>;
 
 export function InstallStatusPanel({
   page,
+  state,
   primaryMode,
   appVersion,
   onOpenInstallModal
 }: {
   page: InstallPage;
+  state: InstallState;
   primaryMode: PrimaryInstallMode;
   appVersion: string;
   onOpenInstallModal: () => void;
 }) {
   const { t } = useI18n();
   const [copied, setCopied] = useState(false);
-  const installed = page.state.mod_state.installed;
-  const healthy = installed && page.state.mod_state.version_matches;
-  const needsReinstall = installed && !page.state.mod_state.version_matches;
+  const installed = state.mod_state.installed;
+  const healthy = installed && state.mod_state.version_matches;
+  const needsReinstall = installed && !state.mod_state.version_matches;
   const heroState = healthy
     ? t('installed')
     : needsReinstall
@@ -35,7 +39,7 @@ export function InstallStatusPanel({
     : needsReinstall
       ? t('installOverviewUpdateDescription')
       : t('installOverviewNotInstalledDescription');
-  const selectedPath = page.state.selected_game_path;
+  const selectedPath = state.selected_game_path;
 
   const copyPath = async () => {
     if (!selectedPath) return;
@@ -116,12 +120,12 @@ export function InstallStatusPanel({
         </InfoCard>
       </div>
 
-      {page.state.warnings.length > 0 && (
+      {state.warnings.length > 0 && (
         <div className="bpp-install-notices" role="status" aria-live="polite">
-          {page.state.warnings.map((warning) => (
+          {state.warnings.map((warning) => (
             <p key={warning.code} className="m-0 flex items-start gap-2">
               <CircleAlert size={14} className="mt-0.5 shrink-0" />
-              <span>{warning.message}</span>
+              <span>{presentInstallWarning(warning, t)}</span>
             </p>
           ))}
         </div>

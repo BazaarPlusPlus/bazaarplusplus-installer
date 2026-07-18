@@ -1,15 +1,21 @@
+import { useState } from 'react';
 import { ChevronRight, Image as ImageIcon, RefreshCw } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { ErrorBanner } from '../components/ui/ErrorBanner';
 import { LoadingPanel } from '../components/ui/LoadingPanel';
 import { PageShell } from '../components/ui/PageShell';
+import { ProblemBanner } from '../components/ui/ProblemBanner';
 import {
   formatDateTime,
   formatRunResultLabel,
   toneColorClass
 } from '../features/history/format';
 import { StorageCleanupCard } from '../features/history/StorageCleanupCard';
+import {
+  presentHistoryProblem,
+  type HistoryPageProblem
+} from '../features/history/historyProblems';
 import { useHistoryPage } from '../features/history/useHistoryPage';
+import { formatProblemDiagnostic } from '../features/shared/problems';
 import { useI18n } from '../i18n/LocaleProvider';
 import type { HistoryRunRow } from '../types/backend';
 
@@ -26,59 +32,77 @@ export default function History() {
         <button
           type="button"
           onClick={page.refresh}
-          disabled={page.loading}
+          disabled={page.busy}
           className="bpp-button"
         >
-          <RefreshCw size={16} className={page.loading ? 'animate-spin' : ''} />
+          <RefreshCw size={16} className={page.busy ? 'animate-spin' : ''} />
           {t('refresh')}
         </button>
       }
     >
-      <div className="flex min-h-0 w-full flex-1 flex-col gap-4">
-        <div className="bpp-history-summary-grid">
-          <SummaryCard
-            label={t('historySummaryRuns')}
-            value={page.summary.runs}
-            detail={t('historySummaryRunsDescription')}
-          />
-          <SummaryCard
-            label={t('historySummaryVideos')}
-            value={page.summary.videos}
-            detail={t('historySummaryVideosDescription')}
-          />
-          <SummaryCard
-            label={t('historySummaryWinRate')}
-            value={page.summary.winRate}
-            detail={
-              page.payload.summary.win_rate === null
-                ? t('historySummaryWinRateUnavailable')
-                : t('historySummaryWinRateDescription')
-            }
-          />
-        </div>
+      {page.state.phase === 'initial-loading' ? (
+        <LoadingPanel label={t('historyLoading')} />
+      ) : page.state.phase === 'blocking-failure' ? (
+        <HistoryProblemBanner
+          problem={page.state.problem}
+          onRetry={page.refresh}
+        />
+      ) : (
+        <div className="flex min-h-0 w-full flex-1 flex-col gap-4">
+          <div className="bpp-history-summary-grid">
+            <SummaryCard
+              label={t('historySummaryRuns')}
+              value={page.summary?.runs ?? '-'}
+              detail={t('historySummaryRunsDescription')}
+            />
+            <SummaryCard
+              label={t('historySummaryVideos')}
+              value={page.summary?.videos ?? '-'}
+              detail={t('historySummaryVideosDescription')}
+            />
+            <SummaryCard
+              label={t('historySummaryWinRate')}
+              value={page.summary?.winRate ?? '-'}
+              detail={
+                page.state.data.summary.win_rate === null
+                  ? t('historySummaryWinRateUnavailable')
+                  : t('historySummaryWinRateDescription')
+              }
+            />
+          </div>
 
-        <StorageCleanupCard onCompleted={page.refresh} />
+          <StorageCleanupCard onCompleted={page.refresh} />
 
-        {page.error && <ErrorBanner message={page.error} />}
-
-        <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto pr-2 custom-scrollbar">
-          {page.loading ? (
-            <LoadingPanel label={t('historyLoading')} />
-          ) : page.payload.runs.length === 0 ? (
-            <div className="bpp-panel flex h-48 items-center justify-center text-[#777871]">
-              {t('noLocalRuns')}
-            </div>
-          ) : (
-            page.payload.runs.map((run: HistoryRunRow) => (
-              <RunRow
-                key={run.run_id}
-                run={run}
-                previewUrl={page.previewUrl(run)}
-              />
-            ))
+          {page.state.refresh.phase === 'failed' && (
+            <HistoryProblemBanner
+              problem={page.state.refresh.problem}
+              onRetry={page.refresh}
+            />
           )}
+
+          {page.state.phase === 'ready-content' &&
+            page.previewProblem &&
+            page.state.data.runs.some((run) => run.strip_url) && (
+              <HistoryPreviewProblemBanner problem={page.previewProblem} />
+            )}
+
+          <div className="flex flex-col gap-3 flex-1 min-h-0 overflow-y-auto custom-scrollbar pr-2">
+            {page.state.phase === 'ready-empty' ? (
+              <div className="bpp-panel flex h-48 items-center justify-center text-[#777871]">
+                {t('noLocalRuns')}
+              </div>
+            ) : (
+              page.state.data.runs.map((run: HistoryRunRow) => (
+                <RunRow
+                  key={run.run_id}
+                  run={run}
+                  previewUrl={page.previewUrl(run)}
+                />
+              ))
+            )}
+          </div>
         </div>
-      </div>
+      )}
     </PageShell>
   );
 }
@@ -110,38 +134,24 @@ function RunRow({
   run: HistoryRunRow;
   previewUrl: string | null;
 }) {
-  const { t } = useI18n();
+  const { locale, t } = useI18n();
   const result = formatRunResultLabel(run.result);
   const detailPath = `/history/${encodeURIComponent(run.run_id)}`;
 
   return (
     <Link to={detailPath} className="bpp-history-run-card group">
-      <div className="bpp-history-run-preview">
-        {previewUrl ? (
-          // Rounded server crop dimensions can differ slightly from 2000:470.
-          // Cover intentionally stays full-bleed; the outline no longer changes
-          // this image viewport or adds another layer of crop.
-          <img
-            src={previewUrl}
-            alt=""
-            loading="lazy"
-            decoding="async"
-            className="bpp-history-run-preview-image"
-          />
-        ) : (
-          <>
-            <span className="bpp-history-run-preview-empty" />
-            <ImageIcon size={19} />
-          </>
-        )}
-      </div>
+      <RunPreview
+        key={previewUrl ?? 'preview-unavailable'}
+        previewUrl={previewUrl}
+        fallbackLabel={t('historyPreviewFallback')}
+      />
 
       <div className="bpp-history-run-data">
         <div className="bpp-history-run-heading">
           <div className="bpp-history-run-identity">
             <span className="bpp-history-run-hero cinzel">{run.hero}</span>
             <span className="bpp-history-run-date fira-code">
-              {formatDateTime(run.started_at_utc)}
+              {formatDateTime(run.started_at_utc, locale)}
             </span>
           </div>
 
@@ -180,6 +190,101 @@ function RunRow({
         </div>
       </div>
     </Link>
+  );
+}
+
+function RunPreview({
+  previewUrl,
+  fallbackLabel
+}: {
+  previewUrl: string | null;
+  fallbackLabel: string;
+}) {
+  const [failedUrl, setFailedUrl] = useState<string | null>(null);
+  const visibleUrl = previewUrl && previewUrl !== failedUrl ? previewUrl : null;
+
+  return (
+    <div
+      className="bpp-history-run-preview"
+      title={visibleUrl ? undefined : fallbackLabel}
+      aria-label={visibleUrl ? undefined : fallbackLabel}
+    >
+      {visibleUrl ? (
+        // Rounded server crop dimensions can differ slightly from 2000:470.
+        // Cover intentionally stays full-bleed; the outline no longer changes
+        // this image viewport or adds another layer of crop.
+        <img
+          src={visibleUrl}
+          alt=""
+          loading="lazy"
+          decoding="async"
+          onError={() => setFailedUrl(visibleUrl)}
+          className="bpp-history-run-preview-image"
+        />
+      ) : (
+        <>
+          <span className="bpp-history-run-preview-empty" />
+          <ImageIcon size={19} aria-hidden="true" />
+        </>
+      )}
+    </div>
+  );
+}
+
+function HistoryProblemBanner({
+  problem,
+  onRetry
+}: {
+  problem: HistoryPageProblem;
+  onRetry: () => void;
+}) {
+  const { t } = useI18n();
+  const diagnostic = problem.diagnostic
+    ? formatProblemDiagnostic(problem)
+    : null;
+  return (
+    <ProblemBanner
+      message={presentHistoryProblem(problem, t)}
+      diagnostic={diagnostic}
+      diagnosticLabel={t('problemDiagnostics')}
+      actions={
+        <>
+          {problem.code === 'history_unavailable' && (
+            <Link to="/" className="underline underline-offset-2">
+              {t('historyOpenInstall')}
+            </Link>
+          )}
+          <button
+            type="button"
+            onClick={onRetry}
+            className="underline underline-offset-2"
+          >
+            {t('retry')}
+          </button>
+        </>
+      }
+    />
+  );
+}
+
+function HistoryPreviewProblemBanner({
+  problem
+}: {
+  problem: HistoryPageProblem;
+}) {
+  const { t } = useI18n();
+  return (
+    <ProblemBanner
+      tone="warning"
+      message={presentHistoryProblem(problem, t)}
+      diagnostic={problem.diagnostic ? formatProblemDiagnostic(problem) : null}
+      diagnosticLabel={t('problemDiagnostics')}
+      actions={
+        <Link to="/stream" className="underline underline-offset-2">
+          {t('historyOpenStream')}
+        </Link>
+      }
+    />
   );
 }
 

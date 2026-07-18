@@ -1,14 +1,8 @@
-import {
-  AlertTriangle,
-  Box,
-  CloudDownload,
-  Layers3,
-  Loader2,
-  Trash2
-} from 'lucide-react';
+import { Box, CloudDownload, Layers3, Loader2, Trash2 } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useI18n } from '../../i18n/LocaleProvider';
 import { ResetDataFailureDetails } from './ResetDataFailureDetails';
+import { InstallProblemBanner } from './InstallProblemBanner';
 import type { useInstallPage } from './useInstallPage';
 
 type InstallPage = ReturnType<typeof useInstallPage>;
@@ -27,6 +21,9 @@ export function InstallActionsPanel({
   onOpenResetBepinexModal: () => void;
 }) {
   const { t } = useI18n();
+  const state = page.installState;
+
+  if (!state) return null;
 
   return (
     <section>
@@ -35,11 +32,11 @@ export function InstallActionsPanel({
       </h3>
       <div className="bpp-install-maintenance-grid">
         <MaintenanceAction
-          disabled={page.busy || !page.state.actions.can_reset_data}
+          disabled={page.busy || !state.actions.can_reset_data}
           busy={page.action === 'resetData'}
           icon={<Layers3 size={22} />}
           title={
-            page.state.game.path_valid && !page.state.has_resettable_data
+            state.game.path_valid && !state.has_resettable_data
               ? t('actionNoResettableData')
               : t('actionResetData')
           }
@@ -47,7 +44,7 @@ export function InstallActionsPanel({
           onClick={onOpenResetDataModal}
         />
         <MaintenanceAction
-          disabled={page.busy || !page.state.actions.can_reset_bepinex}
+          disabled={page.busy || !state.actions.can_reset_bepinex}
           busy={page.action === 'resetBepinex'}
           icon={<Box size={22} />}
           title={t('actionResetBepinex')}
@@ -64,7 +61,7 @@ export function InstallActionsPanel({
         />
         <MaintenanceAction
           danger
-          disabled={page.busy || !page.state.actions.can_uninstall}
+          disabled={page.busy || !state.actions.can_uninstall}
           busy={page.action === 'uninstall'}
           icon={<Trash2 size={22} />}
           title={t('actionUninstall')}
@@ -73,16 +70,18 @@ export function InstallActionsPanel({
         />
       </div>
 
-      {(page.error || page.message) && (
+      {page.actionProblem && (
+        <div className="mt-4">
+          <InstallProblemBanner problem={page.actionProblem} />
+        </div>
+      )}
+      {page.message && (
         <p
-          role={page.error ? 'alert' : 'status'}
-          aria-live={page.error ? 'assertive' : 'polite'}
-          className={`selectable mt-4 flex items-start gap-2 text-xs ${page.error ? 'text-[#d66a5d]' : 'text-[#58b66f]'}`}
+          role="status"
+          aria-live="polite"
+          className="selectable mt-4 flex items-start gap-2 text-xs text-[#58b66f]"
         >
-          {page.error && (
-            <AlertTriangle size={14} className="mt-0.5 shrink-0" />
-          )}
-          <span>{page.error ?? page.message}</span>
+          <span>{page.message}</span>
         </p>
       )}
       {page.resetDataFailurePaths.length > 0 && (

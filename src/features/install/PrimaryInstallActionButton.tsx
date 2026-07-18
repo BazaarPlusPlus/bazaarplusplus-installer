@@ -20,10 +20,10 @@ export function PrimaryInstallActionButton({
   const disabled =
     page.busy ||
     (isLaunch
-      ? !page.state.actions.can_launch
+      ? !page.installState?.actions.can_launch
       : mode === 'reinstall'
-        ? !page.state.actions.can_reinstall
-        : !page.state.actions.can_install);
+        ? !page.installState?.actions.can_reinstall
+        : !page.installState?.actions.can_install);
   const label = isLaunch
     ? t('launchGame')
     : mode === 'reinstall'

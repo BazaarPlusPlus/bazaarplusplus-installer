@@ -38,6 +38,7 @@ export function InstallConfirmModal({
       confirmLabel={t('confirmInstall')}
       busyLabel={t('installing')}
       busy={busy}
+      activeDismissalPolicy={{ kind: 'blocked' }}
       onConfirm={onConfirm}
       onClose={onClose}
     >
@@ -48,9 +49,7 @@ export function InstallConfirmModal({
           className="bpp-install-card-icon"
         />
         <div className="bpp-install-card-copy">
-          <p className="bpp-install-card-title">
-              {t('tutorialKicker')}
-          </p>
+          <p className="bpp-install-card-title">{t('tutorialKicker')}</p>
           <p className="bpp-install-card-description">
             {t('installModalBody')}
           </p>

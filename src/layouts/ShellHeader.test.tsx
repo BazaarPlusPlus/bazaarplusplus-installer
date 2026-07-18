@@ -5,33 +5,51 @@ import { UpdaterProvider } from '../features/about/UpdaterProvider';
 import { LocaleProvider } from '../i18n/LocaleProvider';
 import { ShellHeader } from './ShellHeader';
 
-const app: AppBootstrapController = {
-  bootstrap: {
-    app_version: '4.4.0',
-    bundled_bpp_version: '4.4.0',
-    links: {
-      github: 'https://example.com/github',
-      x: 'https://example.com/x',
-      bilibili_project: 'https://example.com/bilibili-project',
-      bilibili_author: 'https://example.com/bilibili-author',
-      xiaohongshu: 'https://example.com/xiaohongshu',
-      kofi: 'https://example.com/kofi',
-      supporter_list: 'https://example.com/supporters'
-    },
-    credits: [],
-    licenses: []
-  }
+const bootstrap: AppBootstrapController['bootstrap'] = {
+  app_version: '4.4.0',
+  bundled_bpp_version: '4.4.0',
+  links: {
+    github: 'https://example.com/github',
+    x: 'https://example.com/x',
+    bilibili_project: 'https://example.com/bilibili-project',
+    bilibili_author: 'https://example.com/bilibili-author',
+    bilibili_core_dev: 'https://example.com/bilibili-core-dev',
+    xiaohongshu: 'https://example.com/xiaohongshu',
+    kofi: 'https://example.com/kofi',
+    supporter_list: 'https://example.com/supporters'
+  },
+  credits: [],
+  licenses: []
 };
 
-function renderOpenHeader() {
+const app: AppBootstrapController = {
+  bootstrap,
+  resource: {
+    phase: 'authoritative',
+    data: bootstrap,
+    source: 'native',
+    unavailableFields: [],
+    problem: null,
+    retrying: false
+  },
+  retry: () => undefined
+};
+
+function renderHeader({
+  showBilibili = false,
+  showSupport = false
+}: {
+  showBilibili?: boolean;
+  showSupport?: boolean;
+} = {}) {
   return renderToStaticMarkup(
     <LocaleProvider>
       <UpdaterProvider>
         <ShellHeader
           app={app}
-          showBilibili
+          showBilibili={showBilibili}
           onToggleBilibili={() => undefined}
-          showSupport={false}
+          showSupport={showSupport}
           onToggleSupport={() => undefined}
           onOpenPayment={() => undefined}
           onCloseBilibili={() => undefined}
@@ -44,22 +62,27 @@ function renderOpenHeader() {
 
 describe('ShellHeader', () => {
   it('shows the brand logo and language icon without an update check', () => {
-    const html = renderOpenHeader();
+    const html = renderHeader();
 
     expect(html).not.toContain('检查更新');
     expect(html).toContain('lucide-languages');
     expect(html).toContain('bpp-brand-logo');
   });
 
-  it('shows the author entry before the project entry', () => {
-    const html = renderOpenHeader();
+  it('shows the author, CoreDev, and project entries in order', () => {
+    const html = renderHeader({ showBilibili: true });
 
     const authorHrefIndex = html.indexOf('https://example.com/bilibili-author');
+    const coreDevHrefIndex = html.indexOf(
+      'https://example.com/bilibili-core-dev'
+    );
     const projectHrefIndex = html.indexOf(
       'https://example.com/bilibili-project'
     );
     const authorIndex = html.indexOf('仓鼠小猫', authorHrefIndex);
     const authorSubtitleIndex = html.indexOf('BazaarLine 作者', authorIndex);
+    const coreDevIndex = html.indexOf('hisenser', coreDevHrefIndex);
+    const coreDevSubtitleIndex = html.indexOf('CoreDev', coreDevIndex);
     const projectIndex = html.indexOf('BazaarPlusPlus', projectHrefIndex);
     const projectSubtitleIndex = html.indexOf(
       '教程、演示和项目内容',
@@ -67,12 +90,31 @@ describe('ShellHeader', () => {
     );
 
     expect(authorHrefIndex).toBeGreaterThanOrEqual(0);
+    expect(coreDevHrefIndex).toBeGreaterThanOrEqual(0);
     expect(projectHrefIndex).toBeGreaterThanOrEqual(0);
     expect(authorIndex).toBeGreaterThanOrEqual(0);
     expect(authorSubtitleIndex).toBeGreaterThan(authorIndex);
-    expect(authorHrefIndex).toBeLessThan(projectHrefIndex);
-    expect(authorIndex).toBeLessThan(projectIndex);
-    expect(authorSubtitleIndex).toBeLessThan(projectIndex);
+    expect(coreDevIndex).toBeGreaterThanOrEqual(0);
+    expect(coreDevSubtitleIndex).toBeGreaterThan(coreDevIndex);
+    expect(authorHrefIndex).toBeLessThan(coreDevHrefIndex);
+    expect(coreDevHrefIndex).toBeLessThan(projectHrefIndex);
+    expect(authorIndex).toBeLessThan(coreDevIndex);
+    expect(authorSubtitleIndex).toBeLessThan(coreDevIndex);
+    expect(coreDevSubtitleIndex).toBeLessThan(projectIndex);
     expect(projectSubtitleIndex).toBeGreaterThan(projectIndex);
+  });
+
+  it('exposes controlled keyboard-operable disclosure semantics', () => {
+    const closed = renderHeader();
+    const bilibiliOpen = renderHeader({ showBilibili: true });
+    const supportOpen = renderHeader({ showSupport: true });
+
+    expect(closed).toContain('aria-controls="shell-bilibili-menu"');
+    expect(closed).toContain('aria-controls="shell-support-menu"');
+    expect(closed.match(/aria-expanded="false"/g)).toHaveLength(2);
+    expect(bilibiliOpen).toContain('id="shell-bilibili-menu"');
+    expect(bilibiliOpen).toContain('aria-expanded="true"');
+    expect(supportOpen).toContain('id="shell-support-menu"');
+    expect(supportOpen).toContain('aria-expanded="true"');
   });
 });

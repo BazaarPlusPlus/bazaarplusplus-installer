@@ -3,7 +3,7 @@ use std::{collections::HashMap, path::Path, time::Duration};
 use rusqlite::{params, params_from_iter, Connection, OpenFlags, OptionalExtension};
 
 use crate::history::dto::{HistoryBattleRow, HistorySummary};
-use crate::history::mapper::map_battle_row;
+use crate::history::mapper::{map_battle_row, BattleFields, BattleVideoFields};
 
 pub struct RunRow {
     pub run_id: String,
@@ -64,8 +64,7 @@ pub fn table_exists(conn: &Connection, table_name: &str) -> Result<bool, String>
 }
 
 pub fn sql_placeholders(count: usize) -> String {
-    std::iter::repeat("?")
-        .take(count)
+    std::iter::repeat_n("?", count)
         .collect::<Vec<_>>()
         .join(", ")
 }
@@ -76,8 +75,8 @@ pub fn load_summary(conn: &Connection) -> Result<HistorySummary, String> {
             "
             select
               count(*) as runs,
-              sum(case when status = 'completed' then 1 else 0 end) as completed_runs,
-              sum(case when status = 'completed' and coalesce(victories, 0) >= 10 then 1 else 0 end) as win_runs,
+              coalesce(sum(case when status = 'completed' then 1 else 0 end), 0) as completed_runs,
+              coalesce(sum(case when status = 'completed' and coalesce(victories, 0) >= 10 then 1 else 0 end), 0) as win_runs,
               max(coalesce(ended_at_utc, last_seen_at_utc, started_at_utc)) as last_run_at_utc
             from runs
             ",
@@ -159,6 +158,19 @@ fn map_run_row_from_statement(row: &rusqlite::Row<'_>) -> rusqlite::Result<RunRo
         final_hour: row.get(10)?,
         final_player_rank: row.get(11)?,
         final_player_rating: row.get(12)?,
+    })
+}
+
+fn map_battle_fields(row: &rusqlite::Row<'_>) -> rusqlite::Result<BattleFields> {
+    Ok(BattleFields {
+        battle_id: row.get(0)?,
+        day: row.get(1)?,
+        hour: row.get(2)?,
+        result: row.get::<_, Option<String>>(3)?,
+        opponent_hero: row.get(4)?,
+        opponent_name: row.get(5)?,
+        opponent_rank: row.get(6)?,
+        opponent_rating: row.get(7)?,
     })
 }
 
@@ -269,18 +281,13 @@ pub fn load_battle_rows(conn: &Connection, run_id: &str) -> Result<Vec<HistoryBa
             .query_map([run_id], |row| {
                 let video_id: Option<String> = row.get(8)?;
                 Ok(map_battle_row(
-                    row.get(0)?,
-                    row.get(1)?,
-                    row.get(2)?,
-                    row.get::<_, Option<String>>(3)?,
-                    row.get(4)?,
-                    row.get(5)?,
-                    row.get(6)?,
-                    row.get(7)?,
-                    video_id,
-                    row.get(9).ok().flatten(),
-                    row.get(10).ok().flatten(),
-                    row.get(11).ok().flatten(),
+                    map_battle_fields(row)?,
+                    video_id.map(|video_id| BattleVideoFields {
+                        video_id,
+                        status: row.get(9).ok().flatten(),
+                        file_size_bytes: row.get(10).ok().flatten(),
+                        duration_ms: row.get(11).ok().flatten(),
+                    }),
                 ))
             })
             .map_err(|err| err.to_string())?;
@@ -303,20 +310,7 @@ pub fn load_battle_rows(conn: &Connection, run_id: &str) -> Result<Vec<HistoryBa
         .map_err(|err| err.to_string())?;
     let rows = stmt
         .query_map([run_id], |row| {
-            Ok(map_battle_row(
-                row.get(0)?,
-                row.get(1)?,
-                row.get(2)?,
-                row.get::<_, Option<String>>(3)?,
-                row.get(4)?,
-                row.get(5)?,
-                row.get(6)?,
-                row.get(7)?,
-                None,
-                None,
-                None,
-                None,
-            ))
+            Ok(map_battle_row(map_battle_fields(row)?, None))
         })
         .map_err(|err| err.to_string())?;
     rows.collect::<Result<Vec<_>, _>>()
