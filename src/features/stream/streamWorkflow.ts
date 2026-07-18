@@ -3,23 +3,24 @@ import type {
   StreamOverlayDisplayMode,
   StreamServiceStatus
 } from '../../types/backend';
+import { defaultCropSettings } from '../../api/previewDefaults';
 import {
-  defaultCropSettings,
-  idleStreamStatus
-} from '../../api/previewDefaults';
-import { toErrorMessage } from '../shared/errors';
+  streamProblemFromError,
+  streamRuntimeProblem,
+  type StreamNotice,
+  type StreamProblem,
+  type StreamProblemCode
+} from './streamProblems';
 
-export type StreamAction =
-  | 'restart'
-  | 'copy'
-  | 'open_overlay'
-  | 'open_settings'
-  | 'crop'
-  | 'display_mode'
-  | 'window';
+export type StreamCapabilityPhase =
+  | 'loading'
+  | 'available'
+  | 'degraded'
+  | 'unavailable';
 
-export type StreamPagePhase = 'error' | 'starting' | 'running' | 'idle';
-export type StreamFeedbackTone = 'success' | 'error';
+type StatusOperation = 'restart' | 'window';
+type CropOperation = 'load' | 'crop' | 'display_mode' | 'reset';
+type OneOffAction = 'copy' | 'open_overlay' | 'open_settings';
 
 export interface StreamCommandPort {
   ensureSession(): Promise<StreamServiceStatus>;
@@ -49,50 +50,51 @@ export interface StreamOpener {
   open(url: string): Promise<void>;
 }
 
-export interface StreamWorkflowCopy {
-  statusError: string;
-  statusStarting: string;
-  statusRunning: string;
-  statusIdle: string;
-  startingDetail: string;
-  idleDetail: string;
-  portDetail(port: number): string;
-  dbConnected: string;
-  dbMissing: string;
-  windowLatest: string;
-  windowOffset(count: number): string;
-  copied: string;
-  copyFailed: string;
-  cropSaved: string;
-  cropReset: string;
-}
-
 export interface StreamPageSnapshot {
-  status: StreamServiceStatus;
-  cropSettings: StreamOverlayCropSettingsPayload;
-  cropCode: string;
-  phase: StreamPagePhase;
-  statusLabel: string;
-  statusDetail: string;
-  dbLabel: string;
-  windowLabel: string;
-  action: StreamAction | null;
-  error: string | null;
-  feedback: { text: string; tone: StreamFeedbackTone } | null;
-  obsUrl: string | null;
-  settingsUrl: string | null;
-  isBusy: boolean;
-  canOpenOverlay: boolean;
-  canCopyObsUrl: boolean;
-  canOpenSettings: boolean;
-  canRestart: boolean;
-  canMoveMoreHistory: boolean;
-  canMoveLessHistory: boolean;
-  canEditCrop: boolean;
+  service: {
+    phase: Extract<StreamCapabilityPhase, 'loading' | 'available' | 'degraded'>;
+    status: StreamServiceStatus | null;
+    problem: StreamProblem | null;
+    operation: Extract<StatusOperation, 'restart'> | null;
+    canRestart: boolean;
+  };
+  polling: {
+    phase: Extract<StreamCapabilityPhase, 'loading' | 'available' | 'degraded'>;
+    freshness: 'unknown' | 'fresh' | 'stale';
+    problem: StreamProblem | null;
+    operation: 'poll' | 'retry' | null;
+  };
+  window: {
+    phase: StreamCapabilityPhase;
+    problem: StreamProblem | null;
+    operation: Extract<StatusOperation, 'window'> | null;
+    canMoveMoreHistory: boolean;
+    canMoveLessHistory: boolean;
+  };
+  crop: {
+    phase: Extract<StreamCapabilityPhase, 'loading' | 'available' | 'degraded'>;
+    settings: StreamOverlayCropSettingsPayload;
+    code: string;
+    problem: StreamProblem | null;
+    operation: CropOperation | null;
+    canEdit: boolean;
+  };
+  oneOff: {
+    operations: Record<OneOffAction, boolean>;
+    problems: Record<OneOffAction, StreamProblem | null>;
+    obsUrl: string | null;
+    settingsUrl: string | null;
+    canOpenOverlay: boolean;
+    canCopyObsUrl: boolean;
+    canOpenSettings: boolean;
+  };
+  notice: StreamNotice | null;
 }
 
 export interface StreamWorkflowIntents {
   restart(): Promise<boolean>;
+  retryStatus(): Promise<boolean>;
+  reloadCropSettings(): Promise<boolean>;
   copyObsUrl(): Promise<boolean>;
   openOverlay(): Promise<boolean>;
   openSettings(): Promise<boolean>;
@@ -116,20 +118,26 @@ interface StreamWorkflowPorts {
   scheduler: StreamScheduler;
   clipboard: StreamClipboard;
   opener: StreamOpener;
-  copy: StreamWorkflowCopy;
 }
 
 interface MutableState {
-  status: StreamServiceStatus;
+  status: StreamServiceStatus | null;
+  serviceLoading: boolean;
+  serviceProblem: StreamProblem | null;
+  pollingFreshness: 'unknown' | 'fresh' | 'stale';
+  pollingProblem: StreamProblem | null;
+  pollingRequests: number;
+  manualPollingRequests: number;
   cropSettings: StreamOverlayCropSettingsPayload;
   cropCode: string;
-  loading: boolean;
-  action: StreamAction | null;
-  actionError: string | null;
-  statusLoadError: string | null;
-  cropLoadError: string | null;
-  pollError: string | null;
-  transient: { text: string; tone: StreamFeedbackTone } | null;
+  cropLoading: boolean;
+  cropProblem: StreamProblem | null;
+  statusOperation: StatusOperation | null;
+  windowProblem: StreamProblem | null;
+  cropOperation: CropOperation | null;
+  oneOffOperations: Set<OneOffAction>;
+  oneOffProblems: Record<OneOffAction, StreamProblem | null>;
+  notice: StreamNotice | null;
 }
 
 const POLL_INTERVAL_MS = 2_000;
@@ -138,31 +146,21 @@ const TRANSIENT_MESSAGE_MS = 3_000;
 
 class DefaultStreamWorkflow implements StreamWorkflow {
   private readonly listeners = new Set<() => void>();
-  private state: MutableState = {
-    status: idleStreamStatus,
-    cropSettings: defaultCropSettings,
-    cropCode: defaultCropSettings.code,
-    loading: true,
-    action: null,
-    actionError: null,
-    statusLoadError: null,
-    cropLoadError: null,
-    pollError: null,
-    transient: null
-  };
+  private state: MutableState = initialState();
   private snapshot: StreamPageSnapshot;
   private started = false;
   private disposed = false;
   private lifecycleEpoch = 0;
   private statusEpoch = 0;
   private latestPollRequest = 0;
-  private latestSuccessfulPollRequest = 0;
   private consecutivePollFailures = 0;
   private intervalHandle: unknown = null;
-  private messageTimeoutHandle: unknown = null;
+  private noticeTimeoutHandle: unknown = null;
 
   readonly intents: StreamWorkflowIntents = {
     restart: () => this.restart(),
+    retryStatus: () => this.poll(true),
+    reloadCropSettings: () => this.reloadCropSettings(),
     copyObsUrl: () => this.copyObsUrl(),
     openOverlay: () => this.openOverlay(),
     openSettings: () => this.openSettings(),
@@ -189,40 +187,19 @@ class DefaultStreamWorkflow implements StreamWorkflow {
     this.started = true;
     this.disposed = false;
     const lifecycle = ++this.lifecycleEpoch;
-    this.state.loading = true;
-    this.state.action = null;
-    this.state.actionError = null;
-    this.state.statusLoadError = null;
-    this.state.cropLoadError = null;
-    this.state.pollError = null;
+    const statusEpoch = ++this.statusEpoch;
+    this.state = initialState();
     this.consecutivePollFailures = 0;
-    this.clearTransient();
+    this.clearNoticeTimer();
     this.publish();
-    const epoch = ++this.statusEpoch;
-    const [statusResult, cropResult] = await Promise.allSettled([
-      this.ports.commands.ensureSession(),
-      this.ports.commands.loadCropSettings()
-    ]);
+
+    const statusLoad = this.loadInitialStatus(lifecycle, statusEpoch);
+    const cropLoad = this.loadInitialCrop(lifecycle);
+    await Promise.all([statusLoad, cropLoad]);
     if (!this.isCurrentLifecycle(lifecycle)) return;
 
-    if (statusResult.status === 'fulfilled' && epoch === this.statusEpoch) {
-      this.state.status = statusResult.value;
-      this.state.statusLoadError = null;
-    } else if (statusResult.status === 'rejected') {
-      this.state.statusLoadError = toErrorMessage(statusResult.reason);
-    }
-
-    if (cropResult.status === 'fulfilled') {
-      this.applyCropSettings(cropResult.value);
-      this.state.cropLoadError = null;
-    } else {
-      this.state.cropLoadError = toErrorMessage(cropResult.reason);
-    }
-
-    this.state.loading = false;
-    this.publish();
     this.intervalHandle = this.ports.scheduler.setInterval(
-      () => void this.poll(),
+      () => void this.poll(false),
       POLL_INTERVAL_MS
     );
   }
@@ -234,107 +211,232 @@ class DefaultStreamWorkflow implements StreamWorkflow {
     this.lifecycleEpoch += 1;
     this.statusEpoch += 1;
     this.latestPollRequest += 1;
-    this.state.action = null;
+    this.state.statusOperation = null;
+    this.state.cropOperation = null;
+    this.state.oneOffOperations.clear();
     if (this.intervalHandle !== null) {
       this.ports.scheduler.clearInterval(this.intervalHandle);
       this.intervalHandle = null;
     }
-    this.clearMessageTimer();
+    this.clearNoticeTimer();
     this.listeners.clear();
   }
 
-  private async poll() {
-    if (this.disposed || this.state.action !== null) return;
+  private async loadInitialStatus(lifecycle: number, epoch: number) {
+    try {
+      const status = await this.ports.commands.ensureSession();
+      if (!this.isCurrentLifecycle(lifecycle) || epoch !== this.statusEpoch) {
+        return;
+      }
+      this.applyStatus(status);
+    } catch (caught) {
+      if (!this.isCurrentLifecycle(lifecycle) || epoch !== this.statusEpoch) {
+        return;
+      }
+      this.state.serviceProblem = streamProblemFromError(
+        caught,
+        'stream_service_failed',
+        { operation: 'ensure' }
+      );
+      this.state.pollingFreshness = 'unknown';
+    } finally {
+      if (this.isCurrentLifecycle(lifecycle) && epoch === this.statusEpoch) {
+        this.state.serviceLoading = false;
+        this.publish();
+      }
+    }
+  }
+
+  private async loadInitialCrop(lifecycle: number) {
+    try {
+      const settings = await this.ports.commands.loadCropSettings();
+      if (!this.isCurrentLifecycle(lifecycle)) return;
+      this.applyCropSettings(settings);
+      this.state.cropProblem = null;
+    } catch (caught) {
+      if (!this.isCurrentLifecycle(lifecycle)) return;
+      this.state.cropProblem = streamProblemFromError(
+        caught,
+        'stream_crop_failed',
+        { operation: 'load' }
+      );
+    } finally {
+      if (this.isCurrentLifecycle(lifecycle)) {
+        this.state.cropLoading = false;
+        this.publish();
+      }
+    }
+  }
+
+  private async poll(manual: boolean): Promise<boolean> {
+    if (this.disposed || this.state.statusOperation !== null) return false;
     const lifecycle = this.lifecycleEpoch;
     const epoch = this.statusEpoch;
     const request = ++this.latestPollRequest;
+    this.state.pollingRequests += 1;
+    if (manual) this.state.manualPollingRequests += 1;
+    this.publish();
+
     try {
       const status = await this.ports.commands.getStatus();
       if (
         !this.isCurrentLifecycle(lifecycle) ||
         epoch !== this.statusEpoch ||
         request !== this.latestPollRequest
-      )
-        return;
-      this.state.status = status;
-      this.state.statusLoadError = null;
-      this.state.pollError = null;
-      this.latestSuccessfulPollRequest = request;
-      this.consecutivePollFailures = 0;
-      this.publish();
+      ) {
+        return false;
+      }
+      this.applyStatus(status);
+      return true;
     } catch (caught) {
       if (
         !this.isCurrentLifecycle(lifecycle) ||
         epoch !== this.statusEpoch ||
-        request < this.latestSuccessfulPollRequest
-      )
-        return;
+        request !== this.latestPollRequest
+      ) {
+        return false;
+      }
       this.consecutivePollFailures += 1;
       if (this.consecutivePollFailures >= POLL_FAILURE_THRESHOLD) {
-        this.state.pollError = toErrorMessage(caught);
+        this.state.pollingFreshness = 'stale';
+        this.state.pollingProblem = streamProblemFromError(
+          caught,
+          'stream_poll_failed',
+          { operation: 'poll_status' }
+        );
+      }
+      return false;
+    } finally {
+      if (this.isCurrentLifecycle(lifecycle)) {
+        this.state.pollingRequests = Math.max(
+          0,
+          this.state.pollingRequests - 1
+        );
+        if (manual) {
+          this.state.manualPollingRequests = Math.max(
+            0,
+            this.state.manualPollingRequests - 1
+          );
+        }
         this.publish();
       }
     }
   }
 
-  private restart() {
-    return this.runAction(
-      'restart',
-      async (lifecycle) => {
-        await this.ports.commands.restartSession();
-        const status = await this.ports.commands.getStatus();
-        if (!this.isCurrentLifecycle(lifecycle)) return;
-        this.state.status = status;
-        this.state.statusLoadError = null;
-        this.state.pollError = null;
-        this.consecutivePollFailures = 0;
-      },
-      { invalidateStatus: true }
-    );
+  private async restart(): Promise<boolean> {
+    if (
+      this.disposed ||
+      this.state.serviceLoading ||
+      this.state.statusOperation !== null
+    ) {
+      return false;
+    }
+    const lifecycle = this.lifecycleEpoch;
+    this.state.statusOperation = 'restart';
+    this.state.serviceProblem = null;
+    this.invalidateStatusRequests();
+    this.publish();
+
+    try {
+      const status = await this.ports.commands.restartSession();
+      if (!this.isCurrentLifecycle(lifecycle)) return false;
+      this.applyStatus(status);
+      return true;
+    } catch (caught) {
+      if (this.isCurrentLifecycle(lifecycle)) {
+        this.state.serviceProblem = streamProblemFromError(
+          caught,
+          'stream_service_failed',
+          { operation: 'restart' }
+        );
+        this.state.pollingFreshness = 'stale';
+      }
+      return false;
+    } finally {
+      if (this.isCurrentLifecycle(lifecycle)) {
+        this.state.statusOperation = null;
+        this.publish();
+      }
+    }
+  }
+
+  private async reloadCropSettings(): Promise<boolean> {
+    if (
+      this.disposed ||
+      this.state.cropLoading ||
+      this.state.cropOperation !== null
+    ) {
+      return false;
+    }
+    const lifecycle = this.lifecycleEpoch;
+    this.state.cropLoading = true;
+    this.state.cropOperation = 'load';
+    this.state.cropProblem = null;
+    this.publish();
+    try {
+      const settings = await this.ports.commands.loadCropSettings();
+      if (!this.isCurrentLifecycle(lifecycle)) return false;
+      this.applyCropSettings(settings);
+      return true;
+    } catch (caught) {
+      if (this.isCurrentLifecycle(lifecycle)) {
+        this.state.cropProblem = streamProblemFromError(
+          caught,
+          'stream_crop_failed',
+          { operation: 'load' }
+        );
+      }
+      return false;
+    } finally {
+      if (this.isCurrentLifecycle(lifecycle)) {
+        this.state.cropLoading = false;
+        this.state.cropOperation = null;
+        this.publish();
+      }
+    }
   }
 
   private copyObsUrl() {
-    return this.runAction(
+    const url = this.state.status?.overlay_url;
+    if (!url) return Promise.resolve(false);
+    return this.runOneOff(
       'copy',
-      async (lifecycle) => {
-        const url = this.state.status.overlay_url;
-        if (!url) return;
-        try {
-          await this.ports.clipboard.writeText(url);
-          if (this.isCurrentLifecycle(lifecycle)) {
-            this.showTransient(this.ports.copy.copied, 'success');
-          }
-        } catch {
-          if (this.isCurrentLifecycle(lifecycle)) {
-            this.showTransient(this.ports.copy.copyFailed, 'error');
-          }
-        }
-      },
-      { clearTransient: true }
+      () => this.ports.clipboard.writeText(url),
+      'stream_copy_failed',
+      { operation: 'copy_obs_url' },
+      { code: 'stream_obs_url_copied', params: {} }
     );
   }
 
   private openOverlay() {
-    return this.runAction('open_overlay', async () => {
-      const url = this.state.status.overlay_url;
-      if (url) await this.ports.opener.open(url);
-    });
+    const url = this.state.status?.overlay_url;
+    if (!url) return Promise.resolve(false);
+    return this.runOneOff(
+      'open_overlay',
+      () => this.ports.opener.open(url),
+      'stream_open_failed',
+      { operation: 'open_overlay' }
+    );
   }
 
   private openSettings() {
-    return this.runAction('open_settings', async () => {
-      const url = this.state.status.settings_url;
-      if (url) await this.ports.opener.open(url);
-    });
+    const url = this.state.status?.settings_url;
+    if (!url) return Promise.resolve(false);
+    return this.runOneOff(
+      'open_settings',
+      () => this.ports.opener.open(url),
+      'stream_open_failed',
+      { operation: 'open_settings' }
+    );
   }
 
   private changeDisplayMode(displayMode: StreamOverlayDisplayMode) {
-    return this.runAction('display_mode', async (lifecycle) => {
-      const settings = await this.ports.commands.saveDisplayMode(displayMode);
-      if (!this.isCurrentLifecycle(lifecycle)) return;
-      this.applyCropSettings(settings, false);
-      this.state.cropLoadError = null;
-    });
+    return this.runCropAction(
+      'display_mode',
+      () => this.ports.commands.saveDisplayMode(displayMode),
+      { operation: 'save_display_mode' },
+      false
+    );
   }
 
   private setCropCode(value: string) {
@@ -344,83 +446,153 @@ class DefaultStreamWorkflow implements StreamWorkflow {
   }
 
   private submitCropCode() {
-    return this.runAction(
+    return this.runCropAction(
       'crop',
-      async (lifecycle) => {
-        const settings = await this.ports.commands.applyCropCode(
-          this.state.cropCode.trim()
-        );
-        if (!this.isCurrentLifecycle(lifecycle)) return;
-        this.applyCropSettings(settings);
-        this.state.cropLoadError = null;
-        this.showTransient(this.ports.copy.cropSaved, 'success');
-      },
-      { clearTransient: true }
+      () => this.ports.commands.applyCropCode(this.state.cropCode.trim()),
+      { operation: 'apply_code' },
+      true,
+      { code: 'stream_crop_saved', params: {} }
     );
   }
 
   private resetCropCode() {
-    return this.runAction(
-      'crop',
-      async (lifecycle) => {
-        const settings = await this.ports.commands.resetCropSettings();
-        if (!this.isCurrentLifecycle(lifecycle)) return;
-        this.applyCropSettings(settings);
-        this.state.cropLoadError = null;
-        this.showTransient(this.ports.copy.cropReset, 'success');
-      },
-      { clearTransient: true }
+    return this.runCropAction(
+      'reset',
+      () => this.ports.commands.resetCropSettings(),
+      { operation: 'reset' },
+      true,
+      { code: 'stream_crop_reset', params: {} }
     );
   }
 
-  private moveWindow(delta: number) {
-    return this.runAction(
-      'window',
-      async (lifecycle) => {
-        const offset = Math.max(
-          0,
-          Math.trunc(this.state.status.active_window_offset + delta)
-        );
-        const status = await this.ports.commands.setWindow(offset);
-        if (!this.isCurrentLifecycle(lifecycle)) return;
-        this.state.status = status;
-        this.state.statusLoadError = null;
-        this.state.pollError = null;
-      },
-      { invalidateStatus: true }
-    );
-  }
-
-  private async runAction(
-    action: StreamAction,
-    task: (lifecycle: number) => Promise<void>,
-    options: { clearTransient?: boolean; invalidateStatus?: boolean } = {}
-  ) {
-    if (this.disposed || this.state.action !== null) return false;
-    const lifecycle = this.lifecycleEpoch;
-    this.state.action = action;
-    this.state.actionError = null;
-    if (options.invalidateStatus) {
-      this.statusEpoch += 1;
-      this.latestPollRequest += 1;
+  private async moveWindow(delta: number): Promise<boolean> {
+    if (
+      this.disposed ||
+      this.state.statusOperation !== null ||
+      !this.state.status?.running ||
+      this.state.pollingFreshness !== 'fresh'
+    ) {
+      return false;
     }
-    if (options.clearTransient) this.clearTransient();
+    const lifecycle = this.lifecycleEpoch;
+    const offset = Math.max(
+      0,
+      Math.trunc(this.state.status.active_window_offset + delta)
+    );
+    this.state.statusOperation = 'window';
+    this.state.windowProblem = null;
+    this.invalidateStatusRequests();
     this.publish();
 
     try {
-      await task(lifecycle);
+      const status = await this.ports.commands.setWindow(offset);
+      if (!this.isCurrentLifecycle(lifecycle)) return false;
+      this.applyStatus(status);
       return true;
     } catch (caught) {
       if (this.isCurrentLifecycle(lifecycle)) {
-        this.state.actionError = toErrorMessage(caught);
+        this.state.windowProblem = streamProblemFromError(
+          caught,
+          'stream_window_failed',
+          { operation: 'set_window', offset: String(offset) }
+        );
       }
       return false;
     } finally {
       if (this.isCurrentLifecycle(lifecycle)) {
-        this.state.action = null;
+        this.state.statusOperation = null;
         this.publish();
       }
     }
+  }
+
+  private async runCropAction(
+    operation: Exclude<CropOperation, 'load'>,
+    task: () => Promise<StreamOverlayCropSettingsPayload>,
+    params: Record<string, string>,
+    updateCode: boolean,
+    notice: StreamNotice | null = null
+  ): Promise<boolean> {
+    if (
+      this.disposed ||
+      this.state.cropLoading ||
+      this.state.cropOperation !== null
+    ) {
+      return false;
+    }
+    const lifecycle = this.lifecycleEpoch;
+    this.state.cropOperation = operation;
+    this.state.cropProblem = null;
+    if (notice) this.clearNotice();
+    this.publish();
+
+    try {
+      const settings = await task();
+      if (!this.isCurrentLifecycle(lifecycle)) return false;
+      this.applyCropSettings(settings, updateCode);
+      if (notice) this.showNotice(notice);
+      return true;
+    } catch (caught) {
+      if (this.isCurrentLifecycle(lifecycle)) {
+        this.state.cropProblem = streamProblemFromError(
+          caught,
+          'stream_crop_failed',
+          params
+        );
+      }
+      return false;
+    } finally {
+      if (this.isCurrentLifecycle(lifecycle)) {
+        this.state.cropOperation = null;
+        this.publish();
+      }
+    }
+  }
+
+  private async runOneOff(
+    action: OneOffAction,
+    task: () => Promise<void>,
+    fallbackCode: StreamProblemCode,
+    params: Record<string, string>,
+    notice: StreamNotice | null = null
+  ): Promise<boolean> {
+    if (this.disposed || this.state.oneOffOperations.has(action)) return false;
+    const lifecycle = this.lifecycleEpoch;
+    this.state.oneOffOperations.add(action);
+    this.state.oneOffProblems[action] = null;
+    if (notice) this.clearNotice();
+    this.publish();
+
+    try {
+      await task();
+      if (!this.isCurrentLifecycle(lifecycle)) return false;
+      if (notice) this.showNotice(notice);
+      return true;
+    } catch (caught) {
+      if (this.isCurrentLifecycle(lifecycle)) {
+        this.state.oneOffProblems[action] = streamProblemFromError(
+          caught,
+          fallbackCode,
+          params
+        );
+      }
+      return false;
+    } finally {
+      if (this.isCurrentLifecycle(lifecycle)) {
+        this.state.oneOffOperations.delete(action);
+        this.publish();
+      }
+    }
+  }
+
+  private applyStatus(status: StreamServiceStatus) {
+    this.state.status = status;
+    this.state.serviceProblem = status.last_error
+      ? streamRuntimeProblem(status.last_error)
+      : null;
+    this.state.pollingFreshness = 'fresh';
+    this.state.pollingProblem = null;
+    this.consecutivePollFailures = 0;
   }
 
   private applyCropSettings(
@@ -429,40 +601,36 @@ class DefaultStreamWorkflow implements StreamWorkflow {
   ) {
     this.state.cropSettings = settings;
     if (updateCode) this.state.cropCode = settings.code;
+    this.state.cropProblem = null;
   }
 
-  private showTransient(text: string, tone: StreamFeedbackTone) {
+  private invalidateStatusRequests() {
+    this.statusEpoch += 1;
+    this.latestPollRequest += 1;
+  }
+
+  private showNotice(notice: StreamNotice) {
     const lifecycle = this.lifecycleEpoch;
-    this.clearMessageTimer();
-    this.state.transient = { text, tone };
-    this.messageTimeoutHandle = this.ports.scheduler.setTimeout(() => {
-      this.messageTimeoutHandle = null;
+    this.clearNoticeTimer();
+    this.state.notice = notice;
+    this.noticeTimeoutHandle = this.ports.scheduler.setTimeout(() => {
+      this.noticeTimeoutHandle = null;
       if (!this.isCurrentLifecycle(lifecycle)) return;
-      this.state.transient = null;
+      this.state.notice = null;
       this.publish();
     }, TRANSIENT_MESSAGE_MS);
     this.publish();
   }
 
-  private clearTransient() {
-    this.clearMessageTimer();
-    this.state.transient = null;
+  private clearNotice() {
+    this.clearNoticeTimer();
+    this.state.notice = null;
   }
 
-  private clearMessageTimer() {
-    if (this.messageTimeoutHandle === null) return;
-    this.ports.scheduler.clearTimeout(this.messageTimeoutHandle);
-    this.messageTimeoutHandle = null;
-  }
-
-  private currentError() {
-    return (
-      this.state.actionError ??
-      this.state.statusLoadError ??
-      this.state.cropLoadError ??
-      this.state.pollError ??
-      this.state.status.last_error
-    );
+  private clearNoticeTimer() {
+    if (this.noticeTimeoutHandle === null) return;
+    this.ports.scheduler.clearTimeout(this.noticeTimeoutHandle);
+    this.noticeTimeoutHandle = null;
   }
 
   private isCurrentLifecycle(lifecycle: number) {
@@ -470,65 +638,91 @@ class DefaultStreamWorkflow implements StreamWorkflow {
   }
 
   private deriveSnapshot(): StreamPageSnapshot {
-    const error = this.currentError();
-    const isBusy = this.state.loading || this.state.action !== null;
-    const phase: StreamPagePhase = error
-      ? 'error'
-      : this.state.loading
-        ? 'starting'
-        : this.state.status.running
-          ? 'running'
-          : 'idle';
-    const statusLabel =
-      phase === 'error'
-        ? this.ports.copy.statusError
-        : phase === 'starting'
-          ? this.ports.copy.statusStarting
-          : phase === 'running'
-            ? this.ports.copy.statusRunning
-            : this.ports.copy.statusIdle;
-    const statusDetail = error
-      ? error
-      : phase === 'starting'
-        ? this.ports.copy.startingDetail
-        : phase === 'running' && this.state.status.port !== null
-          ? this.ports.copy.portDetail(this.state.status.port)
-          : this.ports.copy.idleDetail;
-    const controlsAvailable = !isBusy && error === null;
-    const running = this.state.status.running;
+    const status = this.state.status;
+    const servicePhase = this.state.serviceLoading
+      ? 'loading'
+      : this.state.serviceProblem
+        ? 'degraded'
+        : 'available';
+    const pollingPhase = this.state.serviceLoading
+      ? 'loading'
+      : this.state.pollingFreshness !== 'fresh'
+        ? 'degraded'
+        : 'available';
+    const authoritativeRunning =
+      status?.running === true &&
+      this.state.pollingFreshness === 'fresh' &&
+      this.state.serviceProblem === null;
+    const statusOperationBusy = this.state.statusOperation !== null;
+    const windowPhase: StreamCapabilityPhase = this.state.serviceLoading
+      ? 'loading'
+      : this.state.windowProblem
+        ? 'degraded'
+        : authoritativeRunning
+          ? 'available'
+          : 'unavailable';
+    const cropPhase = this.state.cropLoading
+      ? 'loading'
+      : this.state.cropProblem
+        ? 'degraded'
+        : 'available';
+    const copyBusy = this.state.oneOffOperations.has('copy');
+    const overlayBusy = this.state.oneOffOperations.has('open_overlay');
+    const settingsBusy = this.state.oneOffOperations.has('open_settings');
 
     return {
-      status: this.state.status,
-      cropSettings: this.state.cropSettings,
-      cropCode: this.state.cropCode,
-      phase,
-      statusLabel,
-      statusDetail,
-      dbLabel: this.state.status.db.found
-        ? this.ports.copy.dbConnected
-        : this.ports.copy.dbMissing,
-      windowLabel:
-        this.state.status.active_window_offset === 0
-          ? this.ports.copy.windowLatest
-          : this.ports.copy.windowOffset(
-              this.state.status.active_window_offset
-            ),
-      action: this.state.action,
-      error,
-      feedback: error ? { text: error, tone: 'error' } : this.state.transient,
-      obsUrl: this.state.status.overlay_url,
-      settingsUrl: this.state.status.settings_url,
-      isBusy,
-      canOpenOverlay:
-        controlsAvailable && running && this.state.status.overlay_url !== null,
-      canCopyObsUrl: !isBusy && this.state.status.overlay_url !== null,
-      canOpenSettings:
-        controlsAvailable && running && this.state.status.settings_url !== null,
-      canRestart: !isBusy,
-      canMoveMoreHistory: !isBusy && running,
-      canMoveLessHistory:
-        !isBusy && running && this.state.status.active_window_offset > 0,
-      canEditCrop: !isBusy
+      service: {
+        phase: servicePhase,
+        status,
+        problem: this.state.serviceProblem,
+        operation: this.state.statusOperation === 'restart' ? 'restart' : null,
+        canRestart: !this.state.serviceLoading && !statusOperationBusy
+      },
+      polling: {
+        phase: pollingPhase,
+        freshness: this.state.pollingFreshness,
+        problem: this.state.pollingProblem,
+        operation:
+          this.state.manualPollingRequests > 0
+            ? 'retry'
+            : this.state.pollingRequests > 0
+              ? 'poll'
+              : null
+      },
+      window: {
+        phase: windowPhase,
+        problem: this.state.windowProblem,
+        operation: this.state.statusOperation === 'window' ? 'window' : null,
+        canMoveMoreHistory: authoritativeRunning && !statusOperationBusy,
+        canMoveLessHistory:
+          authoritativeRunning &&
+          !statusOperationBusy &&
+          (status?.active_window_offset ?? 0) > 0
+      },
+      crop: {
+        phase: cropPhase,
+        settings: this.state.cropSettings,
+        code: this.state.cropCode,
+        problem: this.state.cropProblem,
+        operation: this.state.cropOperation,
+        canEdit: !this.state.cropLoading && this.state.cropOperation === null
+      },
+      oneOff: {
+        operations: {
+          copy: copyBusy,
+          open_overlay: overlayBusy,
+          open_settings: settingsBusy
+        },
+        problems: { ...this.state.oneOffProblems },
+        obsUrl: status?.overlay_url ?? null,
+        settingsUrl: status?.settings_url ?? null,
+        canOpenOverlay:
+          authoritativeRunning && !statusOperationBusy && !overlayBusy,
+        canCopyObsUrl: status?.overlay_url != null && !copyBusy,
+        canOpenSettings:
+          authoritativeRunning && !statusOperationBusy && !settingsBusy
+      },
+      notice: this.state.notice
     };
   }
 
@@ -537,6 +731,32 @@ class DefaultStreamWorkflow implements StreamWorkflow {
     this.snapshot = this.deriveSnapshot();
     for (const listener of this.listeners) listener();
   }
+}
+
+function initialState(): MutableState {
+  return {
+    status: null,
+    serviceLoading: true,
+    serviceProblem: null,
+    pollingFreshness: 'unknown',
+    pollingProblem: null,
+    pollingRequests: 0,
+    manualPollingRequests: 0,
+    cropSettings: defaultCropSettings,
+    cropCode: defaultCropSettings.code,
+    cropLoading: true,
+    cropProblem: null,
+    statusOperation: null,
+    windowProblem: null,
+    cropOperation: null,
+    oneOffOperations: new Set(),
+    oneOffProblems: {
+      copy: null,
+      open_overlay: null,
+      open_settings: null
+    },
+    notice: null
+  };
 }
 
 export function createStreamWorkflow(

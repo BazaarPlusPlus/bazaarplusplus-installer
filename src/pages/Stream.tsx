@@ -1,5 +1,6 @@
 import {
   AlertCircle,
+  AlertTriangle,
   Copy,
   ExternalLink,
   Maximize,
@@ -10,7 +11,14 @@ import {
 } from 'lucide-react';
 import type { StreamOverlayDisplayMode } from '../types/backend';
 import { PageShell } from '../components/ui/PageShell';
+import { ProblemBanner } from '../components/ui/ProblemBanner';
 import { useStreamPage } from '../features/stream/useStreamPage';
+import {
+  presentStreamProblem,
+  presentStreamSnapshot
+} from '../features/stream/streamPresentation';
+import type { StreamProblem } from '../features/stream/streamProblems';
+import { formatProblemDiagnostic } from '../features/shared/problems';
 import { useI18n } from '../i18n/LocaleProvider';
 import type { MessageKey } from '../i18n/messages';
 
@@ -26,8 +34,10 @@ const displayModes: Array<{
 export default function Stream() {
   const { t } = useI18n();
   const { snapshot, intents } = useStreamPage();
-  const { status, cropSettings } = snapshot;
-  const feedbackIsError = snapshot.feedback?.tone === 'error';
+  const presentation = presentStreamSnapshot(snapshot, t);
+  const status = snapshot.service.status;
+  const cropSettings = snapshot.crop.settings;
+  const statusTone = presentation.status.tone;
 
   return (
     <PageShell eyebrow="Stream" title={t('streamTitle')}>
@@ -37,38 +47,49 @@ export default function Stream() {
             <div className="flex items-center gap-3">
               <div
                 className={`flex items-center justify-center w-8 h-8 rounded-full border ${
-                  snapshot.phase === 'error'
+                  statusTone === 'degraded'
                     ? 'bg-[rgba(210,80,80,0.15)] border-[rgba(210,80,80,0.3)] text-[#d96d6d]'
-                    : status.running
-                      ? 'bg-[rgba(80,180,120,0.15)] border-[rgba(80,180,120,0.3)] text-[#6dd9a0]'
-                      : 'bg-[rgba(200,148,55,0.1)] border-[rgba(200,148,55,0.22)] text-[#e8c87a]'
+                    : statusTone === 'stale'
+                      ? 'bg-[rgba(232,200,122,0.12)] border-[rgba(232,200,122,0.3)] text-[#e8c87a]'
+                      : statusTone === 'running'
+                        ? 'bg-[rgba(80,180,120,0.15)] border-[rgba(80,180,120,0.3)] text-[#6dd9a0]'
+                        : 'bg-[rgba(200,148,55,0.1)] border-[rgba(200,148,55,0.22)] text-[#e8c87a]'
                 }`}
               >
-                {snapshot.phase === 'error' ? (
+                {statusTone === 'degraded' ? (
                   <AlertCircle size={16} />
-                ) : status.running ? (
+                ) : statusTone === 'stale' ? (
+                  <AlertTriangle size={16} />
+                ) : statusTone === 'running' ? (
                   <Radio size={16} className="animate-pulse" />
                 ) : (
                   <RefreshCw
                     size={16}
-                    className={snapshot.isBusy ? 'animate-spin' : ''}
+                    className={
+                      snapshot.service.phase === 'loading' ||
+                      snapshot.service.operation === 'restart'
+                        ? 'animate-spin'
+                        : ''
+                    }
                   />
                 )}
               </div>
               <div>
                 <h3 className="font-bold text-[#e8dcc8] flex items-center gap-2">
-                  {snapshot.statusLabel}
+                  {presentation.status.label}
                 </h3>
                 <p className="text-xs text-[rgba(200,170,120,0.8)] fira-code mt-0.5">
-                  {snapshot.statusDetail}
-                  {status.running ? ` · ${snapshot.dbLabel}` : ''}
+                  {presentation.status.detail}
+                  {status?.running && snapshot.polling.freshness === 'fresh'
+                    ? ` · ${presentation.dbLabel}`
+                    : ''}
                 </p>
               </div>
             </div>
             <div className="flex gap-2">
               <button
                 type="button"
-                disabled={!snapshot.canOpenOverlay}
+                disabled={!snapshot.oneOff.canOpenOverlay}
                 onClick={() => void intents.openOverlay()}
                 className="flex items-center gap-1.5 px-3 py-1.5 bg-[rgba(200,148,55,0.06)] border border-[rgba(180,130,48,0.2)] rounded-sm hover:bg-[rgba(200,148,55,0.12)] disabled:opacity-40 disabled:hover:bg-[rgba(200,148,55,0.06)] transition-colors text-xs text-[#e8dcc8]"
               >
@@ -76,20 +97,47 @@ export default function Stream() {
               </button>
               <button
                 type="button"
-                disabled={!snapshot.canRestart}
+                disabled={!snapshot.service.canRestart}
                 onClick={() => void intents.restart()}
                 className="flex items-center gap-1.5 px-3 py-1.5 bg-[rgba(200,148,55,0.06)] border border-[rgba(180,130,48,0.2)] rounded-sm hover:bg-[rgba(200,148,55,0.12)] disabled:opacity-40 disabled:hover:bg-[rgba(200,148,55,0.06)] transition-colors text-xs text-[#e8dcc8]"
               >
                 <RefreshCw
                   size={14}
                   className={
-                    snapshot.action === 'restart' ? 'animate-spin' : ''
+                    snapshot.service.operation === 'restart'
+                      ? 'animate-spin'
+                      : ''
                   }
                 />
                 {t('streamRestart')}
               </button>
             </div>
           </div>
+
+          {snapshot.service.problem && (
+            <StreamProblemBanner
+              problem={snapshot.service.problem}
+              onRetry={() => void intents.restart()}
+            />
+          )}
+          {snapshot.polling.problem && (
+            <StreamProblemBanner
+              problem={snapshot.polling.problem}
+              tone="warning"
+              actionLabel={t('streamRetryStatus')}
+              busy={snapshot.polling.operation === 'retry'}
+              onRetry={() => void intents.retryStatus()}
+            />
+          )}
+          {presentation.notice && (
+            <p
+              role="status"
+              aria-live="polite"
+              className="m-0 text-xs text-[rgba(109,217,160,0.86)]"
+            >
+              {presentation.notice}
+            </p>
+          )}
 
           <div className="h-px bg-gradient-to-r from-[rgba(200,148,55,0.3)] to-transparent opacity-50" />
 
@@ -106,29 +154,24 @@ export default function Stream() {
                 className="flex-1 px-3 py-2 bg-[rgba(0,0,0,0.4)] border border-[rgba(180,130,48,0.2)] rounded-sm fira-code text-sm text-[rgba(228,216,191,0.8)] overflow-hidden text-ellipsis whitespace-nowrap selectable"
                 aria-labelledby="stream-obs-url-label"
               >
-                {snapshot.obsUrl ?? t('streamObsPlaceholder')}
+                {snapshot.oneOff.obsUrl ?? t('streamObsPlaceholder')}
               </div>
               <button
                 type="button"
-                disabled={!snapshot.canCopyObsUrl}
+                disabled={!snapshot.oneOff.canCopyObsUrl}
                 onClick={() => void intents.copyObsUrl()}
                 className="flex items-center gap-2 px-4 py-2 bg-[rgba(200,148,55,0.1)] border border-[rgba(180,130,48,0.3)] rounded-sm hover:bg-[rgba(200,148,55,0.2)] disabled:opacity-40 disabled:hover:bg-[rgba(200,148,55,0.1)] transition-colors text-sm text-[#e8dcc8]"
               >
                 <Copy size={16} /> {t('copy')}
               </button>
             </div>
-            {snapshot.feedback && (
-              <p
-                role={feedbackIsError ? 'alert' : 'status'}
-                aria-live={feedbackIsError ? 'assertive' : 'polite'}
-                className={`m-0 text-xs ${
-                  feedbackIsError
-                    ? 'text-[#d96d6d]'
-                    : 'text-[rgba(109,217,160,0.86)]'
-                }`}
-              >
-                {snapshot.feedback.text}
-              </p>
+            {snapshot.oneOff.problems.copy && (
+              <StreamProblemBanner problem={snapshot.oneOff.problems.copy} />
+            )}
+            {snapshot.oneOff.problems.open_overlay && (
+              <StreamProblemBanner
+                problem={snapshot.oneOff.problems.open_overlay}
+              />
             )}
           </div>
 
@@ -139,12 +182,12 @@ export default function Stream() {
               </span>
               <div className="flex items-center gap-4">
                 <span className="text-xs text-[rgba(200,170,120,0.8)]">
-                  {snapshot.windowLabel}
+                  {presentation.windowLabel}
                 </span>
                 <div className="flex items-center gap-2 border-l border-[rgba(200,148,55,0.2)] pl-4">
                   <button
                     type="button"
-                    disabled={!snapshot.canMoveMoreHistory}
+                    disabled={!snapshot.window.canMoveMoreHistory}
                     onClick={() => void intents.moveWindow(1)}
                     className="flex items-center gap-1.5 px-2 py-1 bg-[rgba(200,148,55,0.06)] border border-[rgba(180,130,48,0.2)] rounded-sm hover:bg-[rgba(200,148,55,0.12)] disabled:opacity-40 disabled:hover:bg-[rgba(200,148,55,0.06)] transition-colors text-[10px] text-[#e8dcc8]"
                   >
@@ -153,7 +196,7 @@ export default function Stream() {
                   </button>
                   <button
                     type="button"
-                    disabled={!snapshot.canMoveLessHistory}
+                    disabled={!snapshot.window.canMoveLessHistory}
                     onClick={() => void intents.moveWindow(-1)}
                     className="flex items-center gap-1.5 px-2 py-1 bg-[rgba(200,148,55,0.06)] border border-[rgba(180,130,48,0.2)] rounded-sm hover:bg-[rgba(200,148,55,0.12)] disabled:opacity-40 disabled:hover:bg-[rgba(200,148,55,0.06)] transition-colors text-[10px] text-[#e8dcc8]"
                   >
@@ -164,16 +207,26 @@ export default function Stream() {
               </div>
             </div>
 
+            {snapshot.window.problem && (
+              <StreamProblemBanner problem={snapshot.window.problem} />
+            )}
+
             <div className="grid grid-cols-4 gap-4 mt-2 pt-4 border-t border-[rgba(200,148,55,0.1)]">
-              <InfoMetric label={t('streamInfoHost')} value={status.host} />
+              <InfoMetric
+                label={t('streamInfoHost')}
+                value={status?.host ?? '-'}
+              />
               <InfoMetric
                 label={t('streamInfoPort')}
-                value={status.port ? String(status.port) : '-'}
+                value={status?.port ? String(status.port) : '-'}
               />
-              <InfoMetric label={t('streamInfoDb')} value={snapshot.dbLabel} />
+              <InfoMetric
+                label={t('streamInfoDb')}
+                value={presentation.dbLabel}
+              />
               <InfoMetric
                 label={t('streamInfoWindow')}
-                value={String(status.active_window_offset)}
+                value={String(status?.active_window_offset ?? 0)}
               />
             </div>
           </div>
@@ -183,6 +236,28 @@ export default function Stream() {
               {t('streamOverlayConfig')}
             </span>
 
+            {snapshot.crop.problem && (
+              <StreamProblemBanner
+                problem={snapshot.crop.problem}
+                actionLabel={
+                  snapshot.crop.problem.params.operation === 'load'
+                    ? t('streamRetryCrop')
+                    : undefined
+                }
+                busy={snapshot.crop.operation === 'load'}
+                onRetry={
+                  snapshot.crop.problem.params.operation === 'load'
+                    ? () => void intents.reloadCropSettings()
+                    : undefined
+                }
+              />
+            )}
+            {snapshot.oneOff.problems.open_settings && (
+              <StreamProblemBanner
+                problem={snapshot.oneOff.problems.open_settings}
+              />
+            )}
+
             <div className="flex gap-2">
               {displayModes.map((mode) => (
                 <label key={mode.value} className="flex-1 cursor-pointer">
@@ -191,7 +266,7 @@ export default function Stream() {
                     name="displayMode"
                     className="peer sr-only"
                     checked={cropSettings.display_mode === mode.value}
-                    disabled={!snapshot.canEditCrop}
+                    disabled={!snapshot.crop.canEdit}
                     onChange={() => void intents.changeDisplayMode(mode.value)}
                   />
                   <div className="px-3 py-2 text-center text-sm border border-[rgba(180,130,48,0.3)] rounded-sm text-[rgba(228,216,191,0.6)] peer-checked:bg-[rgba(200,148,55,0.15)] peer-checked:text-[#e8c87a] peer-checked:border-[rgba(200,148,55,0.6)] transition-all">
@@ -209,15 +284,15 @@ export default function Stream() {
                 id="stream-crop-code"
                 type="text"
                 placeholder={t('streamCropCodePlaceholder')}
-                value={snapshot.cropCode}
-                disabled={!snapshot.canEditCrop}
+                value={snapshot.crop.code}
+                disabled={!snapshot.crop.canEdit}
                 onChange={(event) => intents.setCropCode(event.target.value)}
                 className="flex-1 min-w-[12rem] px-3 py-2 bg-[rgba(0,0,0,0.4)] border border-[rgba(180,130,48,0.2)] rounded-sm fira-code text-sm text-[rgba(228,216,191,0.8)] focus:border-[rgba(200,148,55,0.6)]"
               />
               <button
                 type="button"
                 onClick={() => void intents.submitCropCode()}
-                disabled={!snapshot.canEditCrop}
+                disabled={!snapshot.crop.canEdit}
                 className="shrink-0 whitespace-nowrap px-4 py-2 bg-[rgba(200,148,55,0.06)] border border-[rgba(180,130,48,0.2)] rounded-sm hover:bg-[rgba(200,148,55,0.12)] disabled:opacity-40 transition-colors text-sm text-[#e8dcc8]"
               >
                 {t('streamApplyCrop')}
@@ -225,14 +300,14 @@ export default function Stream() {
               <button
                 type="button"
                 onClick={() => void intents.resetCropCode()}
-                disabled={!snapshot.canEditCrop}
+                disabled={!snapshot.crop.canEdit}
                 className="shrink-0 whitespace-nowrap px-4 py-2 bg-transparent border border-transparent hover:bg-[rgba(255,255,255,0.05)] rounded-sm transition-colors text-sm text-[rgba(200,170,120,0.8)]"
               >
                 {t('streamResetCrop')}
               </button>
               <button
                 type="button"
-                disabled={!snapshot.canOpenSettings}
+                disabled={!snapshot.oneOff.canOpenSettings}
                 onClick={() => void intents.openSettings()}
                 className="shrink-0 whitespace-nowrap px-4 py-2 bg-[rgba(200,148,55,0.06)] border border-[rgba(180,130,48,0.2)] rounded-sm hover:bg-[rgba(200,148,55,0.12)] disabled:opacity-40 transition-colors text-sm text-[#e8dcc8] flex items-center gap-2"
               >
@@ -243,6 +318,43 @@ export default function Stream() {
         </div>
       </div>
     </PageShell>
+  );
+}
+
+function StreamProblemBanner({
+  problem,
+  tone = 'error',
+  actionLabel,
+  busy = false,
+  onRetry
+}: {
+  problem: StreamProblem;
+  tone?: 'error' | 'warning';
+  actionLabel?: string;
+  busy?: boolean;
+  onRetry?: () => void;
+}) {
+  const { t } = useI18n();
+  const label = actionLabel ?? t('retry');
+  return (
+    <ProblemBanner
+      tone={tone}
+      message={presentStreamProblem(problem, t)}
+      diagnostic={problem.diagnostic ? formatProblemDiagnostic(problem) : null}
+      diagnosticLabel={t('problemDiagnostics')}
+      actions={
+        onRetry ? (
+          <button
+            type="button"
+            disabled={busy}
+            onClick={onRetry}
+            className="underline underline-offset-2 disabled:opacity-50"
+          >
+            {label}
+          </button>
+        ) : undefined
+      }
+    />
   );
 }
 
