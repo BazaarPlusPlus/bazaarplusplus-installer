@@ -15,7 +15,7 @@ Last full citation verification: `2026-07-11` on `4366cda394fe304066b55564c3c44d
 | `README.md` | project entrypoint | current-entrypoint | 2026-07-11 |
 | `.trae/rules/git-commit-message.md` | ignored local rule | ignored-operational | n/a |
 | `docs/INDEX.md` | documentation manifest | manifest | 2026-07-11 |
-| `CONTEXT.md` | entry map + glossary | truth | `5953080a80db8ddfbc8419b869d6b0461c5d4862` |
+| `CONTEXT.md` | entry map + glossary | truth | `04a20c635e6d51fd56da143733f956e2638b1a5b` |
 | `docs/truth/architecture.md` | architecture | truth | `5953080a80db8ddfbc8419b869d6b0461c5d4862` |
 | `docs/truth/frontend.md` | frontend | truth | `5953080a80db8ddfbc8419b869d6b0461c5d4862` |
 | `docs/truth/install-reset.md` | install-reset | truth | `4366cda394fe304066b55564c3c44d1f917a2273` |

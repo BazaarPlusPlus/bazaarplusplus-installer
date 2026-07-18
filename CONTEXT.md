@@ -1,7 +1,7 @@
 ---
 status: truth
 topic: context
-last-verified: 5953080a80db8ddfbc8419b869d6b0461c5d4862
+last-verified: 04a20c635e6d51fd56da143733f956e2638b1a5b
 ---
 
 # BazaarPlusPlus Installer Context
@@ -13,7 +13,7 @@ Current behavior truth lives under `docs/truth/` (topic-sliced, code-cited, hash
 ## System Map
 
 - The app is a Tauri 2 desktop app with a React/Vite frontend and Rust backend. The package entry declares the app version and scripts in `package.json:2-21`; the Tauri app config sets the product name, frontend dev URL, build hooks, window size, and updater endpoint in `src-tauri/tauri.conf.json:3-35`.
-- The native runtime registers single-instance, window-state, updater, process, dialog, opener, tray, installer context, and stream runtime state in `src-tauri/src/lib.rs:18-39`.
+- The native runtime registers single-instance, window-state, updater, process, dialog, opener, tray, selected-installation, installer-context, and stream-runtime state in `src-tauri/src/lib.rs:19-43`.
 - Startup warms installer context on a blocking task and emits `startup-ready`; the stream HTTP service starts on setup in `src-tauri/src/lib.rs:40-53`.
 - When the stream service is running, closing the main window hides it instead of quitting so OBS can keep using the local HTTP overlay in `src-tauri/src/lib.rs:56-70`.
 
@@ -25,6 +25,7 @@ Current behavior truth lives under `docs/truth/` (topic-sliced, code-cited, hash
 - **Trampoline mode** — macOS launch mode (forced on macOS 27+): the real Unity executable is renamed to `.orig` and a build-time stub is swapped in (`src-tauri/src/services/bepinex/trampoline.rs:362-445`).
 - **Launch-mode marker** — the `.bpp-launch-mode` file next to the game directory persisting the chosen mode (`src-tauri/src/services/bepinex/trampoline.rs:23-71`).
 - **InstallState** — the frontend/backend contract for the install page: paths, game/mod state, compat state, action gates, warnings (`src-tauri/src/services/install/types.rs:3-19`).
+- **Selected game installation** — the one session-scoped The Bazaar installation shared by Install, History, and Stream. Valid explicit paths update it; resolution then uses explicit, selected, startup-detected, and fallback priority. It is held only in managed memory and is recreated empty on app restart (`src-tauri/src/services/selected_game_installation.rs:14-115`, `src-tauri/src/lib.rs:37-40`).
 - **Reset (local data)** — the only flow that deletes the mod's `BazaarPlusPlusV4/` data directory; explicit, confirmed, and refused while the game runs (`src-tauri/src/services/bepinex/mod.rs:18-69`). Uninstall never touches it.
 - **History** — the installer's read-only view of the mod-owned SQLite database (`src-tauri/src/history/queries.rs:29-35`); the database is created and written by the mod.
 - **Stream service / overlay** — the local Axum HTTP service on `127.0.0.1:17654` serving the OBS overlay and settings pages (`src-tauri/src/stream/server.rs:16-17`).
