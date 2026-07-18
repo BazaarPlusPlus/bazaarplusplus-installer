@@ -5,23 +5,34 @@ import { UpdaterProvider } from '../features/about/UpdaterProvider';
 import { LocaleProvider } from '../i18n/LocaleProvider';
 import { ShellHeader } from './ShellHeader';
 
+const bootstrap: AppBootstrapController['bootstrap'] = {
+  app_version: '4.4.0',
+  bundled_bpp_version: '4.4.0',
+  links: {
+    github: 'https://example.com/github',
+    x: 'https://example.com/x',
+    bilibili_project: 'https://example.com/bilibili-project',
+    bilibili_author: 'https://example.com/bilibili-author',
+    bilibili_core_dev: 'https://example.com/bilibili-core-dev',
+    xiaohongshu: 'https://example.com/xiaohongshu',
+    kofi: 'https://example.com/kofi',
+    supporter_list: 'https://example.com/supporters'
+  },
+  credits: [],
+  licenses: []
+};
+
 const app: AppBootstrapController = {
-  bootstrap: {
-    app_version: '4.4.0',
-    bundled_bpp_version: '4.4.0',
-    links: {
-      github: 'https://example.com/github',
-      x: 'https://example.com/x',
-      bilibili_project: 'https://example.com/bilibili-project',
-      bilibili_author: 'https://example.com/bilibili-author',
-      bilibili_core_dev: 'https://example.com/bilibili-core-dev',
-      xiaohongshu: 'https://example.com/xiaohongshu',
-      kofi: 'https://example.com/kofi',
-      supporter_list: 'https://example.com/supporters'
-    },
-    credits: [],
-    licenses: []
-  }
+  bootstrap,
+  resource: {
+    phase: 'authoritative',
+    data: bootstrap,
+    source: 'native',
+    unavailableFields: [],
+    problem: null,
+    retrying: false
+  },
+  retry: () => undefined
 };
 
 function renderHeader({
