@@ -1,7 +1,7 @@
 ---
 status: truth
 topic: verification
-last-verified: 0f609de844c0cbc48e7fb53396a90d5f32776c2b
+last-verified: 838d5d6bf30e16a277e5b367b648333e8923759a
 ---
 
 # Verification
@@ -45,6 +45,7 @@ Use the smallest command that verifies the changed behavior; use the authoritati
 - Run Detail tests cover its four page states, preserved refresh failure, stale completion, global action gate, target-scoped retry, and bilingual semantic problem presentation in `src/features/history/runDetailPageState.test.ts:56-187` and `src/features/history/runDetailProblems.test.ts:6-39`. Shared confirmation tests cover idle and active Escape/backdrop/close/secondary behavior for blocked, detachable, and genuinely cancelable policies in `src/components/ui/ConfirmDialog.test.tsx:104-205`; the confirmed-operation tests cover blocked dismissal, repeat submission, success-only closure, retained failure, retry, and cleanup/reset/delete targets in `src/features/shared/confirmedOperation.test.ts:15-96`.
 - Cleanup semantic presentation and native-adapter preservation are covered in `src/features/history/storageCleanupProblems.test.ts:8-30` and `src/api/commandClient.dispatch.test.ts:97-118`; neither test treats diagnostics as user-facing copy.
 - Install tests cover explicit initial detection, preserved refresh failure and retry, each primary-action branch, shared disabled/loading derivation, bilingual semantic warnings/problems, partial-failure recovery parameters, and native-adapter preservation in `src/features/install/installPageState.test.ts:43-228`, `src/features/install/installProblems.test.ts:10-89`, and `src/api/commandClient.dispatch.test.ts:57-76`. Rust tests pin Install semantic serialization and service-boundary classification in `src-tauri/src/problem.rs:46-84` and `src-tauri/src/services/install/mod.rs:282-366`.
+- Modal-coordinator tests cover strict priority, equal-priority FIFO, queued-source unregistration, non-preempting update/support dialogs, active confirmation upgrades, critical preemption, and connected/fallback focus restoration in `src/features/shared/modalCoordinator.test.ts:17-110`. The shell/route integration case covers a routed confirmation upgrading to blocked critical work, route-source unmount, and ordered handoff to update then payment in `src/features/shared/modalCoordinator.integration.test.ts:4-40`; controlled disclosure semantics are rendered in `src/layouts/ShellHeader.test.tsx:88-100`.
 
 ## Version And Platform Guards
 

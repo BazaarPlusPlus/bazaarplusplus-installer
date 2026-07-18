@@ -24,15 +24,21 @@ const app: AppBootstrapController = {
   }
 };
 
-function renderOpenHeader() {
+function renderHeader({
+  showBilibili = false,
+  showSupport = false
+}: {
+  showBilibili?: boolean;
+  showSupport?: boolean;
+} = {}) {
   return renderToStaticMarkup(
     <LocaleProvider>
       <UpdaterProvider>
         <ShellHeader
           app={app}
-          showBilibili
+          showBilibili={showBilibili}
           onToggleBilibili={() => undefined}
-          showSupport={false}
+          showSupport={showSupport}
           onToggleSupport={() => undefined}
           onOpenPayment={() => undefined}
           onCloseBilibili={() => undefined}
@@ -45,7 +51,7 @@ function renderOpenHeader() {
 
 describe('ShellHeader Bilibili menu', () => {
   it('shows the author, CoreDev, and project entries in order', () => {
-    const html = renderOpenHeader();
+    const html = renderHeader({ showBilibili: true });
 
     const authorHrefIndex = html.indexOf('https://example.com/bilibili-author');
     const coreDevHrefIndex = html.indexOf(
@@ -77,5 +83,19 @@ describe('ShellHeader Bilibili menu', () => {
     expect(authorSubtitleIndex).toBeLessThan(coreDevIndex);
     expect(coreDevSubtitleIndex).toBeLessThan(projectIndex);
     expect(projectSubtitleIndex).toBeGreaterThan(projectIndex);
+  });
+
+  it('exposes controlled keyboard-operable disclosure semantics', () => {
+    const closed = renderHeader();
+    const bilibiliOpen = renderHeader({ showBilibili: true });
+    const supportOpen = renderHeader({ showSupport: true });
+
+    expect(closed).toContain('aria-controls="shell-bilibili-menu"');
+    expect(closed).toContain('aria-controls="shell-support-menu"');
+    expect(closed.match(/aria-expanded="false"/g)).toHaveLength(2);
+    expect(bilibiliOpen).toContain('id="shell-bilibili-menu"');
+    expect(bilibiliOpen).toContain('aria-expanded="true"');
+    expect(supportOpen).toContain('id="shell-support-menu"');
+    expect(supportOpen).toContain('aria-expanded="true"');
   });
 });

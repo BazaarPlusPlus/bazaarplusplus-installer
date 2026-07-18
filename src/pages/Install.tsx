@@ -14,6 +14,7 @@ import {
   installProblemFromError,
   type InstallProblem
 } from '../features/install/installProblems';
+import { ModalSource } from '../components/ui/ModalCoordinator';
 
 type InstallResetTarget = {
   kind: 'reset-data' | 'reset-bepinex';
@@ -127,53 +128,73 @@ export default function Install() {
         </>
       ) : null}
 
-      {showInstallModal && page.installState && (
-        <InstallConfirmModal
-          busy={page.action === 'install'}
-          installAcknowledged={installAcknowledged}
-          onAcknowledgedChange={setInstallAcknowledged}
-          compat={page.installState.compat}
-          compatOptIn={compatOptIn}
-          onCompatOptInChange={setCompatOptIn}
-          onClose={() => setShowInstallModal(false)}
-          onConfirm={confirmInstall}
-        />
-      )}
-
-      {resetOperation.state?.target.kind === 'reset-data' &&
-        page.installState && (
-          <ResetDataConfirmModal
-            busy={resetOperation.state.phase === 'running'}
-            acknowledged={resetDataAcknowledged}
-            targetPath={resetOperation.state.target.gamePath}
-            problem={
-              resetOperation.state.phase === 'failed'
-                ? resetOperation.state.problem
-                : null
-            }
-            failurePaths={page.resetDataFailurePaths}
-            onAcknowledgedChange={setResetDataAcknowledged}
-            onClose={closeReset}
-            onConfirm={confirmReset}
+      <ModalSource
+        id="route:install-confirmation"
+        open={showInstallModal && page.installState !== null}
+        priority={page.action === 'install' ? 'critical' : 'confirmation'}
+        dismissalPolicy={page.action === 'install' ? 'blocked' : 'dismissible'}
+      >
+        {showInstallModal && page.installState && (
+          <InstallConfirmModal
+            busy={page.action === 'install'}
+            installAcknowledged={installAcknowledged}
+            onAcknowledgedChange={setInstallAcknowledged}
+            compat={page.installState.compat}
+            compatOptIn={compatOptIn}
+            onCompatOptInChange={setCompatOptIn}
+            onClose={() => setShowInstallModal(false)}
+            onConfirm={confirmInstall}
           />
         )}
+      </ModalSource>
 
-      {resetOperation.state?.target.kind === 'reset-bepinex' &&
-        page.installState && (
-          <ResetBepinexConfirmModal
-            busy={resetOperation.state.phase === 'running'}
-            acknowledged={resetBepinexAcknowledged}
-            targetPath={resetOperation.state.target.gamePath}
-            problem={
-              resetOperation.state.phase === 'failed'
-                ? resetOperation.state.problem
-                : null
-            }
-            onAcknowledgedChange={setResetBepinexAcknowledged}
-            onClose={closeReset}
-            onConfirm={confirmReset}
-          />
-        )}
+      <ModalSource
+        id="route:install-reset"
+        open={resetOperation.state !== null && page.installState !== null}
+        priority={
+          resetOperation.state?.phase === 'running'
+            ? 'critical'
+            : 'confirmation'
+        }
+        dismissalPolicy={
+          resetOperation.state?.phase === 'running' ? 'blocked' : 'dismissible'
+        }
+      >
+        {resetOperation.state?.target.kind === 'reset-data' &&
+          page.installState && (
+            <ResetDataConfirmModal
+              busy={resetOperation.state.phase === 'running'}
+              acknowledged={resetDataAcknowledged}
+              targetPath={resetOperation.state.target.gamePath}
+              problem={
+                resetOperation.state.phase === 'failed'
+                  ? resetOperation.state.problem
+                  : null
+              }
+              failurePaths={page.resetDataFailurePaths}
+              onAcknowledgedChange={setResetDataAcknowledged}
+              onClose={closeReset}
+              onConfirm={confirmReset}
+            />
+          )}
+
+        {resetOperation.state?.target.kind === 'reset-bepinex' &&
+          page.installState && (
+            <ResetBepinexConfirmModal
+              busy={resetOperation.state.phase === 'running'}
+              acknowledged={resetBepinexAcknowledged}
+              targetPath={resetOperation.state.target.gamePath}
+              problem={
+                resetOperation.state.phase === 'failed'
+                  ? resetOperation.state.problem
+                  : null
+              }
+              onAcknowledgedChange={setResetBepinexAcknowledged}
+              onClose={closeReset}
+              onConfirm={confirmReset}
+            />
+          )}
+      </ModalSource>
     </PageShell>
   );
 }

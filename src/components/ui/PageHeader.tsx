@@ -28,7 +28,11 @@ export function PageHeader({
 
 function Title({ children }: { children: ReactNode }) {
   return (
-    <h2 className="cinzel text-lg tracking-wider text-[rgba(232,220,194,0.92)] uppercase m-0">
+    <h2
+      data-page-heading
+      tabIndex={-1}
+      className="cinzel text-lg tracking-wider text-[rgba(232,220,194,0.92)] uppercase m-0"
+    >
       {children}
     </h2>
   );

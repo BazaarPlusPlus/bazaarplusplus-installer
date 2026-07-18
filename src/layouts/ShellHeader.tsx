@@ -10,7 +10,7 @@ import {
   QrCode,
   Users
 } from 'lucide-react';
-import type { CSSProperties, ReactNode } from 'react';
+import type { CSSProperties, ReactNode, RefObject } from 'react';
 import type { AppBootstrapController } from '../features/about/useAppBootstrap';
 import { useUpdater } from '../features/about/UpdaterProvider';
 import { useI18n } from '../i18n/LocaleProvider';
@@ -19,9 +19,11 @@ import xiaohongshuSvg from '../../static/support/xiaohongshu.svg';
 
 type ShellHeaderProps = {
   app: AppBootstrapController;
+  bilibiliTriggerRef?: RefObject<HTMLButtonElement | null>;
   showBilibili: boolean;
   onToggleBilibili: () => void;
   showSupport: boolean;
+  supportTriggerRef?: RefObject<HTMLButtonElement | null>;
   onToggleSupport: () => void;
   onOpenPayment: () => void;
   onCloseBilibili: () => void;
@@ -30,9 +32,11 @@ type ShellHeaderProps = {
 
 export function ShellHeader({
   app,
+  bilibiliTriggerRef,
   showBilibili,
   onToggleBilibili,
   showSupport,
+  supportTriggerRef,
   onToggleSupport,
   onOpenPayment,
   onCloseBilibili,
@@ -54,9 +58,11 @@ export function ShellHeader({
       <ShellBrand />
       <ShellHeaderActions
         bootstrap={bootstrap}
+        bilibiliTriggerRef={bilibiliTriggerRef}
         showBilibili={showBilibili}
         onToggleBilibili={onToggleBilibili}
         showSupport={showSupport}
+        supportTriggerRef={supportTriggerRef}
         onToggleSupport={onToggleSupport}
         onOpenPayment={onOpenPayment}
         onCloseBilibili={onCloseBilibili}
@@ -148,9 +154,11 @@ function ShellBrand() {
 
 type ShellHeaderActionsProps = {
   bootstrap: AppBootstrapController['bootstrap'];
+  bilibiliTriggerRef?: RefObject<HTMLButtonElement | null>;
   showBilibili: boolean;
   onToggleBilibili: () => void;
   showSupport: boolean;
+  supportTriggerRef?: RefObject<HTMLButtonElement | null>;
   onToggleSupport: () => void;
   onOpenPayment: () => void;
   onCloseBilibili: () => void;
@@ -159,9 +167,11 @@ type ShellHeaderActionsProps = {
 
 function ShellHeaderActions({
   bootstrap,
+  bilibiliTriggerRef,
   showBilibili,
   onToggleBilibili,
   showSupport,
+  supportTriggerRef,
   onToggleSupport,
   onOpenPayment,
   onCloseBilibili,
@@ -198,6 +208,7 @@ function ShellHeaderActions({
     <div className="flex items-center gap-3 z-10 justify-end mr-6">
       <ShellSocialLinks
         bootstrap={bootstrap}
+        triggerRef={bilibiliTriggerRef}
         showBilibili={showBilibili}
         onToggleBilibili={onToggleBilibili}
         onCloseBilibili={onCloseBilibili}
@@ -224,6 +235,7 @@ function ShellHeaderActions({
 
       <ShellSupportMenu
         bootstrap={bootstrap}
+        triggerRef={supportTriggerRef}
         showSupport={showSupport}
         onToggleSupport={onToggleSupport}
         onOpenPayment={onOpenPayment}
@@ -336,11 +348,13 @@ function QrSocialEntry({
 
 function ShellSocialLinks({
   bootstrap,
+  triggerRef,
   showBilibili,
   onToggleBilibili,
   onCloseBilibili
 }: {
   bootstrap: AppBootstrapController['bootstrap'];
+  triggerRef?: RefObject<HTMLButtonElement | null>;
   showBilibili: boolean;
   onToggleBilibili: () => void;
   onCloseBilibili: () => void;
@@ -442,6 +456,7 @@ function ShellSocialLinks({
       </QrSocialEntry>
       <div className="relative" data-dropdown>
         <button
+          ref={triggerRef}
           type="button"
           onClick={onToggleBilibili}
           className="flex min-w-[66px] items-center justify-center gap-1.5 px-2.5 h-8 border border-[rgba(0,161,214,0.28)] rounded-[2px] text-[11px] font-medium tracking-[0.04em] transition-all hover:border-[rgba(0,161,214,0.55)] hover:text-[#7ad8ff]"
@@ -453,6 +468,8 @@ function ShellSocialLinks({
           }}
           aria-label={t('socialBilibili')}
           aria-expanded={showBilibili}
+          aria-controls="shell-bilibili-menu"
+          aria-haspopup="menu"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -474,8 +491,13 @@ function ShellSocialLinks({
           <span className="whitespace-nowrap">{t('socialBilibili')}</span>
         </button>
         {showBilibili && (
-          <div className="absolute top-[calc(100%+0.5rem)] left-1/2 w-[260px] bg-[rgba(18,11,5,0.95)] backdrop-blur-md border border-[rgba(200,148,55,0.2)] rounded-sm shadow-[0_16px_40px_rgba(0,0,0,0.6)] p-1.5 z-50 flex flex-col gap-1 transform -translate-x-1/2">
+          <div
+            id="shell-bilibili-menu"
+            role="menu"
+            className="absolute top-[calc(100%+0.5rem)] left-1/2 w-[260px] bg-[rgba(18,11,5,0.95)] backdrop-blur-md border border-[rgba(200,148,55,0.2)] rounded-sm shadow-[0_16px_40px_rgba(0,0,0,0.6)] p-1.5 z-50 flex flex-col gap-1 transform -translate-x-1/2"
+          >
             <a
+              role="menuitem"
               href={bootstrap.links.bilibili_author}
               target="_blank"
               rel="noopener noreferrer"
@@ -498,6 +520,7 @@ function ShellSocialLinks({
             <div className="h-px bg-gradient-to-r from-transparent via-[rgba(200,148,55,0.2)] to-transparent my-0.5 mx-2" />
 
             <a
+              role="menuitem"
               href={bootstrap.links.bilibili_core_dev}
               target="_blank"
               rel="noopener noreferrer"
@@ -520,6 +543,7 @@ function ShellSocialLinks({
             <div className="h-px bg-gradient-to-r from-transparent via-[rgba(200,148,55,0.2)] to-transparent my-0.5 mx-2" />
 
             <a
+              role="menuitem"
               href={bootstrap.links.bilibili_project}
               target="_blank"
               rel="noopener noreferrer"
@@ -548,12 +572,14 @@ function ShellSocialLinks({
 
 function ShellSupportMenu({
   bootstrap,
+  triggerRef,
   showSupport,
   onToggleSupport,
   onOpenPayment,
   onCloseSupport
 }: {
   bootstrap: AppBootstrapController['bootstrap'];
+  triggerRef?: RefObject<HTMLButtonElement | null>;
   showSupport: boolean;
   onToggleSupport: () => void;
   onOpenPayment: () => void;
@@ -563,6 +589,7 @@ function ShellSupportMenu({
   return (
     <div className="relative" data-dropdown>
       <button
+        ref={triggerRef}
         type="button"
         className="flex items-center gap-2 px-3 h-8 border border-[rgba(200,148,55,0.24)] rounded-[2px] cinzel text-[10px] tracking-widest uppercase transition-all hover:border-[rgba(200,148,55,0.4)]"
         style={{
@@ -572,13 +599,21 @@ function ShellSupportMenu({
           boxShadow: '0 0 0 1px rgba(255,198,98,0.08) inset'
         }}
         onClick={onToggleSupport}
+        aria-expanded={showSupport}
+        aria-controls="shell-support-menu"
+        aria-haspopup="menu"
       >
         <Heart size={14} />
         <span>{t('supportProject')}</span>
       </button>
       {showSupport && (
-        <div className="absolute top-[calc(100%+0.5rem)] right-0 w-56 bg-[rgba(18,11,5,0.95)] backdrop-blur-md border border-[rgba(200,148,55,0.2)] rounded-sm shadow-[0_16px_40px_rgba(0,0,0,0.6)] p-1.5 z-50 flex flex-col gap-1">
+        <div
+          id="shell-support-menu"
+          role="menu"
+          className="absolute top-[calc(100%+0.5rem)] right-0 w-56 bg-[rgba(18,11,5,0.95)] backdrop-blur-md border border-[rgba(200,148,55,0.2)] rounded-sm shadow-[0_16px_40px_rgba(0,0,0,0.6)] p-1.5 z-50 flex flex-col gap-1"
+        >
           <button
+            role="menuitem"
             type="button"
             className="flex items-center gap-3 px-3 py-2.5 hover:bg-[rgba(200,148,55,0.1)] rounded-sm text-left transition-all group"
             onClick={onOpenPayment}
@@ -599,6 +634,7 @@ function ShellSupportMenu({
           <div className="h-px bg-gradient-to-r from-transparent via-[rgba(200,148,55,0.2)] to-transparent my-0.5 mx-2" />
 
           <a
+            role="menuitem"
             href={bootstrap.links.kofi}
             target="_blank"
             rel="noopener noreferrer"
@@ -621,6 +657,7 @@ function ShellSupportMenu({
           <div className="h-px bg-gradient-to-r from-transparent via-[rgba(200,148,55,0.2)] to-transparent my-0.5 mx-2" />
 
           <a
+            role="menuitem"
             href={bootstrap.links.supporter_list}
             target="_blank"
             rel="noopener noreferrer"

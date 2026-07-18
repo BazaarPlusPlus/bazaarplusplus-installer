@@ -15,6 +15,7 @@ import {
   type CleanupScope,
   type PendingCleanup
 } from './useStorageCleanup';
+import { ModalSource } from '../../components/ui/ModalCoordinator';
 
 const PRESETS: Array<{
   preset: StorageCleanupPreset;
@@ -121,55 +122,67 @@ export function StorageCleanupCard({
         </div>
       </details>
 
-      {cleanup.pending && (
-        <ConfirmDialog
-          titleId="cleanup-confirm-modal-title"
-          title={t('storageCleanupConfirmTitle')}
-          tone="danger"
-          confirmLabel={
-            cleanup.problem ? t('retry') : t('storageCleanupConfirmAction')
-          }
-          busyLabel={
-            cleanup.pending.scope === 'screenshots'
-              ? t('storageCleanupRunningScreenshots')
-              : t('storageCleanupRunningRunData')
-          }
-          busy={cleanup.busy}
-          activeDismissalPolicy={{ kind: 'blocked' }}
-          dismissLabel={
-            cleanup.operation?.phase === 'failed' ? t('close') : undefined
-          }
-          confirmDisabled={pendingItemCount(cleanup.pending) === 0}
-          onConfirm={cleanup.confirm}
-          onClose={cleanup.cancel}
-        >
-          <p className="m-0 text-[12px] leading-relaxed text-[rgba(232,200,122,0.86)] fira-code selectable">
-            {t('storageCleanupTarget', {
-              scope:
-                cleanup.pending.scope === 'screenshots'
-                  ? t('storageCleanupScreenshotsLabel')
-                  : t('storageCleanupRunDataLabel'),
-              preset: t(
-                PRESETS.find(({ preset }) => preset === cleanup.pending?.preset)
-                  ?.labelKey ?? 'storageCleanupPresetAll'
-              )
-            })}
-          </p>
-          <p className="m-0 text-[13px] leading-relaxed text-[rgba(245,220,220,0.86)]">
-            {pendingBody(cleanup.pending)}
-          </p>
-          {cleanup.pending.preview.skipped_pending_uploads > 0 && (
-            <p className="m-0 text-[12px] leading-relaxed text-[rgba(200,170,120,0.8)]">
-              {t('storageCleanupSkippedPending', {
-                count: cleanup.pending.preview.skipped_pending_uploads
+      <ModalSource
+        id="route:storage-cleanup"
+        open={cleanup.pending !== null}
+        priority={
+          cleanup.operation?.phase === 'running' ? 'critical' : 'confirmation'
+        }
+        dismissalPolicy={
+          cleanup.operation?.phase === 'running' ? 'blocked' : 'dismissible'
+        }
+      >
+        {cleanup.pending && (
+          <ConfirmDialog
+            titleId="cleanup-confirm-modal-title"
+            title={t('storageCleanupConfirmTitle')}
+            tone="danger"
+            confirmLabel={
+              cleanup.problem ? t('retry') : t('storageCleanupConfirmAction')
+            }
+            busyLabel={
+              cleanup.pending.scope === 'screenshots'
+                ? t('storageCleanupRunningScreenshots')
+                : t('storageCleanupRunningRunData')
+            }
+            busy={cleanup.busy}
+            activeDismissalPolicy={{ kind: 'blocked' }}
+            dismissLabel={
+              cleanup.operation?.phase === 'failed' ? t('close') : undefined
+            }
+            confirmDisabled={pendingItemCount(cleanup.pending) === 0}
+            onConfirm={cleanup.confirm}
+            onClose={cleanup.cancel}
+          >
+            <p className="m-0 text-[12px] leading-relaxed text-[rgba(232,200,122,0.86)] fira-code selectable">
+              {t('storageCleanupTarget', {
+                scope:
+                  cleanup.pending.scope === 'screenshots'
+                    ? t('storageCleanupScreenshotsLabel')
+                    : t('storageCleanupRunDataLabel'),
+                preset: t(
+                  PRESETS.find(
+                    ({ preset }) => preset === cleanup.pending?.preset
+                  )?.labelKey ?? 'storageCleanupPresetAll'
+                )
               })}
             </p>
-          )}
-          {cleanup.problem && (
-            <StorageCleanupProblemBanner problem={cleanup.problem} />
-          )}
-        </ConfirmDialog>
-      )}
+            <p className="m-0 text-[13px] leading-relaxed text-[rgba(245,220,220,0.86)]">
+              {pendingBody(cleanup.pending)}
+            </p>
+            {cleanup.pending.preview.skipped_pending_uploads > 0 && (
+              <p className="m-0 text-[12px] leading-relaxed text-[rgba(200,170,120,0.8)]">
+                {t('storageCleanupSkippedPending', {
+                  count: cleanup.pending.preview.skipped_pending_uploads
+                })}
+              </p>
+            )}
+            {cleanup.problem && (
+              <StorageCleanupProblemBanner problem={cleanup.problem} />
+            )}
+          </ConfirmDialog>
+        )}
+      </ModalSource>
     </>
   );
 }

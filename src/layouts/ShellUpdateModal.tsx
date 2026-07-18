@@ -38,10 +38,7 @@ export function ShellUpdateModal({ updater }: ShellUpdateModalProps) {
   );
 
   return (
-    <Dialog
-      onClose={dismissable ? updater.dismiss : () => undefined}
-      labelledBy="update-modal-title"
-    >
+    <Dialog onClose={updater.dismiss} labelledBy="update-modal-title">
       <div className="w-[min(460px,calc(100vw-32px))] border border-[rgba(200,148,55,0.26)] bg-[#130d08] shadow-[0_24px_70px_rgba(0,0,0,0.58)]">
         <div className="border-b border-[rgba(200,148,55,0.18)] px-6 py-5">
           <div className="flex items-start gap-4">

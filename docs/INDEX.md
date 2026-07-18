@@ -20,6 +20,8 @@ Stream capability citation refresh: `2026-07-19` on `5bbe32c870bc06e35e5064f3c84
 
 Destructive-operation citation refresh: `2026-07-19` on `0f609de844c0cbc48e7fb53396a90d5f32776c2b` — the context glossary plus architecture, frontend, Install/Reset, History/Stream, and verification topics were checked against the target-bearing confirmation lifecycle, explicit active dismissal policies, retained semantic failures, and cleanup semantic native contract.
 
+Modal-coordination citation refresh: `2026-07-19` on `838d5d6bf30e16a277e5b367b648333e8923759a` — the context glossary plus architecture, frontend, updater, and verification topics were checked against the global modal priority queue, source lifecycle, dismissal policy, focus restoration, and controlled shell disclosures.
+
 ## Current Manifest
 
 | Path | Topic | Status | Last verified |
@@ -29,14 +31,14 @@ Destructive-operation citation refresh: `2026-07-19` on `0f609de844c0cbc48e7fb53
 | `README.md` | project entrypoint | current-entrypoint | 2026-07-11 |
 | `.trae/rules/git-commit-message.md` | ignored local rule | ignored-operational | n/a |
 | `docs/INDEX.md` | documentation manifest | manifest | 2026-07-19 |
-| `CONTEXT.md` | entry map + glossary | truth | `0f609de844c0cbc48e7fb53396a90d5f32776c2b` |
-| `docs/truth/architecture.md` | architecture | truth | `0f609de844c0cbc48e7fb53396a90d5f32776c2b` |
-| `docs/truth/frontend.md` | frontend | truth | `0f609de844c0cbc48e7fb53396a90d5f32776c2b` |
+| `CONTEXT.md` | entry map + glossary | truth | `838d5d6bf30e16a277e5b367b648333e8923759a` |
+| `docs/truth/architecture.md` | architecture | truth | `838d5d6bf30e16a277e5b367b648333e8923759a` |
+| `docs/truth/frontend.md` | frontend | truth | `838d5d6bf30e16a277e5b367b648333e8923759a` |
 | `docs/truth/install-reset.md` | install-reset | truth | `0f609de844c0cbc48e7fb53396a90d5f32776c2b` |
 | `docs/truth/launch-modes.md` | launch-modes | truth | `f23d786ab3bf1998f556f5fe05b6e47467a7ea48` |
 | `docs/truth/history-stream.md` | history-stream | truth | `0f609de844c0cbc48e7fb53396a90d5f32776c2b` |
-| `docs/truth/updater-release.md` | updater-release | truth | `45764680a4476063a46a92f4606dd520f0ce29ef` |
-| `docs/truth/verification.md` | verification | truth | `0f609de844c0cbc48e7fb53396a90d5f32776c2b` |
+| `docs/truth/updater-release.md` | updater-release | truth | `838d5d6bf30e16a277e5b367b648333e8923759a` |
+| `docs/truth/verification.md` | verification | truth | `838d5d6bf30e16a277e5b367b648333e8923759a` |
 | `docs/plans/manual-validation.md` | manual-validation | active-plan | `7500016b1c4adfc7b5d0206c7def0ceabae514d5` |
 | `docs/agents/issue-tracker.md` | agent skills: issue tracker | operational | 2026-07-11 |
 | `docs/agents/triage-labels.md` | agent skills: triage labels | operational | 2026-07-11 |

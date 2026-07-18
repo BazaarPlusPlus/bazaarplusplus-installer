@@ -30,6 +30,7 @@ import {
 import { formatProblemDiagnostic } from '../features/shared/problems';
 import { useConfirmedOperation } from '../features/shared/confirmedOperation';
 import { useI18n } from '../i18n/LocaleProvider';
+import { ModalSource } from '../components/ui/ModalCoordinator';
 
 // Shared 7-track grid for the battle table header + rows so columns align and
 // the action/metadata column does not reflow when the hover-only delete button
@@ -243,39 +244,52 @@ export default function RunDetail() {
         </>
       ) : null}
 
-      {pendingDelete && (
-        <ConfirmDialog
-          titleId="delete-video-modal-title"
-          title={t('deleteVideoConfirmTitle')}
-          tone="danger"
-          confirmLabel={
-            deleteOperation.state?.phase === 'failed'
-              ? t('retry')
-              : t('deleteVideoConfirmAction')
-          }
-          busyLabel={t('deleteVideoRunning')}
-          busy={deleteOperation.state?.phase === 'running'}
-          activeDismissalPolicy={{ kind: 'blocked' }}
-          dismissLabel={
-            deleteOperation.state?.phase === 'failed' ? t('close') : undefined
-          }
-          onConfirm={confirmDelete}
-          onClose={deleteOperation.controller.dismiss}
-        >
-          <p className="m-0 text-[12px] leading-relaxed text-[rgba(232,200,122,0.86)] fira-code selectable">
-            {t('deleteVideoTarget', {
-              battleId: pendingDelete.battleId,
-              videoId: pendingDelete.videoId
-            })}
-          </p>
-          <p className="m-0 text-[13px] leading-relaxed text-[rgba(245,220,220,0.86)]">
-            {t('deleteVideoConfirmBody')}
-          </p>
-          {deleteOperation.state?.phase === 'failed' && (
-            <RunDetailProblemBanner problem={deleteOperation.state.problem} />
-          )}
-        </ConfirmDialog>
-      )}
+      <ModalSource
+        id="route:delete-video"
+        open={pendingDelete !== null}
+        priority={
+          deleteOperation.state?.phase === 'running'
+            ? 'critical'
+            : 'confirmation'
+        }
+        dismissalPolicy={
+          deleteOperation.state?.phase === 'running' ? 'blocked' : 'dismissible'
+        }
+      >
+        {pendingDelete && (
+          <ConfirmDialog
+            titleId="delete-video-modal-title"
+            title={t('deleteVideoConfirmTitle')}
+            tone="danger"
+            confirmLabel={
+              deleteOperation.state?.phase === 'failed'
+                ? t('retry')
+                : t('deleteVideoConfirmAction')
+            }
+            busyLabel={t('deleteVideoRunning')}
+            busy={deleteOperation.state?.phase === 'running'}
+            activeDismissalPolicy={{ kind: 'blocked' }}
+            dismissLabel={
+              deleteOperation.state?.phase === 'failed' ? t('close') : undefined
+            }
+            onConfirm={confirmDelete}
+            onClose={deleteOperation.controller.dismiss}
+          >
+            <p className="m-0 text-[12px] leading-relaxed text-[rgba(232,200,122,0.86)] fira-code selectable">
+              {t('deleteVideoTarget', {
+                battleId: pendingDelete.battleId,
+                videoId: pendingDelete.videoId
+              })}
+            </p>
+            <p className="m-0 text-[13px] leading-relaxed text-[rgba(245,220,220,0.86)]">
+              {t('deleteVideoConfirmBody')}
+            </p>
+            {deleteOperation.state?.phase === 'failed' && (
+              <RunDetailProblemBanner problem={deleteOperation.state.problem} />
+            )}
+          </ConfirmDialog>
+        )}
+      </ModalSource>
     </div>
   );
 }
