@@ -72,64 +72,14 @@ body {
   height: 100%;
   min-height: 0;
   overflow: hidden;
-  background:
-    radial-gradient(circle at 76% 22%, rgba(46, 61, 72, 0.11), transparent 30%),
-    radial-gradient(
-      circle at 24% 40%,
-      rgba(231, 127, 14, 0.035),
-      transparent 26%
-    ),
-    linear-gradient(145deg, #090e12 0%, #090d11 44%, #070b0e 100%);
-}
-.bpp-app::before {
-  content: '';
-  position: absolute;
-  z-index: 0;
-  inset: 0;
-  pointer-events: none;
-  opacity: 0.11;
-  background-image:
-    linear-gradient(rgba(220, 141, 37, 0.035) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(220, 141, 37, 0.028) 1px, transparent 1px),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.72' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.24'/%3E%3C/svg%3E");
-  background-size:
-    96px 96px,
-    96px 96px,
-    220px 220px;
-  mix-blend-mode: screen;
-}
-.bpp-app::after {
-  content: '';
-  position: absolute;
-  z-index: -1;
-  inset: 0;
-  pointer-events: none;
-  background:
-    linear-gradient(
-      90deg,
-      rgba(3, 7, 9, 0.16),
-      rgba(3, 7, 9, 0.02) 52%,
-      rgba(3, 7, 9, 0.12)
-    ),
-    linear-gradient(
-      180deg,
-      rgba(4, 8, 10, 0.14),
-      transparent 34%,
-      rgba(3, 6, 8, 0.05)
-    ),
-    url('../../static/backgrounds/app-shell.png') center center / cover
-      no-repeat;
-  mix-blend-mode: lighten;
-  opacity: 0.88;
+  background: linear-gradient(160deg, #0a0f13 0%, #090d11 46%, #070b0e 100%);
 }
 .bpp-app-vignette {
   position: absolute;
   inset: 0;
   z-index: 30;
   pointer-events: none;
-  box-shadow:
-    inset 0 0 70px rgba(0, 0, 0, 0.58),
-    inset 0 0 0 1px rgba(224, 139, 27, 0.07);
+  box-shadow: inset 0 0 130px rgba(0, 0, 0, 0.32);
 }
 .bpp-header {
   position: relative;
@@ -156,8 +106,12 @@ body {
   left: 27%;
   width: 42px;
   height: 2px;
-  background: linear-gradient(90deg, transparent, #d98116, transparent);
-  box-shadow: 0 0 10px rgba(232, 132, 17, 0.65);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(214, 129, 22, 0.5),
+    transparent
+  );
 }
 .bpp-header .bpp-language-button {
   padding: 0;
@@ -204,7 +158,6 @@ body {
   height: 48px;
   flex: none;
   overflow: visible;
-  filter: drop-shadow(0 0 9px rgba(231, 130, 16, 0.18));
 }
 .bpp-brand-mark.is-compact {
   width: 38px;
@@ -215,7 +168,6 @@ body {
   width: 36px;
   height: auto;
   flex: none;
-  filter: drop-shadow(0 0 9px rgba(231, 130, 16, 0.18));
 }
 .bpp-brand-title {
   margin: 0;
@@ -269,7 +221,6 @@ body {
     rgba(13, 18, 22, 0.76);
   box-shadow:
     inset 0 1px rgba(255, 232, 192, 0.06),
-    inset 0 0 18px rgba(230, 130, 17, 0.018),
     0 5px 16px rgba(0, 0, 0, 0.2);
   font-size: 12px;
   font-weight: 600;
@@ -297,18 +248,15 @@ body {
   border-color: rgba(239, 159, 49, 0.62);
   color: #fff5e5;
   background:
-    linear-gradient(135deg, rgba(245, 164, 50, 0.16), transparent 64%),
+    linear-gradient(135deg, rgba(245, 164, 50, 0.14), transparent 64%),
     rgba(18, 22, 25, 0.88);
   box-shadow:
-    inset 0 1px rgba(255, 238, 202, 0.12),
-    inset 0 0 22px rgba(237, 143, 24, 0.045),
-    0 7px 20px rgba(0, 0, 0, 0.26),
-    0 0 16px rgba(234, 139, 20, 0.09);
+    inset 0 1px rgba(255, 238, 202, 0.1),
+    0 7px 20px rgba(0, 0, 0, 0.26);
   transform: translateY(-1px);
 }
 .bpp-about-github-button:hover > svg:first-child {
   color: #f2a13c;
-  filter: drop-shadow(0 0 4px rgba(255, 193, 92, 0.48));
   transform: scale(1.04);
 }
 .bpp-about-github-button:focus-visible {
@@ -366,6 +314,15 @@ body {
   left: 8px;
   height: 78px;
   pointer-events: none;
+  border: 1px solid rgba(224, 139, 27, 0.26);
+  border-radius: 5px;
+  background: linear-gradient(
+    90deg,
+    rgba(232, 132, 18, 0.1),
+    rgba(232, 132, 18, 0.02) 62%,
+    transparent
+  );
+  box-shadow: inset 3px 0 0 rgba(240, 149, 37, 0.85);
   transform: translateY(calc(var(--bpp-nav-index) * 78px));
   transition: transform 360ms cubic-bezier(0.22, 1, 0.36, 1);
   will-change: transform;
@@ -388,37 +345,9 @@ body {
   background: transparent;
   box-shadow: none;
 }
-.bpp-nav-active-image {
-  position: absolute;
-  z-index: 0;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  object-fit: fill;
-}
-.bpp-nav-active-glow {
-  position: absolute;
-  z-index: 1;
-  inset: 0;
-  pointer-events: none;
-  background: linear-gradient(
-    90deg,
-    rgba(255, 154, 24, 0.15),
-    rgba(255, 147, 16, 0.025) 46%,
-    transparent 72%
-  );
-  box-shadow:
-    -5px 0 20px rgba(239, 132, 11, 0.2),
-    inset 2px 0 12px rgba(255, 157, 31, 0.08);
-  mix-blend-mode: screen;
-  border-radius: 4px;
-}
 .bpp-nav-item.is-active svg {
   color: #f09525;
-  filter: drop-shadow(0 0 2px rgba(255, 225, 174, 0.48))
-    drop-shadow(0 0 6px rgba(241, 143, 24, 0.44))
-    drop-shadow(0 0 11px rgba(222, 111, 5, 0.18));
+  filter: drop-shadow(0 0 5px rgba(241, 143, 24, 0.32));
 }
 .bpp-nav-item.is-active::after {
   content: none;
@@ -465,7 +394,7 @@ body {
   min-height: 100%;
   backface-visibility: hidden;
   transform-origin: center;
-  will-change: opacity, filter, transform;
+  will-change: opacity, transform;
 }
 .bpp-route-page.is-forward {
   animation: bpp-page-enter-from-bottom 390ms cubic-bezier(0.22, 1, 0.36, 1)
@@ -488,45 +417,38 @@ body {
 @keyframes bpp-page-leave-up {
   to {
     opacity: 0;
-    filter: blur(1.5px);
-    transform: translateY(-30px) scale(0.995);
+    transform: translateY(-12px);
   }
 }
 @keyframes bpp-page-enter-from-bottom {
   from {
     opacity: 0;
-    filter: blur(2px);
-    transform: translateY(38px) scale(0.996);
+    transform: translateY(14px);
   }
   to {
     opacity: 1;
-    filter: blur(0);
-    transform: translateY(0) scale(1);
+    transform: translateY(0);
   }
 }
 @keyframes bpp-page-leave-down {
   to {
     opacity: 0;
-    filter: blur(1.5px);
-    transform: translateY(30px) scale(0.995);
+    transform: translateY(12px);
   }
 }
 @keyframes bpp-page-enter-from-top {
   from {
     opacity: 0;
-    filter: blur(2px);
-    transform: translateY(-38px) scale(0.996);
+    transform: translateY(-14px);
   }
   to {
     opacity: 1;
-    filter: blur(0);
-    transform: translateY(0) scale(1);
+    transform: translateY(0);
   }
 }
 @keyframes bpp-page-fade-in {
   from {
     opacity: 0;
-    filter: blur(1px);
   }
 }
 .bpp-page {
@@ -596,29 +518,18 @@ body {
   width: 2px;
   height: 16px;
   background: #d47b16;
-  box-shadow: 0 0 8px rgba(212, 123, 22, 0.4);
 }
 .bpp-panel {
   border: 1px solid var(--bpp-line);
   border-radius: 4px;
-  background:
-    radial-gradient(
-      circle at 8% 0%,
-      rgba(240, 151, 42, 0.045),
-      transparent 27%
-    ),
-    radial-gradient(
-      circle at 93% 100%,
-      rgba(48, 62, 70, 0.055),
-      transparent 32%
-    ),
-    linear-gradient(180deg, rgba(18, 22, 24, 0.92), rgba(10, 14, 17, 0.88));
+  background: linear-gradient(
+    180deg,
+    rgba(18, 22, 24, 0.92),
+    rgba(10, 14, 17, 0.88)
+  );
   box-shadow:
-    inset 0 1px rgba(255, 228, 189, 0.026),
-    inset 0 0 0 1px rgba(255, 168, 55, 0.012),
-    inset 0 -18px 38px rgba(0, 0, 0, 0.08),
-    0 12px 28px rgba(0, 0, 0, 0.18),
-    0 0 26px rgba(226, 128, 17, 0.018);
+    inset 0 1px rgba(255, 228, 189, 0.02),
+    0 10px 24px rgba(0, 0, 0, 0.18);
 }
 .bpp-panel-subtle {
   border: 1px solid rgba(204, 132, 37, 0.12);
@@ -663,29 +574,23 @@ body {
   opacity: 0.38;
 }
 .bpp-button-primary {
-  border-color: rgba(245, 146, 24, 0.68);
+  border-color: rgba(245, 146, 24, 0.62);
   color: #f0e8dc;
-  background:
-    linear-gradient(90deg, rgba(229, 130, 16, 0.34), rgba(117, 62, 8, 0.2)),
-    repeating-linear-gradient(
-      90deg,
-      transparent 0 35px,
-      rgba(255, 255, 255, 0.025) 35px 36px
-    );
+  background: linear-gradient(
+    90deg,
+    rgba(229, 130, 16, 0.34),
+    rgba(117, 62, 8, 0.2)
+  );
   box-shadow:
-    inset 0 1px rgba(255, 222, 169, 0.15),
-    inset 0 0 0 1px rgba(255, 179, 71, 0.08),
-    inset 0 0 28px rgba(244, 146, 24, 0.1),
-    0 0 20px rgba(232, 132, 18, 0.16),
-    0 8px 24px rgba(0, 0, 0, 0.24);
+    inset 0 1px rgba(255, 222, 169, 0.12),
+    0 8px 20px rgba(0, 0, 0, 0.22);
 }
 .bpp-button-primary:disabled {
   opacity: 0.62;
   filter: saturate(0.72);
 }
 .bpp-primary-action-icon {
-  filter: drop-shadow(0 0 4px rgba(242, 154, 36, 0.75))
-    drop-shadow(0 0 10px rgba(226, 126, 14, 0.38));
+  filter: drop-shadow(0 0 5px rgba(240, 142, 21, 0.3));
 }
 
 /* ── History dashboard ──────────────────────────────────────────────── */
@@ -695,9 +600,7 @@ body {
   z-index: 1;
   inset: 0;
   pointer-events: none;
-  background:
-    radial-gradient(circle at 51% 18%, rgba(19, 47, 66, 0.13), transparent 42%),
-    linear-gradient(rgba(3, 10, 16, 0.33), rgba(3, 9, 14, 0.48));
+  background: linear-gradient(rgba(3, 8, 12, 0.22), rgba(3, 7, 11, 0.34));
 }
 .bpp-history-summary-grid {
   display: grid;
@@ -716,24 +619,14 @@ body {
   padding: 10px 15px;
   border: 1px solid rgba(202, 126, 29, 0.24);
   border-radius: 4px;
-  background:
-    radial-gradient(
-      circle at 24% 54%,
-      rgba(221, 123, 12, 0.08),
-      transparent 30%
-    ),
-    radial-gradient(
-      circle at 93% 100%,
-      rgba(39, 56, 66, 0.08),
-      transparent 34%
-    ),
-    linear-gradient(105deg, rgba(16, 21, 24, 0.94), rgba(8, 13, 17, 0.9));
+  background: linear-gradient(
+    105deg,
+    rgba(16, 21, 24, 0.94),
+    rgba(8, 13, 17, 0.9)
+  );
   box-shadow:
-    inset 0 1px rgba(255, 228, 189, 0.025),
-    inset 0 0 0 1px rgba(255, 160, 45, 0.012),
-    inset 0 0 42px rgba(222, 122, 11, 0.02),
-    0 12px 27px rgba(0, 0, 0, 0.17),
-    0 0 26px rgba(222, 124, 14, 0.018);
+    inset 0 1px rgba(255, 228, 189, 0.02),
+    0 10px 22px rgba(0, 0, 0, 0.17);
 }
 .bpp-history-summary-card::before {
   content: '';
@@ -748,18 +641,6 @@ body {
     rgba(228, 133, 21, 0.22),
     transparent
   );
-}
-.bpp-history-summary-card::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  opacity: 0.1;
-  background-image:
-    linear-gradient(rgba(255, 255, 255, 0.018) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.014) 1px, transparent 1px);
-  background-size: 18px 18px;
-  mask-image: linear-gradient(90deg, #000, transparent 72%);
 }
 .bpp-history-stat-copy {
   position: relative;
@@ -786,9 +667,7 @@ body {
   letter-spacing: -0.055em;
   line-height: 0.92;
   font-variant-numeric: tabular-nums;
-  text-shadow:
-    0 0 10px rgba(231, 128, 11, 0.26),
-    0 2px 10px rgba(0, 0, 0, 0.55);
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
 }
 .bpp-history-stat-detail {
   margin-top: 4px;
@@ -805,22 +684,14 @@ body {
   overflow: hidden;
   border: 1px solid rgba(204, 128, 31, 0.2);
   border-radius: 4px;
-  background:
-    radial-gradient(
-      circle at 3% 0%,
-      rgba(226, 130, 15, 0.055),
-      transparent 28%
-    ),
-    radial-gradient(
-      circle at 96% 100%,
-      rgba(40, 56, 66, 0.07),
-      transparent 29%
-    ),
-    linear-gradient(180deg, rgba(16, 21, 24, 0.94), rgba(9, 14, 17, 0.9));
+  background: linear-gradient(
+    180deg,
+    rgba(16, 21, 24, 0.94),
+    rgba(9, 14, 17, 0.9)
+  );
   box-shadow:
-    inset 0 1px rgba(255, 226, 185, 0.025),
-    inset 0 0 34px rgba(225, 126, 12, 0.015),
-    0 12px 26px rgba(0, 0, 0, 0.16);
+    inset 0 1px rgba(255, 226, 185, 0.02),
+    0 10px 22px rgba(0, 0, 0, 0.16);
   transition:
     border-color 360ms ease,
     box-shadow 360ms ease,
@@ -840,7 +711,6 @@ body {
     #e08214 86%,
     transparent
   );
-  box-shadow: 0 0 10px rgba(232, 129, 14, 0.55);
   opacity: 0;
   transform: scaleY(0.18);
   transition:
@@ -850,10 +720,8 @@ body {
 .bpp-history-cleanup.is-open {
   border-color: rgba(211, 131, 30, 0.27);
   box-shadow:
-    inset 0 1px rgba(255, 226, 185, 0.03),
-    inset 0 0 38px rgba(225, 126, 12, 0.02),
-    -5px 0 18px rgba(224, 124, 10, 0.035),
-    0 13px 29px rgba(0, 0, 0, 0.18);
+    inset 0 1px rgba(255, 226, 185, 0.025),
+    0 12px 26px rgba(0, 0, 0, 0.18);
 }
 .bpp-history-cleanup.is-open::before {
   opacity: 1;
@@ -909,7 +777,6 @@ body {
 .bpp-history-cleanup-trash {
   flex: none;
   color: #dd7d11;
-  filter: drop-shadow(0 0 6px rgba(225, 123, 8, 0.27));
 }
 .bpp-history-cleanup-title {
   color: #9d9891;
@@ -1029,20 +896,14 @@ body {
   border-radius: 4px;
   color: inherit;
   text-decoration: none;
-  background:
-    radial-gradient(
-      circle at 13% 50%,
-      rgba(229, 131, 16, 0.065),
-      transparent 25%
-    ),
-    radial-gradient(circle at 89% 0%, rgba(38, 58, 71, 0.075), transparent 31%),
-    linear-gradient(104deg, rgba(15, 20, 23, 0.94), rgba(8, 13, 17, 0.9));
+  background: linear-gradient(
+    104deg,
+    rgba(15, 20, 23, 0.94),
+    rgba(8, 13, 17, 0.9)
+  );
   box-shadow:
-    inset 0 1px rgba(255, 228, 188, 0.025),
-    inset 0 0 0 1px rgba(255, 158, 42, 0.01),
-    inset 0 0 34px rgba(224, 125, 11, 0.012),
-    0 10px 24px rgba(0, 0, 0, 0.17),
-    0 0 20px rgba(228, 129, 13, 0.016);
+    inset 0 1px rgba(255, 228, 188, 0.02),
+    0 10px 22px rgba(0, 0, 0, 0.17);
   transition:
     border-color 200ms ease,
     background 200ms ease,
@@ -1063,10 +924,7 @@ body {
     #e3871b 72%,
     transparent
   );
-  box-shadow:
-    0 0 7px rgba(232, 130, 16, 0.48),
-    0 0 14px rgba(226, 125, 10, 0.2);
-  opacity: 0.7;
+  opacity: 0.55;
 }
 .bpp-history-run-card::after {
   content: '';
@@ -1080,27 +938,21 @@ body {
   background: linear-gradient(
     90deg,
     transparent,
-    rgba(235, 141, 26, 0.36),
+    rgba(235, 141, 26, 0.3),
     transparent
   );
-  box-shadow: 0 0 8px rgba(232, 133, 16, 0.17);
-  opacity: 0.65;
+  opacity: 0.5;
 }
 .bpp-history-run-card:hover {
   border-color: rgba(232, 141, 27, 0.46);
-  background:
-    radial-gradient(
-      circle at 13% 50%,
-      rgba(235, 137, 20, 0.095),
-      transparent 27%
-    ),
-    radial-gradient(circle at 89% 0%, rgba(43, 64, 77, 0.1), transparent 33%),
-    linear-gradient(104deg, rgba(18, 22, 24, 0.96), rgba(9, 14, 18, 0.93));
+  background: linear-gradient(
+    104deg,
+    rgba(18, 22, 24, 0.96),
+    rgba(9, 14, 18, 0.93)
+  );
   box-shadow:
-    inset 0 1px rgba(255, 228, 188, 0.035),
-    inset 0 0 30px rgba(230, 132, 16, 0.025),
-    0 12px 27px rgba(0, 0, 0, 0.2),
-    0 0 22px rgba(229, 130, 14, 0.055);
+    inset 0 1px rgba(255, 228, 188, 0.03),
+    0 12px 24px rgba(0, 0, 0, 0.2);
 }
 .bpp-history-run-preview {
   position: relative;
@@ -1115,17 +967,10 @@ body {
   border: 1px solid rgba(215, 133, 29, 0.25);
   border-radius: 3px;
   color: #655f55;
-  background:
-    radial-gradient(
-      circle at 50% 48%,
-      rgba(224, 130, 19, 0.09),
-      transparent 39%
-    ),
-    #030608;
+  background: #030608;
   box-shadow:
-    inset 0 0 22px rgba(0, 0, 0, 0.58),
-    inset 0 0 0 1px rgba(246, 170, 68, 0.025),
-    0 0 13px rgba(225, 127, 12, 0.055);
+    inset 0 0 22px rgba(0, 0, 0, 0.5),
+    inset 0 0 0 1px rgba(246, 170, 68, 0.025);
 }
 .bpp-history-run-preview::before,
 .bpp-history-run-preview::after {
@@ -1137,18 +982,12 @@ body {
 }
 .bpp-history-run-preview::before {
   opacity: 0.18;
-  background:
-    linear-gradient(
-      90deg,
-      rgba(4, 8, 10, 0.72),
-      transparent 17% 83%,
-      rgba(3, 7, 9, 0.7)
-    ),
-    repeating-linear-gradient(
-      180deg,
-      transparent 0 5px,
-      rgba(239, 164, 68, 0.025) 5px 6px
-    );
+  background: linear-gradient(
+    90deg,
+    rgba(4, 8, 10, 0.72),
+    transparent 17% 83%,
+    rgba(3, 7, 9, 0.7)
+  );
 }
 .bpp-history-run-preview::after {
   inset: auto 8% 0;
@@ -1156,10 +995,9 @@ body {
   background: linear-gradient(
     90deg,
     transparent,
-    rgba(229, 137, 25, 0.48),
+    rgba(229, 137, 25, 0.36),
     transparent
   );
-  box-shadow: 0 0 8px rgba(225, 128, 13, 0.25);
 }
 .bpp-history-run-preview-image {
   position: absolute;
@@ -1206,10 +1044,9 @@ body {
   width: 1px;
   background: linear-gradient(
     transparent,
-    rgba(225, 133, 20, 0.42),
+    rgba(225, 133, 20, 0.36),
     transparent
   );
-  box-shadow: 0 0 7px rgba(224, 127, 11, 0.12);
 }
 .bpp-history-run-heading {
   display: grid;
@@ -1247,7 +1084,6 @@ body {
   font-weight: 700;
   letter-spacing: 0.05em;
   white-space: nowrap;
-  text-shadow: 0 0 7px currentColor;
 }
 .bpp-history-run-detail {
   display: flex;
@@ -1358,9 +1194,7 @@ body {
   z-index: 1;
   inset: 0;
   pointer-events: none;
-  background:
-    radial-gradient(circle at 42% 12%, rgba(21, 55, 79, 0.14), transparent 40%),
-    linear-gradient(rgba(3, 11, 18, 0.43), rgba(3, 10, 16, 0.58));
+  background: linear-gradient(rgba(3, 8, 12, 0.26), rgba(3, 7, 11, 0.4));
 }
 .bpp-install-hero {
   position: relative;
@@ -1373,50 +1207,29 @@ body {
   padding: 22px 30px;
   border: 1px solid var(--bpp-line);
   border-radius: 5px;
-  background:
-    radial-gradient(
-      circle at 82% 47%,
-      rgba(232, 123, 12, 0.13),
-      transparent 30%
-    ),
-    radial-gradient(
-      circle at 10% 48%,
-      rgba(226, 128, 17, 0.045),
-      transparent 31%
-    ),
-    linear-gradient(108deg, rgba(17, 22, 24, 0.95), rgba(10, 14, 17, 0.92));
+  background: linear-gradient(
+    108deg,
+    rgba(17, 22, 24, 0.95),
+    rgba(10, 14, 17, 0.92)
+  );
   box-shadow:
-    inset 0 1px rgba(255, 228, 189, 0.026),
-    inset 0 0 54px rgba(226, 128, 17, 0.025),
-    0 15px 36px rgba(0, 0, 0, 0.24);
+    inset 0 1px rgba(255, 228, 189, 0.02),
+    0 12px 28px rgba(0, 0, 0, 0.22);
 }
-.bpp-install-hero::before,
 .bpp-install-hero::after {
   content: '';
   position: absolute;
-  pointer-events: none;
-}
-.bpp-install-hero::before {
-  inset: 0;
-  opacity: 0.16;
-  background-image:
-    linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.018) 1px, transparent 1px);
-  background-size: 22px 22px;
-  mask-image: linear-gradient(90deg, transparent 45%, #000 74%, transparent);
-}
-.bpp-install-hero::after {
   top: 0;
   right: 5%;
   width: 24%;
   height: 1px;
+  pointer-events: none;
   background: linear-gradient(
     90deg,
     transparent,
-    rgba(235, 135, 18, 0.75),
+    rgba(224, 129, 22, 0.4),
     transparent
   );
-  box-shadow: 0 0 13px rgba(235, 135, 18, 0.48);
 }
 .bpp-install-hero-summary {
   position: relative;
@@ -1444,7 +1257,6 @@ body {
   border: 1px solid rgba(232, 130, 14, 0.24);
   border-radius: 7px;
   background: rgba(213, 105, 2, 0.035);
-  box-shadow: 0 0 18px rgba(235, 127, 8, 0.13);
 }
 .bpp-install-primary-button {
   position: relative;
@@ -1457,73 +1269,21 @@ body {
   border: 1px solid #ffad38;
   border-radius: 4px;
   color: #fff;
-  background:
-    radial-gradient(
-      circle at 92% 6%,
-      rgba(255, 226, 180, 0.3),
-      transparent 22%
-    ),
-    linear-gradient(110deg, #d66e05, #ef870e 53%, #db6f04);
+  background: linear-gradient(110deg, #d66e05, #ef870e 53%, #db6f04);
   box-shadow:
-    inset 0 1px rgba(255, 242, 215, 0.43),
-    inset 0 -2px 5px rgba(116, 44, 0, 0.32),
-    inset 0 0 23px rgba(255, 182, 65, 0.17),
-    0 0 17px rgba(239, 132, 9, 0.42),
+    inset 0 1px rgba(255, 242, 215, 0.32),
+    0 0 14px rgba(239, 132, 9, 0.26),
     0 8px 22px rgba(0, 0, 0, 0.26);
   transition:
     box-shadow 150ms ease,
     transform 150ms ease;
 }
-.bpp-install-primary-button::before {
-  content: '';
-  position: absolute;
-  z-index: 0;
-  inset: 0;
-  opacity: 0.23;
-  background-image:
-    radial-gradient(
-      circle,
-      rgba(255, 244, 218, 0.55) 0 0.7px,
-      transparent 0.9px
-    ),
-    linear-gradient(90deg, transparent, rgba(255, 246, 222, 0.14), transparent);
-  background-size:
-    4px 4px,
-    100% 100%;
-  mask-image: linear-gradient(90deg, #000, transparent 44%, #000);
-}
-.bpp-install-primary-button::after {
-  position: absolute;
-  z-index: 1;
-  top: -70%;
-  right: -24%;
-  width: 44%;
-  height: 240%;
-  content: '';
-  opacity: 0;
-  pointer-events: none;
-  background: linear-gradient(
-    106deg,
-    transparent 22%,
-    rgba(255, 249, 232, 0.16) 50%,
-    transparent 78%
-  );
-  transform: translateX(24%) rotate(12deg);
-  transition:
-    opacity 180ms ease,
-    transform 260ms ease;
-}
 .bpp-install-primary-button:hover:not(:disabled) {
   box-shadow:
-    inset 0 1px rgba(255, 249, 228, 0.56),
-    inset 0 -1px rgba(112, 48, 0, 0.3),
-    0 0 30px rgba(240, 142, 21, 0.4),
+    inset 0 1px rgba(255, 249, 228, 0.4),
+    0 0 20px rgba(240, 142, 21, 0.3),
     0 12px 25px rgba(0, 0, 0, 0.28);
   transform: translateY(-1px);
-}
-.bpp-install-primary-button:hover:not(:disabled)::after {
-  opacity: 1;
-  transform: translateX(-105%) rotate(12deg);
 }
 .bpp-install-primary-button:disabled {
   opacity: 0.5;
@@ -1535,18 +1295,7 @@ body {
 }
 .bpp-install-primary-button .bpp-primary-action-icon {
   color: #fff3dd;
-  filter: drop-shadow(0 0 3px rgba(255, 243, 218, 0.72))
-    drop-shadow(0 0 8px rgba(255, 171, 54, 0.5));
-  transition: filter 180ms ease;
-}
-.bpp-install-primary-button:hover:not(:disabled) .bpp-primary-action-icon {
-  filter: drop-shadow(0 0 3px rgba(255, 248, 230, 0.86))
-    drop-shadow(0 0 10px rgba(255, 172, 52, 0.62));
-}
-.bpp-install-primary-button .bpp-primary-action-label {
-  text-shadow:
-    0 0 5px rgba(255, 249, 235, 0.38),
-    0 0 12px rgba(255, 194, 93, 0.22);
+  filter: drop-shadow(0 0 6px rgba(255, 178, 66, 0.4));
 }
 .bpp-install-info-grid {
   display: grid;
@@ -1563,28 +1312,14 @@ body {
   overflow: hidden;
   border: 1px solid var(--bpp-line);
   border-radius: 5px;
-  background:
-    radial-gradient(
-      circle at 7% 8%,
-      rgba(240, 151, 42, 0.045),
-      transparent 47%
-    ),
-    linear-gradient(145deg, rgba(18, 22, 24, 0.92), rgba(10, 14, 17, 0.88));
+  background: linear-gradient(
+    145deg,
+    rgba(18, 22, 24, 0.92),
+    rgba(10, 14, 17, 0.88)
+  );
   box-shadow:
-    inset 0 1px rgba(255, 228, 189, 0.026),
-    inset 0 0 31px rgba(226, 128, 17, 0.018),
-    0 10px 25px rgba(0, 0, 0, 0.16);
-}
-.bpp-install-info-card::after {
-  content: '';
-  position: absolute;
-  right: -24px;
-  bottom: -28px;
-  width: 100px;
-  height: 70px;
-  border-radius: 50%;
-  background: rgba(226, 128, 17, 0.035);
-  filter: blur(18px);
+    inset 0 1px rgba(255, 228, 189, 0.02),
+    0 10px 22px rgba(0, 0, 0, 0.16);
 }
 .bpp-install-info-title {
   display: flex;
@@ -1667,7 +1402,6 @@ body {
   color: #e78a1a;
   background: rgba(231, 133, 18, 0.05);
   font-size: 10px;
-  box-shadow: inset 0 0 11px rgba(231, 133, 18, 0.035);
 }
 .bpp-install-section-title {
   margin: 0 0 9px;
@@ -1691,17 +1425,14 @@ body {
   border-radius: 5px;
   color: #f08b15;
   text-align: left;
-  background:
-    radial-gradient(
-      circle at 4% 44%,
-      rgba(225, 132, 20, 0.085),
-      transparent 34%
-    ),
-    linear-gradient(145deg, rgba(25, 25, 23, 0.84), rgba(12, 18, 22, 0.84));
+  background: linear-gradient(
+    145deg,
+    rgba(25, 25, 23, 0.84),
+    rgba(12, 18, 22, 0.84)
+  );
   box-shadow:
-    inset 0 1px rgba(255, 226, 185, 0.035),
-    inset 0 0 24px rgba(228, 127, 12, 0.022),
-    0 8px 20px rgba(0, 0, 0, 0.16);
+    inset 0 1px rgba(255, 226, 185, 0.025),
+    0 8px 18px rgba(0, 0, 0, 0.16);
   transition:
     border-color 150ms ease,
     background 150ms ease,
@@ -1709,13 +1440,11 @@ body {
 }
 .bpp-install-maintenance-action:hover:not(:disabled) {
   border-color: rgba(241, 144, 23, 0.66);
-  background:
-    radial-gradient(
-      circle at 4% 44%,
-      rgba(225, 132, 20, 0.14),
-      transparent 38%
-    ),
-    linear-gradient(145deg, rgba(30, 27, 22, 0.9), rgba(14, 19, 23, 0.88));
+  background: linear-gradient(
+    145deg,
+    rgba(30, 27, 22, 0.9),
+    rgba(14, 19, 23, 0.88)
+  );
   transform: translateY(-1px);
 }
 .bpp-install-maintenance-action:disabled {
@@ -1724,13 +1453,14 @@ body {
 .bpp-install-maintenance-action.is-danger {
   color: #ec6658;
   border-color: rgba(208, 72, 58, 0.42);
-  background:
-    radial-gradient(circle at 6% 50%, rgba(194, 58, 46, 0.13), transparent 40%),
-    linear-gradient(145deg, rgba(37, 20, 21, 0.87), rgba(20, 15, 18, 0.84));
+  background: linear-gradient(
+    145deg,
+    rgba(37, 20, 21, 0.87),
+    rgba(20, 15, 18, 0.84)
+  );
   box-shadow:
-    inset 0 1px rgba(255, 205, 197, 0.03),
-    inset 0 0 24px rgba(204, 60, 47, 0.035),
-    0 8px 20px rgba(0, 0, 0, 0.16);
+    inset 0 1px rgba(255, 205, 197, 0.025),
+    0 8px 18px rgba(0, 0, 0, 0.16);
 }
 .bpp-install-maintenance-action.is-danger:hover:not(:disabled) {
   border-color: rgba(219, 83, 64, 0.52);
@@ -1741,14 +1471,6 @@ body {
   height: 34px;
   align-items: center;
   justify-content: center;
-  filter: drop-shadow(0 0 3px color-mix(in srgb, currentColor 54%, transparent))
-    drop-shadow(0 0 9px color-mix(in srgb, currentColor 30%, transparent));
-  transition: filter 150ms ease;
-}
-.bpp-install-maintenance-action:hover:not(:disabled)
-  .bpp-install-maintenance-icon {
-  filter: drop-shadow(0 0 4px color-mix(in srgb, currentColor 68%, transparent))
-    drop-shadow(0 0 12px color-mix(in srgb, currentColor 42%, transparent));
 }
 .bpp-install-notices {
   display: flex;
@@ -1824,18 +1546,14 @@ body {
   overflow: hidden;
   border: 1px solid rgba(224, 136, 25, 0.3);
   border-radius: 4px;
-  background:
-    radial-gradient(
-      circle at 12% 0%,
-      rgba(234, 141, 27, 0.08),
-      transparent 30%
-    ),
-    linear-gradient(160deg, rgba(15, 20, 23, 0.99), rgba(7, 11, 14, 0.99));
+  background: linear-gradient(
+    160deg,
+    rgba(15, 20, 23, 0.99),
+    rgba(7, 11, 14, 0.99)
+  );
   box-shadow:
-    inset 0 0 0 1px rgba(255, 181, 85, 0.025),
-    inset 0 -30px 60px rgba(0, 0, 0, 0.18),
-    0 28px 80px rgba(0, 0, 0, 0.68),
-    0 0 34px rgba(229, 133, 19, 0.08);
+    inset 0 0 0 1px rgba(255, 181, 85, 0.02),
+    0 28px 80px rgba(0, 0, 0, 0.68);
 }
 .bpp-modal-card::before,
 .bpp-modal-card::after {
@@ -1845,7 +1563,6 @@ body {
   width: 22px;
   height: 1px;
   background: #d57c16;
-  box-shadow: 0 0 8px rgba(221, 128, 20, 0.42);
 }
 .bpp-modal-card::before {
   top: 0;
@@ -1859,8 +1576,7 @@ body {
   border-color: rgba(206, 76, 60, 0.34);
   box-shadow:
     inset 0 0 0 1px rgba(235, 102, 83, 0.02),
-    0 28px 80px rgba(0, 0, 0, 0.68),
-    0 0 30px rgba(193, 57, 43, 0.06);
+    0 28px 80px rgba(0, 0, 0, 0.68);
 }
 .bpp-modal-header {
   border-bottom: 1px solid rgba(220, 135, 29, 0.16);
@@ -1884,28 +1600,17 @@ body {
   border-radius: 8px;
   outline: 1px solid rgba(221, 126, 17, 0.28);
   outline-offset: 4px;
-  background:
-    linear-gradient(rgba(222, 132, 22, 0.018) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(222, 132, 22, 0.015) 1px, transparent 1px),
-    radial-gradient(
-      circle at 10% 0%,
-      rgba(238, 145, 30, 0.11),
-      transparent 34%
-    ),
-    linear-gradient(155deg, rgba(15, 20, 22, 0.995), rgba(5, 9, 12, 0.995));
-  background-size:
-    32px 32px,
-    32px 32px,
-    auto,
-    auto;
+  background: linear-gradient(
+    155deg,
+    rgba(15, 20, 22, 0.995),
+    rgba(5, 9, 12, 0.995)
+  );
   box-shadow:
-    inset 0 0 0 1px rgba(255, 197, 112, 0.06),
-    inset 0 0 70px rgba(0, 0, 0, 0.3),
-    0 32px 90px rgba(0, 0, 0, 0.76),
-    0 0 36px rgba(232, 132, 15, 0.13);
+    inset 0 0 0 1px rgba(255, 197, 112, 0.05),
+    0 32px 90px rgba(0, 0, 0, 0.76);
   animation: bpp-install-modal-in 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
   transform-origin: 50% 44%;
-  will-change: opacity, filter, transform;
+  will-change: opacity, transform;
 }
 .bpp-install-confirm-card.is-closing {
   pointer-events: none;
@@ -1914,12 +1619,7 @@ body {
 @keyframes bpp-install-modal-in {
   from {
     opacity: 0;
-    filter: blur(3px);
-    transform: translateY(18px) scale(0.975);
-  }
-  58% {
-    opacity: 1;
-    filter: blur(0);
+    transform: translateY(14px) scale(0.985);
   }
   to {
     opacity: 1;
@@ -1929,13 +1629,11 @@ body {
 @keyframes bpp-install-modal-out {
   from {
     opacity: 1;
-    filter: blur(0);
     transform: translateY(0) scale(1);
   }
   to {
     opacity: 0;
-    filter: blur(2px);
-    transform: translateY(10px) scale(0.982);
+    transform: translateY(8px) scale(0.99);
   }
 }
 @keyframes bpp-install-backdrop-in {
@@ -1955,12 +1653,10 @@ body {
 .bpp-install-confirm-card::before {
   width: 42px;
   height: 2px;
-  box-shadow: 0 0 9px rgba(255, 166, 51, 0.68);
 }
 .bpp-install-confirm-card::after {
   width: 42px;
   height: 2px;
-  box-shadow: 0 0 9px rgba(255, 166, 51, 0.58);
 }
 .bpp-install-confirm-header {
   min-height: 86px;
@@ -1973,8 +1669,6 @@ body {
 }
 .bpp-install-confirm-header svg:first-child {
   color: #ec8a18;
-  filter: drop-shadow(0 0 3px rgba(255, 205, 132, 0.52))
-    drop-shadow(0 0 10px rgba(237, 134, 18, 0.32));
 }
 .bpp-install-confirm-header h2 {
   font-family: var(--bpp-body-font);
@@ -2036,7 +1730,6 @@ body {
 }
 .bpp-install-card-icon {
   color: #e58a1c;
-  filter: drop-shadow(0 0 7px rgba(229, 138, 28, 0.28));
 }
 .bpp-install-card-copy {
   position: relative;
@@ -2089,7 +1782,6 @@ body {
 .bpp-install-guide-link:hover {
   border-color: rgba(238, 153, 42, 0.7);
   background: rgba(218, 132, 22, 0.13);
-  box-shadow: 0 0 14px rgba(224, 131, 17, 0.1);
 }
 .bpp-install-steam-warning {
   display: flex;
@@ -2102,24 +1794,11 @@ body {
   background:
     linear-gradient(90deg, rgba(224, 129, 12, 0.1), transparent 70%),
     rgba(9, 12, 13, 0.78);
-  box-shadow:
-    inset 0 0 24px rgba(222, 125, 14, 0.045),
-    0 0 18px rgba(222, 125, 14, 0.045);
-}
-.bpp-install-steam-warning::after {
-  content: '';
-  position: absolute;
-  right: -14px;
-  bottom: -15px;
-  width: 62px;
-  height: 22px;
-  border-top: 1px solid rgba(233, 143, 31, 0.34);
-  transform: rotate(-30deg);
+  box-shadow: inset 0 0 24px rgba(222, 125, 14, 0.04);
 }
 .bpp-install-warning-icon {
   flex: none;
   color: #ed8b17;
-  filter: drop-shadow(0 0 8px rgba(237, 139, 23, 0.3));
 }
 .bpp-install-steam-warning p {
   max-width: 460px;
@@ -2139,18 +1818,7 @@ body {
   border: 1px solid rgba(201, 143, 55, 0.34);
 }
 .bpp-install-compat-orbit {
-  position: absolute;
-  right: 27px;
-  bottom: -26px;
-  width: 104px;
-  height: 104px;
-  border: 1px solid rgba(222, 143, 41, 0.055);
-  border-radius: 50%;
-  background: repeating-radial-gradient(
-    circle,
-    transparent 0 13px,
-    rgba(222, 143, 41, 0.04) 14px 15px
-  );
+  display: none;
 }
 .bpp-install-confirm-card input[type='checkbox'] {
   position: relative;
@@ -2167,9 +1835,7 @@ body {
 .bpp-install-confirm-card input[type='checkbox']:checked {
   border-color: #e6932a;
   background: linear-gradient(145deg, #f4ad3e, #d47714);
-  box-shadow:
-    inset 0 1px rgba(255, 235, 194, 0.42),
-    0 0 12px rgba(231, 139, 28, 0.25);
+  box-shadow: inset 0 1px rgba(255, 235, 194, 0.42);
 }
 .bpp-install-confirm-card input[type='checkbox']:checked::after {
   content: '\2713';
@@ -2222,19 +1888,18 @@ body {
   color: #fff4dc;
   background: linear-gradient(180deg, #f2a135, #d87513 72%, #b95c0b);
   box-shadow:
-    inset 0 1px rgba(255, 240, 209, 0.56),
-    inset 0 -1px rgba(112, 45, 2, 0.3),
-    0 0 12px rgba(244, 147, 27, 0.48),
-    0 0 30px rgba(230, 119, 8, 0.19);
+    inset 0 1px rgba(255, 240, 209, 0.45),
+    0 0 14px rgba(244, 147, 27, 0.3),
+    0 8px 20px rgba(0, 0, 0, 0.24);
   font-family: var(--bpp-body-font);
   font-size: 15px;
   letter-spacing: 0.04em;
 }
 .bpp-install-confirm-submit:hover:not(:disabled) {
   box-shadow:
-    inset 0 1px rgba(255, 244, 220, 0.68),
-    0 0 16px rgba(246, 156, 42, 0.58),
-    0 0 34px rgba(229, 116, 6, 0.24);
+    inset 0 1px rgba(255, 244, 220, 0.55),
+    0 0 20px rgba(246, 156, 42, 0.36),
+    0 8px 20px rgba(0, 0, 0, 0.26);
 }
 .bpp-status-dot {
   display: inline-block;
@@ -2243,7 +1908,7 @@ body {
   flex: none;
   border-radius: 50%;
   background: currentColor;
-  box-shadow: 0 0 8px currentColor;
+  box-shadow: 0 0 4px currentColor;
 }
 
 @media (max-width: 1080px) {

@@ -3,7 +3,6 @@ import type { CSSProperties, MouseEvent, ReactNode } from 'react';
 import { Download, History, Info, MonitorPlay } from 'lucide-react';
 import clsx from 'clsx';
 import { useI18n } from '../i18n/LocaleProvider';
-import navActivePng from '../../static/navigation/nav-active.png';
 
 export function ShellNavRail() {
   const { locale, t } = useI18n();
@@ -22,15 +21,7 @@ export function ShellNavRail() {
         className="bpp-nav-active-slider"
         aria-hidden="true"
         style={{ '--bpp-nav-index': activeIndex } as CSSProperties}
-      >
-        <img
-          src={navActivePng}
-          alt=""
-          draggable={false}
-          className="bpp-nav-active-image"
-        />
-        <span className="bpp-nav-active-glow" />
-      </div>
+      />
       <RailItem
         to="/"
         index={0}
