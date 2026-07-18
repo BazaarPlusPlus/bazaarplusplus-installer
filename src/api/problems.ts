@@ -3,7 +3,11 @@ import type { SemanticProblem } from '../types/backend';
 const semanticProblemCodes: Record<SemanticProblem['code'], true> = {
   history_unavailable: true,
   history_read_failed: true,
-  history_action_failed: true
+  history_action_failed: true,
+  install_detection_failed: true,
+  install_action_failed: true,
+  install_game_running: true,
+  install_partial_failure: true
 };
 
 export class SemanticProblemError extends Error {

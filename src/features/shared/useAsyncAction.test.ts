@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import { createAsyncActionGate, runSingleFlightAction } from './useAsyncAction';
-import { parseResetBppDataError } from './errors';
 
 describe('runSingleFlightAction', () => {
   it('rejects a second action while the first action is still running', async () => {
@@ -69,27 +68,5 @@ describe('runSingleFlightAction', () => {
     expect(result).toBe(false);
     expect(errors).toEqual(['localized reset error']);
     expect(gate.current).toBeNull();
-  });
-});
-
-describe('parseResetBppDataError', () => {
-  it('parses reset data machine-code errors without exposing path payloads', () => {
-    expect(parseResetBppDataError('bpp_data_reset_blocked_by_game')).toEqual({
-      code: 'game_running'
-    });
-
-    expect(
-      parseResetBppDataError(
-        'bpp_data_reset_partial_failure:/tmp/a\u001f/tmp/b'
-      )
-    ).toEqual({
-      code: 'partial_failure',
-      paths: ['/tmp/a', '/tmp/b']
-    });
-
-    expect(parseResetBppDataError('bpp_data_reset_partial_failure:')).toEqual({
-      code: 'partial_failure',
-      paths: []
-    });
   });
 });

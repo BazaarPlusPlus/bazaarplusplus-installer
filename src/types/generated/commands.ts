@@ -207,9 +207,11 @@ export type InstallState = {
 };
 
 export type InstallWarning = {
-	code: string,
-	message: string,
+	code: InstallWarningCode,
+	params: { [key in string]: string },
 };
+
+export type InstallWarningCode = "game_missing" | "launch_options_unsupported" | "trampoline_reverted";
 
 export type ResetBepinexResult = {
 	state: InstallState,
@@ -256,7 +258,7 @@ export type SemanticProblem = {
 	diagnostic: string | null,
 };
 
-export type SemanticProblemCode = "history_unavailable" | "history_read_failed" | "history_action_failed";
+export type SemanticProblemCode = "history_unavailable" | "history_read_failed" | "history_action_failed" | "install_detection_failed" | "install_action_failed" | "install_game_running" | "install_partial_failure";
 
 export type StorageCleanupExecution = { scope: "screenshots"; result: ScreenshotCleanupResult } | { scope: "run_data"; result: RunDataCleanupResult };
 

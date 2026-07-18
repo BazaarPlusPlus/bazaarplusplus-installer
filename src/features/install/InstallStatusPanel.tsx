@@ -2,10 +2,19 @@ import { FolderOpen } from 'lucide-react';
 import type { useInstallPage } from './useInstallPage';
 import { InstallStatusCard } from './InstallStatusCard';
 import { useI18n } from '../../i18n/LocaleProvider';
+import type { InstallState } from '../../types/backend';
 
 type InstallPage = ReturnType<typeof useInstallPage>;
 
-export function InstallStatusPanel({ page }: { page: InstallPage }) {
+export function InstallStatusPanel({
+  page,
+  state,
+  status
+}: {
+  page: InstallPage;
+  state: InstallState;
+  status: NonNullable<InstallPage['status']>;
+}) {
   const { t } = useI18n();
   return (
     <div className="col-span-7 flex flex-col gap-6">
@@ -18,18 +27,16 @@ export function InstallStatusPanel({ page }: { page: InstallPage }) {
             <InstallStatusCard
               title="The Bazaar"
               detail={
-                page.state.game.display_version ??
-                page.state.selected_game_path ??
-                '-'
+                state.game.display_version ?? state.selected_game_path ?? '-'
               }
-              label={page.status.gameLabel}
-              tone={page.status.gameTone}
+              label={status.gameLabel}
+              tone={status.gameTone}
             />
             <InstallStatusCard
               title="BazaarPlusPlus"
-              detail={page.status.modVersion}
-              label={page.status.modLabel}
-              tone={page.status.modTone}
+              detail={status.modVersion}
+              label={status.modLabel}
+              tone={status.modTone}
             />
           </div>
         </section>
@@ -46,9 +53,9 @@ export function InstallStatusPanel({ page }: { page: InstallPage }) {
               />
               <span
                 className="truncate"
-                title={page.state.selected_game_path ?? t('notSelected')}
+                title={state.selected_game_path ?? t('notSelected')}
               >
-                {page.state.selected_game_path ?? t('gamePathEmpty')}
+                {state.selected_game_path ?? t('gamePathEmpty')}
               </span>
             </div>
             <div className="flex gap-2">
