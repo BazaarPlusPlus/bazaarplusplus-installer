@@ -45,7 +45,7 @@ export function InstallStatusPanel({
   };
 
   return (
-    <div className="flex min-w-0 flex-col gap-4">
+    <div className="flex min-w-0 flex-col gap-3">
       <section className="bpp-install-hero">
         <div className="bpp-install-hero-summary">
           <div className="min-w-0">
@@ -71,39 +71,41 @@ export function InstallStatusPanel({
           icon={<Folder size={19} />}
           title={t('installationDirectoryHeading')}
         >
-          <p
-            className="selectable bpp-install-path"
-            title={selectedPath ?? undefined}
-          >
-            {selectedPath ?? t('gamePathEmpty')}
-          </p>
-          <div className="mt-auto grid grid-cols-2 gap-2.5 pt-4">
-            <button
-              type="button"
-              disabled={!selectedPath}
-              onClick={() => void copyPath()}
-              className="bpp-install-secondary-button"
+          <div className="bpp-install-directory-field">
+            <p
+              className="selectable bpp-install-path"
+              title={selectedPath ?? undefined}
             >
-              <Copy size={14} />
-              {copied ? t('pathCopied') : t('copyPath')}
-            </button>
-            <button
-              type="button"
-              disabled={!selectedPath}
-              onClick={() => selectedPath && void openPath(selectedPath)}
-              className="bpp-install-secondary-button"
-            >
-              <Folder size={14} />
-              {t('openDirectory')}
-            </button>
+              {selectedPath ?? t('gamePathEmpty')}
+            </p>
+            <div className="bpp-install-path-actions">
+              <button
+                type="button"
+                disabled={!selectedPath}
+                onClick={() => void copyPath()}
+                className="bpp-install-secondary-button bpp-install-copy-path-button"
+                title={copied ? t('pathCopied') : t('copyPath')}
+                aria-label={copied ? t('pathCopied') : t('copyPath')}
+              >
+                <Copy size={14} />
+                {copied ? t('pathCopied') : t('copyPath')}
+              </button>
+              <button
+                type="button"
+                disabled={!selectedPath}
+                onClick={() => selectedPath && void openPath(selectedPath)}
+                className="bpp-install-secondary-button"
+              >
+                <Folder size={14} />
+                {t('openDirectory')}
+              </button>
+            </div>
           </div>
         </InfoCard>
 
         <InfoCard title={t('applicationVersionHeading')}>
-          <div className="mt-1 flex items-center gap-3">
-            <span className="text-[30px] font-medium leading-none text-[#ece7df]">
-              {appVersion}
-            </span>
+          <div className="mt-0.5 flex items-center gap-2.5">
+            <span className="bpp-install-version-value">{appVersion}</span>
             <span className="bpp-install-build-badge">
               {import.meta.env.DEV ? t('developmentBuild') : t('stableBuild')}
             </span>

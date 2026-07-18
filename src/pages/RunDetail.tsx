@@ -76,7 +76,7 @@ export default function RunDetail() {
           <div className="bpp-panel flex flex-col gap-6 p-6">
             <div className="flex justify-between items-start">
               <div className="flex flex-col gap-1 min-w-0">
-                <h2 className="cinzel-decorative text-2xl font-bold text-[#e8dcc8] m-0 truncate">
+                <h2 className="cinzel text-2xl font-bold text-[#e8dcc8] m-0 truncate">
                   {detail.run.hero}
                   <span className={toneColorClass(runResult?.tone)}>
                     {' '}
@@ -241,7 +241,7 @@ function BattleRow({
         aria-hidden="true"
         className="absolute inset-0 overflow-hidden pointer-events-none opacity-[0.02] flex items-center justify-center"
       >
-        <span className="cinzel-decorative text-8xl font-bold text-[#e8c87a]">
+        <span className="cinzel text-8xl font-bold text-[#e8c87a]">
           {battle.opponent_hero ?? '-'}
         </span>
       </div>

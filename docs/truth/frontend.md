@@ -1,7 +1,7 @@
 ---
 status: truth
 topic: frontend
-last-verified: 692bc8e96c2877547919761be350f24032f8e9ac
+last-verified: 2c1d70e
 ---
 
 # Frontend
@@ -13,7 +13,7 @@ last-verified: 692bc8e96c2877547919761be350f24032f8e9ac
 - The four primary rail links run a direction-aware exit before navigation, then `AnimatedOutlet` mounts the destination with the matching vertical entry animation while the shell remains fixed in `src/layouts/ShellNavRail.tsx`, `src/layouts/GlobalShell.tsx`, and `src/styles/index.css`.
 - The update modal is rendered only for updater phases considered modal phases by `isUpdateModalPhase` in `src/layouts/GlobalShell.tsx:86-89` and `src/features/about/updater.ts:90-103`.
 - The shell's dark industrial visual system, supplied background image, navigation rail, panels, buttons, page headers, install-dashboard effects, and history-dashboard effects are centralized in `src/styles/index.css`; individual product pages reuse those semantic classes.
-- The desktop window is fixed at 1080×720 on macOS and 1080×680 on Windows; it cannot be resized, maximized, or launched fullscreen. Windows is created hidden with `decorations: false` and native shadow enabled; Rust replaces Tao's wide non-client resize insets with a compact frame, suppresses the Windows 11 DWM border, requests native rounded corners, and shows the window. No window state is persisted, preventing stale decorations or visibility from overriding startup configuration. The header supplies Windows-only minimize and close controls immediately after the language button. macOS keeps native decorations.
+- The desktop window is fixed at 1020×680 on macOS and 972×612 on Windows; it cannot be resized, maximized, or launched fullscreen. At heights below 700px, the content area reduces its surrounding whitespace and page gaps without changing the shell header or navigation rail dimensions. Windows is created hidden with `decorations: false` and native shadow enabled; Rust replaces Tao's wide non-client resize insets with a compact frame, suppresses the Windows 11 DWM border, requests native rounded corners, and shows the window. No window state is persisted, preventing stale decorations or visibility from overriding startup configuration. The header supplies Windows-only minimize and close controls immediately after the language button. macOS keeps native decorations.
 
 ## Native-Feel Rules
 
@@ -32,13 +32,13 @@ last-verified: 692bc8e96c2877547919761be350f24032f8e9ac
 
 ## Current Product Surfaces
 
-- Install renders an overall status hero, real install-directory controls, an app-version card, and four maintenance tools, followed by the existing install and reset confirmation modals in `src/pages/Install.tsx` and `src/features/install/InstallStatusPanel.tsx`.
+- Install renders an overall status hero, compact install-directory and app-version cards, and four compact maintenance tools, followed by the existing install and reset confirmation modals in `src/pages/Install.tsx`, `src/features/install/InstallStatusPanel.tsx`, and `src/features/install/InstallActionsPanel.tsx`.
 - Copy path uses the browser clipboard, open directory uses the Tauri opener plugin, and the page-level check-update tool shares the shell's `UpdaterProvider` flow in `src/features/install/InstallStatusPanel.tsx` and `src/pages/Install.tsx`.
 - Reset-data, reset-BepInEx, and uninstall remain separately gated maintenance actions; reset data switches to a no-data label when the game path is valid but no resettable data exists in `src/features/install/InstallActionsPanel.tsx`.
 - Stream retains service restart/open, OBS URL copying, active-window controls, display modes, crop-code actions, and settings access in `src/pages/Stream.tsx:52-258`.
 - About groups the app versions, GitHub link, contributor/acknowledgement credits, expandable licenses, and verification badge in `src/pages/About.tsx:36-133`.
-- History renders illuminated Runs, Videos, and Win Rate instrument cards in `src/pages/History.tsx:28-71`, followed by the storage-cleanup controls and run list.
-- Storage cleanup uses an always-mounted, ARIA-labelled reveal region so expand and collapse both animate while preserving the existing confirmation flow in `src/features/history/StorageCleanupCard.tsx:81-129`.
+- History renders compact illuminated Runs, Videos, and Win Rate cards with sans-serif figures in `src/pages/History.tsx:28-71`, followed by the storage-cleanup controls and run list.
+- Storage cleanup starts collapsed and uses an always-mounted, ARIA-labelled reveal region so expand and collapse both animate while preserving the existing confirmation flow in `src/features/history/StorageCleanupCard.tsx:81-129`.
 - History rows link to details, split the preserved-ratio preview from an illuminated data region, and display hero, date, result, progress, rank, and rating in `src/pages/History.tsx:129-205`.
 - Run detail shows a hero/result header, run stats, screenshot reveal, and a battle table with fixed columns and video reveal/delete actions in `src/pages/RunDetail.tsx:52-193` and `src/pages/RunDetail.tsx:215-319`.
 

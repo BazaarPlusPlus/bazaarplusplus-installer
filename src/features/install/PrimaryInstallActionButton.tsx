@@ -43,13 +43,15 @@ export function PrimaryInstallActionButton({
       onClick={isLaunch ? page.launch : onOpenInstallModal}
       className="bpp-install-primary-button w-full"
     >
-      <span className="relative z-[2] flex min-w-0 items-center justify-center gap-3.5">
+      <span className="bpp-install-primary-content flex min-w-0 items-center justify-center gap-3.5">
         {busy ? (
           <Loader2 size={30} className="bpp-primary-action-icon animate-spin" />
         ) : (
           <Icon size={30} className="bpp-primary-action-icon" />
         )}
-        <span className="text-[18px] font-semibold text-white">{label}</span>
+        <span className="bpp-primary-action-label text-[18px] font-semibold text-white">
+          {label}
+        </span>
       </span>
     </button>
   );

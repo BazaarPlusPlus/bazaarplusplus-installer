@@ -29,6 +29,15 @@
   --bpp-muted: #827f78;
   --bpp-green: #52b36b;
   --bpp-danger: #d55b4f;
+  --bpp-body-font:
+    -apple-system, BlinkMacSystemFont, 'Noto Sans SC', 'Segoe UI',
+    'Microsoft YaHei', sans-serif;
+}
+html[data-bpp-platform='windows'] {
+  --bpp-body-font: 'Segoe UI', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
+}
+html[data-bpp-platform='windows'][data-bpp-noto-sans-sc='ready'] {
+  --bpp-body-font: 'Noto Sans SC', 'Segoe UI', 'Microsoft YaHei', sans-serif;
 }
 
 html,
@@ -38,15 +47,7 @@ body {
   overflow: hidden;
   background-color: var(--bpp-bg);
   color: var(--bpp-text);
-  font-family:
-    Inter,
-    ui-sans-serif,
-    -apple-system,
-    BlinkMacSystemFont,
-    'Segoe UI',
-    'Noto Sans SC',
-    'Microsoft YaHei',
-    sans-serif;
+  font-family: var(--bpp-body-font);
   font-synthesis: none;
   text-rendering: geometricPrecision;
 }
@@ -59,9 +60,6 @@ body {
 
 .cinzel {
   font-family: 'Cinzel', 'Noto Sans SC', sans-serif;
-}
-.cinzel-decorative {
-  font-family: 'Cinzel Decorative', 'Noto Sans SC', sans-serif;
 }
 .fira-code {
   font-family: 'Fira Code', 'SFMono-Regular', Consolas, monospace;
@@ -169,6 +167,10 @@ body {
   height: 17px;
   flex: none;
 }
+.bpp-header .bpp-brand-title,
+.bpp-header .bpp-version-chip {
+  transform: translateY(2px);
+}
 .bpp-window-controls {
   display: flex;
   flex: none;
@@ -208,6 +210,13 @@ body {
   width: 38px;
   height: 38px;
 }
+.bpp-brand-logo {
+  display: block;
+  width: 36px;
+  height: auto;
+  flex: none;
+  filter: drop-shadow(0 0 9px rgba(231, 130, 16, 0.18));
+}
 .bpp-brand-title {
   margin: 0;
   color: #ded9d0;
@@ -228,6 +237,83 @@ body {
   font-family: 'Fira Code', monospace;
   font-size: 9px;
   line-height: 1;
+}
+.bpp-about-version-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.bpp-about-version-separator {
+  width: 1px;
+  height: 14px;
+  margin-inline: 4px;
+  background: rgba(209, 133, 38, 0.2);
+}
+.bpp-about-github-button {
+  position: relative;
+  display: inline-flex;
+  min-width: 132px;
+  min-height: 40px;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  overflow: hidden;
+  padding: 0 14px;
+  border: 1px solid rgba(218, 143, 39, 0.34);
+  border-radius: 4px;
+  color: #e7ded1;
+  background:
+    linear-gradient(135deg, rgba(239, 153, 40, 0.11), transparent 64%),
+    rgba(13, 18, 22, 0.76);
+  box-shadow:
+    inset 0 1px rgba(255, 232, 192, 0.06),
+    inset 0 0 18px rgba(230, 130, 17, 0.018),
+    0 5px 16px rgba(0, 0, 0, 0.2);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-decoration: none;
+  transition:
+    border-color 180ms ease,
+    color 180ms ease,
+    background 180ms ease,
+    box-shadow 180ms ease,
+    transform 180ms ease;
+}
+.bpp-about-github-button > svg:first-child {
+  color: #d88821;
+  transition:
+    color 180ms ease,
+    filter 180ms ease,
+    transform 180ms ease;
+}
+.bpp-about-github-external {
+  margin-left: 1px;
+  color: rgba(221, 203, 171, 0.52);
+}
+.bpp-about-github-button:hover {
+  border-color: rgba(239, 159, 49, 0.62);
+  color: #fff5e5;
+  background:
+    linear-gradient(135deg, rgba(245, 164, 50, 0.16), transparent 64%),
+    rgba(18, 22, 25, 0.88);
+  box-shadow:
+    inset 0 1px rgba(255, 238, 202, 0.12),
+    inset 0 0 22px rgba(237, 143, 24, 0.045),
+    0 7px 20px rgba(0, 0, 0, 0.26),
+    0 0 16px rgba(234, 139, 20, 0.09);
+  transform: translateY(-1px);
+}
+.bpp-about-github-button:hover > svg:first-child {
+  color: #f2a13c;
+  filter: drop-shadow(0 0 4px rgba(255, 193, 92, 0.48));
+  transform: scale(1.04);
+}
+.bpp-about-github-button:focus-visible {
+  outline: 1px solid rgba(245, 174, 71, 0.85);
+  outline-offset: 3px;
 }
 .bpp-mod-name {
   font-family: 'Cinzel', 'Noto Sans SC', sans-serif;
@@ -326,6 +412,7 @@ body {
     -5px 0 20px rgba(239, 132, 11, 0.2),
     inset 2px 0 12px rgba(255, 157, 31, 0.08);
   mix-blend-mode: screen;
+  border-radius: 4px;
 }
 .bpp-nav-item.is-active svg {
   color: #f09525;
@@ -346,13 +433,7 @@ body {
   display: block;
   margin-top: 2px;
   color: #575a5a;
-  font-family:
-    ui-sans-serif,
-    -apple-system,
-    BlinkMacSystemFont,
-    'Segoe UI',
-    'Noto Sans SC',
-    sans-serif;
+  font-family: var(--bpp-body-font);
   font-size: 8px;
   letter-spacing: 0.04em;
 }
@@ -361,7 +442,7 @@ body {
   padding: 14px 16px 0;
   border-top: 1px solid rgba(207, 128, 24, 0.09);
   color: rgba(145, 143, 136, 0.36);
-  font-size: 7px;
+  font-size: 9px;
   letter-spacing: 0.05em;
   text-transform: uppercase;
 }
@@ -622,18 +703,17 @@ body {
   display: grid;
   flex: none;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 16px;
+  gap: 12px;
 }
 .bpp-history-summary-card {
   position: relative;
-  display: grid;
+  display: flex;
   min-width: 0;
-  min-height: 106px;
-  grid-template-columns: 92px minmax(0, 1fr);
+  min-height: 76px;
   align-items: center;
-  gap: 10px;
+  gap: 14px;
   overflow: hidden;
-  padding: 9px 14px;
+  padding: 10px 15px;
   border: 1px solid rgba(202, 126, 29, 0.24);
   border-radius: 4px;
   background:
@@ -681,146 +761,6 @@ body {
   background-size: 18px 18px;
   mask-image: linear-gradient(90deg, #000, transparent 72%);
 }
-.bpp-history-stat-orbit {
-  position: relative;
-  z-index: 1;
-  display: grid;
-  width: 86px;
-  height: 86px;
-  place-items: center;
-  border: 1px solid rgba(199, 119, 20, 0.18);
-  border-radius: 50%;
-  background:
-    radial-gradient(circle, rgba(242, 153, 43, 0.045) 0 31%, transparent 32%),
-    radial-gradient(
-      circle,
-      transparent 0 47%,
-      rgba(226, 132, 20, 0.07) 48% 49%,
-      transparent 50%
-    ),
-    radial-gradient(circle, rgba(236, 142, 25, 0.035), transparent 68%);
-  box-shadow:
-    inset 0 0 18px rgba(233, 137, 18, 0.055),
-    0 0 18px rgba(231, 133, 17, 0.04);
-}
-.bpp-history-stat-orbit::before,
-.bpp-history-stat-orbit::after {
-  content: '';
-  position: absolute;
-  border-radius: 50%;
-  pointer-events: none;
-}
-.bpp-history-stat-orbit::before {
-  inset: 5px;
-  background: repeating-conic-gradient(
-    from 2deg,
-    rgba(224, 132, 20, 0.54) 0 1deg,
-    transparent 1deg 9deg
-  );
-  -webkit-mask: radial-gradient(
-    circle,
-    transparent 0 43%,
-    #000 44% 49%,
-    transparent 50%
-  );
-  mask: radial-gradient(
-    circle,
-    transparent 0 43%,
-    #000 44% 49%,
-    transparent 50%
-  );
-}
-.bpp-history-stat-orbit::after {
-  inset: 12px;
-  background: conic-gradient(
-    from 24deg,
-    rgba(236, 140, 20, 0.12) 0 12%,
-    rgba(243, 148, 24, 0.86) 13% 18%,
-    rgba(236, 140, 20, 0.08) 19% 67%,
-    rgba(240, 144, 22, 0.48) 68% 72%,
-    rgba(236, 140, 20, 0.1) 73%
-  );
-  -webkit-mask: radial-gradient(
-    circle,
-    transparent 0 82%,
-    #000 83% 88%,
-    transparent 89%
-  );
-  mask: radial-gradient(
-    circle,
-    transparent 0 82%,
-    #000 83% 88%,
-    transparent 89%
-  );
-}
-.bpp-history-stat-tick {
-  position: absolute;
-  z-index: 3;
-  left: 50%;
-  width: 6px;
-  height: 2px;
-  border-radius: 1px;
-  background: #e27d0c;
-  box-shadow:
-    0 0 5px rgba(241, 139, 18, 0.82),
-    0 0 11px rgba(233, 128, 10, 0.42);
-  transform: translateX(-50%);
-}
-.bpp-history-stat-tick.is-top {
-  top: 7px;
-}
-.bpp-history-stat-tick.is-bottom {
-  bottom: 7px;
-  opacity: 0.72;
-}
-.bpp-history-stat-glyph {
-  position: relative;
-  z-index: 4;
-  display: grid;
-  width: 42px;
-  height: 42px;
-  place-items: center;
-  border-radius: 50%;
-  color: #e4d9c7;
-  background: radial-gradient(
-    circle,
-    rgba(222, 129, 20, 0.055),
-    rgba(10, 13, 15, 0.2) 68%
-  );
-  box-shadow:
-    inset 0 0 0 1px rgba(229, 143, 38, 0.09),
-    inset 0 0 12px rgba(231, 135, 18, 0.035);
-  filter: drop-shadow(0 0 3px rgba(230, 143, 38, 0.42))
-    drop-shadow(0 0 10px rgba(222, 126, 12, 0.16));
-  text-shadow: 0 0 10px rgba(245, 183, 89, 0.3);
-}
-.bpp-history-stat-glyph::before {
-  content: '';
-  position: absolute;
-  inset: 4px;
-  border: 1px solid rgba(221, 134, 27, 0.065);
-  border-radius: 50%;
-}
-.bpp-history-stat-glyph svg {
-  position: relative;
-  z-index: 2;
-  color: #eadcc5;
-  filter: drop-shadow(0 0 2px rgba(255, 229, 184, 0.68))
-    drop-shadow(0 0 6px rgba(241, 143, 24, 0.6))
-    drop-shadow(0 0 12px rgba(222, 111, 5, 0.3));
-}
-.bpp-history-win-mark {
-  position: absolute;
-  z-index: 3;
-  bottom: 5px;
-  left: 50%;
-  width: 5px;
-  height: 5px;
-  border: 1px solid rgba(236, 221, 198, 0.88);
-  background: rgba(224, 137, 29, 0.15);
-  box-shadow: 0 0 5px rgba(232, 144, 37, 0.3);
-  transform: translateX(-50%) rotate(45deg);
-}
 .bpp-history-stat-copy {
   position: relative;
   z-index: 2;
@@ -831,26 +771,30 @@ body {
 }
 .bpp-history-stat-label {
   color: #8d8983;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
   line-height: 1.2;
 }
 .bpp-history-stat-value {
-  margin-top: 4px;
+  position: relative;
+  z-index: 2;
+  flex: none;
   color: #e9830f;
-  font-size: 30px;
-  font-weight: 700;
-  letter-spacing: -0.03em;
-  line-height: 1;
+  font-family: 'Space Grotesk', Inter, ui-sans-serif, sans-serif;
+  font-size: 36px;
+  font-weight: 600;
+  letter-spacing: -0.055em;
+  line-height: 0.92;
+  font-variant-numeric: tabular-nums;
   text-shadow:
-    0 0 8px rgba(231, 128, 11, 0.22),
+    0 0 10px rgba(231, 128, 11, 0.26),
     0 2px 10px rgba(0, 0, 0, 0.55);
 }
 .bpp-history-stat-detail {
-  margin-top: 6px;
+  margin-top: 4px;
   overflow: hidden;
   color: #6e6b67;
-  font-size: 10px;
+  font-size: 9px;
   line-height: 1.2;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1102,8 +1046,7 @@ body {
   transition:
     border-color 200ms ease,
     background 200ms ease,
-    box-shadow 200ms ease,
-    transform 200ms ease;
+    box-shadow 200ms ease;
 }
 .bpp-history-run-card::before {
   content: '';
@@ -1158,7 +1101,6 @@ body {
     inset 0 0 30px rgba(230, 132, 16, 0.025),
     0 12px 27px rgba(0, 0, 0, 0.2),
     0 0 22px rgba(229, 130, 14, 0.055);
-  transform: translateY(-1px);
 }
 .bpp-history-run-preview {
   position: relative;
@@ -1169,6 +1111,7 @@ body {
   align-items: center;
   justify-content: center;
   overflow: hidden;
+  isolation: isolate;
   border: 1px solid rgba(215, 133, 29, 0.25);
   border-radius: 3px;
   color: #655f55;
@@ -1183,10 +1126,6 @@ body {
     inset 0 0 22px rgba(0, 0, 0, 0.58),
     inset 0 0 0 1px rgba(246, 170, 68, 0.025),
     0 0 13px rgba(225, 127, 12, 0.055);
-  transition:
-    border-color 200ms ease,
-    box-shadow 200ms ease,
-    filter 200ms ease;
 }
 .bpp-history-run-preview::before,
 .bpp-history-run-preview::after {
@@ -1221,14 +1160,6 @@ body {
     transparent
   );
   box-shadow: 0 0 8px rgba(225, 128, 13, 0.25);
-}
-.bpp-history-run-card:hover .bpp-history-run-preview {
-  border-color: rgba(235, 143, 27, 0.5);
-  box-shadow:
-    inset 0 0 20px rgba(0, 0, 0, 0.45),
-    inset 0 0 0 1px rgba(246, 170, 68, 0.04),
-    0 0 16px rgba(229, 132, 17, 0.09);
-  filter: brightness(1.035);
 }
 .bpp-history-run-preview-image {
   position: absolute;
@@ -1369,20 +1300,15 @@ body {
 }
 @media (max-width: 980px) {
   .bpp-history-summary-grid {
-    gap: 12px;
+    gap: 10px;
   }
   .bpp-history-summary-card {
-    grid-template-columns: 80px minmax(0, 1fr);
-    gap: 9px;
-    padding-inline: 10px;
+    min-height: 72px;
+    gap: 10px;
+    padding-inline: 11px;
   }
-  .bpp-history-stat-orbit {
-    width: 76px;
-    height: 76px;
-  }
-  .bpp-history-stat-glyph {
-    width: 39px;
-    height: 39px;
+  .bpp-history-stat-value {
+    font-size: 32px;
   }
   .bpp-history-cleanup-row {
     gap: 10px;
@@ -1545,13 +1471,13 @@ body {
     0 0 17px rgba(239, 132, 9, 0.42),
     0 8px 22px rgba(0, 0, 0, 0.26);
   transition:
-    filter 150ms ease,
     box-shadow 150ms ease,
     transform 150ms ease;
 }
 .bpp-install-primary-button::before {
   content: '';
   position: absolute;
+  z-index: 0;
   inset: 0;
   opacity: 0.23;
   background-image:
@@ -1566,18 +1492,46 @@ body {
     100% 100%;
   mask-image: linear-gradient(90deg, #000, transparent 44%, #000);
 }
+.bpp-install-primary-button::after {
+  position: absolute;
+  z-index: 1;
+  top: -70%;
+  right: -24%;
+  width: 44%;
+  height: 240%;
+  content: '';
+  opacity: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    106deg,
+    transparent 22%,
+    rgba(255, 249, 232, 0.16) 50%,
+    transparent 78%
+  );
+  transform: translateX(24%) rotate(12deg);
+  transition:
+    opacity 180ms ease,
+    transform 260ms ease;
+}
 .bpp-install-primary-button:hover:not(:disabled) {
-  filter: brightness(1.07);
   box-shadow:
-    inset 0 1px rgba(255, 242, 218, 0.38),
+    inset 0 1px rgba(255, 249, 228, 0.56),
     inset 0 -1px rgba(112, 48, 0, 0.3),
-    0 0 24px rgba(232, 128, 13, 0.28),
-    0 10px 22px rgba(0, 0, 0, 0.22);
-  transform: translateY(0px);
+    0 0 30px rgba(240, 142, 21, 0.4),
+    0 12px 25px rgba(0, 0, 0, 0.28);
+  transform: translateY(-1px);
+}
+.bpp-install-primary-button:hover:not(:disabled)::after {
+  opacity: 1;
+  transform: translateX(-105%) rotate(12deg);
 }
 .bpp-install-primary-button:disabled {
   opacity: 0.5;
   filter: saturate(0.65);
+}
+.bpp-install-primary-content {
+  position: relative;
+  z-index: 2;
 }
 .bpp-install-primary-button .bpp-primary-action-icon {
   color: #fff3dd;
@@ -1589,18 +1543,23 @@ body {
   filter: drop-shadow(0 0 3px rgba(255, 248, 230, 0.86))
     drop-shadow(0 0 10px rgba(255, 172, 52, 0.62));
 }
+.bpp-install-primary-button .bpp-primary-action-label {
+  text-shadow:
+    0 0 5px rgba(255, 249, 235, 0.38),
+    0 0 12px rgba(255, 194, 93, 0.22);
+}
 .bpp-install-info-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.3fr) minmax(280px, 0.7fr);
-  gap: 16px;
+  grid-template-columns: minmax(0, 1.25fr) minmax(250px, 0.75fr);
+  gap: 12px;
 }
 .bpp-install-info-card {
   position: relative;
   display: flex;
-  min-height: 152px;
+  min-height: 120px;
   min-width: 0;
   flex-direction: column;
-  padding: 21px 22px 19px;
+  padding: 14px 16px 13px;
   overflow: hidden;
   border: 1px solid var(--bpp-line);
   border-radius: 5px;
@@ -1630,25 +1589,49 @@ body {
 .bpp-install-info-title {
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin: 0 0 14px;
+  gap: 8px;
+  margin: 0 0 10px;
   color: #aaa9ad;
   font-size: 12px;
   font-weight: 600;
+}
+.bpp-install-version-value {
+  color: #ece7df;
+  font-family: 'Space Grotesk', Inter, ui-sans-serif, sans-serif;
+  font-size: 25px;
+  font-weight: 500;
+  letter-spacing: -0.055em;
+  line-height: 0.92;
+  font-variant-numeric: tabular-nums;
 }
 .bpp-install-path {
   display: -webkit-box;
   margin: 0;
   overflow: hidden;
   color: #d2ceca;
-  font-size: 12px;
+  font-family: 'Fira Code', 'SFMono-Regular', Consolas, monospace;
+  font-size: 10px;
   line-height: 1.45;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
 }
+.bpp-install-directory-field {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0 0;
+}
+.bpp-install-path-actions {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+}
 .bpp-install-secondary-button {
   display: flex;
-  min-height: 36px;
+  min-height: 32px;
   align-items: center;
   justify-content: center;
   gap: 7px;
@@ -1659,11 +1642,15 @@ body {
   box-shadow:
     inset 0 1px rgba(255, 255, 255, 0.025),
     0 5px 12px rgba(0, 0, 0, 0.14);
-  font-size: 10px;
+  padding: 0 10px;
+  font-size: 11px;
   transition:
     border-color 150ms ease,
     color 150ms ease,
     background 150ms ease;
+}
+.bpp-install-copy-path-button {
+  padding-inline: 10px;
 }
 .bpp-install-secondary-button:hover:not(:disabled) {
   border-color: rgba(226, 139, 28, 0.44);
@@ -1691,15 +1678,15 @@ body {
 .bpp-install-maintenance-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 14px;
+  gap: 10px;
 }
 .bpp-install-maintenance-action {
   display: grid;
-  min-height: 94px;
-  grid-template-columns: 42px minmax(0, 1fr);
+  min-height: 76px;
+  grid-template-columns: 34px minmax(0, 1fr);
   align-items: center;
-  gap: 12px;
-  padding: 16px 18px;
+  gap: 9px;
+  padding: 10px 12px;
   border: 1px solid rgba(220, 131, 20, 0.34);
   border-radius: 5px;
   color: #f08b15;
@@ -1750,13 +1737,18 @@ body {
 }
 .bpp-install-maintenance-icon {
   display: flex;
-  width: 42px;
-  height: 42px;
+  width: 34px;
+  height: 34px;
   align-items: center;
   justify-content: center;
-  filter: drop-shadow(
-    0 0 7px color-mix(in srgb, currentColor 34%, transparent)
-  );
+  filter: drop-shadow(0 0 3px color-mix(in srgb, currentColor 54%, transparent))
+    drop-shadow(0 0 9px color-mix(in srgb, currentColor 30%, transparent));
+  transition: filter 150ms ease;
+}
+.bpp-install-maintenance-action:hover:not(:disabled)
+  .bpp-install-maintenance-icon {
+  filter: drop-shadow(0 0 4px color-mix(in srgb, currentColor 68%, transparent))
+    drop-shadow(0 0 12px color-mix(in srgb, currentColor 42%, transparent));
 }
 .bpp-install-notices {
   display: flex;
@@ -1985,13 +1977,7 @@ body {
     drop-shadow(0 0 10px rgba(237, 134, 18, 0.32));
 }
 .bpp-install-confirm-header h2 {
-  font-family:
-    'Noto Sans SC',
-    ui-sans-serif,
-    -apple-system,
-    BlinkMacSystemFont,
-    'Segoe UI',
-    sans-serif;
+  font-family: var(--bpp-body-font);
   font-size: 19px;
   font-weight: 620;
   letter-spacing: 0.015em;
@@ -2240,13 +2226,7 @@ body {
     inset 0 -1px rgba(112, 45, 2, 0.3),
     0 0 12px rgba(244, 147, 27, 0.48),
     0 0 30px rgba(230, 119, 8, 0.19);
-  font-family:
-    'Noto Sans SC',
-    ui-sans-serif,
-    -apple-system,
-    BlinkMacSystemFont,
-    'Segoe UI',
-    sans-serif;
+  font-family: var(--bpp-body-font);
   font-size: 15px;
   letter-spacing: 0.04em;
 }
@@ -2279,6 +2259,18 @@ body {
   }
   .bpp-main-inner {
     padding: 28px 26px 46px;
+  }
+}
+
+@media (max-height: 700px) {
+  .bpp-main-inner {
+    padding-block: 24px 38px;
+  }
+  .bpp-page {
+    gap: 18px;
+  }
+  .bpp-page-header {
+    padding-bottom: 20px;
   }
 }
 

@@ -64,9 +64,13 @@ export function ShellNavRail() {
         secondary={locale === 'zh' ? 'ABOUT' : undefined}
       />
       <div className="bpp-nav-footer">
-        <span>◆</span> Powered by
-        <br />
-        Bazaar Technology
+        <span>◆</span> {t('kicker')}
+        {locale === 'zh' && (
+          <>
+            <br />
+            Born of Passion
+          </>
+        )}
       </div>
     </nav>
   );

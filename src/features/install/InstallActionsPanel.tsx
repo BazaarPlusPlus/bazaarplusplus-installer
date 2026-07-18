@@ -1,9 +1,9 @@
 import {
   AlertTriangle,
   Box,
+  CloudDownload,
   Layers3,
   Loader2,
-  RefreshCw,
   Trash2
 } from 'lucide-react';
 import type { ReactNode } from 'react';
@@ -37,7 +37,7 @@ export function InstallActionsPanel({
         <MaintenanceAction
           disabled={page.busy || !page.state.actions.can_reset_data}
           busy={page.action === 'resetData'}
-          icon={<Layers3 size={25} />}
+          icon={<Layers3 size={22} />}
           title={
             page.state.game.path_valid && !page.state.has_resettable_data
               ? t('actionNoResettableData')
@@ -49,7 +49,7 @@ export function InstallActionsPanel({
         <MaintenanceAction
           disabled={page.busy || !page.state.actions.can_reset_bepinex}
           busy={page.action === 'resetBepinex'}
-          icon={<Box size={25} />}
+          icon={<Box size={22} />}
           title={t('actionResetBepinex')}
           detail={t('maintenanceResetBepinexDescription')}
           onClick={onOpenResetBepinexModal}
@@ -57,7 +57,7 @@ export function InstallActionsPanel({
         <MaintenanceAction
           disabled={updateChecking}
           busy={updateChecking}
-          icon={<RefreshCw size={25} />}
+          icon={<CloudDownload size={22} />}
           title={t('headerCheckUpdate')}
           detail={t('checkUpdateDescription')}
           onClick={onCheckUpdate}
@@ -66,7 +66,7 @@ export function InstallActionsPanel({
           danger
           disabled={page.busy || !page.state.actions.can_uninstall}
           busy={page.action === 'uninstall'}
-          icon={<Trash2 size={25} />}
+          icon={<Trash2 size={22} />}
           title={t('actionUninstall')}
           detail={t('maintenanceUninstallDescription')}
           onClick={page.uninstall}
@@ -117,13 +117,13 @@ function MaintenanceAction({
       className={`bpp-install-maintenance-action ${danger ? 'is-danger' : ''}`}
     >
       <span className="bpp-install-maintenance-icon">
-        {busy ? <Loader2 size={25} className="animate-spin" /> : icon}
+        {busy ? <Loader2 size={22} className="animate-spin" /> : icon}
       </span>
       <span className="min-w-0">
-        <span className="block text-[14px] font-medium text-[#d6d1ca]">
+        <span className="block text-[13px] font-medium text-[#d6d1ca]">
           {title}
         </span>
-        <span className="mt-1 block truncate text-[10px] text-[#77757b]">
+        <span className="mt-0.5 block truncate text-[10px] text-[#77757b]">
           {detail}
         </span>
       </span>

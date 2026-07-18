@@ -15,7 +15,7 @@ import type { AppBootstrapController } from '../features/about/useAppBootstrap';
 import { useI18n } from '../i18n/LocaleProvider';
 import douyinPng from '../../static/support/douyin.png';
 import xiaohongshuSvg from '../../static/support/xiaohongshu.svg';
-import { BrandMark } from '../components/brand/BrandMark';
+import brandLogo from '../../static/brand/bazaarplusplus-logo.webp';
 
 type ShellHeaderProps = {
   app: AppBootstrapController;
@@ -64,7 +64,12 @@ function ShellBrand() {
       className="flex min-w-0 items-center gap-3 z-10"
       data-tauri-drag-region
     >
-      {/* <BrandMark /> */}
+      <img
+        src={brandLogo}
+        alt=""
+        className="bpp-brand-logo"
+        draggable={false}
+      />
       <h1 className="bpp-brand-title">BazaarPlusPlus</h1>
       <span className="bpp-version-chip">v{app}</span>
     </div>

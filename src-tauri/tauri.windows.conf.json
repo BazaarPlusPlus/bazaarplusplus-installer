@@ -4,12 +4,12 @@
     "windows": [
       {
         "title": "BazaarPlusPlus",
-        "width": 1080,
-        "height": 680,
-        "minWidth": 1080,
-        "minHeight": 680,
-        "maxWidth": 1080,
-        "maxHeight": 680,
+        "width": 972,
+        "height": 612,
+        "minWidth": 972,
+        "minHeight": 612,
+        "maxWidth": 972,
+        "maxHeight": 612,
         "resizable": false,
         "maximizable": false,
         "fullscreen": false,

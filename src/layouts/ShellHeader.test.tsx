@@ -42,12 +42,13 @@ function renderOpenHeader() {
   );
 }
 
-describe('ShellHeader Bilibili menu', () => {
-  it('keeps update checks on the install page and shows a language icon', () => {
+describe('ShellHeader', () => {
+  it('shows the brand logo and language icon without an update check', () => {
     const html = renderOpenHeader();
 
     expect(html).not.toContain('检查更新');
     expect(html).toContain('lucide-languages');
+    expect(html).toContain('bpp-brand-logo');
   });
 
   it('shows the author entry before the project entry', () => {

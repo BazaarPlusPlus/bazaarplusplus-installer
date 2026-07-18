@@ -44,7 +44,7 @@ export function StorageCleanupCard({
 }) {
   const { t } = useI18n();
   const cleanup = useStorageCleanup(onCompleted);
-  const [expanded, setExpanded] = useState(true);
+  const [expanded, setExpanded] = useState(false);
 
   const pendingBody = (pending: PendingCleanup): string => {
     if (pendingItemCount(pending) === 0) {

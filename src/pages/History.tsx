@@ -1,13 +1,5 @@
-import {
-  ChevronRight,
-  Image as ImageIcon,
-  RefreshCw,
-  Swords,
-  UserRound,
-  Video
-} from 'lucide-react';
+import { ChevronRight, Image as ImageIcon, RefreshCw } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import type { ReactNode } from 'react';
 import { ErrorBanner } from '../components/ui/ErrorBanner';
 import { LoadingPanel } from '../components/ui/LoadingPanel';
 import { PageShell } from '../components/ui/PageShell';
@@ -45,24 +37,16 @@ export default function History() {
       <div className="flex min-h-0 w-full flex-1 flex-col gap-4">
         <div className="bpp-history-summary-grid">
           <SummaryCard
-            icon={<Swords size={26} strokeWidth={1.75} />}
             label={t('historySummaryRuns')}
             value={page.summary.runs}
             detail={t('historySummaryRunsDescription')}
           />
           <SummaryCard
-            icon={<Video size={26} strokeWidth={1.75} />}
             label={t('historySummaryVideos')}
             value={page.summary.videos}
             detail={t('historySummaryVideosDescription')}
           />
           <SummaryCard
-            icon={
-              <>
-                <UserRound size={25} strokeWidth={1.75} />
-                <span className="bpp-history-win-mark" />
-              </>
-            }
             label={t('historySummaryWinRate')}
             value={page.summary.winRate}
             detail={
@@ -100,26 +84,19 @@ export default function History() {
 }
 
 function SummaryCard({
-  icon,
   label,
   value,
   detail
 }: {
-  icon: ReactNode;
   label: string;
   value: string;
   detail: string;
 }) {
   return (
     <div className="bpp-history-summary-card">
-      <div className="bpp-history-stat-orbit" aria-hidden="true">
-        <span className="bpp-history-stat-tick is-top" />
-        <span className="bpp-history-stat-tick is-bottom" />
-        <span className="bpp-history-stat-glyph">{icon}</span>
-      </div>
+      <strong className="bpp-history-stat-value">{value}</strong>
       <div className="bpp-history-stat-copy">
         <span className="bpp-history-stat-label">{label}</span>
-        <strong className="bpp-history-stat-value fira-code">{value}</strong>
         <span className="bpp-history-stat-detail">{detail}</span>
       </div>
     </div>
