@@ -1,15 +1,16 @@
 ---
 status: truth
 topic: history-stream
-last-verified: 7500016b1c4adfc7b5d0206c7def0ceabae514d5
+last-verified: 594eba30b566a42ca8846f152e5a1c1ed17149d4
 ---
 
 # History And Stream
 
 ## History Data Access
 
-- The History facade resolves the current Selected game installation, privately derives database/game/video storage paths, and owns list, detail, reveal, delete, and cleanup operations in `src-tauri/src/services/history.rs:45-69` and `src-tauri/src/services/history.rs:71-213`; absence of an installation with a database returns one domain error rather than borrowing Stream state.
-- Tauri History commands pass only domain inputs such as ids, limits, cleanup scope, and preset to the facade; command signatures contain no database, game, video-directory, cutoff, or cleanup-plan values in `src-tauri/src/commands/history.rs:6-78`.
+- The History facade resolves the current Selected game installation, privately derives database/game/video storage paths, and owns list, detail, reveal, delete, and cleanup operations in `src-tauri/src/services/history.rs:46-69` and `src-tauri/src/services/history.rs:81-231`; it does not borrow Stream runtime state.
+- List resolution emits `history_unavailable`, while SQLite/query failures emit `history_read_failed` with the stable `operation=list_runs` parameter and an optional diagnostic in `src-tauri/src/services/history.rs:72-90` and `src-tauri/src/services/history.rs:233-242`. Their shared serialized contract is defined in `src-tauri/src/problem.rs:3-35` and crosses the Tauri command boundary at `src-tauri/src/commands/history.rs:7-14`.
+- Tauri History commands pass only domain inputs such as ids, limits, cleanup scope, and preset to the facade; command signatures contain no database, game, video-directory, cutoff, or cleanup-plan values in `src-tauri/src/commands/history.rs:7-79`.
 - History reads open the BazaarPlusPlus SQLite database read-only with a two-second busy timeout in `src-tauri/src/history/queries.rs:29-35`.
 - Write access is separate and uses `SQLITE_OPEN_READ_WRITE` in `src-tauri/src/history/queries.rs:37-43`.
 - History summary counts runs, completed runs, wins, latest run timestamp, and completed combat replay videos in `src-tauri/src/history/queries.rs:73-109`.
@@ -18,10 +19,12 @@ last-verified: 7500016b1c4adfc7b5d0206c7def0ceabae514d5
 
 ## History UI
 
-- The History page renders Runs, Videos, and Win Rate summary cards in `src/pages/History.tsx:37-50`.
-- History rows include optional preview images and link to `/history/:run_id` details in `src/pages/History.tsx:101-178`.
+- History independently starts list loading and status-only preview discovery; it never ensures or starts a Stream session in `src/features/history/useHistoryPage.ts:37-68`. Stopped/failed Stream status becomes a non-blocking preview problem, and image load failures fall back inside the row in `src/features/history/historyPreview.ts:14-45` and `src/pages/History.tsx:193-229`.
+- The History page state union makes initial loading, blocking failure, ready-empty, and ready-content exclusive, while refreshing and refresh failure retain successful data in `src/features/shared/pageState.ts:1-60`, `src/features/history/historyPageState.ts:10-42`, and `src/pages/History.tsx:42-97`.
+- The History page renders Runs, Videos, and Win Rate summary cards in `src/pages/History.tsx:50-64`.
+- History rows include optional preview images and link to `/history/:run_id` details in `src/pages/History.tsx:125-229`.
 - Run detail renders run metadata, screenshot reveal, summary stats, and a battle table with video reveal/delete controls in `src/pages/RunDetail.tsx:52-176` and `src/pages/RunDetail.tsx:222-319`.
-- The History page renders the storage cleanup card after the summary cards in `src/pages/History.tsx:52`; the card offers separate end-of-run screenshot and run-data rows in `src/features/history/StorageCleanupCard.tsx:80-115`, with its confirmation composed inline at `src/features/history/StorageCleanupCard.tsx:117-139`.
+- The History page renders the storage cleanup card after the summary cards only in a successful ready state in `src/pages/History.tsx:50-67`; the card offers separate end-of-run screenshot and run-data rows in `src/features/history/StorageCleanupCard.tsx:80-115`, with its confirmation composed inline at `src/features/history/StorageCleanupCard.tsx:117-139`.
 
 ## Storage Cleanup
 
@@ -40,7 +43,7 @@ last-verified: 7500016b1c4adfc7b5d0206c7def0ceabae514d5
 - `StreamRuntime` is the single lifecycle owner. Its async lifecycle mutex serializes ensure, restart, stop, window changes, and exclusive maintenance; task handles and captured installation paths remain private in `src-tauri/src/stream/runtime.rs:43-108` and `src-tauri/src/stream/runtime.rs:188-280`.
 - Ensure and restart resolve one Selected game installation snapshot while holding the lifecycle gate; window changes reuse the captured record path instead of re-resolving a possibly changed selection in `src-tauri/src/stream/runtime.rs:66-98`, `src-tauri/src/stream/runtime.rs:203-220`, and `src-tauri/src/stream/runtime.rs:300-357`.
 - The production server adapter constructs the overlay repository and settings store, reports database/window status, and serves the router with graceful shutdown in `src-tauri/src/stream/server.rs:19-102`; stop sends shutdown and awaits the task before publishing idle state in `src-tauri/src/stream/runtime.rs:188-201`.
-- Startup, stream commands, tray stop/quit, and window-close behavior use the runtime rather than composing server mutations directly in `src-tauri/src/lib.rs:40-74`, `src-tauri/src/commands/stream.rs:11-50`, and `src-tauri/src/tray.rs:32-48`.
+- Startup, stream commands, tray stop/quit, and window-close behavior use the runtime rather than composing server mutations directly in `src-tauri/src/lib.rs:41-75`, `src-tauri/src/commands/stream.rs:11-50`, and `src-tauri/src/tray.rs:32-48`.
 
 ## HTTP Surface
 

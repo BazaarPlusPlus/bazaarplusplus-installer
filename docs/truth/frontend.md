@@ -1,7 +1,7 @@
 ---
 status: truth
 topic: frontend
-last-verified: 7500016b1c4adfc7b5d0206c7def0ceabae514d5
+last-verified: 594eba30b566a42ca8846f152e5a1c1ed17149d4
 ---
 
 # Frontend
@@ -24,17 +24,20 @@ last-verified: 7500016b1c4adfc7b5d0206c7def0ceabae514d5
 ## Runtime Seam
 
 - `commandClient` selects the normalized generated native client or Browser Preview adapter once at module load in `src/api/commandClient.ts:1-10`; feature APIs call typed command functions rather than command strings.
-- Both adapters implement a contract derived from the generated command object in `src/api/commandAdapter.ts:1-16`. The native adapter normalizes backend rejections in `src/api/nativeCommands.ts:4-33`, while Preview declares every generated operation and returns scope-tagged cleanup values for both scopes in `src/api/previewCommands.ts:14-51`.
+- Both adapters implement a contract derived from the generated command object in `src/api/commandAdapter.ts:1-16`. The native adapter normalizes backend rejections and preserves validated semantic problems in `src/api/nativeCommands.ts:5-37` and `src/api/problems.ts:3-41`, while Preview declares every generated operation and returns scope-tagged cleanup values for both scopes in `src/api/previewCommands.ts:14-51`.
 - Shared install, stream, crop, history, cleanup, and bootstrap preview values live in the leaf module `src/api/previewDefaults.ts`; Preview reuses those object references in `src/api/previewCommands.ts:16-50` so polling preserves React state bailouts.
 - Stream commands pass through one semantic port over the selected native or Preview command adapter in `src/features/stream/streamApi.ts:7-36`. The framework-neutral workflow owns replayable lifecycle initialization, polling thresholds and response epochs, action serialization, error priority, transient messages, and the derived page snapshot in `src/features/stream/streamWorkflow.ts:139-293` and `src/features/stream/streamWorkflow.ts:395-539`; `useStreamPage` only supplies browser ports and binds its lifecycle to React in `src/features/stream/useStreamPage.ts:10-61`.
+- The shared page-state seam is a discriminated union of initial loading, blocking failure, ready-empty, and ready-content with nested idle/refreshing/failed refresh state; request ids reject stale completions in `src/features/shared/pageState.ts:1-60`. Shared UI problems retain code, parameters, and optional diagnostics separately from localized copy in `src/features/shared/problems.ts:4-40` and `src/components/ui/ProblemBanner.tsx:3-43`.
 
 ## Current Product Surfaces
 
 - Install renders status and action panels plus install and reset confirmation modals in `src/pages/Install.tsx:68-111`.
 - Install facts currently show only BazaarPlusPlus, not the broader fact list from the historical design spec, in `src/features/install/InstallActionsPanel.tsx:49-58`.
 - The reset-local-data button is disabled unless backend action gates allow reset data, and its label switches to a no-data message when the game path is valid but no resettable data exists in `src/features/install/InstallActionsPanel.tsx:93-105`.
-- History summary cards are Runs, Videos, and Win Rate in `src/pages/History.tsx:37-50`.
-- History rows link to details, show lazy-decoded preview images when available, and display hero, date, result, progress, rank, and rating in `src/pages/History.tsx:101-178`.
+- History renders loading, blocking failure, and the two successful list states as mutually exclusive branches; refresh failures remain inside the ready branch and keep prior data in `src/pages/History.tsx:42-97` and `src/features/shared/pageState.ts:43-54`.
+- History summary cards are Runs, Videos, and Win Rate in `src/pages/History.tsx:50-64`.
+- History rows link to details, show lazy-decoded preview images with an error fallback, and display hero, locale-formatted date, result, progress, rank, and rating in `src/pages/History.tsx:125-229` and `src/features/history/format.ts:4-27`.
+- History list loading calls `listHistoryRuns` independently from status-only Stream preview discovery; stopped or failed Stream status produces a thumbnail-only problem and never rejects the list request in `src/features/history/useHistoryPage.ts:37-64` and `src/features/history/historyPreview.ts:14-45`.
 - Run detail shows a hero/result header, run stats, screenshot reveal, and a battle table with fixed columns and video reveal/delete actions in `src/pages/RunDetail.tsx:52-176` and `src/pages/RunDetail.tsx:222-319`.
 - Storage cleanup submits only generated `StorageCleanupScope` plus `StorageCleanupPreset`, retains the tagged preview/execution result, and narrows on `scope` when rendering screenshot versus run-data copy in `src/features/history/useStorageCleanup.ts:1-59` and `src/features/history/StorageCleanupCard.tsx:32-77`.
 - Stream renders only the workflow snapshot and invokes its intents; status copy, feedback, and control availability are no longer recomputed in the page in `src/pages/Stream.tsx:26-131` and `src/pages/Stream.tsx:135-240`.
