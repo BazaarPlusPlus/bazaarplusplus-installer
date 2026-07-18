@@ -1,5 +1,5 @@
-import { invokeOrFallback } from '../../api/tauri';
+import { commandClient } from '../../api/commandClient';
 
 export async function loadAppBootstrap() {
-  return invokeOrFallback('get_app_bootstrap');
+  return commandClient.getAppBootstrap();
 }

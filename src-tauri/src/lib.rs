@@ -14,6 +14,7 @@ use tray::{build_tray, TrayMenuState};
 pub fn run() {
     #[allow(unused_mut)]
     let mut builder = tauri::Builder::default();
+    let command_builder = crate::commands::registry::builder();
 
     #[cfg(not(any(target_os = "android", target_os = "ios")))]
     {
@@ -69,7 +70,7 @@ pub fn run() {
                 }
             }
         })
-        .invoke_handler(invoke_handler!())
+        .invoke_handler(command_builder.invoke_handler())
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

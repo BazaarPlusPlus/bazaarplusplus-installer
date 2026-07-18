@@ -7,8 +7,7 @@ use crate::history::files::resolve_cleanup_file_path;
 use crate::history::queries::{open_cleanup_connection, open_connection, table_exists};
 
 /// Wire strings are a stable contract with the frontend preset buttons.
-#[derive(Clone, Copy, Debug, PartialEq, serde::Serialize, serde::Deserialize, ts_rs::TS)]
-#[ts(export)]
+#[derive(Clone, Copy, Debug, PartialEq, serde::Serialize, serde::Deserialize, specta::Type)]
 pub enum CleanupPreset {
     #[serde(rename = "all")]
     All,
@@ -90,8 +89,7 @@ pub struct ScreenshotCleanupPlan {
     pub skipped_pending_uploads: i64,
 }
 
-#[derive(Clone, Debug, PartialEq, serde::Serialize, ts_rs::TS)]
-#[ts(export)]
+#[derive(Clone, Debug, PartialEq, serde::Serialize, specta::Type)]
 pub struct ScreenshotCleanupPreview {
     pub screenshots: i64,
     pub orphan_files: i64,
@@ -175,8 +173,7 @@ pub fn plan_screenshot_cleanup(
 
 const CLEANUP_CHUNK_SIZE: usize = 200;
 
-#[derive(Clone, Debug, PartialEq, serde::Serialize, ts_rs::TS)]
-#[ts(export)]
+#[derive(Clone, Debug, PartialEq, serde::Serialize, specta::Type)]
 pub struct ScreenshotCleanupResult {
     pub deleted_rows: i64,
     pub deleted_files: i64,
@@ -274,8 +271,7 @@ pub struct RunDataCleanupPlan {
     pub skipped_pending_uploads: i64,
 }
 
-#[derive(Clone, Debug, PartialEq, serde::Serialize, ts_rs::TS)]
-#[ts(export)]
+#[derive(Clone, Debug, PartialEq, serde::Serialize, specta::Type)]
 pub struct RunDataCleanupPreview {
     pub runs: i64,
     pub battles: i64,
@@ -402,8 +398,7 @@ pub fn plan_run_data_cleanup(
 /// may also be writing to the WAL database.
 const RUN_CLEANUP_CHUNK_SIZE: usize = 25;
 
-#[derive(Clone, Debug, PartialEq, serde::Serialize, ts_rs::TS)]
-#[ts(export)]
+#[derive(Clone, Debug, PartialEq, serde::Serialize, specta::Type)]
 pub struct RunDataCleanupResult {
     pub deleted_runs: i64,
     pub deleted_files: i64,

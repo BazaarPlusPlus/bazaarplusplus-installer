@@ -12,6 +12,7 @@ use crate::services::history::{
 use crate::stream::state::StreamRuntimeState;
 
 #[tauri::command]
+#[specta::specta]
 pub fn list_history_runs(
     app: tauri::AppHandle,
     state: tauri::State<'_, StreamRuntimeState>,
@@ -28,6 +29,7 @@ pub fn list_history_runs(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn get_history_run_detail(
     app: tauri::AppHandle,
     state: tauri::State<'_, StreamRuntimeState>,
@@ -39,6 +41,7 @@ pub fn get_history_run_detail(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn reveal_run_screenshot(
     app: tauri::AppHandle,
     state: tauri::State<'_, StreamRuntimeState>,
@@ -50,6 +53,7 @@ pub fn reveal_run_screenshot(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn reveal_battle_video(
     app: tauri::AppHandle,
     state: tauri::State<'_, StreamRuntimeState>,
@@ -67,6 +71,7 @@ pub fn reveal_battle_video(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn delete_battle_video(
     app: tauri::AppHandle,
     state: tauri::State<'_, StreamRuntimeState>,
@@ -84,6 +89,7 @@ pub fn delete_battle_video(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn delete_run_videos(
     app: tauri::AppHandle,
     state: tauri::State<'_, StreamRuntimeState>,
@@ -101,6 +107,7 @@ pub fn delete_run_videos(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn preview_screenshot_cleanup(
     app: tauri::AppHandle,
     state: tauri::State<'_, StreamRuntimeState>,
@@ -112,6 +119,7 @@ pub fn preview_screenshot_cleanup(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn execute_screenshot_cleanup(
     app: tauri::AppHandle,
     state: tauri::State<'_, StreamRuntimeState>,
@@ -123,6 +131,7 @@ pub fn execute_screenshot_cleanup(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn preview_run_data_cleanup(
     app: tauri::AppHandle,
     state: tauri::State<'_, StreamRuntimeState>,
@@ -134,6 +143,7 @@ pub fn preview_run_data_cleanup(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn execute_run_data_cleanup(
     app: tauri::AppHandle,
     state: tauri::State<'_, StreamRuntimeState>,

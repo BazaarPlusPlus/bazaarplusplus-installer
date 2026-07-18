@@ -12,6 +12,7 @@ use crate::services::{
 use crate::stream::state::StreamRuntimeState;
 
 #[tauri::command(async)]
+#[specta::specta]
 pub fn get_install_state(
     app: tauri::AppHandle,
     state: tauri::State<'_, InstallerContextState>,
@@ -21,6 +22,7 @@ pub fn get_install_state(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn choose_game_directory(
     app: tauri::AppHandle,
 ) -> Result<GameDirectorySelection, String> {
@@ -36,6 +38,7 @@ pub async fn choose_game_directory(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn install_mod(
     app: tauri::AppHandle,
     state: tauri::State<'_, InstallerContextState>,
@@ -46,6 +49,7 @@ pub async fn install_mod(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn reset_bpp_data(
     app: tauri::AppHandle,
     install_state: tauri::State<'_, InstallerContextState>,
@@ -56,6 +60,7 @@ pub async fn reset_bpp_data(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn reset_bepinex(
     app: tauri::AppHandle,
     install_state: tauri::State<'_, InstallerContextState>,
@@ -65,6 +70,7 @@ pub async fn reset_bepinex(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn uninstall_mod(
     app: tauri::AppHandle,
     state: tauri::State<'_, InstallerContextState>,
@@ -74,6 +80,7 @@ pub async fn uninstall_mod(
 }
 
 #[tauri::command(async)]
+#[specta::specta]
 pub fn launch_game() -> Result<FileActionResult, String> {
     launch_game_via_steam()?;
     Ok(FileActionResult { ok: true })

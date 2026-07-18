@@ -36,7 +36,9 @@ rusqlite = { version = "0.40", features = ["bundled"] }
 chrono = { version = "0.4", features = ["clock", "serde"] }
 image = { version = "0.25", default-features = false, features = ["jpeg", "png", "webp"] }
 include_dir = "0.7"
-ts-rs = "12"
+specta = { version = "=2.0.0-rc.25", features = ["derive"] }
+specta-typescript = "=0.0.12"
+tauri-specta = { version = "=2.0.0-rc.25", features = ["typescript"] }
 tempfile = "3"
 
 [target.'cfg(windows)'.dependencies]

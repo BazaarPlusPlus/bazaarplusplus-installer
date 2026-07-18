@@ -4,8 +4,8 @@ use std::path::PathBuf;
 
 const OVERLAY_SETTINGS_VERSION: u8 = 4;
 
-#[derive(Clone, Copy, Debug, Deserialize, Serialize, PartialEq, ts_rs::TS)]
-#[ts(export, rename = "StreamOverlayCropSettings")]
+#[derive(Clone, Copy, Debug, Deserialize, Serialize, PartialEq, specta::Type)]
+#[serde(rename = "StreamOverlayCropSettings")]
 pub struct OverlayCropSettings {
     pub left: f64,
     pub top: f64,
@@ -13,10 +13,10 @@ pub struct OverlayCropSettings {
     pub height: f64,
 }
 
-#[derive(Clone, Copy, Debug, Deserialize, Serialize, PartialEq, Eq, Default, ts_rs::TS)]
-#[ts(export, rename = "StreamOverlayDisplayMode")]
+#[derive(Clone, Copy, Debug, Deserialize, Serialize, PartialEq, Eq, Default, specta::Type)]
+#[serde(rename = "StreamOverlayDisplayMode")]
 #[serde(rename_all = "snake_case")]
-pub enum OverlayDisplayMode {
+pub enum StreamOverlayDisplayMode {
     #[default]
     Current,
     Hero,
@@ -26,14 +26,14 @@ pub enum OverlayDisplayMode {
 #[derive(Clone, Copy, Debug, Deserialize, Serialize, PartialEq)]
 pub struct OverlaySettings {
     pub crop: OverlayCropSettings,
-    pub display_mode: OverlayDisplayMode,
+    pub display_mode: StreamOverlayDisplayMode,
 }
 
 impl Default for OverlaySettings {
     fn default() -> Self {
         Self {
             crop: OverlayCropSettings::default(),
-            display_mode: OverlayDisplayMode::default(),
+            display_mode: StreamOverlayDisplayMode::default(),
         }
     }
 }
@@ -56,12 +56,12 @@ struct OverlayCropDocument {
     settings: OverlaySettings,
 }
 
-#[derive(Clone, Debug, Serialize, PartialEq, ts_rs::TS)]
-#[ts(export, rename = "StreamOverlayCropSettingsPayload")]
+#[derive(Clone, Debug, Serialize, PartialEq, specta::Type)]
+#[serde(rename = "StreamOverlayCropSettingsPayload")]
 pub struct OverlayCropSettingsPayload {
     pub crop: OverlayCropSettings,
     pub code: String,
-    pub display_mode: OverlayDisplayMode,
+    pub display_mode: StreamOverlayDisplayMode,
 }
 
 #[derive(Clone, Debug)]
@@ -143,7 +143,7 @@ impl OverlaySettingsStore {
 
     pub fn save_display_mode(
         &self,
-        display_mode: OverlayDisplayMode,
+        display_mode: StreamOverlayDisplayMode,
     ) -> Result<OverlayCropSettingsPayload, String> {
         let crop = self
             .load()
@@ -237,7 +237,7 @@ pub fn encode_crop_code(crop: OverlayCropSettings) -> String {
         v: OVERLAY_SETTINGS_VERSION,
         settings: OverlaySettings {
             crop,
-            display_mode: OverlayDisplayMode::Current,
+            display_mode: StreamOverlayDisplayMode::Current,
         },
     };
     let raw =
@@ -270,8 +270,8 @@ pub fn decode_crop_code(code: &str) -> Result<OverlayCropSettings, String> {
 #[cfg(test)]
 mod tests {
     use super::{
-        decode_crop_code, encode_crop_code, OverlayCropSettings, OverlayDisplayMode,
-        OverlaySettingsStore,
+        decode_crop_code, encode_crop_code, OverlayCropSettings, OverlaySettingsStore,
+        StreamOverlayDisplayMode,
     };
 
     fn sample_crop() -> OverlayCropSettings {
@@ -305,7 +305,7 @@ mod tests {
         let loaded = store.load_payload().unwrap();
 
         assert_eq!(loaded.crop, OverlayCropSettings::default());
-        assert_eq!(loaded.display_mode, OverlayDisplayMode::Current);
+        assert_eq!(loaded.display_mode, StreamOverlayDisplayMode::Current);
     }
 
     #[test]
@@ -320,7 +320,7 @@ mod tests {
 
         assert_eq!(saved, loaded);
         assert_eq!(loaded.crop, crop);
-        assert_eq!(loaded.display_mode, OverlayDisplayMode::Current);
+        assert_eq!(loaded.display_mode, StreamOverlayDisplayMode::Current);
     }
 
     #[test]
@@ -342,7 +342,7 @@ mod tests {
         let loaded = store.load_payload().unwrap();
 
         assert_eq!(loaded.crop, OverlayCropSettings::default());
-        assert_eq!(loaded.display_mode, OverlayDisplayMode::Current);
+        assert_eq!(loaded.display_mode, StreamOverlayDisplayMode::Current);
     }
 
     #[test]
@@ -353,12 +353,12 @@ mod tests {
 
         store.save(sample_crop()).unwrap();
         let saved = store
-            .save_display_mode(OverlayDisplayMode::Herohalf)
+            .save_display_mode(StreamOverlayDisplayMode::Herohalf)
             .unwrap();
         let loaded = store.load_payload().unwrap();
 
         assert_eq!(saved, loaded);
         assert_eq!(loaded.crop, sample_crop());
-        assert_eq!(loaded.display_mode, OverlayDisplayMode::Herohalf);
+        assert_eq!(loaded.display_mode, StreamOverlayDisplayMode::Herohalf);
     }
 }

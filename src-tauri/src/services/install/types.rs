@@ -1,7 +1,6 @@
 use serde::Serialize;
 
-#[derive(Clone, Debug, Serialize, ts_rs::TS)]
-#[ts(export)]
+#[derive(Clone, Debug, Serialize, specta::Type)]
 pub struct InstallState {
     pub selected_game_path: Option<String>,
     pub steam_path: Option<String>,
@@ -18,23 +17,20 @@ pub struct InstallState {
     pub warnings: Vec<InstallWarning>,
 }
 
-#[derive(Clone, Debug, Serialize, ts_rs::TS)]
-#[ts(export)]
+#[derive(Clone, Debug, Serialize, specta::Type)]
 pub struct ResetBppDataResult {
     pub state: InstallState,
     pub removed_data: bool,
 }
 
-#[derive(Clone, Debug, Serialize, ts_rs::TS)]
-#[ts(export)]
+#[derive(Clone, Debug, Serialize, specta::Type)]
 pub struct ResetBepinexResult {
     pub state: InstallState,
     pub removed: bool,
 }
 
 /// macOS launch-mode (兼容模式 / trampoline) state surfaced to the UI.
-#[derive(Clone, Debug, Serialize, ts_rs::TS)]
-#[ts(export)]
+#[derive(Clone, Debug, Serialize, specta::Type)]
 pub struct InstallCompatState {
     /// Show the opt-in "兼容模式" checkbox (macOS <= 26 only).
     pub mode_available: bool,
@@ -47,16 +43,14 @@ pub struct InstallCompatState {
     pub applied: bool,
 }
 
-#[derive(Clone, Debug, Serialize, ts_rs::TS)]
-#[ts(export)]
+#[derive(Clone, Debug, Serialize, specta::Type)]
 pub struct InstallGameState {
     pub found: bool,
     pub path_valid: bool,
     pub display_version: Option<String>,
 }
 
-#[derive(Clone, Debug, Serialize, ts_rs::TS)]
-#[ts(export)]
+#[derive(Clone, Debug, Serialize, specta::Type)]
 pub struct InstallModState {
     pub installed: bool,
     pub installed_version: Option<String>,
@@ -64,8 +58,7 @@ pub struct InstallModState {
     pub version_matches: bool,
 }
 
-#[derive(Clone, Debug, Serialize, ts_rs::TS)]
-#[ts(export)]
+#[derive(Clone, Debug, Serialize, specta::Type)]
 pub struct InstallActions {
     pub can_install: bool,
     pub can_reinstall: bool,
@@ -75,21 +68,18 @@ pub struct InstallActions {
     pub can_launch: bool,
 }
 
-#[derive(Clone, Debug, Serialize, ts_rs::TS)]
-#[ts(export)]
+#[derive(Clone, Debug, Serialize, specta::Type)]
 pub struct InstallWarning {
     pub code: String,
     pub message: String,
 }
 
-#[derive(Clone, Debug, Serialize, ts_rs::TS)]
-#[ts(export)]
+#[derive(Clone, Debug, Serialize, specta::Type)]
 pub struct GameDirectorySelection {
     pub game_path: Option<String>,
 }
 
-#[derive(Clone, Debug, Serialize, ts_rs::TS)]
-#[ts(export)]
+#[derive(Clone, Debug, Serialize, specta::Type)]
 pub struct FileActionResult {
     pub ok: bool,
 }

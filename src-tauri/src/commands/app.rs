@@ -15,8 +15,7 @@ fn load_static_bootstrap() -> AppBootstrapStatic {
     serde_json::from_str(RAW).expect("app-bootstrap.json must parse")
 }
 
-#[derive(Clone, Debug, Serialize, ts_rs::TS)]
-#[ts(export)]
+#[derive(Clone, Debug, Serialize, specta::Type)]
 pub struct AppBootstrap {
     pub app_version: String,
     pub bundled_bpp_version: Option<String>,
@@ -25,8 +24,7 @@ pub struct AppBootstrap {
     pub licenses: Vec<AppLicense>,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, ts_rs::TS)]
-#[ts(export)]
+#[derive(Clone, Debug, Serialize, Deserialize, specta::Type)]
 pub struct AppLinks {
     pub github: String,
     pub x: String,
@@ -38,8 +36,7 @@ pub struct AppLinks {
     pub supporter_list: String,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, ts_rs::TS)]
-#[ts(export)]
+#[derive(Clone, Debug, Serialize, Deserialize, specta::Type)]
 pub struct AppCredit {
     pub name: String,
     pub role: String,
@@ -47,8 +44,7 @@ pub struct AppCredit {
     pub group: String,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, ts_rs::TS)]
-#[ts(export)]
+#[derive(Clone, Debug, Serialize, Deserialize, specta::Type)]
 pub struct AppLicense {
     pub name: String,
     pub license: String,
@@ -56,6 +52,7 @@ pub struct AppLicense {
 }
 
 #[tauri::command(async)]
+#[specta::specta]
 pub fn get_app_bootstrap(
     app: AppHandle,
     state: tauri::State<'_, InstallerContextState>,

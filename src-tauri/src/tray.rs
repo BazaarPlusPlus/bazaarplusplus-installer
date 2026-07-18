@@ -144,13 +144,13 @@ impl TrayMenuState {
     }
 }
 
-#[derive(Clone, Debug, serde::Serialize, ts_rs::TS)]
-#[ts(export)]
+#[derive(Clone, Debug, serde::Serialize, specta::Type)]
 pub struct AppLocalePayload {
     locale: String,
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn set_app_locale(
     state: tauri::State<'_, TrayMenuState>,
     locale: String,

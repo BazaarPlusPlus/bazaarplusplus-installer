@@ -1,38 +1,38 @@
-import { invokeOrFallback } from '../../api/tauri';
+import { commandClient } from '../../api/commandClient';
 import type { CleanupPreset } from '../../types/backend';
 
 export async function listHistoryRuns(limit = 50) {
-  return invokeOrFallback('list_history_runs', { limit });
+  return commandClient.listHistoryRuns(null, limit);
 }
 
 export async function loadHistoryRunDetail(runId: string) {
-  return invokeOrFallback('get_history_run_detail', { runId });
+  return commandClient.getHistoryRunDetail(null, runId);
 }
 
 export async function revealRunScreenshot(runId: string) {
-  await invokeOrFallback('reveal_run_screenshot', { runId });
+  await commandClient.revealRunScreenshot(null, runId);
 }
 
 export async function revealBattleVideo(battleId: string, videoId?: string) {
-  await invokeOrFallback('reveal_battle_video', { battleId, videoId });
+  await commandClient.revealBattleVideo(null, battleId, videoId ?? null);
 }
 
 export async function deleteBattleVideo(battleId: string, videoId: string) {
-  return invokeOrFallback('delete_battle_video', { battleId, videoId });
+  return commandClient.deleteBattleVideo(null, battleId, videoId);
 }
 
 export async function previewScreenshotCleanup(preset: CleanupPreset) {
-  return invokeOrFallback('preview_screenshot_cleanup', { preset });
+  return commandClient.previewScreenshotCleanup(null, preset);
 }
 
 export async function executeScreenshotCleanup(preset: CleanupPreset) {
-  return invokeOrFallback('execute_screenshot_cleanup', { preset });
+  return commandClient.executeScreenshotCleanup(null, preset);
 }
 
 export async function previewRunDataCleanup(preset: CleanupPreset) {
-  return invokeOrFallback('preview_run_data_cleanup', { preset });
+  return commandClient.previewRunDataCleanup(null, preset);
 }
 
 export async function executeRunDataCleanup(preset: CleanupPreset) {
-  return invokeOrFallback('execute_run_data_cleanup', { preset });
+  return commandClient.executeRunDataCleanup(null, preset);
 }

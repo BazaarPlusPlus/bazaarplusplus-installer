@@ -23,6 +23,7 @@ Last full citation verification: `2026-07-11` on `4366cda394fe304066b55564c3c44d
 | `docs/truth/history-stream.md` | history-stream | truth | `4366cda394fe304066b55564c3c44d1f917a2273` |
 | `docs/truth/updater-release.md` | updater-release | truth | `4366cda394fe304066b55564c3c44d1f917a2273` |
 | `docs/truth/verification.md` | verification | truth | `4366cda394fe304066b55564c3c44d1f917a2273` |
+| `docs/plans/architecture-deepening.md` | architecture-deepening | active-plan | `3eae49ccb359e7db4fbca47d94136cda6ccc2dbe` |
 | `docs/plans/manual-validation.md` | manual-validation | active-plan | `4366cda394fe304066b55564c3c44d1f917a2273` |
 | `docs/agents/issue-tracker.md` | agent skills: issue tracker | operational | 2026-07-11 |
 | `docs/agents/triage-labels.md` | agent skills: triage labels | operational | 2026-07-11 |
@@ -34,8 +35,9 @@ Last full citation verification: `2026-07-11` on `4366cda394fe304066b55564c3c44d
 | `docs/adr/005-reset-local-data-contract.md` | reset-local-data | decision | n/a |
 | `docs/adr/006-steam-only-launch.md` | steam-only-launch | decision | n/a |
 | `docs/adr/007-steam-branch-switch.md` | steam-branch-switch | superseded-removed | n/a |
-| `docs/adr/008-command-names-artifact.md` | command-names-artifact | decision | n/a |
+| `docs/adr/008-command-names-artifact.md` | command-names-artifact | superseded-by-010 | n/a |
 | `docs/adr/009-agent-skills-doc-layout.md` | agent-skills-doc-layout | decision | n/a |
+| `docs/adr/010-tauri-specta-command-bindings.md` | tauri-specta-command-bindings | decision | n/a |
 | `docs/archive/README.md` | old documentation index | superseded | archived 2026-06-11 |
 | `docs/archive/architecture.md` | old architecture doc | superseded | archived 2026-06-11 |
 | `docs/archive/updater-release-plan.md` | old updater release doc | superseded | archived 2026-06-11 |

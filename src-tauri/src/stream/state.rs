@@ -7,8 +7,7 @@ use tokio::sync::oneshot;
 
 const DEFAULT_HOST: &str = "127.0.0.1";
 
-#[derive(Clone, Debug, Serialize, ts_rs::TS)]
-#[ts(export)]
+#[derive(Clone, Debug, Serialize, specta::Type)]
 pub struct StreamServiceStatus {
     pub running: bool,
     pub host: String,
@@ -24,15 +23,13 @@ pub struct StreamServiceStatus {
     pub window: StreamWindowStatus,
 }
 
-#[derive(Clone, Debug, Default, Serialize, ts_rs::TS)]
-#[ts(export)]
+#[derive(Clone, Debug, Default, Serialize, specta::Type)]
 pub struct StreamDbStatus {
     pub found: bool,
     pub path: Option<String>,
 }
 
-#[derive(Clone, Debug, Default, Serialize, ts_rs::TS)]
-#[ts(export)]
+#[derive(Clone, Debug, Default, Serialize, specta::Type)]
 pub struct StreamWindowStatus {
     pub total_records: usize,
     pub existing_before_start: usize,

@@ -1,32 +1,30 @@
 import { openUrl } from '@tauri-apps/plugin-opener';
-import { invokeOrFallback } from '../../api/tauri';
+import { commandClient } from '../../api/commandClient';
 import { hasTauriRuntime } from '../../api/runtime';
 import type { StreamOverlayDisplayMode } from '../../types/backend';
 
 export async function restartStreamSession() {
-  return invokeOrFallback('restart_stream_session', {});
+  return commandClient.restartStreamSession(null);
 }
 
 export async function setStreamWindowOffset(offset: number) {
-  return invokeOrFallback('set_stream_window', {
-    offset: Math.max(0, Math.trunc(offset))
-  });
+  return commandClient.setStreamWindow(null, Math.max(0, Math.trunc(offset)));
 }
 
 export async function loadCropSettings() {
-  return invokeOrFallback('get_overlay_settings');
+  return commandClient.getOverlaySettings();
 }
 
 export async function applyCropCode(code: string) {
-  return invokeOrFallback('apply_overlay_crop_code', { code });
+  return commandClient.applyOverlayCropCode(code);
 }
 
 export async function saveDisplayMode(displayMode: StreamOverlayDisplayMode) {
-  return invokeOrFallback('save_overlay_display_mode', { displayMode });
+  return commandClient.saveOverlayDisplayMode(displayMode);
 }
 
 export async function resetCropSettings() {
-  return invokeOrFallback('reset_overlay_crop');
+  return commandClient.resetOverlayCrop();
 }
 
 export async function openExternal(url: string) {

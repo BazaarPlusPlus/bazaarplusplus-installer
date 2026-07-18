@@ -3,12 +3,14 @@ use crate::services::{
 };
 use crate::stream::{
     overlay_settings::{
-        OverlayCropSettings, OverlayCropSettingsPayload, OverlayDisplayMode, OverlaySettingsStore,
+        OverlayCropSettings, OverlayCropSettingsPayload, OverlaySettingsStore,
+        StreamOverlayDisplayMode,
     },
     state::{StreamRuntimeState, StreamServiceStatus},
 };
 
 #[tauri::command]
+#[specta::specta]
 pub fn get_stream_status(
     state: tauri::State<'_, StreamRuntimeState>,
 ) -> Result<StreamServiceStatus, String> {
@@ -16,6 +18,7 @@ pub fn get_stream_status(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn ensure_stream_session(
     app: tauri::AppHandle,
     state: tauri::State<'_, StreamRuntimeState>,
@@ -25,6 +28,7 @@ pub async fn ensure_stream_session(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn restart_stream_session(
     app: tauri::AppHandle,
     state: tauri::State<'_, StreamRuntimeState>,
@@ -35,6 +39,7 @@ pub async fn restart_stream_session(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn set_stream_window(
     app: tauri::AppHandle,
     state: tauri::State<'_, StreamRuntimeState>,
@@ -45,23 +50,27 @@ pub fn set_stream_window(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn get_overlay_settings() -> Result<OverlayCropSettingsPayload, String> {
     OverlaySettingsStore::default().load_payload()
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn apply_overlay_crop_code(code: String) -> Result<OverlayCropSettingsPayload, String> {
     OverlaySettingsStore::default().import_code(&code)
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn save_overlay_display_mode(
-    display_mode: OverlayDisplayMode,
+    display_mode: StreamOverlayDisplayMode,
 ) -> Result<OverlayCropSettingsPayload, String> {
     OverlaySettingsStore::default().save_display_mode(display_mode)
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn reset_overlay_crop() -> Result<OverlayCropSettingsPayload, String> {
     OverlaySettingsStore::default().save(OverlayCropSettings::default())
 }

@@ -1,10 +1,10 @@
-import { invokeOrFallback } from '../../api/tauri';
+import { commandClient } from '../../api/commandClient';
 
 export async function ensureStreamSession() {
   // This intentionally starts the local HTTP service when it is not running.
-  return invokeOrFallback('ensure_stream_session', {});
+  return commandClient.ensureStreamSession(null);
 }
 
 export async function getStreamStatus() {
-  return invokeOrFallback('get_stream_status');
+  return commandClient.getStreamStatus();
 }

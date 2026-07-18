@@ -1,7 +1,6 @@
 // LEAF MODULE: value-mirrors of generated types, consumed as BOTH useState seeds
-// (features/**) and preview fallbacks (previewFallbacks.ts). MUST NOT import from
-// src/api/tauri.ts, src/api/previewFallbacks.ts, or src/features/** — that would
-// recreate the api <-> features runtime import cycle this file exists to kill.
+// (features/**) and preview command results. MUST NOT import from command clients
+// or features/** — that would recreate the runtime import cycle this file avoids.
 import type {
   AppBootstrap,
   HistoryRunList,
