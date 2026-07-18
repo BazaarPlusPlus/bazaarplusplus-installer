@@ -156,6 +156,7 @@ class DefaultStreamWorkflow implements StreamWorkflow {
   private lifecycleEpoch = 0;
   private statusEpoch = 0;
   private latestPollRequest = 0;
+  private latestSuccessfulPollRequest = 0;
   private consecutivePollFailures = 0;
   private intervalHandle: unknown = null;
   private messageTimeoutHandle: unknown = null;
@@ -258,13 +259,14 @@ class DefaultStreamWorkflow implements StreamWorkflow {
       this.state.status = status;
       this.state.statusLoadError = null;
       this.state.pollError = null;
+      this.latestSuccessfulPollRequest = request;
       this.consecutivePollFailures = 0;
       this.publish();
     } catch (caught) {
       if (
         !this.isCurrentLifecycle(lifecycle) ||
         epoch !== this.statusEpoch ||
-        request !== this.latestPollRequest
+        request < this.latestSuccessfulPollRequest
       )
         return;
       this.consecutivePollFailures += 1;

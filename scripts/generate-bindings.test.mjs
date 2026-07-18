@@ -3,7 +3,10 @@ import os from 'node:os';
 import path from 'node:path';
 import { expect, test } from 'vitest';
 
-import { commitGeneratedBindings } from './generate-bindings.mjs';
+import {
+  commitGeneratedBindings,
+  replaceDirectoryWithBackup
+} from './generate-bindings.mjs';
 
 test('generated bindings commit atomically replaces the complete target', () => {
   const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), 'bpp-bindings-test-'));
@@ -63,6 +66,34 @@ test('generated bindings validation rejects an empty commands artifact', () => {
     expect(() =>
       commitGeneratedBindings({ generatedDir, tempGeneratedDir })
     ).toThrow(/empty or malformed/);
+  } finally {
+    fs.rmSync(rootDir, { recursive: true, force: true });
+  }
+});
+
+test('failed backup rename preserves the last valid generated directory', () => {
+  const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), 'bpp-bindings-test-'));
+  const generatedDir = path.join(rootDir, 'src/types/generated');
+  const sourceDir = path.join(rootDir, 'staged-generated');
+
+  try {
+    fs.mkdirSync(generatedDir, { recursive: true });
+    fs.mkdirSync(sourceDir, { recursive: true });
+    fs.writeFileSync(path.join(generatedDir, 'commands.ts'), 'old bindings');
+    fs.writeFileSync(path.join(sourceDir, 'commands.ts'), 'new bindings');
+
+    expect(() =>
+      replaceDirectoryWithBackup(generatedDir, sourceDir, {
+        renameSync(source, destination) {
+          if (source === generatedDir) throw new Error('backup rename failed');
+          fs.renameSync(source, destination);
+        }
+      })
+    ).toThrow('backup rename failed');
+
+    expect(
+      fs.readFileSync(path.join(generatedDir, 'commands.ts'), 'utf8')
+    ).toBe('old bindings');
   } finally {
     fs.rmSync(rootDir, { recursive: true, force: true });
   }

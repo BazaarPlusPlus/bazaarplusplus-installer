@@ -17,7 +17,12 @@ import { fileURLToPath } from 'node:url';
 
 const GENERATED_COMMANDS_FILE = 'commands.ts';
 
-export function replaceDirectoryWithBackup(targetDir, sourceDir) {
+export function replaceDirectoryWithBackup(
+  targetDir,
+  sourceDir,
+  fileOperations = {}
+) {
+  const rename = fileOperations.renameSync ?? renameSync;
   const parentDir = path.dirname(targetDir);
   const baseName = path.basename(targetDir);
   const suffix = `${process.pid}.${Date.now()}`;
@@ -32,16 +37,16 @@ export function replaceDirectoryWithBackup(targetDir, sourceDir) {
 
   try {
     if (existsSync(targetDir)) {
-      renameSync(targetDir, backupDir);
+      rename(targetDir, backupDir);
       backupCreated = true;
     }
 
-    renameSync(stagingDir, targetDir);
+    rename(stagingDir, targetDir);
     rmSync(backupDir, { recursive: true, force: true });
   } catch (error) {
-    rmSync(targetDir, { recursive: true, force: true });
-    if (backupCreated) {
-      renameSync(backupDir, targetDir);
+    if (backupCreated || existsSync(backupDir)) {
+      rmSync(targetDir, { recursive: true, force: true });
+      rename(backupDir, targetDir);
     }
     rmSync(stagingDir, { recursive: true, force: true });
     throw error;

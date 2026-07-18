@@ -20,7 +20,8 @@ pub(super) enum InstallEffect {
     CloseSteam,
     /// `install_bepinex(app, steam, game)` — payload extraction, self-rolls-
     /// back via `install_backup.restore` on failure (bepinex/mod.rs:118-192).
-    /// Unconditional in every plan (present in both master branches).
+    /// Present for fresh or changed payloads; current payloads are left intact
+    /// during a launch-mode-only repair.
     InstallBepInEx,
     /// `bepinex::install_trampoline(&app, game)` — bundle swap + sign + seal,
     /// self-restores vanilla on failure (trampoline.rs:362-445). IDEMPOTENT:
@@ -50,6 +51,16 @@ pub(super) enum InstallEffect {
     PatchLaunchOptions,
 }
 
+/// Payload state captured before an install operation. The planner uses it to
+/// distinguish a fresh/changed payload from an already-current installation;
+/// callers cannot request individual payload steps.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(super) enum PayloadState {
+    Missing,
+    Changed,
+    Current,
+}
+
 /// Every fact the planner needs. Plain data — no paths, no handles, no IO.
 /// Each field's single gathering site already exists pre-spawn on master
 /// (A2–A6); PR 2 adds zero new IO.
@@ -72,12 +83,22 @@ pub(super) struct InstallPlanInputs {
     /// `before.steam_launch_options_supported` (startup-cached). Gates ONLY
     /// `PatchLaunchOptions`, mirroring master install/mod.rs:93.
     pub steam_launch_options_supported: bool,
+    /// Whether the BPP payload is absent, differs from the bundled version, or
+    /// is already current.
+    pub payload: PayloadState,
+    /// True only when the recorded and live launch mode both match the mode
+    /// requested for this operation.
+    pub launch_mode_satisfied: bool,
 }
 
 /// Pure. Returns the exact ordered effect list; the executor runs it
 /// front-to-back and returns on the first `Err` (identical propagation to
 /// master's straight-line `?`s).
 pub(super) fn plan_install(inputs: InstallPlanInputs) -> Vec<InstallEffect> {
+    if inputs.payload == PayloadState::Current && inputs.launch_mode_satisfied {
+        return Vec::new();
+    }
+
     let mut steps = Vec::new();
     match inputs.requested {
         LaunchMode::Trampoline => {
@@ -86,7 +107,9 @@ pub(super) fn plan_install(inputs: InstallPlanInputs) -> Vec<InstallEffect> {
             if inputs.has_steam_path {
                 steps.push(InstallEffect::CloseSteam);
             }
-            steps.push(InstallEffect::InstallBepInEx);
+            if inputs.payload != PayloadState::Current {
+                steps.push(InstallEffect::InstallBepInEx);
+            }
             steps.push(InstallEffect::InstallTrampoline);
             // Persist the desired mode AS SOON AS the bundle is trampolined, before
             // the Steam step below — otherwise a clear-launch-options failure would
@@ -107,7 +130,9 @@ pub(super) fn plan_install(inputs: InstallPlanInputs) -> Vec<InstallEffect> {
             if inputs.was_trampolined && inputs.has_steam_path {
                 steps.push(InstallEffect::CloseSteam);
             }
-            steps.push(InstallEffect::InstallBepInEx);
+            if inputs.payload != PayloadState::Current {
+                steps.push(InstallEffect::InstallBepInEx);
+            }
             if inputs.was_trampolined {
                 steps.push(InstallEffect::UninstallTrampoline);
             }
@@ -128,7 +153,7 @@ pub(super) fn plan_install(inputs: InstallPlanInputs) -> Vec<InstallEffect> {
 
 #[cfg(test)]
 mod tests {
-    use super::{plan_install, InstallEffect, InstallPlanInputs};
+    use super::{plan_install, InstallEffect, InstallPlanInputs, PayloadState};
     use crate::services::launch_mode::LaunchMode;
     use InstallEffect::*;
 
@@ -143,6 +168,8 @@ mod tests {
             was_trampolined,
             has_steam_path,
             steam_launch_options_supported: supported,
+            payload: PayloadState::Missing,
+            launch_mode_satisfied: false,
         }
     }
 
@@ -198,5 +225,32 @@ mod tests {
                 }
             }
         }
+    }
+
+    #[test]
+    fn test_current_payload_and_satisfied_launch_mode_is_a_no_op() {
+        for (requested, was_trampolined) in
+            [(LaunchMode::Prefix, false), (LaunchMode::Trampoline, true)]
+        {
+            let mut facts = inputs(requested, was_trampolined, true, true);
+            facts.payload = PayloadState::Current;
+            facts.launch_mode_satisfied = true;
+
+            assert!(plan_install(facts).is_empty());
+        }
+    }
+
+    #[test]
+    fn test_payload_is_only_reinstalled_when_missing_or_changed() {
+        for payload in [PayloadState::Missing, PayloadState::Changed] {
+            let mut facts = inputs(LaunchMode::Prefix, false, true, true);
+            facts.payload = payload;
+            facts.launch_mode_satisfied = true;
+            assert!(plan_install(facts).contains(&InstallBepInEx));
+        }
+
+        let mut mode_repair = inputs(LaunchMode::Trampoline, false, true, true);
+        mode_repair.payload = PayloadState::Current;
+        assert!(!plan_install(mode_repair).contains(&InstallBepInEx));
     }
 }

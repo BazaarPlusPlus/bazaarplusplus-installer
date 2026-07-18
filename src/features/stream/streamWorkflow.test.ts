@@ -197,6 +197,35 @@ describe('stream workflow', () => {
     expect(getStatus).toHaveBeenCalledTimes(4);
   });
 
+  it('counts overlapping slow failures toward the polling threshold', async () => {
+    const polls = [
+      deferred<StreamServiceStatus>(),
+      deferred<StreamServiceStatus>(),
+      deferred<StreamServiceStatus>()
+    ];
+    const getStatus = vi
+      .fn()
+      .mockImplementationOnce(() => polls[0].promise)
+      .mockImplementationOnce(() => polls[1].promise)
+      .mockImplementationOnce(() => polls[2].promise);
+    const { workflow, scheduler } = setup({ getStatus });
+    await workflow.start();
+
+    scheduler.fireIntervals();
+    scheduler.fireIntervals();
+    scheduler.fireIntervals();
+    expect(getStatus).toHaveBeenCalledTimes(3);
+    polls[0].reject(new Error('slow poll 1'));
+    await flush();
+    polls[1].reject(new Error('slow poll 2'));
+    await flush();
+    expect(workflow.getSnapshot().error).toBeNull();
+    polls[2].reject(new Error('slow poll 3'));
+    await flush();
+
+    expect(workflow.getSnapshot().error).toBe('slow poll 3');
+  });
+
   it('refreshes after restart and preserves the usable status on failure', async () => {
     const refreshed = runningStatus({ active_window_offset: 2 });
     const success = setup({
