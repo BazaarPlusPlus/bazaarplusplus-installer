@@ -93,18 +93,18 @@ export function runVerification({
   rootDir,
   mode,
   releasePlatform,
-  platform = process.platform,
   run = spawnSync,
   log = console.log
 }) {
   for (const step of verificationSteps({ mode, releasePlatform })) {
     log(`==> ${step.label}`);
-    const isWindowsNpm = platform === 'win32' && step.command === 'npm';
-    const command = isWindowsNpm ? 'npm.cmd' : step.command;
+    const command =
+      process.platform === 'win32' && step.command === 'npm'
+        ? 'npm.cmd'
+        : step.command;
     const result = run(command, step.args, {
       cwd: rootDir,
       stdio: step.stdio ?? 'inherit',
-      shell: isWindowsNpm,
       env: { ...process.env, ...step.env }
     });
     if (result.error) {

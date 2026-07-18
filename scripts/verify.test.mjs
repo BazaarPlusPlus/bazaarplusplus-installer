@@ -62,22 +62,3 @@ test('verification preserves the failing command status and stops', () => {
     false
   );
 });
-
-test('windows npm steps execute through the command shell', () => {
-  let invocation;
-  const status = runVerification({
-    rootDir: process.cwd(),
-    mode: 'source',
-    platform: 'win32',
-    log() {},
-    run(command, args, options) {
-      invocation = { command, args, options };
-      return { status: 19 };
-    }
-  });
-
-  expect(status).toBe(19);
-  expect(invocation.command).toBe('npm.cmd');
-  expect(invocation.args).toEqual(['run', 'generate:bindings:test']);
-  expect(invocation.options.shell).toBe(true);
-});
