@@ -1,7 +1,7 @@
 ---
 status: truth
 topic: install-reset
-last-verified: f23d786ab3bf1998f556f5fe05b6e47467a7ea48
+last-verified: 0f609de844c0cbc48e7fb53396a90d5f32776c2b
 ---
 
 # Install And Reset
@@ -28,9 +28,9 @@ last-verified: f23d786ab3bf1998f556f5fe05b6e47467a7ea48
 
 ## Reset Local Data
 
-- The frontend opens a dedicated reset confirmation modal and requires an acknowledgement checkbox before confirming in `src/pages/Install.tsx:120-128` and `src/features/install/ResetDataConfirmModal.tsx:21-55`.
+- The frontend opens target-bearing reset confirmations and requires an acknowledgement checkbox before confirming. Both show the selected game path and concrete consequence; once the native operation starts, Escape, backdrop, close, and secondary dismissal are blocked because neither reset command is cancellable in `src/pages/Install.tsx:53-84`, `src/features/install/ResetDataConfirmModal.tsx:29-74`, and `src/features/install/ResetBepinexConfirmModal.tsx:26-69`.
 - The reset button is disabled when reset is not allowed, and the UI distinguishes "no resettable data" from the destructive action label in `src/features/install/InstallActionsPanel.tsx:103-115`.
-- `useInstallPage` treats an already-empty state as a no-op, calls `resetBppData`, replaces the completed state from the typed result, and chooses success versus no-op copy from `removed_data` in `src/features/install/useInstallPage.ts:148-166`.
+- `useInstallPage` returns a semantic success/problem outcome for every action; reset data treats an already-empty state as a no-op, otherwise calls `resetBppData`, replaces the completed state from the typed result, and chooses success versus no-op copy from `removed_data` in `src/features/install/useInstallPage.ts:103-147` and `src/features/install/useInstallPage.ts:172-190`. The confirmation closes only on that success outcome; failure retains its exact target, semantic problem, and partial-failure paths for retry or safe close in `src/pages/Install.tsx:67-84` and `src/pages/Install.tsx:143-176`.
 - The Rust reset path enters `StreamRuntime` exclusive maintenance, stops and awaits the stream task, and keeps lifecycle operations excluded throughout blocking deletion in `src-tauri/src/services/bepinex/mod.rs:29-42` and `src-tauri/src/stream/runtime.rs:100-108`.
 - Reset refuses to run while The Bazaar is detected as running, records whether the data directory existed before cleanup, and returns stable error-code prefixes for blocked or partial-failure cases in `src-tauri/src/services/bepinex/mod.rs:20-27` and `src-tauri/src/services/bepinex/mod.rs:44-70`.
-- Raw reset sentinels remain private to the Rust service boundary; the frontend consumes only semantic problem parameters, maps them to localized messages, and extracts partial-failure paths in `src/features/install/installProblems.ts:23-107` and `src/features/install/useInstallPage.ts:100-123`.
+- Raw reset sentinels remain private to the Rust service boundary; the frontend consumes only semantic problem parameters, maps them to localized messages, and extracts partial-failure paths in `src/features/install/installProblems.ts:23-107` and `src/features/install/useInstallPage.ts:103-145`.
