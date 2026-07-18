@@ -175,10 +175,7 @@ mod tests {
                         if requested == Prefix {
                             assert_eq!(marker, plan.len() - 1, "prefix-marker-last");
                         }
-                        // (ii) Steam closed iff trampoline mutation or mode switch —
-                        // NOTE: re-states the planner's gate (drift pin, not an
-                        // independent oracle; the exact-Vec rows above are the
-                        // hand-verified-against-master pins).
+                        // (ii) Steam closes only for trampoline mutation or mode switch.
                         let expect_close = steam && (requested == Trampoline || was);
                         assert_eq!(
                             pos(&CloseSteam).is_some(),

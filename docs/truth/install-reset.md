@@ -1,7 +1,7 @@
 ---
 status: truth
 topic: install-reset
-last-verified: 4366cda394fe304066b55564c3c44d1f917a2273
+last-verified: ee9f7f3e10716f810df078599d29a7256bcb3f6c
 ---
 
 # Install And Reset
@@ -14,10 +14,9 @@ last-verified: 4366cda394fe304066b55564c3c44d1f917a2273
 
 ## Install And Uninstall
 
-- `run_install` gathers detection and launch-mode facts, passes them to the pure `plan_install`, executes the returned steps through `execute_install_step` on a Tauri blocking task, and rebuilds state from a fresh detection in `src-tauri/src/services/install/mod.rs:36-104` and `src-tauri/src/services/install/plan.rs:58-132`.
-- Marker-before-Steam-clear, close-Steam-only-on-mode-switch, and prefix-marker-last are planner-output constraints pinned by scenario-named exact-sequence rows and a 16-combination positional sweep in `src-tauri/src/services/install/plan.rs:1-12` and `src-tauri/src/services/install/plan.rs:155-367`.
-- Prefix mode installs BepInEx, removes any prior trampoline, patches Steam launch options only when supported, and writes the launch-mode marker as `Prefix` last in `src-tauri/src/services/install/plan.rs:107-129`.
-- Trampoline mode installs BepInEx, applies the macOS trampoline, writes the launch-mode marker as `Trampoline`, and clears Steam launch options in `src-tauri/src/services/install/plan.rs:88-106`.
+- `install` is one operation: it gathers detection and launch-mode facts, executes private planned effects through the production adapter, stops on the first effect error, and returns only a freshly detected `InstallState` in `src-tauri/src/services/install/operation.rs:21-102`.
+- Marker-before-Steam-clear, close-Steam-only-on-mode-switch, prefix-marker-last, and payload-before-bundle mutation remain private planner invariants across all input combinations in `src-tauri/src/services/install/plan.rs:77-127` and `src-tauri/src/services/install/plan.rs:149-201`.
+- Prefix and trampoline scenario behavior, payload execution on repair/no-Steam cases, first-error truncation, and refresh-after-success are tested through the operation's effect recorder in `src-tauri/src/services/install/operation.rs:104-233`; no command or service caller observes the planned effect vector.
 - Install pre-clean removes only BPP-owned files the incoming payload no longer ships in `prepare_install_target` and `remove_stale_bpp_files` in `src-tauri/src/services/bepinex/payload.rs:380-416`; extraction skips byte-identical existing files and overwrites the rest in `src-tauri/src/services/bepinex/zip_archive.rs:39-79`. Third-party files are never pre-deleted, but a colliding path with different content is still overwritten by extraction.
 - Ownership is defined by `BPP_PRIVATE_RELATIVE_PATHS` and `BPP_BUNDLED_DEPENDENCY_RELATIVE_PATHS` in `src-tauri/src/services/bepinex/payload.rs:10-35`; `test_ownership_lists_match_shipped_payload` pins them to `resources/SourceForBuild/{macos,windows}/BepInEx/plugins` in `src-tauri/src/services/bepinex/payload.rs:752-786`, and `scripts/prebuild-check.mjs` requires every `SourceForBuild` file to exist in the bundled zips and rejects stray OS artifacts (`.DS_Store` and the like) in both the tree and the zips in `scripts/prebuild-check.mjs:30-61` and `scripts/prebuild-check.mjs:219-250`.
 - Uninstall is gated on `has_third_party_plugins` and `has_third_party_patchers` in `src-tauri/src/services/bepinex/mod.rs:194-244` and `src-tauri/src/services/bepinex/payload.rs:326-352`: when another mod's plugin (in `BepInEx/plugins`) or patcher (any file under `BepInEx/patchers`) is present, only private BPP files are removed and shared dependencies, trampoline, launch options, and BepInEx bootstrap stay; when BPP is the last mod, the full payload, trampoline, launch-mode marker, Steam launch options, and BepInEx bootstrap are removed through `remove_bootstrap_files` in `src-tauri/src/services/bepinex/payload.rs:313-324`, which lets `is_bepinex_installed` return false in `src-tauri/src/services/detect/game.rs:3-21`.
