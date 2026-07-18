@@ -1,7 +1,7 @@
 ---
 status: truth
 topic: frontend
-last-verified: d7b3dee85f26f15bc46c0f4a64d1e6dc21e4deeb
+last-verified: 68f2b1ef20e7c1c5c789bd5cde34821cf28efd57
 ---
 
 # Frontend

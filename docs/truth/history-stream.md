@@ -1,7 +1,7 @@
 ---
 status: truth
 topic: history-stream
-last-verified: d7b3dee85f26f15bc46c0f4a64d1e6dc21e4deeb
+last-verified: 68f2b1ef20e7c1c5c789bd5cde34821cf28efd57
 ---
 
 # History And Stream
@@ -9,7 +9,7 @@ last-verified: d7b3dee85f26f15bc46c0f4a64d1e6dc21e4deeb
 ## History Data Access
 
 - The History facade resolves the current Selected game installation, privately derives database/game/video storage paths, and owns list, detail, reveal, delete, and cleanup operations in `src-tauri/src/services/history.rs:48-270`; it does not borrow Stream runtime state.
-- List/detail resolution emits `history_unavailable`, while SQLite/query failures emit `history_read_failed` with a stable operation parameter and optional diagnostic in `src-tauri/src/services/history.rs:74-102`. Screenshot reveal, video reveal, and video delete failures emit `history_action_failed` with their target operation in `src-tauri/src/services/history.rs:109-188` and `src-tauri/src/services/history.rs:343-347`. Their shared serialized contract is defined in `src-tauri/src/problem.rs:3-35` and crosses the Tauri command boundary at `src-tauri/src/commands/history.rs:7-49`.
+- List/detail resolution emits `history_unavailable`, while SQLite/query failures emit `history_read_failed` with a stable operation parameter and optional diagnostic in `src-tauri/src/services/history.rs:74-102`. Screenshot reveal, video reveal, and video delete failures emit `history_action_failed` with their target operation in `src-tauri/src/services/history.rs:109-188` and `src-tauri/src/services/history.rs:343-347`. Their shared serialized contract is defined in `src-tauri/src/problem.rs:3-38` and crosses the Tauri command boundary at `src-tauri/src/commands/history.rs:7-49`.
 - `get_history_run_detail` returns a successful nullable detail, so an absent run is distinct from an unavailable installation or failed read in `src-tauri/src/commands/history.rs:16-23` and `src-tauri/src/services/history.rs:93-107`.
 - Tauri History commands pass only domain inputs such as ids, limits, cleanup scope, and preset to the facade; command signatures contain no database, game, video-directory, cutoff, or cleanup-plan values in `src-tauri/src/commands/history.rs:7-79`.
 - History reads open the BazaarPlusPlus SQLite database read-only with a two-second busy timeout in `src-tauri/src/history/queries.rs:29-35`.

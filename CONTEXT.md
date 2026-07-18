@@ -1,7 +1,7 @@
 ---
 status: truth
 topic: context
-last-verified: d7b3dee85f26f15bc46c0f4a64d1e6dc21e4deeb
+last-verified: 68f2b1ef20e7c1c5c789bd5cde34821cf28efd57
 ---
 
 # BazaarPlusPlus Installer Context
@@ -28,7 +28,7 @@ Current behavior truth lives under `docs/truth/` (topic-sliced, code-cited, hash
 - **Selected game installation** — the one session-scoped The Bazaar installation shared by Install, History, and Stream. Valid explicit paths update it; resolution then uses explicit, selected, startup-detected, and fallback priority. It is held only in managed memory and is recreated empty on app restart (`src-tauri/src/services/selected_game_installation.rs:14-115`, `src-tauri/src/lib.rs:38-41`).
 - **Reset (local data)** — the only flow that deletes the mod's `BazaarPlusPlusV4/` data directory; explicit, confirmed, refused while the game runs, and performed under exclusive stream-runtime maintenance (`src-tauri/src/services/bepinex/mod.rs:20-62`, `src-tauri/src/stream/runtime.rs:100-108`). Uninstall never touches it.
 - **History** — the facade around the Selected game installation's mod-owned SQLite database, including reads, detail, reveal, video deletion, and storage cleanup (`src-tauri/src/services/history.rs:48-270`); the database is created and primarily written by the mod.
-- **Semantic problem** — a command failure contract made of a stable code, string parameters, and an optional troubleshooting diagnostic (`src-tauri/src/problem.rs:3-35`). History list/detail loading publishes `history_unavailable` and `history_read_failed`, while screenshot/video actions publish `history_action_failed` with an operation parameter; the frontend adapter preserves the structured payload instead of turning it into display copy (`src-tauri/src/services/history.rs:74-188`, `src/api/problems.ts:3-42`, `src/api/nativeCommands.ts:5-15`).
+- **Semantic problem** — a command failure contract made of a stable code, string parameters, and an optional troubleshooting diagnostic (`src-tauri/src/problem.rs:3-38`). History list/detail loading publishes `history_unavailable` and `history_read_failed`, while screenshot/video actions publish `history_action_failed` with an operation parameter; the frontend adapter preserves the structured payload instead of turning it into display copy (`src-tauri/src/services/history.rs:74-188`, `src/api/problems.ts:3-42`, `src/api/nativeCommands.ts:5-15`).
 - **Stream runtime / overlay** — the single serialized owner of the local Axum service lifecycle, window selection, and exclusive maintenance; the production service remains on `127.0.0.1:17654` and serves the OBS overlay and settings pages (`src-tauri/src/stream/runtime.rs:43-108`, `src-tauri/src/stream/server.rs:16-69`).
 - **Stream workflow** — the framework-neutral frontend owner of Stream page initialization, polling, intents, error priority, and its single derived snapshot. Browser/Tauri concerns enter through injected ports, and React only attaches lifecycle and subscription (`src/features/stream/streamWorkflow.ts:94-120`, `src/features/stream/useStreamPage.ts:21-61`).
 - **Storage cleanup** — preset-driven deletion of old screenshots and run data with upload-safety and referenced-file protections; its IPC is the two scope-tagged preview/execute operations (`src-tauri/src/commands/history.rs:61-79`, `src-tauri/src/services/history.rs:25-44`).
