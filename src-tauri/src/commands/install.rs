@@ -4,8 +4,8 @@ use tauri_plugin_dialog::DialogExt;
 
 use crate::services::{
     install::{
-        build_install_state, launch_game_via_steam, run_install, run_reset_bepinex,
-        run_reset_bpp_data, run_uninstall,
+        build_install_state, install, launch_game_via_steam, run_reset_bepinex, run_reset_bpp_data,
+        run_uninstall, InstallRequest,
     },
     startup::InstallerContextState,
 };
@@ -41,11 +41,17 @@ pub async fn choose_game_directory(
 #[specta::specta]
 pub async fn install_mod(
     app: tauri::AppHandle,
-    state: tauri::State<'_, InstallerContextState>,
     game_path: String,
     compat_opt_in: bool,
 ) -> Result<InstallState, String> {
-    run_install(app, state, game_path, compat_opt_in).await
+    install(
+        app,
+        InstallRequest {
+            game_path,
+            compat_opt_in,
+        },
+    )
+    .await
 }
 
 #[tauri::command]

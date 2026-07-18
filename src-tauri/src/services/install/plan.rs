@@ -1,23 +1,18 @@
-//! Pure install planner: turns the facts gathered before `spawn_blocking`
-//! into the exact ordered effect sequence `run_install` executes.
+//! Private install planner: turns gathered facts into the ordered effects the
+//! complete install operation executes.
 //!
 //! ORDER IS THE OUTPUT. The three load-bearing ordering constraints —
 //! (i) marker-before-Steam-clear, (ii) close-Steam-only-on-mode-switch,
 //! (iii) prefix-marker-last — are encoded in the sequence this function
-//! returns and pinned by the table tests below: any *planner* reorder fails
-//! a scenario-named test row plus the positional invariant sweep. The
-//! executor (`execute_install_step` in mod.rs) is orderless and carries no
-//! branching; its per-arm argument literals (e.g. `prepare_steam(.., false)`)
-//! are comment-guarded only — the accepted residual risk of a zero-mock
-//! design, identical to master's exposure.
+//! returns and pinned by a positional invariant sweep. Scenario behavior is
+//! tested through the operation's effect recorder in `operation.rs`.
 
 use crate::services::launch_mode::LaunchMode;
 
 /// One effect in an install run. Each variant maps 1:1 to exactly one
-/// existing effect call in `execute_install_step` — no variant may fan out
-/// to multiple effects or grow conditionals in the executor.
+/// production effect call in `operation.rs`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(super) enum InstallStep {
+pub(super) enum InstallEffect {
     /// `prepare_steam_for_launch_option_update(steam, /*skip_shutdown=*/false)`
     /// — quits Steam and polls until gone (steam.rs:136). Internal no-op `Ok`
     /// when `<steam>/userdata` is missing (steam.rs:140-146). The `false`
@@ -82,26 +77,26 @@ pub(super) struct InstallPlanInputs {
 /// Pure. Returns the exact ordered effect list; the executor runs it
 /// front-to-back and returns on the first `Err` (identical propagation to
 /// master's straight-line `?`s).
-pub(super) fn plan_install(inputs: InstallPlanInputs) -> Vec<InstallStep> {
+pub(super) fn plan_install(inputs: InstallPlanInputs) -> Vec<InstallEffect> {
     let mut steps = Vec::new();
     match inputs.requested {
         LaunchMode::Trampoline => {
             // Trampoline mode MUTATES the .app and needs a reliable localconfig
             // clear -> Steam MUST be closed.                       [moved: (iv)]
             if inputs.has_steam_path {
-                steps.push(InstallStep::CloseSteam);
+                steps.push(InstallEffect::CloseSteam);
             }
-            steps.push(InstallStep::InstallBepInEx);
-            steps.push(InstallStep::InstallTrampoline);
+            steps.push(InstallEffect::InstallBepInEx);
+            steps.push(InstallEffect::InstallTrampoline);
             // Persist the desired mode AS SOON AS the bundle is trampolined, before
             // the Steam step below — otherwise a clear-launch-options failure would
             // leave a trampolined bundle with no marker, which a later detect would
             // mislabel as `trampoline_reverted` on macOS <= 26.    [moved: (i)]
-            steps.push(InstallStep::WriteLaunchModeMarker(LaunchMode::Trampoline));
+            steps.push(InstallEffect::WriteLaunchModeMarker(LaunchMode::Trampoline));
             // LaunchOptions are driven by the MODE: trampoline => cleared (the
             // empty/vanilla launch the stub needs).                [moved]
             if inputs.has_steam_path {
-                steps.push(InstallStep::ClearLaunchOptions);
+                steps.push(InstallEffect::ClearLaunchOptions);
             }
         }
         LaunchMode::Prefix => {
@@ -110,14 +105,14 @@ pub(super) fn plan_install(inputs: InstallPlanInputs) -> Vec<InstallStep> {
             // (Steam stays up; patch_launch_options does its own prepare(.., true)).
             //                                                      [moved: (ii)]
             if inputs.was_trampolined && inputs.has_steam_path {
-                steps.push(InstallStep::CloseSteam);
+                steps.push(InstallEffect::CloseSteam);
             }
-            steps.push(InstallStep::InstallBepInEx);
+            steps.push(InstallEffect::InstallBepInEx);
             if inputs.was_trampolined {
-                steps.push(InstallStep::UninstallTrampoline);
+                steps.push(InstallEffect::UninstallTrampoline);
             }
             if inputs.steam_launch_options_supported && inputs.has_steam_path {
-                steps.push(InstallStep::PatchLaunchOptions);
+                steps.push(InstallEffect::PatchLaunchOptions);
             }
             // The marker records the ACHIEVED mode, mirroring the trampoline
             // branch's rule from the other side: written LAST, after the fallible
@@ -125,7 +120,7 @@ pub(super) fn plan_install(inputs: InstallPlanInputs) -> Vec<InstallStep> {
             // correctly reads desired=prefix.
             // [NEW comment — master pinned (iii) only structurally at :100;
             //  authored text, reviewer-verified against fact map §2(iii)]
-            steps.push(InstallStep::WriteLaunchModeMarker(LaunchMode::Prefix));
+            steps.push(InstallEffect::WriteLaunchModeMarker(LaunchMode::Prefix));
         }
     }
     steps
@@ -133,9 +128,9 @@ pub(super) fn plan_install(inputs: InstallPlanInputs) -> Vec<InstallStep> {
 
 #[cfg(test)]
 mod tests {
-    use super::{plan_install, InstallPlanInputs, InstallStep};
+    use super::{plan_install, InstallEffect, InstallPlanInputs};
     use crate::services::launch_mode::LaunchMode;
-    use InstallStep::*;
+    use InstallEffect::*;
 
     fn inputs(
         requested: LaunchMode,
@@ -152,163 +147,6 @@ mod tests {
     }
 
     #[test]
-    fn test_plan_matrix_named_after_fact_map_scenarios() {
-        use LaunchMode::{Prefix, Trampoline};
-        // Rows with identical plans ((a)==(b)==(f)==(g), (d)==plain-prefix) are
-        // DELIBERATE documentation of distinct scenarios — do not collapse them;
-        // the names are the spec.
-        for (name, req, was, steam, sup, want) in [
-            (
-                "(a) macos27 fresh trampoline install, Steam present",
-                Trampoline,
-                false,
-                true,
-                true,
-                vec![
-                    CloseSteam,
-                    InstallBepInEx,
-                    InstallTrampoline,
-                    WriteLaunchModeMarker(Trampoline),
-                    ClearLaunchOptions,
-                ],
-            ),
-            (
-                "(b) macos26 opt-in trampoline == (a): OS gate resolved upstream in launch_mode",
-                Trampoline,
-                false,
-                true,
-                true,
-                vec![
-                    CloseSteam,
-                    InstallBepInEx,
-                    InstallTrampoline,
-                    WriteLaunchModeMarker(Trampoline),
-                    ClearLaunchOptions,
-                ],
-            ),
-            (
-                "(c) macos26 mode-switch downgrade: Steam closed ONLY because was_trampolined; \
-                 marker moves to LAST (constraints ii + iii)",
-                Prefix,
-                true,
-                true,
-                true,
-                vec![
-                    CloseSteam,
-                    InstallBepInEx,
-                    UninstallTrampoline,
-                    PatchLaunchOptions,
-                    WriteLaunchModeMarker(Prefix),
-                ],
-            ),
-            (
-                "plain macos26 prefix install keeps Steam UP (constraint ii converse)",
-                Prefix,
-                false,
-                true,
-                true,
-                vec![
-                    InstallBepInEx,
-                    PatchLaunchOptions,
-                    WriteLaunchModeMarker(Prefix),
-                ],
-            ),
-            (
-                "(d) windows prefix install == plain prefix: patch step still planned, \
-                 empty-args short-circuit lives in the effect, not the planner",
-                Prefix,
-                false,
-                true,
-                true,
-                vec![
-                    InstallBepInEx,
-                    PatchLaunchOptions,
-                    WriteLaunchModeMarker(Prefix),
-                ],
-            ),
-            (
-                "(e) trampoline, steam path present but launch options unsupported: \
-                 Steam steps STILL planned (clear is NOT gated on supported; they early-Ok internally)",
-                Trampoline,
-                false,
-                true,
-                false,
-                vec![
-                    CloseSteam,
-                    InstallBepInEx,
-                    InstallTrampoline,
-                    WriteLaunchModeMarker(Trampoline),
-                    ClearLaunchOptions,
-                ],
-            ),
-            (
-                "(e') prefix without launch-option support: patch dropped, marker still last",
-                Prefix,
-                false,
-                true,
-                false,
-                vec![InstallBepInEx, WriteLaunchModeMarker(Prefix)],
-            ),
-            (
-                "(f) == (a): install_trampoline mid-failure aborts BEFORE the marker step \
-                 by plan POSITION; recovery is detect-driven (needs_trampoline_repair, PR 1)",
-                Trampoline,
-                false,
-                true,
-                true,
-                vec![
-                    CloseSteam,
-                    InstallBepInEx,
-                    InstallTrampoline,
-                    WriteLaunchModeMarker(Trampoline),
-                    ClearLaunchOptions,
-                ],
-            ),
-            (
-                "(g) repair/reinstall over healthy trampoline: was_trampolined IGNORED in \
-                 trampoline mode (install_trampoline is the idempotent re-seal path)",
-                Trampoline,
-                true,
-                true,
-                true,
-                vec![
-                    CloseSteam,
-                    InstallBepInEx,
-                    InstallTrampoline,
-                    WriteLaunchModeMarker(Trampoline),
-                    ClearLaunchOptions,
-                ],
-            ),
-            (
-                "no Steam at all, trampoline: pure filesystem plan",
-                Trampoline,
-                false,
-                false,
-                true,
-                vec![
-                    InstallBepInEx,
-                    InstallTrampoline,
-                    WriteLaunchModeMarker(Trampoline),
-                ],
-            ),
-            (
-                "no Steam at all, prefix downgrade: trampoline still un-applied",
-                Prefix,
-                true,
-                false,
-                true,
-                vec![
-                    InstallBepInEx,
-                    UninstallTrampoline,
-                    WriteLaunchModeMarker(Prefix),
-                ],
-            ),
-        ] {
-            assert_eq!(plan_install(inputs(req, was, steam, sup)), want, "{name}");
-        }
-    }
-
-    #[test]
     fn test_ordering_constraints_hold_for_every_input_combination() {
         use LaunchMode::{Prefix, Trampoline};
         for requested in [Trampoline, Prefix] {
@@ -316,7 +154,7 @@ mod tests {
                 for steam in [false, true] {
                     for sup in [false, true] {
                         let plan = plan_install(inputs(requested, was, steam, sup));
-                        let pos = |s: &InstallStep| plan.iter().position(|x| x == s);
+                        let pos = |s: &InstallEffect| plan.iter().position(|x| x == s);
                         // marker: exactly once, and it echoes `requested`
                         let marker = pos(&WriteLaunchModeMarker(requested))
                             .expect("every plan persists the requested mode");
