@@ -40,9 +40,11 @@ export interface ConfirmDialogProps {
    *  Absent => the four danger modals: busy prepends Loader2 animate-spin to
    *  confirmLabel. Presence is the switch. */
   busyLabel?: string;
-  /** Disables confirm + triggers busy affordance. Escape/backdrop/X/cancel
-   *  stay active while busy. */
+  /** Disables confirm + triggers busy affordance. */
   busy: boolean;
+  /** Also disables Escape/backdrop/X/cancel while a native operation that
+   *  cannot be cancelled is in flight. */
+  dismissDisabled?: boolean;
   /** Extra gate (for example, Cleanup having nothing to clean). */
   confirmDisabled?: boolean;
   onConfirm: () => void | Promise<void>;
@@ -91,6 +93,7 @@ export function ConfirmDialog({
   confirmLabel,
   busyLabel,
   busy,
+  dismissDisabled = false,
   confirmDisabled,
   onConfirm,
   onClose
@@ -100,7 +103,10 @@ export function ConfirmDialog({
   const Icon = s.Icon;
 
   return (
-    <Dialog onClose={onClose} labelledBy={titleId}>
+    <Dialog
+      onClose={dismissDisabled ? () => undefined : onClose}
+      labelledBy={titleId}
+    >
       <div className={s.card}>
         <div className={s.bar}>
           <div className="flex items-center gap-3">
@@ -112,7 +118,8 @@ export function ConfirmDialog({
           <button
             type="button"
             onClick={onClose}
-            className={s.close}
+            disabled={dismissDisabled}
+            className={`${s.close} disabled:opacity-40 disabled:pointer-events-none`}
             aria-label={t('close')}
           >
             <X size={20} />
@@ -135,7 +142,8 @@ export function ConfirmDialog({
             <button
               type="button"
               onClick={onClose}
-              className="px-5 py-2 bg-[rgba(200,148,55,0.04)] border border-[rgba(180,130,48,0.2)] rounded-sm hover:bg-[rgba(200,148,55,0.1)] transition-colors text-sm text-[#e8dcc8]"
+              disabled={dismissDisabled}
+              className="px-5 py-2 bg-[rgba(200,148,55,0.04)] border border-[rgba(180,130,48,0.2)] rounded-sm hover:bg-[rgba(200,148,55,0.1)] disabled:opacity-40 disabled:pointer-events-none transition-colors text-sm text-[#e8dcc8]"
             >
               {t('cancel')}
             </button>

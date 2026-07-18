@@ -1,7 +1,7 @@
 ---
 status: truth
 topic: architecture
-last-verified: b07adb2e67f03480d039352837037c25a75f3472
+last-verified: 68f2b1ef20e7c1c5c789bd5cde34821cf28efd57
 ---
 
 # Architecture
@@ -23,8 +23,8 @@ last-verified: b07adb2e67f03480d039352837037c25a75f3472
 
 - Install state is produced by Rust detection and serialized through `InstallState`; the contract includes selected paths, game/mod state, macOS compatibility state, action gates, resettable-data and BepInEx-folder status, and warnings in `src-tauri/src/services/install/types.rs:3-19`.
 - The complete install operation owns payload and launch-mode fact gathering, private planning, ordered production effects, first-error propagation, and a final state refresh in `src-tauri/src/services/install/operation.rs:16-125`; the Tauri command only constructs the request and invokes that operation in `src-tauri/src/commands/install.rs:40-55`. Reset, uninstall, and Steam-only launch remain in the install service facade.
-- The History facade resolves Selected game installation and privately owns storage derivation, reads, reveals, deletes, and cleanup dispatch in `src-tauri/src/services/history.rs:46-231`; commands expose ids plus domain cleanup scope/preset without raw paths or cutoffs in `src-tauri/src/commands/history.rs:7-79`. Reads use SQLite read-only connections by default, while mutation uses separate write connections in `src-tauri/src/history/queries.rs:29-54`.
-- `list_history_runs` is the first command whose failure type is `SemanticProblem`; the shared Rust DTO fixes code/parameter/diagnostic shape, and the History facade maps unavailable selection and read failures before the command boundary in `src-tauri/src/problem.rs:3-35`, `src-tauri/src/services/history.rs:74-90`, and `src-tauri/src/commands/history.rs:7-14`.
+- The History facade resolves Selected game installation and privately owns storage derivation, reads, reveals, deletes, and cleanup dispatch in `src-tauri/src/services/history.rs:48-270`; commands expose ids plus domain cleanup scope/preset without raw paths or cutoffs in `src-tauri/src/commands/history.rs:7-79`. Reads use SQLite read-only connections by default, while mutation uses separate write connections in `src-tauri/src/history/queries.rs:29-54`.
+- History list/detail/reveal/delete commands use `SemanticProblem`; the shared Rust DTO fixes code/parameter/diagnostic shape, the detail command models not-found as a successful `Option`, and the facade classifies unavailable selection, failed reads, and failed actions before the command boundary in `src-tauri/src/problem.rs:3-38`, `src-tauri/src/services/history.rs:74-188`, and `src-tauri/src/commands/history.rs:7-49`.
 - History internals default to private modules; only cleanup algorithms and mapper/screenshots test seams are crate-visible, and the facade receives a narrowed repository surface in `src-tauri/src/history/mod.rs:1-13`.
 - `StreamRuntime` is the only stream lifecycle mutation boundary: it serializes ensure/restart/stop/window/maintenance operations and privately owns the task plus captured installation paths in `src-tauri/src/stream/runtime.rs:43-108` and `src-tauri/src/stream/runtime.rs:188-280`. Its private production adapter binds the local Axum service to `127.0.0.1:17654` in `src-tauri/src/stream/server.rs:16-69`.
 - The frontend Stream workflow depends inward on semantic command, scheduler, clipboard, and opener ports in `src/features/stream/streamWorkflow.ts:24-50` and `src/features/stream/streamWorkflow.ts:114-120`; the React hook provides those outer adapters and only subscribes, starts, and disposes the workflow in `src/features/stream/useStreamPage.ts:21-61`.

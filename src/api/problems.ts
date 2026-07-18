@@ -2,7 +2,8 @@ import type { SemanticProblem } from '../types/backend';
 
 const semanticProblemCodes: Record<SemanticProblem['code'], true> = {
   history_unavailable: true,
-  history_read_failed: true
+  history_read_failed: true,
+  history_action_failed: true
 };
 
 export class SemanticProblemError extends Error {

@@ -9,9 +9,13 @@ pub struct SemanticProblem {
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize, specta::Type)]
 #[serde(rename_all = "snake_case")]
+// The domain prefix is intentional: these names are the stable cross-language
+// problem codes and must remain unambiguous as other feature domains are added.
+#[allow(clippy::enum_variant_names)]
 pub enum SemanticProblemCode {
     HistoryUnavailable,
     HistoryReadFailed,
+    HistoryActionFailed,
 }
 
 impl SemanticProblem {

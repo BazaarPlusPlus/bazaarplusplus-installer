@@ -22,7 +22,10 @@ export const commands = {
 	applyOverlayCropCode: (code: string) => __TAURI_INVOKE<StreamOverlayCropSettingsPayload>("apply_overlay_crop_code", { code }),
 	resetOverlayCrop: () => __TAURI_INVOKE<StreamOverlayCropSettingsPayload>("reset_overlay_crop"),
 	listHistoryRuns: (limit: number | null) => __TAURI_INVOKE<HistoryRunList>("list_history_runs", { limit }),
-	getHistoryRunDetail: (runId: string) => __TAURI_INVOKE<HistoryRunDetail>("get_history_run_detail", { runId }),
+	getHistoryRunDetail: (runId: string) => __TAURI_INVOKE<{
+	run: HistoryRunDetailRow,
+	battles: HistoryBattleRow[],
+} | null>("get_history_run_detail", { runId }),
 	revealRunScreenshot: (runId: string) => __TAURI_INVOKE<null>("reveal_run_screenshot", { runId }),
 	revealBattleVideo: (battleId: string, videoId: string | null) => __TAURI_INVOKE<null>("reveal_battle_video", { battleId, videoId }),
 	deleteBattleVideo: (battleId: string, videoId: string) => __TAURI_INVOKE<HistoryRunDetail>("delete_battle_video", { battleId, videoId }),
@@ -253,7 +256,7 @@ export type SemanticProblem = {
 	diagnostic: string | null,
 };
 
-export type SemanticProblemCode = "history_unavailable" | "history_read_failed";
+export type SemanticProblemCode = "history_unavailable" | "history_read_failed" | "history_action_failed";
 
 export type StorageCleanupExecution = { scope: "screenshots"; result: ScreenshotCleanupResult } | { scope: "run_data"; result: RunDataCleanupResult };
 

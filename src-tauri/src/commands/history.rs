@@ -18,13 +18,13 @@ pub fn list_history_runs(
 pub fn get_history_run_detail(
     app: tauri::AppHandle,
     run_id: String,
-) -> Result<HistoryRunDetail, String> {
+) -> Result<Option<HistoryRunDetail>, SemanticProblem> {
     history::get_run_detail(&app, &run_id)
 }
 
 #[tauri::command]
 #[specta::specta]
-pub fn reveal_run_screenshot(app: tauri::AppHandle, run_id: String) -> Result<(), String> {
+pub fn reveal_run_screenshot(app: tauri::AppHandle, run_id: String) -> Result<(), SemanticProblem> {
     history::reveal_run_screenshot(&app, &run_id)
 }
 
@@ -34,7 +34,7 @@ pub fn reveal_battle_video(
     app: tauri::AppHandle,
     battle_id: String,
     video_id: Option<String>,
-) -> Result<(), String> {
+) -> Result<(), SemanticProblem> {
     history::reveal_battle_video(&app, &battle_id, video_id.as_deref())
 }
 
@@ -44,7 +44,7 @@ pub fn delete_battle_video(
     app: tauri::AppHandle,
     battle_id: String,
     video_id: String,
-) -> Result<HistoryRunDetail, String> {
+) -> Result<HistoryRunDetail, SemanticProblem> {
     history::delete_battle_video(&app, &battle_id, &video_id)
 }
 

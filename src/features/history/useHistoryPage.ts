@@ -8,10 +8,10 @@ import {
 } from 'react';
 import type { HistoryRunRow } from '../../types/backend';
 import { getStreamStatus } from '../shared/streamSessionApi';
-import { problemFromError } from '../shared/problems';
 import { isReadyPageState } from '../shared/pageState';
 import { optionalStripPreviewUrl } from './stripPreview';
 import { listHistoryRuns } from './historyApi';
+import { historyProblemFromError } from './historyProblems';
 import {
   initialHistoryPageState,
   reduceHistoryPageState
@@ -44,7 +44,7 @@ export function useHistoryPage() {
       dispatch({
         type: 'request-failed',
         requestId,
-        problem: problemFromError(caught, 'history_unexpected')
+        problem: historyProblemFromError(caught)
       });
     }
   }, []);

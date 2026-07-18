@@ -94,4 +94,9 @@ describe('ConfirmDialog', () => {
   it('confirmDisabled disables confirm even when idle (Cleanup nothing-to-clean)', () => {
     expect(render({ confirmDisabled: true })).toContain('disabled=""');
   });
+
+  it('can make every dismiss control visibly unavailable for an uncancellable action', () => {
+    const html = render({ busy: true, dismissDisabled: true });
+    expect(html.match(/disabled=""/g)).toHaveLength(3);
+  });
 });
