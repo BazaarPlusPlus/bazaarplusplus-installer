@@ -139,6 +139,7 @@ function RunRow({
       className="group grid grid-cols-[14rem_minmax(0,1fr)_9rem_6.5rem_5rem_5.5rem_auto] items-center gap-6 p-3 bg-[rgba(18,11,5,0.88)] border border-[rgba(180,130,48,0.13)] rounded-sm hover:border-[rgba(200,148,55,0.4)] hover:bg-[rgba(200,148,55,0.04)] transition-all shadow-[0_4px_12px_rgba(0,0,0,0.2)] no-underline text-inherit"
     >
       <RunPreview
+        key={previewUrl ?? 'preview-unavailable'}
         previewUrl={previewUrl}
         fallbackLabel={t('historyPreviewFallback')}
       />

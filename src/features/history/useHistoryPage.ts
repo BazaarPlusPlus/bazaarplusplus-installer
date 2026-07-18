@@ -91,7 +91,6 @@ export function useHistoryPage() {
 
   return {
     state,
-    payload,
     summary,
     previewProblem: preview.problem,
     busy:

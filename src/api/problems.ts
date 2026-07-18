@@ -19,7 +19,7 @@ export function isSemanticProblem(value: unknown): value is SemanticProblem {
   if (
     !isRecord(value) ||
     typeof value.code !== 'string' ||
-    !(value.code in semanticProblemCodes)
+    !Object.hasOwn(semanticProblemCodes, value.code)
   ) {
     return false;
   }

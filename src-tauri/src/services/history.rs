@@ -54,12 +54,14 @@ struct History {
 }
 
 impl History {
-    fn resolve(app: &tauri::AppHandle) -> Result<Self, String> {
-        let game_path = app
-            .state::<SelectedGameInstallationState>()
+    fn resolved_game_path(app: &tauri::AppHandle) -> Option<PathBuf> {
+        app.state::<SelectedGameInstallationState>()
             .resolve(app, None, GamePathAcceptance::DatabaseExists)
-            .map(|resolution| resolution.game_path);
-        Self::from_resolved_game_path(game_path)
+            .map(|resolution| resolution.game_path)
+    }
+
+    fn resolve(app: &tauri::AppHandle) -> Result<Self, String> {
+        Self::from_resolved_game_path(Self::resolved_game_path(app))
     }
 
     fn from_resolved_game_path(game_path: Option<PathBuf>) -> Result<Self, String> {
@@ -72,10 +74,8 @@ impl History {
     fn from_resolved_game_path_for_list(
         game_path: Option<PathBuf>,
     ) -> Result<Self, SemanticProblem> {
-        game_path
-            .map(history_paths_for_game_path)
-            .map(|paths| Self { paths })
-            .ok_or_else(|| SemanticProblem::new(SemanticProblemCode::HistoryUnavailable))
+        Self::from_resolved_game_path(game_path)
+            .map_err(|_| SemanticProblem::new(SemanticProblemCode::HistoryUnavailable))
     }
 
     fn list_runs(&self, limit: usize) -> Result<HistoryRunList, String> {
@@ -234,11 +234,8 @@ pub fn list_runs(
     app: &tauri::AppHandle,
     limit: Option<usize>,
 ) -> Result<HistoryRunList, SemanticProblem> {
-    let game_path = app
-        .state::<SelectedGameInstallationState>()
-        .resolve(app, None, GamePathAcceptance::DatabaseExists)
-        .map(|resolution| resolution.game_path);
-    History::from_resolved_game_path_for_list(game_path)?.list_runs_for_page(limit.unwrap_or(50))
+    History::from_resolved_game_path_for_list(History::resolved_game_path(app))?
+        .list_runs_for_page(limit.unwrap_or(50))
 }
 
 pub fn get_run_detail(app: &tauri::AppHandle, run_id: &str) -> Result<HistoryRunDetail, String> {

@@ -50,6 +50,7 @@ describe('native command adapter', () => {
       message: 'history_read_failed',
       problem
     });
+    expect(invokeMock).toHaveBeenCalledWith('list_history_runs', { limit: 50 });
   });
 });
 
@@ -69,6 +70,13 @@ describe('normalizeBackendError sentinel contract', () => {
     expect(normalizeBackendError({ weird: true }).message).toBe(
       'Backend command failed.'
     );
+    expect(
+      normalizeBackendError({
+        code: 'toString',
+        params: {},
+        diagnostic: null
+      }).message
+    ).toBe('Backend command failed.');
   });
 
   it('feeds reset partial-failure parsing end to end', async () => {
