@@ -1,7 +1,7 @@
 ---
 status: truth
 topic: history-stream
-last-verified: 4366cda394fe304066b55564c3c44d1f917a2273
+last-verified: faefb505c5717c3da3a71fc2361315ad2fb6658a
 ---
 
 # History And Stream
@@ -34,12 +34,12 @@ last-verified: 4366cda394fe304066b55564c3c44d1f917a2273
 ## Stream Service
 
 - The stream service binds to `127.0.0.1:17654` in `src-tauri/src/stream/server.rs:16-17`.
-- Starting the service stops any existing different-path service, resolves game/database paths, constructs the overlay record repository and settings store, then serves the router with graceful shutdown in `src-tauri/src/stream/server.rs:19-112`.
-- The service reports database presence and path from the resolved game path in `src-tauri/src/stream/server.rs:114-123`.
-- The service reports window totals and current record from the overlay repository in `src-tauri/src/stream/server.rs:125-144`.
-- Stop and restart are explicit async service operations in `src-tauri/src/stream/server.rs:161-177`.
+- `StreamRuntime` is the single lifecycle owner. Its async lifecycle mutex serializes ensure, restart, stop, window changes, and exclusive maintenance; task handles and captured installation paths remain private in `src-tauri/src/stream/runtime.rs:43-108` and `src-tauri/src/stream/runtime.rs:188-280`.
+- Ensure and restart resolve one Selected game installation snapshot while holding the lifecycle gate; window changes reuse the captured record path instead of re-resolving a possibly changed selection in `src-tauri/src/stream/runtime.rs:66-98`, `src-tauri/src/stream/runtime.rs:203-220`, and `src-tauri/src/stream/runtime.rs:300-357`.
+- The production server adapter constructs the overlay repository and settings store, reports database/window status, and serves the router with graceful shutdown in `src-tauri/src/stream/server.rs:19-102`; stop sends shutdown and awaits the task before publishing idle state in `src-tauri/src/stream/runtime.rs:188-201`.
+- Startup, stream commands, tray stop/quit, and window-close behavior use the runtime rather than composing server mutations directly in `src-tauri/src/lib.rs:40-73`, `src-tauri/src/commands/stream.rs:11-50`, and `src-tauri/src/tray.rs:32-48`.
 
 ## HTTP Surface
 
-- The local HTTP router exposes `/overlay`, `/settings`, stream record APIs, crop-config APIs, record images, and static overlay/settings assets in `src-tauri/src/stream/http.rs:63-91`.
-- CORS is narrowed to Tauri origins and the local Vite dev origins `http://localhost:14207` and `http://127.0.0.1:14207` in `src-tauri/src/stream/http.rs:99-110`.
+- The local HTTP router exposes `/overlay`, `/settings`, stream record APIs, crop-config APIs, record images, and static overlay/settings assets in `src-tauri/src/stream/http.rs:29-40` and `src-tauri/src/stream/http.rs:75-109`.
+- CORS is narrowed to Tauri origins and the local Vite dev origins `http://localhost:14207` and `http://127.0.0.1:14207` in `src-tauri/src/stream/http.rs:111-122`.

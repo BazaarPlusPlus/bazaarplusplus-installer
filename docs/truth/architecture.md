@@ -1,7 +1,7 @@
 ---
 status: truth
 topic: architecture
-last-verified: ee9f7f3e10716f810df078599d29a7256bcb3f6c
+last-verified: faefb505c5717c3da3a71fc2361315ad2fb6658a
 ---
 
 # Architecture
@@ -15,8 +15,8 @@ last-verified: ee9f7f3e10716f810df078599d29a7256bcb3f6c
 
 ## Native Runtime
 
-- Tauri startup builds the tray, warms `InstallerContextState`, emits `startup-ready`, and starts the stream service in `src-tauri/src/lib.rs:40-53`.
-- Close behavior is service-aware: while the stream runtime reports `running`, the main window close request is prevented and the window is hidden in `src-tauri/src/lib.rs:56-70`.
+- Tauri startup builds the tray, warms `InstallerContextState`, emits `startup-ready`, and asks `StreamRuntime` to ensure the stream service in `src-tauri/src/lib.rs:44-59`.
+- Close behavior is service-aware: while the stream runtime reports `running`, the main window close request is prevented and the window is hidden in `src-tauri/src/lib.rs:60-73`.
 - The default capability grants updater check/download/install, process restart, `steam://*` opening, and dialog permissions in `src-tauri/capabilities/default.json:6-20`.
 
 ## Feature Boundaries
@@ -24,7 +24,7 @@ last-verified: ee9f7f3e10716f810df078599d29a7256bcb3f6c
 - Install state is produced by Rust detection and serialized through `InstallState`; the contract includes selected paths, game/mod state, macOS compatibility state, action gates, resettable-data and BepInEx-folder status, and warnings in `src-tauri/src/services/install/types.rs:3-19`.
 - The complete install operation owns fact gathering, private planning, ordered production effects, first-error propagation, and a final state refresh in `src-tauri/src/services/install/operation.rs:16-102`; the Tauri command only constructs the request and invokes that operation in `src-tauri/src/commands/install.rs:40-55`. Reset, uninstall, and Steam-only launch remain in the install service facade.
 - History reads use SQLite read-only connections by default in `src-tauri/src/history/queries.rs:29-35`; the separate write connection is used only where mutation is needed in `src-tauri/src/history/queries.rs:37-43`.
-- The stream service is a local Axum HTTP service bound to `127.0.0.1:17654`, creates overlay repositories and settings stores, and exposes overlay/settings URLs in `src-tauri/src/stream/server.rs:16-112`.
+- `StreamRuntime` is the only stream lifecycle mutation boundary: it serializes ensure/restart/stop/window/maintenance operations and privately owns the task plus captured installation paths in `src-tauri/src/stream/runtime.rs:43-108` and `src-tauri/src/stream/runtime.rs:188-280`. Its private production adapter binds the local Axum service to `127.0.0.1:17654` in `src-tauri/src/stream/server.rs:16-69`.
 
 ## Build And Generated Artifacts
 
