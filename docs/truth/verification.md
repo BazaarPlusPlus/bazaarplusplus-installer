@@ -1,7 +1,7 @@
 ---
 status: truth
 topic: verification
-last-verified: bd90f6e85084510f756eda76d49dbe18d85b959d
+last-verified: a3c3caff279c6d789e4439edb115455ea8863298
 ---
 
 # Verification
@@ -10,9 +10,9 @@ Use the smallest command that verifies the changed behavior; use the authoritati
 
 ## Authoritative Gates
 
-- `npm run verify` is the release-resource gate. `npm run verify -- --source-only` is the source-only gate for clean checkouts without private payloads, and `--release-platform <macos|windows>` narrows release payload validation to one platform in `scripts/verify.mjs:128-152`.
-- The gate sequentially generates bindings while running the full Rust tests once, checks binding drift and formatting, type-checks TypeScript, runs Vitest, checks Rust formatting and the locked Cargo graph, runs strict Clippy and rustdoc, applies the selected prebuild guard, and builds the production frontend in `scripts/verify.mjs:16-89`. It stops on the first failure and returns that command's status; on Windows, npm steps run `npm_execpath` through Node without a command shell in `scripts/verify.mjs:92-126`.
-- Source CI runs the same gate on macOS 15 and Windows 2022 with pinned Node/npm, npm and Cargo caches, `npm ci`, and an explicitly non-release Tauri resource fixture in `.github/workflows/verify.yml:11-47`. Real payload validation is a separately dispatched, release-environment job on the corresponding pinned platform in `.github/workflows/release-resources.yml:26-73`.
+- `npm run verify` is the release-resource gate. `npm run verify -- --source-only` is the source-only gate for clean checkouts without private payloads, and `--release-platform <macos|windows>` narrows release payload validation to one platform in `scripts/verify.mjs:121-145`.
+- The gate sequentially generates bindings while running the full Rust tests once, checks binding drift and formatting, type-checks TypeScript, runs Vitest, checks Rust formatting and the locked Cargo graph, runs strict Clippy and rustdoc, applies the selected prebuild guard, and builds the production frontend in `scripts/verify.mjs:16-89`. It stops on the first failure and returns that command's status; on Windows, npm's `.cmd` shim is launched through the command shell in `scripts/verify.mjs:92-119`.
+- Source CI runs the same gate on macOS and Windows with pinned Node/npm, npm and Cargo caches, `npm ci`, and an explicitly non-release Tauri resource fixture in `.github/workflows/verify.yml:11-47`. Real payload validation is a separately dispatched, release-environment job in `.github/workflows/release-resources.yml:26-73`.
 
 ## Common Commands
 
@@ -25,7 +25,7 @@ Use the smallest command that verifies the changed behavior; use the authoritati
 
 - Standalone generation runs one locked filtered Cargo test; the verification/test variant runs the full locked Rust suite in that same binding-export invocation in `scripts/generate-bindings.mjs:91-125`.
 - Generation normalizes and validates a temporary result before atomically replacing `src/types/generated` in `scripts/generate-bindings.mjs:20-89`; the prebuild guard then fails on any generated-directory git drift without regenerating it in `scripts/prebuild-check.mjs:100-125`.
-- Generator tests verify atomic replacement, missing/empty artifact failures, and preservation of the prior artifact when its backup rename fails in `scripts/generate-bindings.test.mjs:11-100`; orchestration tests verify one binding step, original failure-code propagation, and Windows npm CLI execution through Node in `scripts/verify.test.mjs:5-89`.
+- Generator tests verify atomic replacement, missing/empty artifact failures, and preservation of the prior artifact when its backup rename fails in `scripts/generate-bindings.test.mjs:11-100`; orchestration tests verify one binding step, original failure-code propagation, and Windows npm command-shell execution in `scripts/verify.test.mjs:5-83`.
 
 ## Build Incrementality
 
