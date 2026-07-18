@@ -1,6 +1,7 @@
 mod commands;
 mod config;
 mod history;
+mod problem;
 mod services;
 mod stream;
 mod tray;

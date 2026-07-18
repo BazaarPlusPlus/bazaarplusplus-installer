@@ -31,7 +31,7 @@ export default function RunDetail() {
   const navigate = useNavigate();
   const page = useRunDetailPage();
   const detail = page.detail;
-  const { t } = useI18n();
+  const { locale, t } = useI18n();
   const runResult = detail ? formatRunResultLabel(detail.run.result) : null;
   const [pendingDelete, setPendingDelete] = useState<{
     battleId: string;
@@ -91,8 +91,8 @@ export default function RunDetail() {
                   <span>{detail.run.game_mode}</span>
                   <span>•</span>
                   <span>
-                    {formatDateTime(detail.run.started_at_utc)} -{' '}
-                    {formatDateTime(detail.run.ended_at_utc)}
+                    {formatDateTime(detail.run.started_at_utc, locale)} -{' '}
+                    {formatDateTime(detail.run.ended_at_utc, locale)}
                   </span>
                   <span>•</span>
                   <span className="text-[rgba(200,170,120,0.8)]">

@@ -1,9 +1,13 @@
 import { commands as generatedCommands } from '../types/generated/commands';
 import type { CommandAdapter } from './commandAdapter';
+import { isSemanticProblem, SemanticProblemError } from './problems';
 
 export function normalizeBackendError(error: unknown): Error {
   if (error instanceof Error) {
     return error;
+  }
+  if (isSemanticProblem(error)) {
+    return new SemanticProblemError(error);
   }
   if (typeof error === 'string') {
     return new Error(error);

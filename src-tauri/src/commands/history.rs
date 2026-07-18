@@ -1,3 +1,4 @@
+use crate::problem::SemanticProblem;
 use crate::services::history::{
     self, HistoryRunDetail, HistoryRunList, StorageCleanupExecution, StorageCleanupPreset,
     StorageCleanupPreview, StorageCleanupScope,
@@ -8,7 +9,7 @@ use crate::services::history::{
 pub fn list_history_runs(
     app: tauri::AppHandle,
     limit: Option<usize>,
-) -> Result<HistoryRunList, String> {
+) -> Result<HistoryRunList, SemanticProblem> {
     history::list_runs(&app, limit)
 }
 

@@ -34,6 +34,23 @@ describe('native command adapter', () => {
       message: 'bpp_data_reset_blocked_by_game'
     });
   });
+
+  it('preserves semantic problem data from a generated command rejection', async () => {
+    vi.stubGlobal('window', { __TAURI_INTERNALS__: {} });
+    const problem = {
+      code: 'history_read_failed',
+      params: { operation: 'list_runs' },
+      diagnostic: 'database is locked'
+    };
+    invokeMock.mockRejectedValueOnce(problem);
+    const { commandClient } = await import('./commandClient');
+
+    await expect(commandClient.listHistoryRuns(50)).rejects.toMatchObject({
+      name: 'SemanticProblemError',
+      message: 'history_read_failed',
+      problem
+    });
+  });
 });
 
 describe('normalizeBackendError sentinel contract', () => {

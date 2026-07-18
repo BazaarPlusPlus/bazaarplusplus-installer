@@ -1,15 +1,21 @@
+import { useState } from 'react';
 import { ChevronRight, Image as ImageIcon, RefreshCw } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { ErrorBanner } from '../components/ui/ErrorBanner';
 import { LoadingPanel } from '../components/ui/LoadingPanel';
 import { PageShell } from '../components/ui/PageShell';
+import { ProblemBanner } from '../components/ui/ProblemBanner';
 import {
   formatDateTime,
   formatRunResultLabel,
   toneColorClass
 } from '../features/history/format';
 import { StorageCleanupCard } from '../features/history/StorageCleanupCard';
+import {
+  presentHistoryProblem,
+  type HistoryPageProblem
+} from '../features/history/historyProblems';
 import { useHistoryPage } from '../features/history/useHistoryPage';
+import { formatProblemDiagnostic } from '../features/shared/problems';
 import { useI18n } from '../i18n/LocaleProvider';
 import type { HistoryRunRow } from '../types/backend';
 
@@ -25,52 +31,70 @@ export default function History() {
         <button
           type="button"
           onClick={page.refresh}
-          disabled={page.loading}
+          disabled={page.busy}
           className="flex items-center gap-2 px-3 py-1.5 bg-[rgba(200,148,55,0.06)] border border-[rgba(180,130,48,0.2)] rounded-sm hover:bg-[rgba(200,148,55,0.12)] disabled:opacity-40 transition-colors text-xs text-[#e8dcc8]"
         >
-          <RefreshCw size={14} className={page.loading ? 'animate-spin' : ''} />
+          <RefreshCw size={14} className={page.busy ? 'animate-spin' : ''} />
           {t('refresh')}
         </button>
       }
     >
-      <div className="flex flex-col gap-6 flex-1 min-h-0 w-full">
-        <div className="grid grid-cols-3 gap-4 shrink-0">
-          <SummaryCard
-            label={t('historySummaryRuns')}
-            value={page.summary.runs}
-          />
-          <SummaryCard
-            label={t('historySummaryVideos')}
-            value={page.summary.videos}
-          />
-          <SummaryCard
-            label={t('historySummaryWinRate')}
-            value={page.summary.winRate}
-          />
-        </div>
+      {page.state.phase === 'initial-loading' ? (
+        <LoadingPanel label={t('historyLoading')} />
+      ) : page.state.phase === 'blocking-failure' ? (
+        <HistoryProblemBanner
+          problem={page.state.problem}
+          onRetry={page.refresh}
+        />
+      ) : (
+        <div className="flex flex-col gap-6 flex-1 min-h-0 w-full">
+          <div className="grid grid-cols-3 gap-4 shrink-0">
+            <SummaryCard
+              label={t('historySummaryRuns')}
+              value={page.summary?.runs ?? '-'}
+            />
+            <SummaryCard
+              label={t('historySummaryVideos')}
+              value={page.summary?.videos ?? '-'}
+            />
+            <SummaryCard
+              label={t('historySummaryWinRate')}
+              value={page.summary?.winRate ?? '-'}
+            />
+          </div>
 
-        <StorageCleanupCard onCompleted={page.refresh} />
+          <StorageCleanupCard onCompleted={page.refresh} />
 
-        {page.error && <ErrorBanner message={page.error} />}
-
-        <div className="flex flex-col gap-3 flex-1 min-h-0 overflow-y-auto custom-scrollbar pr-2">
-          {page.loading ? (
-            <LoadingPanel label={t('historyLoading')} />
-          ) : page.payload.runs.length === 0 ? (
-            <div className="flex items-center justify-center h-48 text-[rgba(200,170,120,0.8)] border border-[rgba(180,130,48,0.12)] bg-[rgba(18,11,5,0.6)]">
-              {t('noLocalRuns')}
-            </div>
-          ) : (
-            page.payload.runs.map((run: HistoryRunRow) => (
-              <RunRow
-                key={run.run_id}
-                run={run}
-                previewUrl={page.previewUrl(run)}
-              />
-            ))
+          {page.state.refresh.phase === 'failed' && (
+            <HistoryProblemBanner
+              problem={page.state.refresh.problem}
+              onRetry={page.refresh}
+            />
           )}
+
+          {page.state.phase === 'ready-content' &&
+            page.previewProblem &&
+            page.state.data.runs.some((run) => run.strip_url) && (
+              <HistoryPreviewProblemBanner problem={page.previewProblem} />
+            )}
+
+          <div className="flex flex-col gap-3 flex-1 min-h-0 overflow-y-auto custom-scrollbar pr-2">
+            {page.state.phase === 'ready-empty' ? (
+              <div className="flex items-center justify-center h-48 text-[rgba(200,170,120,0.8)] border border-[rgba(180,130,48,0.12)] bg-[rgba(18,11,5,0.6)]">
+                {t('noLocalRuns')}
+              </div>
+            ) : (
+              page.state.data.runs.map((run: HistoryRunRow) => (
+                <RunRow
+                  key={run.run_id}
+                  run={run}
+                  previewUrl={page.previewUrl(run)}
+                />
+              ))
+            )}
+          </div>
         </div>
-      </div>
+      )}
     </PageShell>
   );
 }
@@ -105,7 +129,7 @@ function RunRow({
   run: HistoryRunRow;
   previewUrl: string | null;
 }) {
-  const { t } = useI18n();
+  const { locale, t } = useI18n();
   const result = formatRunResultLabel(run.result);
   const detailPath = `/history/${encodeURIComponent(run.run_id)}`;
 
@@ -114,32 +138,17 @@ function RunRow({
       to={detailPath}
       className="group grid grid-cols-[14rem_minmax(0,1fr)_9rem_6.5rem_5rem_5.5rem_auto] items-center gap-6 p-3 bg-[rgba(18,11,5,0.88)] border border-[rgba(180,130,48,0.13)] rounded-sm hover:border-[rgba(200,148,55,0.4)] hover:bg-[rgba(200,148,55,0.04)] transition-all shadow-[0_4px_12px_rgba(0,0,0,0.2)] no-underline text-inherit"
     >
-      <div className="w-56 aspect-[2000/470] shrink-0 bg-[#000] outline outline-1 outline-[rgba(200,148,55,0.2)] rounded-sm flex items-center justify-center text-[rgba(200,170,120,0.3)] group-hover:outline-[rgba(200,148,55,0.5)] transition-colors overflow-hidden relative">
-        {previewUrl ? (
-          // Rounded server crop dimensions can differ slightly from 2000:470.
-          // Cover intentionally stays full-bleed; the outline no longer changes
-          // this image viewport or adds another layer of crop.
-          <img
-            src={previewUrl}
-            alt=""
-            loading="lazy"
-            decoding="async"
-            className="absolute inset-0 w-full h-full object-cover"
-          />
-        ) : (
-          <>
-            <div className="absolute inset-0 opacity-20 bg-gradient-to-r from-transparent via-[rgba(200,148,55,0.2)] to-transparent" />
-            <ImageIcon size={20} />
-          </>
-        )}
-      </div>
+      <RunPreview
+        previewUrl={previewUrl}
+        fallbackLabel={t('historyPreviewFallback')}
+      />
 
       <div className="flex flex-col gap-1 min-w-0">
         <span className="cinzel font-bold text-lg text-[#e8dcc8] truncate">
           {run.hero}
         </span>
         <span className="fira-code text-[10px] text-[rgba(200,170,120,0.8)] truncate">
-          {formatDateTime(run.started_at_utc)}
+          {formatDateTime(run.started_at_utc, locale)}
         </span>
       </div>
 
@@ -178,6 +187,101 @@ function RunRow({
         <ChevronRight size={14} />
       </div>
     </Link>
+  );
+}
+
+function RunPreview({
+  previewUrl,
+  fallbackLabel
+}: {
+  previewUrl: string | null;
+  fallbackLabel: string;
+}) {
+  const [failedUrl, setFailedUrl] = useState<string | null>(null);
+  const visibleUrl = previewUrl && previewUrl !== failedUrl ? previewUrl : null;
+
+  return (
+    <div
+      className="w-56 aspect-[2000/470] shrink-0 bg-[#000] outline outline-1 outline-[rgba(200,148,55,0.2)] rounded-sm flex items-center justify-center text-[rgba(200,170,120,0.3)] group-hover:outline-[rgba(200,148,55,0.5)] transition-colors overflow-hidden relative"
+      title={visibleUrl ? undefined : fallbackLabel}
+      aria-label={visibleUrl ? undefined : fallbackLabel}
+    >
+      {visibleUrl ? (
+        // Rounded server crop dimensions can differ slightly from 2000:470.
+        // Cover intentionally stays full-bleed; the outline no longer changes
+        // this image viewport or adds another layer of crop.
+        <img
+          src={visibleUrl}
+          alt=""
+          loading="lazy"
+          decoding="async"
+          onError={() => setFailedUrl(visibleUrl)}
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+      ) : (
+        <>
+          <div className="absolute inset-0 opacity-20 bg-gradient-to-r from-transparent via-[rgba(200,148,55,0.2)] to-transparent" />
+          <ImageIcon size={20} aria-hidden="true" />
+        </>
+      )}
+    </div>
+  );
+}
+
+function HistoryProblemBanner({
+  problem,
+  onRetry
+}: {
+  problem: HistoryPageProblem;
+  onRetry: () => void;
+}) {
+  const { t } = useI18n();
+  const diagnostic = problem.diagnostic
+    ? formatProblemDiagnostic(problem)
+    : null;
+  return (
+    <ProblemBanner
+      message={presentHistoryProblem(problem, t)}
+      diagnostic={diagnostic}
+      diagnosticLabel={t('problemDiagnostics')}
+      actions={
+        <>
+          {problem.code === 'history_unavailable' && (
+            <Link to="/" className="underline underline-offset-2">
+              {t('historyOpenInstall')}
+            </Link>
+          )}
+          <button
+            type="button"
+            onClick={onRetry}
+            className="underline underline-offset-2"
+          >
+            {t('retry')}
+          </button>
+        </>
+      }
+    />
+  );
+}
+
+function HistoryPreviewProblemBanner({
+  problem
+}: {
+  problem: HistoryPageProblem;
+}) {
+  const { t } = useI18n();
+  return (
+    <ProblemBanner
+      tone="warning"
+      message={presentHistoryProblem(problem, t)}
+      diagnostic={problem.diagnostic ? formatProblemDiagnostic(problem) : null}
+      diagnosticLabel={t('problemDiagnostics')}
+      actions={
+        <Link to="/stream" className="underline underline-offset-2">
+          {t('historyOpenStream')}
+        </Link>
+      }
+    />
   );
 }
 

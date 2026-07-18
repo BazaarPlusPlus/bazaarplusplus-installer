@@ -55,6 +55,8 @@ const zh = {
   cancel: '取消',
   copy: '复制',
   refresh: '刷新',
+  retry: '重试',
+  problemDiagnostics: '查看诊断信息',
 
   // Page titles
   installTitle: '安装',
@@ -164,6 +166,16 @@ const zh = {
   historySummaryRuns: '对局数',
   historySummaryVideos: '视频数',
   historySummaryWinRate: '胜率',
+  historyProblemUnavailable:
+    '未找到可用的本地战绩数据库。请先在安装页选择正确的游戏目录。',
+  historyProblemReadFailed:
+    '读取本地战绩失败。请关闭可能占用数据库的程序后重试。',
+  historyProblemPreviewUnavailable:
+    '战绩已载入，但缩略图服务当前不可用。可前往直播页启动本地服务。',
+  historyProblemUnexpected: '加载本地战绩时发生意外错误。请重试。',
+  historyOpenInstall: '前往安装页',
+  historyOpenStream: '前往直播页',
+  historyPreviewFallback: '缩略图不可用；刷新页面可重试。',
   runResultVictory: '胜利',
   runResultDefeat: '失败',
   runResultAbandoned: '放弃',
@@ -308,6 +320,8 @@ const en: Record<MessageKey, string> = {
   cancel: 'Cancel',
   copy: 'Copy',
   refresh: 'Refresh',
+  retry: 'Retry',
+  problemDiagnostics: 'Show diagnostics',
 
   installTitle: 'Install',
   historyTitle: 'History',
@@ -417,6 +431,17 @@ const en: Record<MessageKey, string> = {
   historySummaryRuns: 'Runs',
   historySummaryVideos: 'Videos',
   historySummaryWinRate: 'Win Rate',
+  historyProblemUnavailable:
+    'No local History database is available. Select the correct game folder on the Install page.',
+  historyProblemReadFailed:
+    'Local History could not be read. Close apps that may be using the database, then retry.',
+  historyProblemPreviewUnavailable:
+    'Runs are loaded, but thumbnails are unavailable. Start the local service from the Stream page.',
+  historyProblemUnexpected:
+    'Something unexpected happened while loading local History. Please retry.',
+  historyOpenInstall: 'Open Install',
+  historyOpenStream: 'Open Stream',
+  historyPreviewFallback: 'Thumbnail unavailable; refresh to retry.',
   runResultVictory: 'VICTORY',
   runResultDefeat: 'DEFEAT',
   runResultAbandoned: 'ABANDONED',
