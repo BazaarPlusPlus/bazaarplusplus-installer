@@ -1,7 +1,7 @@
 ---
 status: truth
 topic: architecture
-last-verified: 68f2b1ef20e7c1c5c789bd5cde34821cf28efd57
+last-verified: f23d786ab3bf1998f556f5fe05b6e47467a7ea48
 ---
 
 # Architecture
@@ -15,14 +15,15 @@ last-verified: 68f2b1ef20e7c1c5c789bd5cde34821cf28efd57
 
 ## Native Runtime
 
-- Tauri startup builds the tray, warms `InstallerContextState`, emits `startup-ready`, and asks `StreamRuntime` to ensure the stream service in `src-tauri/src/lib.rs:45-60`.
+- Tauri startup builds the tray, warms `InstallerContextState`, and asks `StreamRuntime` to ensure the stream service in `src-tauri/src/lib.rs:45-59`. Install detection waits on the same `OnceLock` initializer in `src-tauri/src/services/startup.rs:23-34` and `src-tauri/src/services/detect/mod.rs:27-39`, so no frontend event/refetch race is required.
 - Close behavior is service-aware: while the stream runtime reports `running`, the main window close request is prevented and the window is hidden in `src-tauri/src/lib.rs:61-75`.
 - The default capability grants updater check/download/install, process restart, `steam://*` opening, and dialog permissions in `src-tauri/capabilities/default.json:6-20`.
 
 ## Feature Boundaries
 
-- Install state is produced by Rust detection and serialized through `InstallState`; the contract includes selected paths, game/mod state, macOS compatibility state, action gates, resettable-data and BepInEx-folder status, and warnings in `src-tauri/src/services/install/types.rs:3-19`.
-- The complete install operation owns payload and launch-mode fact gathering, private planning, ordered production effects, first-error propagation, and a final state refresh in `src-tauri/src/services/install/operation.rs:16-125`; the Tauri command only constructs the request and invokes that operation in `src-tauri/src/commands/install.rs:40-55`. Reset, uninstall, and Steam-only launch remain in the install service facade.
+- Install state is produced by Rust detection and serialized through `InstallState`; the contract includes selected paths, game/mod state, macOS compatibility state, action gates, resettable-data and BepInEx-folder status in `src-tauri/src/services/install/types.rs:5-20`, while warnings use typed codes plus parameters in `src-tauri/src/services/install/types.rs:73-85`.
+- The complete install operation owns payload and launch-mode fact gathering, private planning, ordered production effects, first-error propagation, and a final state refresh in `src-tauri/src/services/install/operation.rs:17-130`; the Tauri command only constructs the request and invokes that operation in `src-tauri/src/commands/install.rs:44-59`. Reset, uninstall, and Steam-only launch remain in the install service facade.
+- All Install command failures share `SemanticProblem`; detection and action boundaries classify stable codes and operation/recovery parameters in `src-tauri/src/commands/install.rs:15-99` and `src-tauri/src/services/install/mod.rs:200-235`. The frontend keeps Install page state and its sole primary-action derivation framework-independent in `src/features/install/installPageState.ts:5-132`.
 - The History facade resolves Selected game installation and privately owns storage derivation, reads, reveals, deletes, and cleanup dispatch in `src-tauri/src/services/history.rs:48-270`; commands expose ids plus domain cleanup scope/preset without raw paths or cutoffs in `src-tauri/src/commands/history.rs:7-79`. Reads use SQLite read-only connections by default, while mutation uses separate write connections in `src-tauri/src/history/queries.rs:29-54`.
 - History list/detail/reveal/delete commands use `SemanticProblem`; the shared Rust DTO fixes code/parameter/diagnostic shape, the detail command models not-found as a successful `Option`, and the facade classifies unavailable selection, failed reads, and failed actions before the command boundary in `src-tauri/src/problem.rs:3-38`, `src-tauri/src/services/history.rs:74-188`, and `src-tauri/src/commands/history.rs:7-49`.
 - History internals default to private modules; only cleanup algorithms and mapper/screenshots test seams are crate-visible, and the facade receives a narrowed repository surface in `src-tauri/src/history/mod.rs:1-13`.

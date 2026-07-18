@@ -1,7 +1,7 @@
 ---
 status: truth
 topic: verification
-last-verified: 68f2b1ef20e7c1c5c789bd5cde34821cf28efd57
+last-verified: f23d786ab3bf1998f556f5fe05b6e47467a7ea48
 ---
 
 # Verification
@@ -39,9 +39,10 @@ Use the smallest command that verifies the changed behavior; use the authoritati
 - Stream runtime tests exercise concurrent ensure, lifecycle transitions, failed start, and exclusive maintenance blocking in `src-tauri/src/stream/runtime.rs:440-572`.
 - The History facade's tempfile test uses a real SQLite schema and managed files across queries, reveal/delete, and both cleanup scopes in `src-tauri/src/services/history.rs:619-725`.
 - The framework-neutral Stream workflow uses fake ports and a fake scheduler to cover initialization failures, polling threshold/recovery, stale-response and lifecycle epochs, action exclusion, window/crop updates, transient feedback, disposal/restart, and both command adapters in `src/features/stream/streamWorkflow.test.ts:133-450`.
-- Semantic-problem serialization plus History list/detail/action classification are covered at the Rust boundary in `src-tauri/src/problem.rs:41-71` and `src-tauri/src/services/history.rs:526-602`; the native adapter preservation path is covered in `src/api/commandClient.dispatch.test.ts:38-54`.
+- Semantic-problem serialization plus History list/detail/action classification are covered at the Rust boundary in `src-tauri/src/problem.rs:42-84` and `src-tauri/src/services/history.rs:526-602`; the native adapter preservation path is covered in `src/api/commandClient.dispatch.test.ts:39-55`.
 - Focused History tests cover exclusive empty/error/content transitions, refresh-data preservation, stale completions, stopped/failed preview capability, bilingual problem presentation, and locale-aware dates in `src/features/history/historyPageState.test.ts:46-108`, `src/features/history/historyPreview.test.ts:5-49`, `src/features/history/historyProblems.test.ts:17-30`, and `src/features/history/format.test.ts:4-19`.
 - Run Detail tests cover its four page states, preserved refresh failure, stale completion, global action gate, target-scoped retry, and bilingual semantic problem presentation in `src/features/history/runDetailPageState.test.ts:56-187` and `src/features/history/runDetailProblems.test.ts:6-39`. The shared confirmation test verifies all dismiss controls can be visibly disabled for an uncancellable action in `src/components/ui/ConfirmDialog.test.tsx:98-101`.
+- Install tests cover explicit initial detection, preserved refresh failure and retry, each primary-action branch, shared disabled/loading derivation, bilingual semantic warnings/problems, partial-failure recovery parameters, and native-adapter preservation in `src/features/install/installPageState.test.ts:43-228`, `src/features/install/installProblems.test.ts:10-89`, and `src/api/commandClient.dispatch.test.ts:57-76`. Rust tests pin Install semantic serialization and service-boundary classification in `src-tauri/src/problem.rs:46-84` and `src-tauri/src/services/install/mod.rs:282-366`.
 
 ## Version And Platform Guards
 
