@@ -45,3 +45,27 @@ jobs:
 
       - name: Run authoritative source gate
         run: npm run verify -- --source-only
+
+      - name: Diagnose Windows loader failure
+        if: failure() && runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $binary = Get-ChildItem src-tauri/target/debug/deps/bppinstaller_lib-*.exe |
+            Sort-Object LastWriteTime -Descending |
+            Select-Object -First 1
+          if (-not $binary) {
+            throw 'Windows test binary was not produced.'
+          }
+
+          $vswhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio/Installer/vswhere.exe'
+          $installation = & $vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+          $dumpbin = Get-ChildItem "$installation/VC/Tools/MSVC/*/bin/Hostx64/x64/dumpbin.exe" |
+            Sort-Object FullName -Descending |
+            Select-Object -First 1
+          if (-not $dumpbin) {
+            throw 'dumpbin.exe was not found.'
+          }
+
+          Write-Output "Inspecting $($binary.FullName) with $($dumpbin.FullName)"
+          & $dumpbin.FullName /dependents $binary.FullName
+          & $dumpbin.FullName /imports $binary.FullName
