@@ -1,7 +1,7 @@
 ---
 status: truth
 topic: verification
-last-verified: 2af743045b72631519a11dadea4b474c903519bd
+last-verified: 4b6f8a9d803bc3415323bcfd7f0a22ff56489a61
 ---
 
 # Verification
@@ -12,7 +12,6 @@ Use the smallest command that verifies the changed behavior; use the authoritati
 
 - `npm run verify` is the release-resource gate. `npm run verify -- --source-only` is the source-only gate for clean checkouts without private payloads, and `--release-platform <macos|windows>` narrows release payload validation to one platform in `scripts/verify.mjs:121-145`.
 - The gate sequentially generates bindings while running the full Rust tests once, checks binding drift and formatting, type-checks TypeScript, runs Vitest, checks Rust formatting and the locked Cargo graph, runs strict Clippy and rustdoc, applies the selected prebuild guard, and builds the production frontend in `scripts/verify.mjs:16-89`. It stops on the first failure and returns that command's status in `scripts/verify.mjs:92-118`.
-- Source CI runs the same gate on macOS and Windows with pinned Node/npm, npm and Cargo caches, `npm ci`, and an explicitly non-release Tauri resource fixture in `.github/workflows/verify.yml:11-47`. Real payload validation is a separately dispatched, release-environment job in `.github/workflows/release-resources.yml:26-73`.
 
 ## Common Commands
 
