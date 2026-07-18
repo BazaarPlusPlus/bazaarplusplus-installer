@@ -1,3 +1,5 @@
+use std::collections::BTreeMap;
+
 use serde::Serialize;
 
 #[derive(Clone, Debug, Serialize, specta::Type)]
@@ -68,10 +70,18 @@ pub struct InstallActions {
     pub can_launch: bool,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, specta::Type)]
+#[serde(rename_all = "snake_case")]
+pub enum InstallWarningCode {
+    GameMissing,
+    LaunchOptionsUnsupported,
+    TrampolineReverted,
+}
+
 #[derive(Clone, Debug, Serialize, specta::Type)]
 pub struct InstallWarning {
-    pub code: String,
-    pub message: String,
+    pub code: InstallWarningCode,
+    pub params: BTreeMap<String, String>,
 }
 
 #[derive(Clone, Debug, Serialize, specta::Type)]

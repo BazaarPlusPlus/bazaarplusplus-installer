@@ -1,7 +1,7 @@
 ---
 status: truth
 topic: context
-last-verified: 68f2b1ef20e7c1c5c789bd5cde34821cf28efd57
+last-verified: f23d786ab3bf1998f556f5fe05b6e47467a7ea48
 ---
 
 # BazaarPlusPlus Installer Context
@@ -14,7 +14,7 @@ Current behavior truth lives under `docs/truth/` (topic-sliced, code-cited, hash
 
 - The app is a Tauri 2 desktop app with a React/Vite frontend and Rust backend. The package entry declares the app version and scripts in `package.json:2-21`; the Tauri app config sets the product name, frontend dev URL, build hooks, window size, and updater endpoint in `src-tauri/tauri.conf.json:3-35`.
 - The native runtime registers single-instance, window-state, updater, process, dialog, opener, tray, selected-installation, installer-context, and stream-runtime state in `src-tauri/src/lib.rs:20-44`.
-- Startup warms installer context on a blocking task and emits `startup-ready`; setup asks the stream runtime to ensure the HTTP service in `src-tauri/src/lib.rs:45-60`.
+- Startup warms installer context on a blocking task while setup asks the stream runtime to ensure the HTTP service in `src-tauri/src/lib.rs:45-59`. Install detection calls the same `OnceLock` initializer, so the first completed command response cannot observe a bootstrap seed in `src-tauri/src/services/startup.rs:23-34` and `src-tauri/src/services/detect/mod.rs:27-39`.
 - When the stream service is running, closing the main window hides it instead of quitting so OBS can keep using the local HTTP overlay in `src-tauri/src/lib.rs:61-75`.
 
 ## Glossary
@@ -24,11 +24,11 @@ Current behavior truth lives under `docs/truth/` (topic-sliced, code-cited, hash
 - **Prefix mode** — the default launch mode: BepInEx loads via Steam launch options (doorstop). One of the two `LaunchMode` variants in `src-tauri/src/services/launch_mode.rs:20-46`.
 - **Trampoline mode** — macOS launch mode (forced on macOS 27+): the real Unity executable is renamed to `.orig` and a build-time stub is swapped in (`src-tauri/src/services/bepinex/trampoline.rs:362-445`).
 - **Launch-mode marker** — the `.bpp-launch-mode` file next to the game directory persisting the chosen mode (`src-tauri/src/services/bepinex/trampoline.rs:23-71`).
-- **InstallState** — the frontend/backend contract for the install page: paths, game/mod state, compat state, action gates, warnings (`src-tauri/src/services/install/types.rs:3-19`).
+- **InstallState** — the frontend/backend contract for the install page: paths, game/mod state, compat state, action gates, and semantic warning codes plus parameters (`src-tauri/src/services/install/types.rs:5-20`, `src-tauri/src/services/install/types.rs:73-85`).
 - **Selected game installation** — the one session-scoped The Bazaar installation shared by Install, History, and Stream. Valid explicit paths update it; resolution then uses explicit, selected, startup-detected, and fallback priority. It is held only in managed memory and is recreated empty on app restart (`src-tauri/src/services/selected_game_installation.rs:14-115`, `src-tauri/src/lib.rs:38-41`).
 - **Reset (local data)** — the only flow that deletes the mod's `BazaarPlusPlusV4/` data directory; explicit, confirmed, refused while the game runs, and performed under exclusive stream-runtime maintenance (`src-tauri/src/services/bepinex/mod.rs:20-62`, `src-tauri/src/stream/runtime.rs:100-108`). Uninstall never touches it.
 - **History** — the facade around the Selected game installation's mod-owned SQLite database, including reads, detail, reveal, video deletion, and storage cleanup (`src-tauri/src/services/history.rs:48-270`); the database is created and primarily written by the mod.
-- **Semantic problem** — a command failure contract made of a stable code, string parameters, and an optional troubleshooting diagnostic (`src-tauri/src/problem.rs:3-38`). History list/detail loading publishes `history_unavailable` and `history_read_failed`, while screenshot/video actions publish `history_action_failed` with an operation parameter; the frontend adapter preserves the structured payload instead of turning it into display copy (`src-tauri/src/services/history.rs:74-188`, `src/api/problems.ts:3-42`, `src/api/nativeCommands.ts:5-15`).
+- **Semantic problem** — a command failure contract made of a stable code, string parameters, and an optional troubleshooting diagnostic (`src-tauri/src/problem.rs:3-40`). History publishes unavailable/read/action codes; Install publishes detection/action/game-running/partial-failure codes and localizes them only in the frontend presenter (`src-tauri/src/services/history.rs:74-188`, `src-tauri/src/services/install/mod.rs:200-235`, `src/features/install/installProblems.ts:23-107`). The native adapter preserves the structured payload instead of turning it into display copy (`src/api/problems.ts:3-46`, `src/api/nativeCommands.ts:5-15`).
 - **Stream runtime / overlay** — the single serialized owner of the local Axum service lifecycle, window selection, and exclusive maintenance; the production service remains on `127.0.0.1:17654` and serves the OBS overlay and settings pages (`src-tauri/src/stream/runtime.rs:43-108`, `src-tauri/src/stream/server.rs:16-69`).
 - **Stream workflow** — the framework-neutral frontend owner of Stream page initialization, polling, intents, error priority, and its single derived snapshot. Browser/Tauri concerns enter through injected ports, and React only attaches lifecycle and subscription (`src/features/stream/streamWorkflow.ts:94-120`, `src/features/stream/useStreamPage.ts:21-61`).
 - **Storage cleanup** — preset-driven deletion of old screenshots and run data with upload-safety and referenced-file protections; its IPC is the two scope-tagged preview/execute operations (`src-tauri/src/commands/history.rs:61-79`, `src-tauri/src/services/history.rs:25-44`).

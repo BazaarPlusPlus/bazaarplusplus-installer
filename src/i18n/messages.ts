@@ -72,8 +72,12 @@ const zh = {
   notSelected: '未选择',
   chooseAgain: '重新选择',
   recheck: '重新检测',
+  installDetecting: '正在检测 The Bazaar 与 BazaarPlusPlus',
+  installRefreshing: '正在重新检测安装状态',
+  actionChooseDirectory: '选择游戏目录',
   actionInstall: '安装',
   actionReinstall: '重新安装',
+  actionRepair: '修复安装',
   actionResetData: '重置本地数据',
   actionNoResettableData: '暂无本地数据',
   actionResetBepinex: '重置 BepInEx',
@@ -124,6 +128,26 @@ const zh = {
   resetBepinexPartialFailure: '有 {count} 个项目未能删除。请关闭游戏后重试。',
   uninstallDone: '卸载完成',
   selectGameDirFirst: '请先选择 The Bazaar 安装目录。',
+  installWarningGameMissing:
+    '未找到有效的 The Bazaar 安装目录，请选择游戏目录。',
+  installWarningLaunchOptionsUnsupported:
+    '当前 Steam 安装不支持自动写入启动项，请检查 Steam 目录后重试。',
+  installWarningTrampolineReverted:
+    '游戏文件已还原，BazaarPlusPlus 的启动配置需要修复。',
+  installWarningUnexpected: '检测到未知的安装警告。',
+  installProblemDetectionFailed: '检测安装状态失败，请重试。',
+  installProblemChooseDirectoryFailed: '无法打开游戏目录选择器，请重试。',
+  installProblemInstallFailed:
+    '安装或修复失败。请退出 The Bazaar 与 Steam，检查目录权限后重试。',
+  installProblemResetDataFailed:
+    '重置本地数据失败，请关闭占用文件的程序后重试。',
+  installProblemResetBepinexFailed:
+    '重置 BepInEx 失败，请退出 The Bazaar 后重试。',
+  installProblemUninstallFailed:
+    '卸载失败，请退出 The Bazaar 与 Steam 后重试。',
+  installProblemLaunchFailed:
+    '无法通过 Steam 启动游戏，请确认 Steam 正在运行后重试。',
+  installProblemUnexpected: '处理安装状态时发生意外错误，请重试。',
 
   // Install confirmation modal
   installModalTitle: '安装 BazaarPlusPlus',
@@ -345,8 +369,12 @@ const en: Record<MessageKey, string> = {
   notSelected: 'Not selected',
   chooseAgain: 'Choose again',
   recheck: 'Re-detect',
+  installDetecting: 'Detecting The Bazaar and BazaarPlusPlus',
+  installRefreshing: 'Re-detecting installation state',
+  actionChooseDirectory: 'Choose Game Directory',
   actionInstall: 'Install',
   actionReinstall: 'Reinstall',
+  actionRepair: 'Repair Installation',
   actionResetData: 'Reset Local Data',
   actionNoResettableData: 'No Local Data',
   actionResetBepinex: 'Reset BepInEx',
@@ -401,6 +429,29 @@ const en: Record<MessageKey, string> = {
     '{count} item(s) could not be deleted. Close the game, then try again.',
   uninstallDone: 'Uninstall complete',
   selectGameDirFirst: 'Select The Bazaar install directory first.',
+  installWarningGameMissing:
+    'No valid The Bazaar installation was found. Choose the game directory.',
+  installWarningLaunchOptionsUnsupported:
+    'This Steam installation cannot update launch options automatically. Check the Steam directory and retry.',
+  installWarningTrampolineReverted:
+    'Game files were restored and the BazaarPlusPlus launch configuration needs repair.',
+  installWarningUnexpected: 'An unknown installation warning was detected.',
+  installProblemDetectionFailed:
+    'Installation state could not be detected. Please retry.',
+  installProblemChooseDirectoryFailed:
+    'The game directory picker could not be opened. Please retry.',
+  installProblemInstallFailed:
+    'Install or repair failed. Quit The Bazaar and Steam, check folder permissions, then retry.',
+  installProblemResetDataFailed:
+    'Local data could not be reset. Close apps using those files, then retry.',
+  installProblemResetBepinexFailed:
+    'BepInEx could not be reset. Quit The Bazaar, then retry.',
+  installProblemUninstallFailed:
+    'Uninstall failed. Quit The Bazaar and Steam, then retry.',
+  installProblemLaunchFailed:
+    'The game could not be launched through Steam. Make sure Steam is running, then retry.',
+  installProblemUnexpected:
+    'Something unexpected happened while handling installation state. Please retry.',
 
   installModalTitle: 'Install BazaarPlusPlus',
   tutorialKicker: 'Tutorial',

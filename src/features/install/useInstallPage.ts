@@ -1,14 +1,13 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { listen } from '@tauri-apps/api/event';
-import { hasTauriRuntime } from '../../api/runtime';
-import { emptyInstallState } from '../../api/previewDefaults';
-import type { InstallState } from '../../types/backend';
-import { useI18n, type Translate } from '../../i18n/LocaleProvider';
 import {
-  parseResetBepinexError,
-  parseResetBppDataError,
-  toErrorMessage
-} from '../shared/errors';
+  useCallback,
+  useEffect,
+  useMemo,
+  useReducer,
+  useRef,
+  useState
+} from 'react';
+import type { InstallState } from '../../types/backend';
+import { useI18n } from '../../i18n/LocaleProvider';
 import { useAsyncAction } from '../shared/useAsyncAction';
 import { useTransientMessage } from '../shared/useTransientMessage';
 import {
@@ -20,194 +19,213 @@ import {
   resetBppData,
   uninstallMod
 } from './installApi';
-
-type InstallAction =
-  | 'load'
-  | 'choose'
-  | 'install'
-  | 'resetData'
-  | 'resetBepinex'
-  | 'uninstall'
-  | 'launch';
+import {
+  deriveInstallPrimaryAction,
+  initialInstallPageState,
+  reduceInstallPageState,
+  type InstallOperation
+} from './installPageState';
+import {
+  installFailurePaths,
+  installProblemFromError,
+  presentInstallProblem,
+  type InstallProblem
+} from './installProblems';
 
 export function useInstallPage() {
   const { t } = useI18n();
-  const [state, setState] = useState<InstallState>(emptyInstallState);
-  const [selectedPath, setSelectedPath] = useState<string | undefined>(
-    undefined
+  const [pageState, dispatch] = useReducer(
+    reduceInstallPageState,
+    initialInstallPageState
   );
+  const [selectedPath, setSelectedPath] = useState<string | undefined>();
   const [transient, setTransient] = useTransientMessage(4000);
+  const [actionProblem, setActionProblem] = useState<InstallProblem | null>(
+    null
+  );
   const [resetDataFailurePaths, setResetDataFailurePaths] = useState<string[]>(
     []
   );
-  const { action, error, run, busy } = useAsyncAction<InstallAction>();
+  const { action, run, busy: actionBusy } = useAsyncAction<InstallOperation>();
+  const requestIdRef = useRef(0);
+  const requestInFlightRef = useRef(false);
+  const actionInFlightRef = useRef(false);
 
-  const refresh = useCallback(
-    async (gamePath = selectedPath) => {
-      await run(
-        'load',
-        async () => {
-          const nextState = await loadInstallState(gamePath);
-          setState(nextState);
-          setSelectedPath(nextState.selected_game_path ?? gamePath);
-        },
-        { onStart: () => setTransient(null) }
-      );
+  const replaceData = useCallback((data: InstallState) => {
+    dispatch({ type: 'data-replaced', data });
+    setSelectedPath(data.selected_game_path ?? undefined);
+  }, []);
+
+  const detect = useCallback(
+    async (gamePath?: string) => {
+      if (requestInFlightRef.current || actionInFlightRef.current) return false;
+      const requestId = ++requestIdRef.current;
+      requestInFlightRef.current = true;
+      dispatch({ type: 'request-started', requestId });
+      setTransient(null);
+      setActionProblem(null);
+      setResetDataFailurePaths([]);
+      try {
+        const data = await loadInstallState(gamePath);
+        dispatch({ type: 'request-succeeded', requestId, data });
+        setSelectedPath(data.selected_game_path ?? gamePath);
+        return true;
+      } catch (caught) {
+        dispatch({
+          type: 'request-failed',
+          requestId,
+          problem: installProblemFromError(caught)
+        });
+        return false;
+      } finally {
+        if (requestIdRef.current === requestId) {
+          requestInFlightRef.current = false;
+        }
+      }
     },
-    [run, selectedPath, setTransient]
+    [setTransient]
   );
 
   useEffect(() => {
-    void run(
-      'load',
-      async () => {
-        const nextState = await loadInstallState(undefined);
-        setState(nextState);
-        setSelectedPath(nextState.selected_game_path ?? undefined);
-      },
-      { onStart: () => setTransient(null) }
-    );
-  }, [run, setTransient]);
+    // `get_install_state` waits on the backend's OnceLock initialization, so its
+    // first successful response is already a completed detection snapshot.
+    void detect(undefined);
+  }, [detect]);
 
-  // The backend warms up installer context in the background and emits
-  // `startup-ready` when done. On slow first launches (Windows) the initial
-  // load above can race ahead of warm-up; refresh once the signal arrives so
-  // the first screen converges to fully-detected state without user action.
-  useEffect(() => {
-    if (!hasTauriRuntime()) return;
-    const unlisten = listen('startup-ready', () => {
-      void refresh();
-    });
-    return () => {
-      void unlisten.then((stop) => stop());
-    };
-  }, [refresh]);
+  const refresh = useCallback(
+    () => detect(selectedPath),
+    [detect, selectedPath]
+  );
+
+  const runInstallAction = useCallback(
+    async (name: InstallOperation, task: () => Promise<void>) => {
+      if (requestInFlightRef.current || actionInFlightRef.current) return false;
+      actionInFlightRef.current = true;
+      try {
+        return await run(name, task, {
+          onStart: () => {
+            setTransient(null);
+            setActionProblem(null);
+            setResetDataFailurePaths([]);
+          },
+          errorMessage: (caught) => {
+            const problem = installProblemFromError(caught);
+            setActionProblem(problem);
+            setResetDataFailurePaths(installFailurePaths(problem));
+            return presentInstallProblem(problem, t);
+          }
+        });
+      } finally {
+        actionInFlightRef.current = false;
+      }
+    },
+    [run, setTransient, t]
+  );
 
   const chooseDirectory = useCallback(
     () =>
-      run('choose', async () => {
+      runInstallAction('choose', async () => {
         const selection = await chooseGameDirectory();
         if (!selection.game_path) return;
-        setSelectedPath(selection.game_path);
-        setState(await loadInstallState(selection.game_path));
+        const data = await loadInstallState(selection.game_path);
+        replaceData(data);
       }),
-    [run]
+    [replaceData, runInstallAction]
   );
+
+  const installState = pageState.phase === 'ready' ? pageState.data : null;
 
   const install = useCallback(
     (compatOptIn: boolean) =>
-      run(
-        'install',
-        async () => {
-          const path = requireGamePath(state, t);
-          setState(await installMod(path, compatOptIn));
-          setTransient(t('installDone'));
-        },
-        { onStart: () => setTransient(null) }
-      ),
-    [run, setTransient, state, t]
+      runInstallAction('install', async () => {
+        const path = requireGamePath(installState);
+        replaceData(await installMod(path, compatOptIn));
+        setTransient(t('installDone'));
+      }),
+    [installState, replaceData, runInstallAction, setTransient, t]
   );
 
   const resetData = useCallback(
     () =>
-      run(
-        'resetData',
-        async () => {
-          if (!state.has_resettable_data) {
-            setResetDataFailurePaths([]);
-            setTransient(t('resetDataNothingToDelete'));
-            return;
-          }
-
-          const path = requireGamePath(state, t);
-          const result = await resetBppData(path);
-          setState(result.state);
-          setResetDataFailurePaths([]);
-          setTransient(
-            result.removed_data
-              ? t('resetDataDone')
-              : t('resetDataNothingToDelete')
-          );
-        },
-        {
-          onStart: () => {
-            setTransient(null);
-            setResetDataFailurePaths([]);
-          },
-          errorMessage: (caught) =>
-            formatResetBppDataError(caught, t, setResetDataFailurePaths)
+      runInstallAction('resetData', async () => {
+        if (!installState?.has_resettable_data) {
+          setTransient(t('resetDataNothingToDelete'));
+          return;
         }
-      ),
-    [run, setTransient, state, t]
+
+        const path = requireGamePath(installState);
+        const result = await resetBppData(path);
+        replaceData(result.state);
+        setTransient(
+          result.removed_data
+            ? t('resetDataDone')
+            : t('resetDataNothingToDelete')
+        );
+      }),
+    [installState, replaceData, runInstallAction, setTransient, t]
   );
 
   const resetBepinexFolder = useCallback(
     () =>
-      run(
-        'resetBepinex',
-        async () => {
-          if (!state.has_bepinex_files) {
-            setResetDataFailurePaths([]);
-            setTransient(t('resetBepinexNothingToDelete'));
-            return;
-          }
-
-          const path = requireGamePath(state, t);
-          const result = await resetBepinex(path);
-          setState(result.state);
-          setResetDataFailurePaths([]);
-          setTransient(
-            result.removed
-              ? t('resetBepinexDone')
-              : t('resetBepinexNothingToDelete')
-          );
-        },
-        {
-          onStart: () => {
-            setTransient(null);
-            setResetDataFailurePaths([]);
-          },
-          errorMessage: (caught) =>
-            formatResetBepinexError(caught, t, setResetDataFailurePaths)
+      runInstallAction('resetBepinex', async () => {
+        if (!installState?.has_bepinex_files) {
+          setTransient(t('resetBepinexNothingToDelete'));
+          return;
         }
-      ),
-    [run, setTransient, state, t]
+
+        const path = requireGamePath(installState);
+        const result = await resetBepinex(path);
+        replaceData(result.state);
+        setTransient(
+          result.removed
+            ? t('resetBepinexDone')
+            : t('resetBepinexNothingToDelete')
+        );
+      }),
+    [installState, replaceData, runInstallAction, setTransient, t]
   );
 
   const uninstall = useCallback(
     () =>
-      run(
-        'uninstall',
-        async () => {
-          const path = requireGamePath(state, t);
-          setState(await uninstallMod(path));
-          setTransient(t('uninstallDone'));
-        },
-        { onStart: () => setTransient(null) }
-      ),
-    [run, setTransient, state, t]
+      runInstallAction('uninstall', async () => {
+        const path = requireGamePath(installState);
+        replaceData(await uninstallMod(path));
+        setTransient(t('uninstallDone'));
+      }),
+    [installState, replaceData, runInstallAction, setTransient, t]
   );
 
   const launch = useCallback(
     () =>
-      run(
-        'launch',
-        async () => {
-          await launchGame();
-        },
-        { onStart: () => setTransient(null) }
-      ),
-    [run, setTransient]
+      runInstallAction('launch', async () => {
+        await launchGame();
+      }),
+    [runInstallAction]
   );
 
-  const status = useMemo(() => createInstallStatus(state, t), [state, t]);
+  const refreshing =
+    pageState.phase === 'ready' && pageState.refresh.phase === 'refreshing';
+  const status = useMemo(
+    () => (installState ? createInstallStatus(installState, t) : null),
+    [installState, t]
+  );
+  const primaryAction = useMemo(
+    () =>
+      installState
+        ? deriveInstallPrimaryAction(installState, action, refreshing)
+        : null,
+    [action, installState, refreshing]
+  );
 
   return {
-    state,
+    pageState,
+    installState,
     status,
+    primaryAction,
     action,
-    busy,
-    error,
+    actionProblem,
+    busy: actionBusy || pageState.phase === 'initial-loading' || refreshing,
+    refreshing,
     message: transient?.text ?? null,
     resetDataFailurePaths,
     refresh,
@@ -220,68 +238,31 @@ export function useInstallPage() {
   };
 }
 
-function requireGamePath(state: InstallState, t: Translate) {
-  if (!state.selected_game_path) {
-    throw new Error(t('selectGameDirFirst'));
+function requireGamePath(state: InstallState | null) {
+  if (!state?.selected_game_path) {
+    throw new Error('Install action requires a selected game path.');
   }
   return state.selected_game_path;
 }
 
-function formatResetBppDataError(
-  error: unknown,
-  t: Translate,
-  setFailurePaths: (paths: string[]) => void
+function createInstallStatus(
+  state: InstallState,
+  t: ReturnType<typeof useI18n>['t']
 ) {
-  const resetError = parseResetBppDataError(error);
-  if (resetError?.code === 'game_running') {
-    setFailurePaths([]);
-    return t('resetDataBlockedByGame');
-  }
-  if (resetError?.code === 'partial_failure') {
-    setFailurePaths(resetError.paths);
-    return t('resetDataPartialFailure', {
-      count: Math.max(1, resetError.paths.length)
-    });
-  }
-  setFailurePaths([]);
-  return toErrorMessage(error);
-}
-
-function formatResetBepinexError(
-  error: unknown,
-  t: Translate,
-  setFailurePaths: (paths: string[]) => void
-) {
-  const resetError = parseResetBepinexError(error);
-  if (resetError?.code === 'game_running') {
-    setFailurePaths([]);
-    return t('resetBepinexBlockedByGame');
-  }
-  if (resetError?.code === 'partial_failure') {
-    setFailurePaths(resetError.paths);
-    return t('resetBepinexPartialFailure', {
-      count: Math.max(1, resetError.paths.length)
-    });
-  }
-  setFailurePaths([]);
-  return toErrorMessage(error);
-}
-
-function createInstallStatus(state: InstallState, t: Translate) {
   const installed = state.mod_state.installed;
+  const ready =
+    installed &&
+    state.mod_state.version_matches &&
+    state.compat.desired === state.compat.applied;
   return {
     gameLabel: state.game.path_valid ? t('gameFilesOk') : t('gameNotFound'),
     gameTone: state.game.path_valid ? ('ok' as const) : ('warn' as const),
     modLabel: installed
-      ? state.mod_state.version_matches
+      ? ready
         ? t('modReady')
         : t('modNeedsReinstall')
       : t('modNotInstalled'),
-    modTone:
-      installed && state.mod_state.version_matches
-        ? ('ok' as const)
-        : ('warn' as const),
-    primaryAction: installed ? t('actionReinstall') : t('actionInstall'),
+    modTone: ready ? ('ok' as const) : ('warn' as const),
     modVersion:
       state.mod_state.installed_version ??
       state.mod_state.bundled_version ??

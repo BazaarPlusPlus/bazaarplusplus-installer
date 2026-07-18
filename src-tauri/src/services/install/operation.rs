@@ -3,7 +3,8 @@ use std::path::Path;
 use tauri::Manager;
 
 use super::plan::{plan_install, InstallEffect, InstallPlanInputs, PayloadState};
-use super::{build_install_state, InstallState};
+use super::{build_install_state_raw, install_action_problem, InstallState};
+use crate::problem::SemanticProblem;
 use crate::services::{
     bepinex::{self, install_bepinex},
     detect::detect_for_install,
@@ -36,7 +37,7 @@ fn classify_payload(
 pub(crate) async fn install(
     app: tauri::AppHandle,
     request: InstallRequest,
-) -> Result<InstallState, String> {
+) -> Result<InstallState, SemanticProblem> {
     let task_app = app.clone();
     tauri::async_runtime::spawn_blocking(move || {
         let installer_state = task_app.state::<InstallerContextState>();
@@ -70,11 +71,14 @@ pub(crate) async fn install(
 
         execute_and_refresh(facts, &mut effects, || {
             let installer_state = task_app.state::<InstallerContextState>();
-            build_install_state(task_app.clone(), installer_state, Some(request.game_path))
+            build_install_state_raw(task_app.clone(), installer_state, Some(request.game_path))
         })
     })
     .await
-    .map_err(|error| format!("failed to run install task: {error}"))?
+    .map_err(|error| {
+        install_action_problem("install", format!("failed to run install task: {error}"))
+    })?
+    .map_err(|diagnostic| install_action_problem("install", diagnostic))
 }
 
 trait InstallEffects {

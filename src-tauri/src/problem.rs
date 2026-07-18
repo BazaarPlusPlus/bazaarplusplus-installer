@@ -9,13 +9,14 @@ pub struct SemanticProblem {
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize, specta::Type)]
 #[serde(rename_all = "snake_case")]
-// The domain prefix is intentional: these names are the stable cross-language
-// problem codes and must remain unambiguous as other feature domains are added.
-#[allow(clippy::enum_variant_names)]
 pub enum SemanticProblemCode {
     HistoryUnavailable,
     HistoryReadFailed,
     HistoryActionFailed,
+    InstallDetectionFailed,
+    InstallActionFailed,
+    InstallGameRunning,
+    InstallPartialFailure,
 }
 
 impl SemanticProblem {
@@ -64,6 +65,18 @@ mod tests {
             .unwrap(),
             serde_json::json!({
                 "code": "history_unavailable",
+                "params": {},
+                "diagnostic": null
+            })
+        );
+
+        assert_eq!(
+            serde_json::to_value(SemanticProblem::new(
+                SemanticProblemCode::InstallDetectionFailed
+            ))
+            .unwrap(),
+            serde_json::json!({
+                "code": "install_detection_failed",
                 "params": {},
                 "diagnostic": null
             })

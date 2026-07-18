@@ -1,6 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { invoke } from '@tauri-apps/api/core';
-import { parseResetBppDataError } from '../features/shared/errors';
 
 vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }));
 const invokeMock = vi.mocked(invoke);
@@ -27,11 +26,13 @@ describe('native command adapter', () => {
 
   it('normalizes string rejections from generated commands', async () => {
     vi.stubGlobal('window', { __TAURI_INTERNALS__: {} });
-    invokeMock.mockRejectedValueOnce('bpp_data_reset_blocked_by_game');
+    invokeMock.mockRejectedValueOnce('raw backend failure');
     const { commandClient } = await import('./commandClient');
 
-    await expect(commandClient.resetBppData('/game')).rejects.toMatchObject({
-      message: 'bpp_data_reset_blocked_by_game'
+    await expect(
+      commandClient.deleteRunVideos('run', null)
+    ).rejects.toMatchObject({
+      message: 'raw backend failure'
     });
   });
 
@@ -51,6 +52,27 @@ describe('native command adapter', () => {
       problem
     });
     expect(invokeMock).toHaveBeenCalledWith('list_history_runs', { limit: 50 });
+  });
+
+  it('preserves semantic install recovery parameters', async () => {
+    vi.stubGlobal('window', { __TAURI_INTERNALS__: {} });
+    const problem = {
+      code: 'install_partial_failure',
+      params: {
+        operation: 'reset_bpp_data',
+        count: '2',
+        paths: '/tmp/a\u001f/tmp/b'
+      },
+      diagnostic: null
+    };
+    invokeMock.mockRejectedValueOnce(problem);
+    const { commandClient } = await import('./commandClient');
+
+    await expect(commandClient.resetBppData('/game')).rejects.toMatchObject({
+      name: 'SemanticProblemError',
+      message: 'install_partial_failure',
+      problem
+    });
   });
 });
 
@@ -77,16 +99,5 @@ describe('normalizeBackendError sentinel contract', () => {
         diagnostic: null
       }).message
     ).toBe('Backend command failed.');
-  });
-
-  it('feeds reset partial-failure parsing end to end', async () => {
-    const { normalizeBackendError } = await import('./nativeCommands');
-    const parsed = parseResetBppDataError(
-      normalizeBackendError('bpp_data_reset_partial_failure:a\u001fb')
-    );
-    expect(parsed).toMatchObject({
-      code: 'partial_failure',
-      paths: ['a', 'b']
-    });
   });
 });

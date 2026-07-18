@@ -1,7 +1,7 @@
 ---
 status: truth
 topic: frontend
-last-verified: 68f2b1ef20e7c1c5c789bd5cde34821cf28efd57
+last-verified: f23d786ab3bf1998f556f5fe05b6e47467a7ea48
 ---
 
 # Frontend
@@ -32,9 +32,11 @@ last-verified: 68f2b1ef20e7c1c5c789bd5cde34821cf28efd57
 
 ## Current Product Surfaces
 
-- Install renders status and action panels plus install and reset confirmation modals in `src/pages/Install.tsx:68-111`.
-- Install facts currently show only BazaarPlusPlus, not the broader fact list from the historical design spec, in `src/features/install/InstallActionsPanel.tsx:49-58`.
-- The reset-local-data button is disabled unless backend action gates allow reset data, and its label switches to a no-data message when the game path is valid but no resettable data exists in `src/features/install/InstallActionsPanel.tsx:93-105`.
+- Install renders mutually exclusive initial-detection, blocking-failure, and completed-state branches; a refresh failure keeps the completed status and actions visible behind a localized retry banner in `src/pages/Install.tsx:63-105` and `src/features/install/installPageState.ts:34-73`.
+- Install facts currently show only BazaarPlusPlus, not the broader fact list from the historical design spec, in `src/features/install/InstallActionsPanel.tsx:58-65`.
+- Install renders exactly one primary action. Its choose/install/repair/launch mode, gate, and loading state are derived from one view model based on path validity, install/version state, compatibility consistency, and the active operation in `src/features/install/installPageState.ts:75-132` and `src/features/install/InstallActionsPanel.tsx:141-222`.
+- Install warnings and failures are presented from stable semantic codes in bilingual frontend copy; native diagnostics are kept in the diagnostic disclosure rather than used as the message in `src/features/install/installProblems.ts:23-107` and `src/features/install/InstallProblemBanner.tsx:1-32`.
+- The reset-local-data button is disabled unless backend action gates allow reset data, and its label switches to a no-data message when the game path is valid but no resettable data exists in `src/features/install/InstallActionsPanel.tsx:103-115`.
 - History renders loading, blocking failure, and the two successful list states as mutually exclusive branches; refresh failures remain inside the ready branch and keep prior data in `src/pages/History.tsx:42-97` and `src/features/shared/pageState.ts:43-54`.
 - History summary cards are Runs, Videos, and Win Rate in `src/pages/History.tsx:50-64`.
 - History rows link to details, show lazy-decoded preview images with an error fallback, and display hero, locale-formatted date, result, progress, rank, and rating in `src/pages/History.tsx:125-230` and `src/features/history/format.ts:4-27`.

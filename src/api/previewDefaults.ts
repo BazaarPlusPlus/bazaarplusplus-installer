@@ -46,7 +46,10 @@ export const emptyInstallState: InstallState = {
   },
   has_resettable_data: false,
   has_bepinex_files: false,
-  warnings: []
+  warnings: [
+    { code: 'game_missing', params: {} },
+    { code: 'launch_options_unsupported', params: {} }
+  ]
 };
 
 export const idleStreamStatus: StreamServiceStatus = {

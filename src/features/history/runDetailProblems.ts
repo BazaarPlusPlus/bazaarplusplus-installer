@@ -21,7 +21,7 @@ export function runDetailProblemFromError(error: unknown): RunDetailProblem {
     case 'history_read_failed':
     case 'history_action_failed':
     case 'run_detail_unexpected':
-      return problem;
+      return problem as RunDetailProblem;
     default:
       return createUiProblem('run_detail_unexpected', {
         params: problem.params,

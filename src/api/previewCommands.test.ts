@@ -108,6 +108,10 @@ describe('browser-preview command adapter', () => {
     expect(emptyInstallState.selected_game_path).toBeNull();
     expect(emptyInstallState.has_resettable_data).toBe(false);
     expect(emptyInstallState.has_bepinex_files).toBe(false);
+    expect(emptyInstallState.warnings.map((warning) => warning.code)).toEqual([
+      'game_missing',
+      'launch_options_unsupported'
+    ]);
   });
 
   it('passes native-only preview commands through to the normalized client', async () => {
