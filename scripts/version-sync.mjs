@@ -38,12 +38,16 @@ function packageLockPath(rootDir) {
   return path.join(rootDir, 'package-lock.json');
 }
 
-function readPackageLockVersion(rootDir) {
+function readPackageLockVersions(rootDir) {
   const filePath = packageLockPath(rootDir);
   if (!fs.existsSync(filePath)) {
-    return null;
+    return { packageLockVersion: null, packageLockRootVersion: null };
   }
-  return readJson(filePath).version;
+  const packageLock = readJson(filePath);
+  return {
+    packageLockVersion: packageLock.version ?? null,
+    packageLockRootVersion: packageLock.packages?.['']?.version ?? null
+  };
 }
 
 function tauriConfigPath(rootDir) {
@@ -162,10 +166,11 @@ function updateCargoLockVersion(rootDir, packageName, version) {
 export function collectVersionSnapshot(rootDir) {
   const packageVersion = readPackageVersion(rootDir);
   const packageName = readCargoPackageName(rootDir);
+  const packageLockVersions = readPackageLockVersions(rootDir);
 
   return {
     packageVersion,
-    packageLockVersion: readPackageLockVersion(rootDir),
+    ...packageLockVersions,
     tauriVersion: readTauriVersion(rootDir),
     cargoVersion: readCargoVersion(rootDir),
     cargoLockVersion: readCargoLockVersion(rootDir, packageName)

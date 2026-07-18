@@ -3,21 +3,36 @@
   "version": "4.5.0",
   "description": "BazaarPlusPlus Desktop App",
   "type": "module",
+  "packageManager": "npm@11.17.0",
+  "engines": {
+    "node": ">=22.12.0 <25",
+    "npm": ">=10 <12"
+  },
   "scripts": {
     "generate:bindings": "node scripts/generate-bindings.mjs",
+    "generate:bindings:test": "node scripts/generate-bindings.mjs --with-rust-tests",
     "dev": "npm run generate:bindings && vite dev",
     "version:sync": "node scripts/version-sync.mjs",
-    "prebuild-check": "node scripts/prebuild-check.mjs",
-    "build": "npm run generate:bindings && vite build",
+    "prepare:resources": "node scripts/payload-zip.mjs",
+    "prepare:ci-resources": "node scripts/ci-resource-fixture.mjs",
+    "check:bindings": "node scripts/prebuild-check.mjs --bindings-only",
+    "prebuild-check": "npm run generate:bindings && npm run prebuild-check:after-bindings",
+    "prebuild-check:after-bindings": "node scripts/prebuild-check.mjs",
+    "prebuild-check:source:after-bindings": "node scripts/prebuild-check.mjs --source-only",
+    "build": "npm run generate:bindings && npm run build:after-bindings",
+    "build:after-bindings": "npm run prebuild-check:after-bindings && npm run check:ts && npm run build:frontend",
+    "build:frontend": "vite build",
     "preview": "vite preview",
-    "test": "npm run generate:bindings && npm run test:rust && npm run test:unit",
-    "test:rust": "cargo test --manifest-path src-tauri/Cargo.toml",
+    "test": "npm run generate:bindings:test && npm run check:bindings && npm run test:unit",
+    "test:rust": "cargo test --locked --manifest-path src-tauri/Cargo.toml",
     "test:unit": "vitest run",
     "test:watch": "vitest",
-    "format": "prettier --write \"*.json\" \"src/**/*.{ts,tsx,html}\" \"scripts/**/*.mjs\" \"src-tauri/*.json\" \"src-tauri/capabilities/**/*.json\" \"vite.config.ts\"",
-    "format:check": "prettier --check \"*.json\" \"src/**/*.{ts,tsx,html}\" \"scripts/**/*.mjs\" \"src-tauri/*.json\" \"src-tauri/capabilities/**/*.json\" \"vite.config.ts\"",
-    "check": "npm run generate:bindings && tsc --noEmit",
+    "format": "prettier --write \"*.json\" \".github/**/*.yml\" \"src/**/*.{ts,tsx,html}\" \"scripts/**/*.mjs\" \"src-tauri/*.json\" \"src-tauri/capabilities/**/*.json\" \"vite.config.ts\"",
+    "format:check": "prettier --check \"*.json\" \".github/**/*.yml\" \"src/**/*.{ts,tsx,html}\" \"scripts/**/*.mjs\" \"src-tauri/*.json\" \"src-tauri/capabilities/**/*.json\" \"vite.config.ts\"",
+    "check": "npm run generate:bindings && npm run check:ts",
+    "check:ts": "tsc --noEmit",
     "check:watch": "npm run generate:bindings && tsc --noEmit --watch",
+    "verify": "node scripts/verify.mjs",
     "tauri": "tauri"
   },
   "license": "MIT",
@@ -43,6 +58,7 @@
     "tailwindcss": "^4.3.0",
     "typescript": "^6.0.3",
     "vite": "^8.0.16",
-    "vitest": "^4.1.8"
+    "vitest": "^4.1.8",
+    "wrangler": "4.112.0"
   }
 }

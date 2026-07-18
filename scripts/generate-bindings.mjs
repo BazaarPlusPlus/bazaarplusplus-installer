@@ -88,7 +88,10 @@ export function commitGeneratedBindings({ generatedDir, tempGeneratedDir }) {
   replaceDirectoryWithBackup(generatedDir, tempGeneratedDir);
 }
 
-export function runGenerateBindings(projectRoot) {
+export function runGenerateBindings(
+  projectRoot,
+  { runAllRustTests = false } = {}
+) {
   const generatedDir = path.join(projectRoot, 'src/types/generated');
   const tempRoot = mkdtempSync(path.join(tmpdir(), 'bpp-bindings-'));
   const tempGeneratedDir = path.join(tempRoot, 'generated');
@@ -97,25 +100,23 @@ export function runGenerateBindings(projectRoot) {
   mkdirSync(tempGeneratedDir, { recursive: true });
 
   try {
-    execFileSync(
-      'cargo',
-      [
-        'test',
-        'export_bindings',
-        '--manifest-path',
-        'src-tauri/Cargo.toml',
-        '--',
-        '--nocapture'
-      ],
-      {
-        cwd: projectRoot,
-        stdio: 'inherit',
-        env: {
-          ...process.env,
-          BPP_SPECTA_EXPORT_PATH: exportPath
-        }
+    const cargoArgs = [
+      'test',
+      '--locked',
+      ...(runAllRustTests ? [] : ['export_bindings']),
+      '--manifest-path',
+      'src-tauri/Cargo.toml',
+      '--',
+      '--nocapture'
+    ];
+    execFileSync('cargo', cargoArgs, {
+      cwd: projectRoot,
+      stdio: 'inherit',
+      env: {
+        ...process.env,
+        BPP_SPECTA_EXPORT_PATH: exportPath
       }
-    );
+    });
 
     commitGeneratedBindings({ generatedDir, tempGeneratedDir });
   } finally {
@@ -128,5 +129,12 @@ const invokedAsScript =
   process.argv[1] && path.resolve(process.argv[1]) === scriptPath;
 
 if (invokedAsScript) {
-  runGenerateBindings(path.resolve(path.dirname(scriptPath), '..'));
+  const args = process.argv.slice(2);
+  if (args.some((arg) => arg !== '--with-rust-tests')) {
+    console.error('Usage: generate-bindings.mjs [--with-rust-tests]');
+    process.exit(2);
+  }
+  runGenerateBindings(path.resolve(path.dirname(scriptPath), '..'), {
+    runAllRustTests: args.includes('--with-rust-tests')
+  });
 }

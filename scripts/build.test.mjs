@@ -55,7 +55,7 @@ test('macOS production build targets arm64 artifacts', () => {
   `);
 
   expect(output).toMatch(
-    /Building macos app binary\|npm run tauri build -- --no-bundle --config .*src-tauri\/tauri\.macos\.conf\.json --target aarch64-apple-darwin/
+    /Building macos app binary\|npm run tauri build -- --no-bundle --config .*src-tauri\/tauri\.macos\.conf\.json --config .*src-tauri\/tauri\.release\.conf\.json --target aarch64-apple-darwin/
   );
   expect(output).toMatch(
     /Preparing signed macos resource zip\|.*src-tauri\/resources\/BepInExSource\/macos\/BepInEx\.zip/
@@ -64,7 +64,7 @@ test('macOS production build targets arm64 artifacts', () => {
     /Preparing signed macos resource binary\|.*src-tauri\/resources\/Trampoline\/macos\/bpp_launcher/
   );
   expect(output).toMatch(
-    /Bundling macos installer\|npm run tauri bundle -- --bundles app,dmg --config .*src-tauri\/tauri\.macos\.conf\.json --target aarch64-apple-darwin/
+    /Bundling macos installer\|npm run tauri bundle -- --bundles app,dmg --config .*src-tauri\/tauri\.macos\.conf\.json --config .*src-tauri\/tauri\.release\.conf\.json --target aarch64-apple-darwin/
   );
   expect(output).not.toMatch(/Notarizing macos|notarytool|stapler/);
   expect(output).toMatch(
@@ -120,7 +120,7 @@ test('Windows production build keeps the default target layout', () => {
   `);
 
   expect(output).toMatch(
-    /Building windows app binary\|npm run tauri build -- --no-bundle --config .*src-tauri\/tauri\.windows\.conf\.json/
+    /Building windows app binary\|npm run tauri build -- --no-bundle --config .*src-tauri\/tauri\.windows\.conf\.json --config .*src-tauri\/tauri\.release\.conf\.json/
   );
   expect(output).not.toMatch(/aarch64-apple-darwin|universal-apple-darwin/);
   expect(output).toMatch(
@@ -148,6 +148,114 @@ test('macOS production build requires the arm64 Rust target', () => {
   expect(output).toMatch(/Missing Rust target: aarch64-apple-darwin/);
   expect(output).toMatch(/rustup target add aarch64-apple-darwin/);
   expect(output).toMatch(/exit:1/);
+});
+
+test('Windows with no extra Rust target does not invoke rustup', () => {
+  const output = runShell(`
+    set -euo pipefail
+    source ./build.sh
+    rustup() { printf 'unexpected rustup call\\n'; return 127; }
+    ensure_required_rust_targets windows
+    printf 'ok\\n'
+  `);
+
+  expect(output).toBe('ok\n');
+});
+
+test('macOS accepts an already installed required Rust target', () => {
+  const output = runShell(`
+    set -euo pipefail
+    source ./build.sh
+    rustup() { printf 'aarch64-apple-darwin\\n'; }
+    ensure_required_rust_targets macos
+    printf 'ok\\n'
+  `);
+
+  expect(output).toBe('ok\n');
+});
+
+test('dependency install reuses a valid local node_modules tree', () => {
+  const root = mkdtempSync(`${projectDir}/.bpp-deps-test-`);
+  const rootBash = toBashPath(root);
+  mkdirSync(`${root}/node_modules/@tauri-apps/cli`, { recursive: true });
+  mkdirSync(`${root}/node_modules/.bin`, { recursive: true });
+  writeFileSync(`${root}/node_modules/.bin/tauri`, 'fixture');
+
+  try {
+    const output = runShell(`
+      set -euo pipefail
+      source ./build.sh
+      SCRIPT_DIR='${rootBash}'
+      npm() { [ "$1" = ls ]; }
+      install_dependencies true
+    `);
+    expect(output).toContain('Reusing existing npm dependencies');
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('release dependency install uses npm ci instead of reusing node_modules', () => {
+  const root = mkdtempSync(`${projectDir}/.bpp-deps-test-`);
+  const rootBash = toBashPath(root);
+  mkdirSync(`${root}/node_modules/@tauri-apps/cli`, { recursive: true });
+  mkdirSync(`${root}/node_modules/.bin`, { recursive: true });
+  writeFileSync(`${root}/node_modules/.bin/tauri`, 'fixture');
+  writeFileSync(`${root}/package-lock.json`, '{}');
+
+  try {
+    const output = runShell(`
+      set -euo pipefail
+      source ./build.sh
+      SCRIPT_DIR='${rootBash}'
+      npm() { [ "$1" = ls ]; }
+      invoke_step() { local label="$1"; shift; printf '%s|%s\\n' "$label" "$*"; }
+      install_dependencies false
+    `);
+    expect(output).toContain('Installing npm dependencies|npm ci');
+    expect(output).not.toContain('Reusing existing npm dependencies');
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('dependency install uses npm ci whenever package-lock.json exists', () => {
+  const root = mkdtempSync(`${projectDir}/.bpp-deps-test-`);
+  const rootBash = toBashPath(root);
+  writeFileSync(`${root}/package-lock.json`, '{}');
+
+  try {
+    const output = runShell(`
+      set -euo pipefail
+      source ./build.sh
+      SCRIPT_DIR='${rootBash}'
+      invoke_step() { local label="$1"; shift; printf '%s|%s\\n' "$label" "$*"; }
+      install_dependencies
+    `);
+    expect(output).toContain('Installing npm dependencies|npm ci');
+    expect(output).not.toContain('npm install');
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('dependency install fails clearly instead of updating an absent lockfile', () => {
+  const root = mkdtempSync(`${projectDir}/.bpp-deps-test-`);
+  const rootBash = toBashPath(root);
+
+  try {
+    const output = runShell(`
+      source ./build.sh
+      SCRIPT_DIR='${rootBash}'
+      set +e
+      install_dependencies 2>&1
+      printf 'exit:%s\\n' "$?"
+    `);
+    expect(output).toContain('package-lock.json is required');
+    expect(output).toContain('exit:1');
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
 });
 
 test('macOS resource signing applies Developer ID timestamp only to Mach-O files', () => {
@@ -345,6 +453,9 @@ test('Windows upload uses installer and updater R2 paths under the version direc
       set -euo pipefail
       source ./build.sh
       assert_file() { :; }
+      artifact_manifest_paths() {
+        printf '%s\\n' '${installerFile}' '${installerFile}' '${signatureFile}'
+      }
       invoke_step() {
         local label="$1"
         shift
@@ -354,13 +465,13 @@ test('Windows upload uses installer and updater R2 paths under the version direc
     `);
 
     expect(output).toMatch(
-      /Uploading BazaarPlusPlus_2\.1\.0_x64-setup\.exe to 2\.1\.0\/windows-x86_64\/installer\/BazaarPlusPlus_2\.1\.0_x64-setup\.exe\|npx wrangler r2 object put bppinstaller\/2\.1\.0\/windows-x86_64\/installer\/BazaarPlusPlus_2\.1\.0_x64-setup\.exe --file .*BazaarPlusPlus_2\.1\.0_x64-setup\.exe/
+      /Uploading BazaarPlusPlus_2\.1\.0_x64-setup\.exe to 2\.1\.0\/windows-x86_64\/installer\/BazaarPlusPlus_2\.1\.0_x64-setup\.exe\|wrangler_cli r2 object put bppinstaller\/2\.1\.0\/windows-x86_64\/installer\/BazaarPlusPlus_2\.1\.0_x64-setup\.exe --file .*BazaarPlusPlus_2\.1\.0_x64-setup\.exe/
     );
     expect(output).toMatch(
-      /Uploading BazaarPlusPlus_2\.1\.0_x64-setup\.exe to 2\.1\.0\/windows-x86_64\/updater\/BazaarPlusPlus_2\.1\.0_x64-setup\.exe\|npx wrangler r2 object put bppinstaller\/2\.1\.0\/windows-x86_64\/updater\/BazaarPlusPlus_2\.1\.0_x64-setup\.exe --file .*BazaarPlusPlus_2\.1\.0_x64-setup\.exe/
+      /Uploading BazaarPlusPlus_2\.1\.0_x64-setup\.exe to 2\.1\.0\/windows-x86_64\/updater\/BazaarPlusPlus_2\.1\.0_x64-setup\.exe\|wrangler_cli r2 object put bppinstaller\/2\.1\.0\/windows-x86_64\/updater\/BazaarPlusPlus_2\.1\.0_x64-setup\.exe --file .*BazaarPlusPlus_2\.1\.0_x64-setup\.exe/
     );
     expect(output).toMatch(
-      /Uploading BazaarPlusPlus_2\.1\.0_x64-setup\.exe\.sig to 2\.1\.0\/windows-x86_64\/updater\/BazaarPlusPlus_2\.1\.0_x64-setup\.exe\.sig\|npx wrangler r2 object put bppinstaller\/2\.1\.0\/windows-x86_64\/updater\/BazaarPlusPlus_2\.1\.0_x64-setup\.exe\.sig --file .*BazaarPlusPlus_2\.1\.0_x64-setup\.exe\.sig/
+      /Uploading BazaarPlusPlus_2\.1\.0_x64-setup\.exe\.sig to 2\.1\.0\/windows-x86_64\/updater\/BazaarPlusPlus_2\.1\.0_x64-setup\.exe\.sig\|wrangler_cli r2 object put bppinstaller\/2\.1\.0\/windows-x86_64\/updater\/BazaarPlusPlus_2\.1\.0_x64-setup\.exe\.sig --file .*BazaarPlusPlus_2\.1\.0_x64-setup\.exe\.sig/
     );
   } finally {
     rmSync(bundleDir, { force: true, recursive: true });

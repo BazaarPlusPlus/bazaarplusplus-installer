@@ -12,6 +12,7 @@ import {
 function createFixture({
   packageVersion = '1.2.3',
   packageLockVersion = packageVersion,
+  packageLockRootVersion = packageLockVersion,
   tauriVersion = '1.2.3',
   cargoVersion = '1.2.3',
   cargoLockVersion = cargoVersion
@@ -31,7 +32,7 @@ function createFixture({
         version: packageLockVersion,
         lockfileVersion: 3,
         packages: {
-          '': { name: 'bppinstaller', version: packageLockVersion }
+          '': { name: 'bppinstaller', version: packageLockRootVersion }
         }
       },
       null,
@@ -75,6 +76,7 @@ test('collectVersionSnapshot reads package, package lock, tauri, cargo, and carg
   expect(collectVersionSnapshot(rootDir)).toEqual({
     packageVersion: '2.0.0',
     packageLockVersion: '2.0.0',
+    packageLockRootVersion: '2.0.0',
     tauriVersion: '2.0.0',
     cargoVersion: '2.0.0',
     cargoLockVersion: '2.0.0'
@@ -104,6 +106,21 @@ test('assertVersionsAreAligned throws when only the package lock is stale', () =
   ).toThrow(/packageLockVersion=4\.3\.0/);
 });
 
+test('assertVersionsAreAligned throws when the package lock root package is stale', () => {
+  const rootDir = createFixture({
+    packageVersion: '4.5.0',
+    packageLockVersion: '4.5.0',
+    packageLockRootVersion: '4.4.9',
+    tauriVersion: '4.5.0',
+    cargoVersion: '4.5.0',
+    cargoLockVersion: '4.5.0'
+  });
+
+  expect(() =>
+    assertVersionsAreAligned(collectVersionSnapshot(rootDir))
+  ).toThrow(/packageLockRootVersion=4\.4\.9/);
+});
+
 test('synchronizeVersions updates package lock, tauri, cargo, and cargo lock to match package.json', () => {
   const rootDir = createFixture({
     packageVersion: '3.4.5',
@@ -118,6 +135,7 @@ test('synchronizeVersions updates package lock, tauri, cargo, and cargo lock to 
   expect(snapshot).toEqual({
     packageVersion: '3.4.5',
     packageLockVersion: '3.4.5',
+    packageLockRootVersion: '3.4.5',
     tauriVersion: '3.4.5',
     cargoVersion: '3.4.5',
     cargoLockVersion: '3.4.5'

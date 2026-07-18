@@ -6,7 +6,7 @@
   "build": {
     "beforeDevCommand": "npm run dev",
     "devUrl": "http://localhost:14207",
-    "beforeBuildCommand": "npm run prebuild-check && npm run build",
+    "beforeBuildCommand": "npm run build",
     "beforeBundleCommand": "node scripts/before-bundle-cleanup.mjs",
     "frontendDist": "../build"
   },

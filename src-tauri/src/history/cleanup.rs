@@ -784,7 +784,7 @@ fn remaining_video_relative_paths_after_run_cleanup(
     Ok(paths)
 }
 
-/// Replay payload path: <CombatReplays>/<battleId>.payload.mpack.gz.
+/// Replay payload path: `<CombatReplays>/<battleId>.payload.mpack.gz`.
 fn replay_payload_path(replays_dir: &Path, battle_id: &str) -> Option<PathBuf> {
     let trimmed = battle_id.trim();
     // `:` guards against a Windows drive-relative id like `C:target`, which has

@@ -8,6 +8,8 @@ Last full citation verification: `2026-07-11` on `4366cda394fe304066b55564c3c44d
 
 Architecture deepening citation refresh: `2026-07-18` on `7500016b1c4adfc7b5d0206c7def0ceabae514d5` — `CONTEXT.md`, the six affected truth topics, and the retained manual-validation items were checked against the final implementation and review fixes.
 
+Build workflow citation refresh: `2026-07-18` on `33d130731f030148b6e8d4f3981264002b5379cd` — the verification and updater-release truth topics were checked against the hardened build, resource, CI, and artifact-manifest implementation.
+
 ## Current Manifest
 
 | Path | Topic | Status | Last verified |
@@ -23,8 +25,8 @@ Architecture deepening citation refresh: `2026-07-18` on `7500016b1c4adfc7b5d020
 | `docs/truth/install-reset.md` | install-reset | truth | `7500016b1c4adfc7b5d0206c7def0ceabae514d5` |
 | `docs/truth/launch-modes.md` | launch-modes | truth | `4366cda394fe304066b55564c3c44d1f917a2273` |
 | `docs/truth/history-stream.md` | history-stream | truth | `7500016b1c4adfc7b5d0206c7def0ceabae514d5` |
-| `docs/truth/updater-release.md` | updater-release | truth | `4366cda394fe304066b55564c3c44d1f917a2273` |
-| `docs/truth/verification.md` | verification | truth | `7500016b1c4adfc7b5d0206c7def0ceabae514d5` |
+| `docs/truth/updater-release.md` | updater-release | truth | `33d130731f030148b6e8d4f3981264002b5379cd` |
+| `docs/truth/verification.md` | verification | truth | `33d130731f030148b6e8d4f3981264002b5379cd` |
 | `docs/plans/manual-validation.md` | manual-validation | active-plan | `7500016b1c4adfc7b5d0206c7def0ceabae514d5` |
 | `docs/agents/issue-tracker.md` | agent skills: issue tracker | operational | 2026-07-11 |
 | `docs/agents/triage-labels.md` | agent skills: triage labels | operational | 2026-07-11 |
