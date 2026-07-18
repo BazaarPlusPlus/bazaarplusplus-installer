@@ -1,52 +1,52 @@
-use crate::services::{
-    path::normalize_requested_game_path, stream_window::apply_stream_window_offset,
-};
+use crate::services::path::normalize_requested_game_path;
 use crate::stream::{
     overlay_settings::{
         OverlayCropSettings, OverlayCropSettingsPayload, OverlaySettingsStore,
         StreamOverlayDisplayMode,
     },
-    state::{StreamRuntimeState, StreamServiceStatus},
+    runtime::StreamRuntime,
+    state::StreamServiceStatus,
 };
 
 #[tauri::command]
 #[specta::specta]
 pub fn get_stream_status(
-    state: tauri::State<'_, StreamRuntimeState>,
+    runtime: tauri::State<'_, StreamRuntime>,
 ) -> Result<StreamServiceStatus, String> {
-    Ok(state.snapshot())
+    Ok(runtime.snapshot())
 }
 
 #[tauri::command]
 #[specta::specta]
 pub async fn ensure_stream_session(
     app: tauri::AppHandle,
-    state: tauri::State<'_, StreamRuntimeState>,
+    runtime: tauri::State<'_, StreamRuntime>,
     game_path: Option<String>,
 ) -> Result<StreamServiceStatus, String> {
-    crate::stream::server::start(app, state.inner(), normalize_requested_game_path(game_path)).await
+    runtime
+        .ensure(app, normalize_requested_game_path(game_path))
+        .await
 }
 
 #[tauri::command]
 #[specta::specta]
 pub async fn restart_stream_session(
     app: tauri::AppHandle,
-    state: tauri::State<'_, StreamRuntimeState>,
+    runtime: tauri::State<'_, StreamRuntime>,
     game_path: Option<String>,
 ) -> Result<StreamServiceStatus, String> {
-    crate::stream::server::restart(app, state.inner(), normalize_requested_game_path(game_path))
+    runtime
+        .restart(app, normalize_requested_game_path(game_path))
         .await
 }
 
 #[tauri::command]
 #[specta::specta]
-pub fn set_stream_window(
-    app: tauri::AppHandle,
-    state: tauri::State<'_, StreamRuntimeState>,
-    game_path: Option<String>,
+pub async fn set_stream_window(
+    runtime: tauri::State<'_, StreamRuntime>,
     offset: usize,
 ) -> Result<StreamServiceStatus, String> {
-    apply_stream_window_offset(&app, state.inner(), game_path, offset)
+    runtime.set_window(offset).await
 }
 
 #[tauri::command]

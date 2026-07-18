@@ -1,6 +1,6 @@
 use super::overlay_settings::{validate_crop_settings, OverlayCropSettings, OverlaySettingsStore};
 use super::records::OverlayRecordRepository;
-use super::state::StreamRuntimeState;
+use super::runtime::StreamRuntime;
 use axum::http::StatusCode;
 use axum::{
     extract::{Path, Query, State},
@@ -26,12 +26,24 @@ const SETTINGS_HTML: &str = include_str!("../../resources/stream/settings.html")
 const SETTINGS_CSS: &str = include_str!("../../resources/stream/settings.css");
 const SETTINGS_JS: &str = include_str!("../../resources/stream/settings.js");
 static BADGES_DIR: Dir<'_> = include_dir!("$CARGO_MANIFEST_DIR/resources/stream/badges");
+const OVERLAY_ROUTE: &str = "/overlay";
+const SETTINGS_ROUTE: &str = "/settings";
+const LATEST_RECORD_ROUTE: &str = "/api/stream/records/latest";
+const RECORD_LIST_ROUTE: &str = "/api/stream/records";
+const CROP_CONFIG_ROUTE: &str = "/api/overlay/crop-config";
+const STRIP_IMAGE_ROUTE: &str = "/images/{record_id}/strip";
+const RECORD_IMAGE_ROUTE: &str = "/images/{record_id}";
+const OVERLAY_CSS_ROUTE: &str = "/assets/overlay.css";
+const OVERLAY_JS_ROUTE: &str = "/assets/overlay.js";
+const SETTINGS_CSS_ROUTE: &str = "/assets/settings.css";
+const SETTINGS_JS_ROUTE: &str = "/assets/settings.js";
+const BADGE_ROUTE: &str = "/assets/badges/{category}/{file_name}";
 
 #[derive(Clone)]
-pub struct HttpAppState {
-    pub overlay_records: OverlayRecordRepository,
-    pub runtime: StreamRuntimeState,
-    pub overlay_settings: OverlaySettingsStore,
+struct HttpAppState {
+    overlay_records: OverlayRecordRepository,
+    runtime: StreamRuntime,
+    overlay_settings: OverlaySettingsStore,
 }
 
 #[derive(Debug, Deserialize)]
@@ -60,9 +72,9 @@ struct StripPreviewQuery {
     preview: Option<bool>,
 }
 
-pub fn router(
+pub(super) fn router(
     overlay_records: OverlayRecordRepository,
-    runtime: StreamRuntimeState,
+    runtime: StreamRuntime,
     overlay_settings: OverlaySettingsStore,
 ) -> Router {
     let cors = CorsLayer::new()
@@ -73,21 +85,21 @@ pub fn router(
         .allow_headers([header::CONTENT_TYPE]);
 
     Router::new()
-        .route("/overlay", get(overlay_page))
-        .route("/settings", get(settings_page))
-        .route("/api/stream/records/latest", get(latest_record))
-        .route("/api/stream/records", get(record_list))
+        .route(OVERLAY_ROUTE, get(overlay_page))
+        .route(SETTINGS_ROUTE, get(settings_page))
+        .route(LATEST_RECORD_ROUTE, get(latest_record))
+        .route(RECORD_LIST_ROUTE, get(record_list))
         .route(
-            "/api/overlay/crop-config",
+            CROP_CONFIG_ROUTE,
             get(get_crop_config).post(save_crop_config),
         )
-        .route("/images/{record_id}/strip", get(record_strip_image))
-        .route("/images/{record_id}", get(record_image))
-        .route("/assets/overlay.css", get(overlay_css))
-        .route("/assets/overlay.js", get(overlay_js))
-        .route("/assets/settings.css", get(settings_css))
-        .route("/assets/settings.js", get(settings_js))
-        .route("/assets/badges/{category}/{file_name}", get(badge_asset))
+        .route(STRIP_IMAGE_ROUTE, get(record_strip_image))
+        .route(RECORD_IMAGE_ROUTE, get(record_image))
+        .route(OVERLAY_CSS_ROUTE, get(overlay_css))
+        .route(OVERLAY_JS_ROUTE, get(overlay_js))
+        .route(SETTINGS_CSS_ROUTE, get(settings_css))
+        .route(SETTINGS_JS_ROUTE, get(settings_js))
+        .route(BADGE_ROUTE, get(badge_asset))
         .layer(cors)
         .with_state(HttpAppState {
             overlay_records,
@@ -514,7 +526,9 @@ async fn badge_asset(Path((category, file_name)): Path<(String, String)>) -> Res
 mod tests {
     use super::{
         crop_cache_path, crop_dynamic_image, is_allowed_cors_origin, load_or_create_strip_cache,
-        overlay_asset_path,
+        overlay_asset_path, BADGE_ROUTE, CROP_CONFIG_ROUTE, LATEST_RECORD_ROUTE, OVERLAY_CSS_ROUTE,
+        OVERLAY_JS_ROUTE, OVERLAY_ROUTE, RECORD_IMAGE_ROUTE, RECORD_LIST_ROUTE, SETTINGS_CSS_ROUTE,
+        SETTINGS_JS_ROUTE, SETTINGS_ROUTE, STRIP_IMAGE_ROUTE,
     };
     use crate::stream::overlay_settings::OverlayCropSettings;
     use axum::http::HeaderValue;
@@ -525,6 +539,40 @@ mod tests {
         let path = overlay_asset_path("overlay.js");
 
         assert!(path.ends_with("resources/stream/overlay.js"));
+    }
+
+    #[test]
+    fn production_routes_remain_stable() {
+        assert_eq!(
+            [
+                OVERLAY_ROUTE,
+                SETTINGS_ROUTE,
+                LATEST_RECORD_ROUTE,
+                RECORD_LIST_ROUTE,
+                CROP_CONFIG_ROUTE,
+                STRIP_IMAGE_ROUTE,
+                RECORD_IMAGE_ROUTE,
+                OVERLAY_CSS_ROUTE,
+                OVERLAY_JS_ROUTE,
+                SETTINGS_CSS_ROUTE,
+                SETTINGS_JS_ROUTE,
+                BADGE_ROUTE,
+            ],
+            [
+                "/overlay",
+                "/settings",
+                "/api/stream/records/latest",
+                "/api/stream/records",
+                "/api/overlay/crop-config",
+                "/images/{record_id}/strip",
+                "/images/{record_id}",
+                "/assets/overlay.css",
+                "/assets/overlay.js",
+                "/assets/settings.css",
+                "/assets/settings.js",
+                "/assets/badges/{category}/{file_name}",
+            ]
+        );
     }
 
     #[test]

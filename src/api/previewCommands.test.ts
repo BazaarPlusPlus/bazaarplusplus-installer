@@ -18,7 +18,7 @@ describe('browser-preview command adapter', () => {
     expect(await commandClient.restartStreamSession(null)).toBe(
       idleStreamStatus
     );
-    expect(await commandClient.setStreamWindow(null, 3)).toBe(idleStreamStatus);
+    expect(await commandClient.setStreamWindow(3)).toBe(idleStreamStatus);
     expect(await commandClient.getOverlaySettings()).toBe(defaultCropSettings);
     expect(await commandClient.resetOverlayCrop()).toBe(defaultCropSettings);
     expect(await commandClient.listHistoryRuns(null, null)).toBe(

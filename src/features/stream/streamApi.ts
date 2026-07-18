@@ -8,7 +8,7 @@ export async function restartStreamSession() {
 }
 
 export async function setStreamWindowOffset(offset: number) {
-  return commandClient.setStreamWindow(null, Math.max(0, Math.trunc(offset)));
+  return commandClient.setStreamWindow(Math.max(0, Math.trunc(offset)));
 }
 
 export async function loadCropSettings() {

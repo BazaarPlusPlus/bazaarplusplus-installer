@@ -19,7 +19,7 @@ use crate::services::{
     detect::detect_for_install,
     startup::InstallerContextState,
 };
-use crate::stream::state::StreamRuntimeState;
+use crate::stream::runtime::StreamRuntime;
 
 const STEAM_BAZAAR_URL: &str = "steam://rungameid/1617400";
 
@@ -35,10 +35,10 @@ pub fn build_install_state(
 pub async fn run_reset_bpp_data(
     app: tauri::AppHandle,
     install_state: tauri::State<'_, InstallerContextState>,
-    stream_state: tauri::State<'_, StreamRuntimeState>,
+    stream_runtime: tauri::State<'_, StreamRuntime>,
     game_path: String,
 ) -> Result<ResetBppDataResult, String> {
-    let removed_data = reset_bpp_data(stream_state, game_path.clone()).await?;
+    let removed_data = reset_bpp_data(stream_runtime, game_path.clone()).await?;
     let state = build_install_state(app, install_state, Some(game_path))?;
     Ok(ResetBppDataResult {
         state,

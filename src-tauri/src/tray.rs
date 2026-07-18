@@ -32,16 +32,16 @@ pub fn build_tray(app: &tauri::AppHandle) -> tauri::Result<()> {
         .on_menu_event(|app, event| match event.id().as_ref() {
             "show_window" => show_main_window(app),
             "copy_obs_url" => {
-                let state = app.state::<crate::stream::state::StreamRuntimeState>();
-                if let Some(url) = state.snapshot().overlay_url {
+                let runtime = app.state::<crate::stream::runtime::StreamRuntime>();
+                if let Some(url) = runtime.snapshot().overlay_url {
                     let _ = copy_text_to_clipboard(&url);
                 }
             }
             "stop_stream_service" => {
                 let app_handle = app.clone();
                 tauri::async_runtime::spawn(async move {
-                    let state = app_handle.state::<crate::stream::state::StreamRuntimeState>();
-                    let _ = crate::stream::server::stop(state.inner()).await;
+                    let runtime = app_handle.state::<crate::stream::runtime::StreamRuntime>();
+                    let _ = runtime.stop().await;
                 });
             }
             "quit_app" => quit_app(app),
@@ -181,8 +181,8 @@ fn should_show_main_window_for_tray_event(event: &TrayIconEvent) -> bool {
 fn quit_app(app: &tauri::AppHandle) {
     let app_handle = app.clone();
     tauri::async_runtime::spawn(async move {
-        let state = app_handle.state::<crate::stream::state::StreamRuntimeState>();
-        let _ = crate::stream::server::stop(state.inner()).await;
+        let runtime = app_handle.state::<crate::stream::runtime::StreamRuntime>();
+        let _ = runtime.stop().await;
         app_handle.exit(0);
     });
 }

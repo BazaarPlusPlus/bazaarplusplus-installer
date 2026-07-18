@@ -9,7 +9,7 @@ use crate::services::{
     },
     startup::InstallerContextState,
 };
-use crate::stream::state::StreamRuntimeState;
+use crate::stream::runtime::StreamRuntime;
 
 #[tauri::command(async)]
 #[specta::specta]
@@ -59,10 +59,10 @@ pub async fn install_mod(
 pub async fn reset_bpp_data(
     app: tauri::AppHandle,
     install_state: tauri::State<'_, InstallerContextState>,
-    stream_state: tauri::State<'_, StreamRuntimeState>,
+    stream_runtime: tauri::State<'_, StreamRuntime>,
     game_path: String,
 ) -> Result<ResetBppDataResult, String> {
-    run_reset_bpp_data(app, install_state, stream_state, game_path).await
+    run_reset_bpp_data(app, install_state, stream_runtime, game_path).await
 }
 
 #[tauri::command]

@@ -37,7 +37,7 @@ pub fn run() {
         .manage(
             crate::services::selected_game_installation::SelectedGameInstallationState::default(),
         )
-        .manage(crate::stream::state::StreamRuntimeState::default())
+        .manage(crate::stream::runtime::StreamRuntime::default())
         .manage(InstallerContextState::default())
         .manage(TrayMenuState::default())
         .plugin(tauri_plugin_opener::init())
@@ -52,8 +52,8 @@ pub fn run() {
             });
             let app_handle = handle.clone();
             tauri::async_runtime::spawn(async move {
-                let state = app_handle.state::<crate::stream::state::StreamRuntimeState>();
-                let _ = crate::stream::server::start(app_handle.clone(), state.inner(), None).await;
+                let runtime = app_handle.state::<crate::stream::runtime::StreamRuntime>();
+                let _ = runtime.ensure(app_handle.clone(), None).await;
             });
             Ok(())
         })
@@ -66,8 +66,8 @@ pub fn run() {
             }
 
             if let WindowEvent::CloseRequested { api, .. } = event {
-                let state = window.state::<crate::stream::state::StreamRuntimeState>();
-                if state.snapshot().running {
+                let runtime = window.state::<crate::stream::runtime::StreamRuntime>();
+                if runtime.snapshot().running {
                     api.prevent_close();
                     let _ = window.hide();
                 }
