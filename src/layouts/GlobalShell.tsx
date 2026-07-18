@@ -1,5 +1,5 @@
 import { Outlet } from 'react-router-dom';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   AppBootstrapProvider,
   useAppBootstrap
@@ -10,12 +10,18 @@ import { ShellHeader } from './ShellHeader';
 import { ShellNavRail } from './ShellNavRail';
 import { ShellPaymentModal } from './ShellPaymentModal';
 import { ShellUpdateModal } from './ShellUpdateModal';
+import {
+  ModalCoordinatorProvider,
+  ModalSource
+} from '../components/ui/ModalCoordinator';
 
 export default function GlobalShell() {
   return (
     <AppBootstrapProvider>
       <UpdaterProvider>
-        <GlobalShellContent />
+        <ModalCoordinatorProvider>
+          <GlobalShellContent />
+        </ModalCoordinatorProvider>
       </UpdaterProvider>
     </AppBootstrapProvider>
   );
@@ -25,6 +31,8 @@ function GlobalShellContent() {
   const [showBilibili, setShowBilibili] = useState(false);
   const [showSupport, setShowSupport] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const bilibiliTriggerRef = useRef<HTMLButtonElement>(null);
+  const supportTriggerRef = useRef<HTMLButtonElement>(null);
   const app = useAppBootstrap();
   const updater = useUpdater();
 
@@ -32,12 +40,16 @@ function GlobalShellContent() {
   // behaviour these controlled dropdowns were missing.
   useEffect(() => {
     if (!showBilibili && !showSupport) return;
-    const closeMenus = () => {
+    const closeMenus = (restoreFocus = false) => {
+      const focusTarget = showBilibili
+        ? bilibiliTriggerRef.current
+        : supportTriggerRef.current;
       setShowBilibili(false);
       setShowSupport(false);
+      if (restoreFocus) queueMicrotask(() => focusTarget?.focus());
     };
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') closeMenus();
+      if (event.key === 'Escape') closeMenus(true);
     };
     const onPointerDown = (event: PointerEvent) => {
       const target = event.target as HTMLElement | null;
@@ -55,12 +67,14 @@ function GlobalShellContent() {
     <div className="flex flex-col h-full bg-[#0b0906] text-[#e8dcc8]">
       <ShellHeader
         app={app}
+        bilibiliTriggerRef={bilibiliTriggerRef}
         showBilibili={showBilibili}
         onToggleBilibili={() => {
           setShowBilibili((open) => !open);
           setShowSupport(false);
         }}
         showSupport={showSupport}
+        supportTriggerRef={supportTriggerRef}
         onToggleSupport={() => {
           setShowSupport((open) => !open);
           setShowBilibili(false);
@@ -75,7 +89,10 @@ function GlobalShellContent() {
 
       <div className="flex-1 flex overflow-hidden">
         <ShellNavRail />
-        <main className="flex-1 overflow-y-auto bg-transparent relative">
+        <main
+          tabIndex={-1}
+          className="flex-1 overflow-y-auto bg-transparent relative"
+        >
           <div
             className="absolute inset-0 pointer-events-none opacity-5"
             style={{
@@ -89,10 +106,31 @@ function GlobalShellContent() {
         </main>
       </div>
 
-      {showPaymentModal && (
+      <ModalSource
+        id="shell:payment"
+        open={showPaymentModal}
+        priority="informational"
+        dismissalPolicy="dismissible"
+        restoreFocusRef={supportTriggerRef}
+      >
         <ShellPaymentModal onClose={() => setShowPaymentModal(false)} />
-      )}
-      {isUpdateModalPhase(updater) && <ShellUpdateModal updater={updater} />}
+      </ModalSource>
+      <ModalSource
+        id="shell:update"
+        open={isUpdateModalPhase(updater)}
+        priority={
+          updater.phase === 'downloading' || updater.phase === 'installing'
+            ? 'critical'
+            : 'system'
+        }
+        dismissalPolicy={
+          updater.phase === 'downloading' || updater.phase === 'installing'
+            ? 'blocked'
+            : 'dismissible'
+        }
+      >
+        <ShellUpdateModal updater={updater} />
+      </ModalSource>
     </div>
   );
 }

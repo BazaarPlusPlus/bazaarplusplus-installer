@@ -1,4 +1,5 @@
 import { useEffect, useRef, type ReactNode } from 'react';
+import { useActiveModalDismissalPolicy } from './ModalCoordinator';
 
 /**
  * Modal dialog backed by the native <dialog> element. showModal() gives us the
@@ -21,6 +22,8 @@ export function Dialog({
   children: ReactNode;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
+  const dismissalPolicy = useActiveModalDismissalPolicy();
+  const dismissalBlocked = dismissalPolicy === 'blocked';
 
   useEffect(() => {
     const el = ref.current;
@@ -38,11 +41,13 @@ export function Dialog({
       onCancel={(event) => {
         // Escape fires `cancel`; we own the close so the parent state stays in sync.
         event.preventDefault();
-        onClose('escape');
+        if (!dismissalBlocked) onClose('escape');
       }}
       onClick={(event) => {
         // A click on the dialog itself (the backdrop area around the card) closes it.
-        if (event.target === event.currentTarget) onClose('backdrop');
+        if (!dismissalBlocked && event.target === event.currentTarget) {
+          onClose('backdrop');
+        }
       }}
     >
       {children}
