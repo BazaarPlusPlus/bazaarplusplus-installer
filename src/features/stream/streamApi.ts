@@ -1,37 +1,47 @@
 import { openUrl } from '@tauri-apps/plugin-opener';
 import { commandClient } from '../../api/commandClient';
+import type { CommandAdapter } from '../../api/commandAdapter';
 import { hasTauriRuntime } from '../../api/runtime';
-import type { StreamOverlayDisplayMode } from '../../types/backend';
+import type { StreamCommandPort, StreamOpener } from './streamWorkflow';
 
-export async function restartStreamSession() {
-  return commandClient.restartStreamSession(null);
+type StreamCommandAdapter = Pick<
+  CommandAdapter,
+  | 'ensureStreamSession'
+  | 'getStreamStatus'
+  | 'restartStreamSession'
+  | 'setStreamWindow'
+  | 'getOverlaySettings'
+  | 'applyOverlayCropCode'
+  | 'saveOverlayDisplayMode'
+  | 'resetOverlayCrop'
+>;
+
+/** Semantic adapter shared by native and Browser Preview command clients. */
+export function createStreamCommandPort(
+  commands: StreamCommandAdapter
+): StreamCommandPort {
+  return {
+    ensureSession: () => commands.ensureStreamSession(null),
+    getStatus: () => commands.getStreamStatus(),
+    restartSession: () => commands.restartStreamSession(null),
+    setWindow: (offset) => commands.setStreamWindow(offset),
+    loadCropSettings: () => commands.getOverlaySettings(),
+    applyCropCode: (code) => commands.applyOverlayCropCode(code),
+    saveDisplayMode: (displayMode) =>
+      commands.saveOverlayDisplayMode(displayMode),
+    resetCropSettings: () => commands.resetOverlayCrop()
+  };
 }
 
-export async function setStreamWindowOffset(offset: number) {
-  return commandClient.setStreamWindow(Math.max(0, Math.trunc(offset)));
-}
+export const streamCommandPort = createStreamCommandPort(commandClient);
 
-export async function loadCropSettings() {
-  return commandClient.getOverlaySettings();
-}
+export const streamOpener: StreamOpener = {
+  async open(url) {
+    if (hasTauriRuntime()) {
+      await openUrl(url);
+      return;
+    }
 
-export async function applyCropCode(code: string) {
-  return commandClient.applyOverlayCropCode(code);
-}
-
-export async function saveDisplayMode(displayMode: StreamOverlayDisplayMode) {
-  return commandClient.saveOverlayDisplayMode(displayMode);
-}
-
-export async function resetCropSettings() {
-  return commandClient.resetOverlayCrop();
-}
-
-export async function openExternal(url: string) {
-  if (hasTauriRuntime()) {
-    await openUrl(url);
-    return;
+    window.open(url, '_blank', 'noopener,noreferrer');
   }
-
-  window.open(url, '_blank', 'noopener,noreferrer');
-}
+};
