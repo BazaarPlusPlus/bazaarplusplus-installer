@@ -1,9 +1,7 @@
 import type { commands as generatedCommands } from '../types/generated/commands';
 
 type GeneratedCommands = typeof generatedCommands;
-type NullablePreviewCommand =
-  | 'getHistoryRunDetail'
-  | 'deleteBattleVideo';
+type NullablePreviewCommand = 'getHistoryRunDetail' | 'deleteBattleVideo';
 
 type AdaptCommand<K extends keyof GeneratedCommands> =
   GeneratedCommands[K] extends (...args: infer Args) => Promise<infer Result>

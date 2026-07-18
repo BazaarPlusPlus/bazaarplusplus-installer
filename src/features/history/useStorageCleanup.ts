@@ -23,10 +23,7 @@ export function useStorageCleanup(onCompleted: () => Promise<void> | void) {
     'preview' | 'execute'
   >();
 
-  const requestCleanup = (
-    scope: CleanupScope,
-    preset: StorageCleanupPreset
-  ) =>
+  const requestCleanup = (scope: CleanupScope, preset: StorageCleanupPreset) =>
     run('preview', async () => {
       setOutcome(null);
       const preview = await previewStorageCleanup(scope, preset);
