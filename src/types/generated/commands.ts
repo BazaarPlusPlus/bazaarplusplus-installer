@@ -21,16 +21,14 @@ export const commands = {
 	saveOverlayDisplayMode: (displayMode: StreamOverlayDisplayMode) => __TAURI_INVOKE<StreamOverlayCropSettingsPayload>("save_overlay_display_mode", { displayMode }),
 	applyOverlayCropCode: (code: string) => __TAURI_INVOKE<StreamOverlayCropSettingsPayload>("apply_overlay_crop_code", { code }),
 	resetOverlayCrop: () => __TAURI_INVOKE<StreamOverlayCropSettingsPayload>("reset_overlay_crop"),
-	listHistoryRuns: (gamePath: string | null, limit: number | null) => __TAURI_INVOKE<HistoryRunList>("list_history_runs", { gamePath, limit }),
-	getHistoryRunDetail: (gamePath: string | null, runId: string) => __TAURI_INVOKE<HistoryRunDetail>("get_history_run_detail", { gamePath, runId }),
-	revealRunScreenshot: (gamePath: string | null, runId: string) => __TAURI_INVOKE<null>("reveal_run_screenshot", { gamePath, runId }),
-	revealBattleVideo: (gamePath: string | null, battleId: string, videoId: string | null) => __TAURI_INVOKE<null>("reveal_battle_video", { gamePath, battleId, videoId }),
-	deleteBattleVideo: (gamePath: string | null, battleId: string, videoId: string) => __TAURI_INVOKE<HistoryRunDetail>("delete_battle_video", { gamePath, battleId, videoId }),
-	deleteRunVideos: (gamePath: string | null, runId: string, limit: number | null) => __TAURI_INVOKE<HistoryRunList>("delete_run_videos", { gamePath, runId, limit }),
-	previewScreenshotCleanup: (gamePath: string | null, preset: CleanupPreset) => __TAURI_INVOKE<ScreenshotCleanupPreview>("preview_screenshot_cleanup", { gamePath, preset }),
-	executeScreenshotCleanup: (gamePath: string | null, preset: CleanupPreset) => __TAURI_INVOKE<ScreenshotCleanupResult>("execute_screenshot_cleanup", { gamePath, preset }),
-	previewRunDataCleanup: (gamePath: string | null, preset: CleanupPreset) => __TAURI_INVOKE<RunDataCleanupPreview>("preview_run_data_cleanup", { gamePath, preset }),
-	executeRunDataCleanup: (gamePath: string | null, preset: CleanupPreset) => __TAURI_INVOKE<RunDataCleanupResult>("execute_run_data_cleanup", { gamePath, preset }),
+	listHistoryRuns: (limit: number | null) => __TAURI_INVOKE<HistoryRunList>("list_history_runs", { limit }),
+	getHistoryRunDetail: (runId: string) => __TAURI_INVOKE<HistoryRunDetail>("get_history_run_detail", { runId }),
+	revealRunScreenshot: (runId: string) => __TAURI_INVOKE<null>("reveal_run_screenshot", { runId }),
+	revealBattleVideo: (battleId: string, videoId: string | null) => __TAURI_INVOKE<null>("reveal_battle_video", { battleId, videoId }),
+	deleteBattleVideo: (battleId: string, videoId: string) => __TAURI_INVOKE<HistoryRunDetail>("delete_battle_video", { battleId, videoId }),
+	deleteRunVideos: (runId: string, limit: number | null) => __TAURI_INVOKE<HistoryRunList>("delete_run_videos", { runId, limit }),
+	previewStorageCleanup: (scope: StorageCleanupScope, preset: StorageCleanupPreset) => __TAURI_INVOKE<StorageCleanupPreview>("preview_storage_cleanup", { scope, preset }),
+	executeStorageCleanup: (scope: StorageCleanupScope, preset: StorageCleanupPreset) => __TAURI_INVOKE<StorageCleanupExecution>("execute_storage_cleanup", { scope, preset }),
 };
 
 /* Types */
@@ -69,9 +67,6 @@ export type AppLinks = {
 export type AppLocalePayload = {
 	locale: string,
 };
-
-/**  Wire strings are a stable contract with the frontend preset buttons. */
-export type CleanupPreset = "all" | "older_than_7_days" | "before_this_month";
 
 export type FileActionResult = {
 	ok: boolean,
@@ -251,6 +246,15 @@ export type ScreenshotCleanupResult = {
 	freed_bytes: number,
 	skipped_pending_uploads: number,
 };
+
+export type StorageCleanupExecution = { scope: "screenshots"; result: ScreenshotCleanupResult } | { scope: "run_data"; result: RunDataCleanupResult };
+
+/**  Wire strings are a stable contract with the frontend preset buttons. */
+export type StorageCleanupPreset = "all" | "older_than_7_days" | "before_this_month";
+
+export type StorageCleanupPreview = { scope: "screenshots"; preview: ScreenshotCleanupPreview } | { scope: "run_data"; preview: RunDataCleanupPreview };
+
+export type StorageCleanupScope = "screenshots" | "run_data";
 
 export type StreamDbStatus = {
 	found: boolean,

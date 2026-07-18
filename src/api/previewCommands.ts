@@ -3,6 +3,10 @@ import {
   defaultCropSettings,
   emptyHistoryRunList,
   emptyInstallState,
+  emptyRunDataCleanupPreview,
+  emptyRunDataCleanupResult,
+  emptyScreenshotCleanupPreview,
+  emptyScreenshotCleanupResult,
   fallbackBootstrap,
   idleStreamStatus
 } from './previewDefaults';
@@ -34,10 +38,14 @@ export function createPreviewCommands(native: CommandAdapter): CommandAdapter {
     revealRunScreenshot: async () => null,
     revealBattleVideo: async () => null,
     deleteBattleVideo: async () => null,
-    deleteRunVideos: (...args) => native.deleteRunVideos(...args),
-    previewScreenshotCleanup: async () => null,
-    executeScreenshotCleanup: async () => null,
-    previewRunDataCleanup: async () => null,
-    executeRunDataCleanup: async () => null
+    deleteRunVideos: async () => emptyHistoryRunList,
+    previewStorageCleanup: async (scope) =>
+      scope === 'screenshots'
+        ? { scope, preview: emptyScreenshotCleanupPreview }
+        : { scope, preview: emptyRunDataCleanupPreview },
+    executeStorageCleanup: async (scope) =>
+      scope === 'screenshots'
+        ? { scope, result: emptyScreenshotCleanupResult }
+        : { scope, result: emptyRunDataCleanupResult }
   } satisfies CommandAdapter;
 }

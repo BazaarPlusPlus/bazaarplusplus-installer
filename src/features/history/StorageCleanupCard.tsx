@@ -2,7 +2,7 @@ import { ChevronRight, Trash2 } from 'lucide-react';
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 import { ErrorBanner } from '../../components/ui/ErrorBanner';
 import { useI18n } from '../../i18n/LocaleProvider';
-import type { CleanupPreset } from '../../types/backend';
+import type { StorageCleanupPreset } from '../../types/backend';
 import { formatBytes } from './format';
 import {
   useStorageCleanup,
@@ -12,7 +12,7 @@ import {
 } from './useStorageCleanup';
 
 const PRESETS: Array<{
-  preset: CleanupPreset;
+  preset: StorageCleanupPreset;
   labelKey:
     | 'storageCleanupPresetBeforeThisMonth'
     | 'storageCleanupPresetOlderThan7Days'
@@ -152,7 +152,7 @@ function CleanupRow({
   busy: boolean;
   onSelect: (
     scope: CleanupScope,
-    preset: CleanupPreset
+    preset: StorageCleanupPreset
   ) => Promise<boolean> | void;
 }) {
   const { t } = useI18n();

@@ -1,13 +1,13 @@
-pub mod cleanup;
-pub mod dto;
-pub mod files;
-pub mod mapper;
-pub mod queries;
-pub mod repo;
-pub mod screenshots;
+pub(crate) mod cleanup;
+mod dto;
+mod files;
+pub(crate) mod mapper;
+mod queries;
+mod repo;
+pub(crate) mod screenshots;
 
-pub use dto::{HistoryRunDetail, HistoryRunList, HistorySummary};
-pub use repo::{
+pub(crate) use dto::{HistoryRunDetail, HistoryRunList};
+pub(crate) use repo::{
     delete_battle_video, delete_run_videos, get_history_run_detail, list_history_runs,
     load_battle_video_path, load_run_id_for_battle, load_run_screenshot_path,
 };

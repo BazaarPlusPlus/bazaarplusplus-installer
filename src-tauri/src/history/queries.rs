@@ -64,8 +64,7 @@ pub fn table_exists(conn: &Connection, table_name: &str) -> Result<bool, String>
 }
 
 pub fn sql_placeholders(count: usize) -> String {
-    std::iter::repeat("?")
-        .take(count)
+    std::iter::repeat_n("?", count)
         .collect::<Vec<_>>()
         .join(", ")
 }
@@ -76,8 +75,8 @@ pub fn load_summary(conn: &Connection) -> Result<HistorySummary, String> {
             "
             select
               count(*) as runs,
-              sum(case when status = 'completed' then 1 else 0 end) as completed_runs,
-              sum(case when status = 'completed' and coalesce(victories, 0) >= 10 then 1 else 0 end) as win_runs,
+              coalesce(sum(case when status = 'completed' then 1 else 0 end), 0) as completed_runs,
+              coalesce(sum(case when status = 'completed' and coalesce(victories, 0) >= 10 then 1 else 0 end), 0) as win_runs,
               max(coalesce(ended_at_utc, last_seen_at_utc, started_at_utc)) as last_run_at_utc
             from runs
             ",

@@ -21,9 +21,52 @@ describe('browser-preview command adapter', () => {
     expect(await commandClient.setStreamWindow(3)).toBe(idleStreamStatus);
     expect(await commandClient.getOverlaySettings()).toBe(defaultCropSettings);
     expect(await commandClient.resetOverlayCrop()).toBe(defaultCropSettings);
-    expect(await commandClient.listHistoryRuns(null, null)).toBe(
-      emptyHistoryRunList
-    );
+    expect(await commandClient.listHistoryRuns(null)).toBe(emptyHistoryRunList);
+    expect(
+      await commandClient.previewStorageCleanup('screenshots', 'all')
+    ).toEqual({
+      scope: 'screenshots',
+      preview: {
+        screenshots: 0,
+        orphan_files: 0,
+        estimated_bytes: 0,
+        skipped_pending_uploads: 0
+      }
+    });
+    expect(
+      await commandClient.previewStorageCleanup('run_data', 'all')
+    ).toEqual({
+      scope: 'run_data',
+      preview: {
+        runs: 0,
+        battles: 0,
+        videos: 0,
+        estimated_bytes: 0,
+        skipped_pending_uploads: 0
+      }
+    });
+    expect(
+      await commandClient.executeStorageCleanup('screenshots', 'all')
+    ).toEqual({
+      scope: 'screenshots',
+      result: {
+        deleted_rows: 0,
+        deleted_files: 0,
+        freed_bytes: 0,
+        skipped_pending_uploads: 0
+      }
+    });
+    expect(
+      await commandClient.executeStorageCleanup('run_data', 'all')
+    ).toEqual({
+      scope: 'run_data',
+      result: {
+        deleted_runs: 0,
+        deleted_files: 0,
+        freed_bytes: 0,
+        skipped_pending_uploads: 0
+      }
+    });
     expect(await commandClient.getAppBootstrap()).toBe(fallbackBootstrap);
   });
 
@@ -46,23 +89,17 @@ describe('browser-preview command adapter', () => {
   });
 
   it('preserves nullable desktop-only preview results', async () => {
-    const preset = 'all';
-    expect(await commandClient.getHistoryRunDetail(null, 'r')).toBeNull();
-    expect(await commandClient.deleteBattleVideo(null, 'b', 'v')).toBeNull();
-    expect(
-      await commandClient.previewScreenshotCleanup(null, preset)
-    ).toBeNull();
-    expect(
-      await commandClient.executeScreenshotCleanup(null, preset)
-    ).toBeNull();
-    expect(await commandClient.previewRunDataCleanup(null, preset)).toBeNull();
-    expect(await commandClient.executeRunDataCleanup(null, preset)).toBeNull();
+    expect(await commandClient.getHistoryRunDetail('r')).toBeNull();
+    expect(await commandClient.deleteBattleVideo('b', 'v')).toBeNull();
+    expect(await commandClient.deleteRunVideos('r', null)).toBe(
+      emptyHistoryRunList
+    );
   });
 
   it('returns typed locale state and null for Tauri unit-returning no-ops', async () => {
     expect(await commandClient.setAppLocale('en')).toEqual({ locale: 'en' });
-    expect(await commandClient.revealRunScreenshot(null, 'r')).toBeNull();
-    expect(await commandClient.revealBattleVideo(null, 'b', null)).toBeNull();
+    expect(await commandClient.revealRunScreenshot('r')).toBeNull();
+    expect(await commandClient.revealBattleVideo('b', null)).toBeNull();
   });
 
   it('keeps preview bootstrap and install gates wired to real defaults', () => {

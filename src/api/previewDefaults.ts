@@ -5,6 +5,10 @@ import type {
   AppBootstrap,
   HistoryRunList,
   InstallState,
+  RunDataCleanupPreview,
+  RunDataCleanupResult,
+  ScreenshotCleanupPreview,
+  ScreenshotCleanupResult,
   StreamOverlayCropSettingsPayload,
   StreamServiceStatus
 } from '../types/backend';
@@ -90,6 +94,35 @@ export const emptyHistoryRunList: HistoryRunList = {
     win_rate: null
   },
   runs: []
+};
+
+export const emptyScreenshotCleanupPreview: ScreenshotCleanupPreview = {
+  screenshots: 0,
+  orphan_files: 0,
+  estimated_bytes: 0,
+  skipped_pending_uploads: 0
+};
+
+export const emptyRunDataCleanupPreview: RunDataCleanupPreview = {
+  runs: 0,
+  battles: 0,
+  videos: 0,
+  estimated_bytes: 0,
+  skipped_pending_uploads: 0
+};
+
+export const emptyScreenshotCleanupResult: ScreenshotCleanupResult = {
+  deleted_rows: 0,
+  deleted_files: 0,
+  freed_bytes: 0,
+  skipped_pending_uploads: 0
+};
+
+export const emptyRunDataCleanupResult: RunDataCleanupResult = {
+  deleted_runs: 0,
+  deleted_files: 0,
+  freed_bytes: 0,
+  skipped_pending_uploads: 0
 };
 
 export const fallbackBootstrap: AppBootstrap = {
