@@ -1,13 +1,15 @@
 ---
 status: truth
 topic: history-stream
-last-verified: faefb505c5717c3da3a71fc2361315ad2fb6658a
+last-verified: 77052422cac58e15f7c8c6e88e6b4eaaf15b99a1
 ---
 
 # History And Stream
 
 ## History Data Access
 
+- The History facade resolves the current Selected game installation, privately derives database/game/video storage paths, and owns list, detail, reveal, delete, and cleanup operations in `src-tauri/src/services/history.rs:45-69` and `src-tauri/src/services/history.rs:71-213`; absence of an installation with a database returns one domain error rather than borrowing Stream state.
+- Tauri History commands pass only domain inputs such as ids, limits, cleanup scope, and preset to the facade; command signatures contain no database, game, video-directory, cutoff, or cleanup-plan values in `src-tauri/src/commands/history.rs:6-78`.
 - History reads open the BazaarPlusPlus SQLite database read-only with a two-second busy timeout in `src-tauri/src/history/queries.rs:29-35`.
 - Write access is separate and uses `SQLITE_OPEN_READ_WRITE` in `src-tauri/src/history/queries.rs:37-43`.
 - History summary counts runs, completed runs, wins, latest run timestamp, and completed combat replay videos in `src-tauri/src/history/queries.rs:73-109`.
@@ -23,10 +25,10 @@ last-verified: faefb505c5717c3da3a71fc2361315ad2fb6658a
 
 ## Storage Cleanup
 
-- Tauri exposes preview and execute commands for screenshot cleanup and run-data cleanup in `src-tauri/src/commands/history.rs:103-145`, and all four commands are registered in `src-tauri/src/commands/registry.rs:29-32`.
-- The cleanup presets are the wire strings `all`, `older_than_7_days`, and `before_this_month`; `CleanupCutoff::for_preset` computes non-`all` cutoffs from local time and stores UTC strings for SQL comparisons in `src-tauri/src/history/cleanup.rs:9-73`. A non-`all` preset never collapses to `None` (the wire meaning of `all`): a spring-forward DST gap at local month-start falls back to local noon.
+- Tauri exposes only `preview_storage_cleanup(scope, preset)` and `execute_storage_cleanup(scope, preset)` in `src-tauri/src/commands/history.rs:60-78`. Their Specta-generated results are Serde scope-tagged unions for `screenshots` and `run_data` in `src-tauri/src/services/history.rs:24-43`.
+- The cleanup presets are the wire strings `all`, `older_than_7_days`, and `before_this_month`; `CleanupCutoff::for_preset` computes non-`all` cutoffs from local time and stores UTC strings for SQL comparisons in `src-tauri/src/history/cleanup.rs:9-71`. A non-`all` preset never collapses to `None` (the wire meaning of `all`): a spring-forward DST gap at local month-start falls back to local noon.
 - Screenshot cleanup plans and executes against `end_of_run_auto` rows, skips pending BazaarDB screenshot uploads, compares captured timestamps with `datetime()`, protects files still referenced by surviving rows, and sweeps orphan dated-folder files plus stale `UploadCache` copies in `src-tauri/src/history/cleanup.rs:123-174` and `src-tauri/src/history/cleanup.rs:187-255`.
-- The orphan sweep skips any folder whose local date is at or after `min(cutoff_date, today_local_date)`, so today's local-date folder is always protected — even under preset `all`, where there is no cutoff — because the mod writes a screenshot's PNG (through an atomic `<name>.png.<guid>.tmp` rename) before it inserts the matching `run_screenshots` row, and an in-flight, not-yet-rowed file would otherwise be swept. `today_local_date` is derived from the same `chrono::Local::now()` that builds the cutoff in `src-tauri/src/services/history.rs:100-129` and threaded into `scan_orphan_screenshot_files` at `src-tauri/src/history/cleanup.rs:992-1056` (a capture straddling local midnight into yesterday's folder is a known, unclosed sub-second window).
+- The orphan sweep skips any folder whose local date is at or after `min(cutoff_date, today_local_date)`, so today's local-date folder is always protected — even under preset `all`, where there is no cutoff — because the mod writes a screenshot's PNG (through an atomic `<name>.png.<guid>.tmp` rename) before it inserts the matching `run_screenshots` row, and an in-flight, not-yet-rowed file would otherwise be swept. `today_local_date` is derived from the same `chrono::Local::now()` that builds the cutoff in `src-tauri/src/services/history.rs:143-199` and threaded into `scan_orphan_screenshot_files` at `src-tauri/src/history/cleanup.rs:992-1056` (a capture straddling local midnight into yesterday's folder is a known, unclosed sub-second window).
 - Run-data cleanup plans only non-active runs, skips upload-unsafe completed Ranked dirty runs, replay-dirty battles, and pending screenshot uploads, and protects screenshot/video files still referenced by kept rows in `src-tauri/src/history/cleanup.rs:308-398`.
 - Run-data execution opens the FK-enabled cleanup connection, validates required cascade foreign keys before removing files, deletes replay videos, replay payloads, and eligible screenshots before deleting rows, then removes video rows, screenshot rows, and `runs` rows without directly deleting `battles`; cleanup file resolution refuses drive-relative escapes in `src-tauri/src/history/cleanup.rs:411-524`.
 - The FK-enabled cleanup connection turns on `PRAGMA foreign_keys = ON` in `src-tauri/src/history/queries.rs:49-54`, so current-schema `runs` deletes cascade to run-owned child rows while ghost battles remain outside run cleanup.

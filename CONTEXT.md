@@ -1,7 +1,7 @@
 ---
 status: truth
 topic: context
-last-verified: faefb505c5717c3da3a71fc2361315ad2fb6658a
+last-verified: 77052422cac58e15f7c8c6e88e6b4eaaf15b99a1
 ---
 
 # BazaarPlusPlus Installer Context
@@ -27,9 +27,9 @@ Current behavior truth lives under `docs/truth/` (topic-sliced, code-cited, hash
 - **InstallState** — the frontend/backend contract for the install page: paths, game/mod state, compat state, action gates, warnings (`src-tauri/src/services/install/types.rs:3-19`).
 - **Selected game installation** — the one session-scoped The Bazaar installation shared by Install, History, and Stream. Valid explicit paths update it; resolution then uses explicit, selected, startup-detected, and fallback priority. It is held only in managed memory and is recreated empty on app restart (`src-tauri/src/services/selected_game_installation.rs:14-115`, `src-tauri/src/lib.rs:37-40`).
 - **Reset (local data)** — the only flow that deletes the mod's `BazaarPlusPlusV4/` data directory; explicit, confirmed, refused while the game runs, and performed under exclusive stream-runtime maintenance (`src-tauri/src/services/bepinex/mod.rs:20-62`, `src-tauri/src/stream/runtime.rs:100-108`). Uninstall never touches it.
-- **History** — the installer's read-only view of the mod-owned SQLite database (`src-tauri/src/history/queries.rs:29-35`); the database is created and written by the mod.
+- **History** — the facade around the Selected game installation's mod-owned SQLite database, including reads, detail, reveal, video deletion, and storage cleanup (`src-tauri/src/services/history.rs:45-213`); the database is created and primarily written by the mod.
 - **Stream runtime / overlay** — the single serialized owner of the local Axum service lifecycle, window selection, and exclusive maintenance; the production service remains on `127.0.0.1:17654` and serves the OBS overlay and settings pages (`src-tauri/src/stream/runtime.rs:43-108`, `src-tauri/src/stream/server.rs:16-69`).
-- **Storage cleanup** — preset-driven deletion of old screenshots and run data with upload-safety and referenced-file protections (`src-tauri/src/history/cleanup.rs`).
+- **Storage cleanup** — preset-driven deletion of old screenshots and run data with upload-safety and referenced-file protections; its IPC is the two scope-tagged preview/execute operations (`src-tauri/src/commands/history.rs:60-78`, `src-tauri/src/services/history.rs:24-43`).
 - **Generated bindings** — `src/types/generated/commands.ts`, emitted by `npm run generate:bindings` from the same Specta builder that registers the Tauri invoke handler; never hand-edited (`src-tauri/src/commands/registry.rs:3-50`, `scripts/generate-bindings.mjs:86-118`).
 
 ## Current Topics

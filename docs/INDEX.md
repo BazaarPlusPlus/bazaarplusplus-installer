@@ -15,12 +15,12 @@ Last full citation verification: `2026-07-11` on `4366cda394fe304066b55564c3c44d
 | `README.md` | project entrypoint | current-entrypoint | 2026-07-11 |
 | `.trae/rules/git-commit-message.md` | ignored local rule | ignored-operational | n/a |
 | `docs/INDEX.md` | documentation manifest | manifest | 2026-07-11 |
-| `CONTEXT.md` | entry map + glossary | truth | `faefb505c5717c3da3a71fc2361315ad2fb6658a` |
-| `docs/truth/architecture.md` | architecture | truth | `faefb505c5717c3da3a71fc2361315ad2fb6658a` |
-| `docs/truth/frontend.md` | frontend | truth | `5953080a80db8ddfbc8419b869d6b0461c5d4862` |
+| `CONTEXT.md` | entry map + glossary | truth | `77052422cac58e15f7c8c6e88e6b4eaaf15b99a1` |
+| `docs/truth/architecture.md` | architecture | truth | `77052422cac58e15f7c8c6e88e6b4eaaf15b99a1` |
+| `docs/truth/frontend.md` | frontend | truth | `77052422cac58e15f7c8c6e88e6b4eaaf15b99a1` |
 | `docs/truth/install-reset.md` | install-reset | truth | `faefb505c5717c3da3a71fc2361315ad2fb6658a` |
 | `docs/truth/launch-modes.md` | launch-modes | truth | `4366cda394fe304066b55564c3c44d1f917a2273` |
-| `docs/truth/history-stream.md` | history-stream | truth | `faefb505c5717c3da3a71fc2361315ad2fb6658a` |
+| `docs/truth/history-stream.md` | history-stream | truth | `77052422cac58e15f7c8c6e88e6b4eaaf15b99a1` |
 | `docs/truth/updater-release.md` | updater-release | truth | `4366cda394fe304066b55564c3c44d1f917a2273` |
 | `docs/truth/verification.md` | verification | truth | `5953080a80db8ddfbc8419b869d6b0461c5d4862` |
 | `docs/plans/architecture-deepening.md` | architecture-deepening | active-plan | `3eae49ccb359e7db4fbca47d94136cda6ccc2dbe` |

@@ -1,7 +1,7 @@
 ---
 status: truth
 topic: frontend
-last-verified: 5953080a80db8ddfbc8419b869d6b0461c5d4862
+last-verified: 77052422cac58e15f7c8c6e88e6b4eaaf15b99a1
 ---
 
 # Frontend
@@ -24,8 +24,8 @@ last-verified: 5953080a80db8ddfbc8419b869d6b0461c5d4862
 ## Runtime Seam
 
 - `commandClient` selects the normalized generated native client or Browser Preview adapter once at module load in `src/api/commandClient.ts:1-10`; feature APIs call typed command functions rather than command strings.
-- Both adapters implement a contract derived from the generated command object in `src/api/commandAdapter.ts:1-22`. The native adapter normalizes backend rejections in `src/api/nativeCommands.ts:4-33`, while Preview declares every generated operation in `src/api/previewCommands.ts:10-43`.
-- Shared install, stream, crop, history, and bootstrap preview values live in the leaf module `src/api/previewDefaults.ts`; Preview reuses those object references in `src/api/previewCommands.ts:12-32` so polling preserves React state bailouts.
+- Both adapters implement a contract derived from the generated command object in `src/api/commandAdapter.ts:1-18`. The native adapter normalizes backend rejections in `src/api/nativeCommands.ts:4-33`, while Preview declares every generated operation and returns scope-tagged cleanup values for both scopes in `src/api/previewCommands.ts:14-51`.
+- Shared install, stream, crop, history, cleanup, and bootstrap preview values live in the leaf module `src/api/previewDefaults.ts`; Preview reuses those object references in `src/api/previewCommands.ts:16-50` so polling preserves React state bailouts.
 
 ## Current Product Surfaces
 
@@ -35,6 +35,7 @@ last-verified: 5953080a80db8ddfbc8419b869d6b0461c5d4862
 - History summary cards are Runs, Videos, and Win Rate in `src/pages/History.tsx:37-50`.
 - History rows link to details, show lazy-decoded preview images when available, and display hero, date, result, progress, rank, and rating in `src/pages/History.tsx:101-178`.
 - Run detail shows a hero/result header, run stats, screenshot reveal, and a battle table with fixed columns and video reveal/delete actions in `src/pages/RunDetail.tsx:52-176` and `src/pages/RunDetail.tsx:222-319`.
+- Storage cleanup submits only generated `StorageCleanupScope` plus `StorageCleanupPreset`, retains the tagged preview/execution result, and narrows on `scope` when rendering screenshot versus run-data copy in `src/features/history/useStorageCleanup.ts:1-59` and `src/features/history/StorageCleanupCard.tsx:32-77`.
 
 ## Update Modal
 
