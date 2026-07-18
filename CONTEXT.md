@@ -1,7 +1,7 @@
 ---
 status: truth
 topic: context
-last-verified: 4366cda394fe304066b55564c3c44d1f917a2273
+last-verified: 5953080a80db8ddfbc8419b869d6b0461c5d4862
 ---
 
 # BazaarPlusPlus Installer Context
@@ -29,7 +29,7 @@ Current behavior truth lives under `docs/truth/` (topic-sliced, code-cited, hash
 - **History** — the installer's read-only view of the mod-owned SQLite database (`src-tauri/src/history/queries.rs:29-35`); the database is created and written by the mod.
 - **Stream service / overlay** — the local Axum HTTP service on `127.0.0.1:17654` serving the OBS overlay and settings pages (`src-tauri/src/stream/server.rs:16-17`).
 - **Storage cleanup** — preset-driven deletion of old screenshots and run data with upload-safety and referenced-file protections (`src-tauri/src/history/cleanup.rs`).
-- **Generated bindings** — `src/types/generated/**`, emitted by `npm run generate:bindings` from the Rust command registry; never hand-edited (`src-tauri/src/commands/registry.rs:3-58`).
+- **Generated bindings** — `src/types/generated/commands.ts`, emitted by `npm run generate:bindings` from the same Specta builder that registers the Tauri invoke handler; never hand-edited (`src-tauri/src/commands/registry.rs:3-50`, `scripts/generate-bindings.mjs:86-118`).
 
 ## Current Topics
 

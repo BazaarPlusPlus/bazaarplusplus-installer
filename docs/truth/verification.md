@@ -1,7 +1,7 @@
 ---
 status: truth
 topic: verification
-last-verified: 4366cda394fe304066b55564c3c44d1f917a2273
+last-verified: 5953080a80db8ddfbc8419b869d6b0461c5d4862
 ---
 
 # Verification
@@ -20,6 +20,7 @@ Use the smallest command that verifies the changed behavior.
 ## Generated Binding Guard
 
 - `scripts/prebuild-check.mjs` runs `npm run generate:bindings`, then checks git porcelain under the generated types directory and errors if generated bindings are out of date in `scripts/prebuild-check.mjs:302-324`.
+- Generator tests verify atomic replacement plus missing/empty artifact failures in `scripts/generate-bindings.test.mjs:8-69`, and the generated-client test verifies a multi-field Rust signature becomes the expected Tauri payload in `src/api/generatedCommands.test.ts:9-22`.
 - The full prebuild check calls binding, version, ZIP, and macOS trampoline stub checks in `scripts/prebuild-check.mjs:326-346`.
 
 ## Version Guard

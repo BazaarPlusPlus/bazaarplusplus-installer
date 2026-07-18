@@ -1,7 +1,7 @@
 ---
 status: truth
 topic: frontend
-last-verified: 4366cda394fe304066b55564c3c44d1f917a2273
+last-verified: 5953080a80db8ddfbc8419b869d6b0461c5d4862
 ---
 
 # Frontend
@@ -23,9 +23,9 @@ last-verified: 4366cda394fe304066b55564c3c44d1f917a2273
 
 ## Runtime Seam
 
-- Tauri command wrappers dispatch through `invokeOrFallback`, which uses native `invoke` when the runtime is present and otherwise resolves the command's centralized preview behavior in `src/api/tauri.ts:142-193`.
-- `PREVIEW_FALLBACKS` is exhaustive over the generated `TauriCommandName` union, so adding a generated command requires declaring its command-map entry and preview behavior at compile time in `src/api/previewFallbacks.ts:11-79`.
-- Shared install, stream, crop, history, and bootstrap preview values live in the leaf module `src/api/previewDefaults.ts:1-103`; consumers and fallbacks reuse the same object references so preview polling preserves React state bailouts.
+- `commandClient` selects the normalized generated native client or Browser Preview adapter once at module load in `src/api/commandClient.ts:1-10`; feature APIs call typed command functions rather than command strings.
+- Both adapters implement a contract derived from the generated command object in `src/api/commandAdapter.ts:1-22`. The native adapter normalizes backend rejections in `src/api/nativeCommands.ts:4-33`, while Preview declares every generated operation in `src/api/previewCommands.ts:10-43`.
+- Shared install, stream, crop, history, and bootstrap preview values live in the leaf module `src/api/previewDefaults.ts`; Preview reuses those object references in `src/api/previewCommands.ts:12-32` so polling preserves React state bailouts.
 
 ## Current Product Surfaces
 

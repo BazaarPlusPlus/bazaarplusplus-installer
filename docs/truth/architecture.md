@@ -1,7 +1,7 @@
 ---
 status: truth
 topic: architecture
-last-verified: 4366cda394fe304066b55564c3c44d1f917a2273
+last-verified: 5953080a80db8ddfbc8419b869d6b0461c5d4862
 ---
 
 # Architecture
@@ -10,7 +10,7 @@ last-verified: 4366cda394fe304066b55564c3c44d1f917a2273
 
 - `package.json` defines the desktop app package as `bppinstaller` and exposes the development, build, test, type-check, and Tauri scripts in `package.json:2-21`; its `version` field is the single version source (see version sync below).
 - The frontend is built by Vite from `src/`; the Tauri config invokes `npm run dev` for development and `npm run prebuild-check && npm run build` before bundle creation in `src-tauri/tauri.conf.json:6-11`.
-- The main desktop shell is Rust/Tauri. It registers native plugins and shared state in `src-tauri/src/lib.rs:18-39`, then registers command handlers and runs the generated Tauri context in `src-tauri/src/lib.rs:72-74`.
+- The main desktop shell is Rust/Tauri. It registers native plugins and shared state in `src-tauri/src/lib.rs:19-40`, then uses the canonical Specta builder's invoke handler and runs the generated Tauri context in `src-tauri/src/lib.rs:73-75`.
 - The main window is configured as a 1000 x 720 window with 900 x 640 minimum dimensions in `src-tauri/tauri.conf.json:13-21`.
 
 ## Native Runtime
@@ -29,7 +29,8 @@ last-verified: 4366cda394fe304066b55564c3c44d1f917a2273
 ## Build And Generated Artifacts
 
 - `npm run check` generates TypeScript bindings and runs `tsc --noEmit`; `npm run test` combines generated bindings, Rust tests, and Vitest in `package.json:13-20`.
-- The Tauri command list is authored solely in `with_commands!` in `src-tauri/src/commands/registry.rs:3-58`; `npm run generate:bindings` runs `cargo test export_bindings`, whose `export_bindings_tauri_command_names` test emits the macro-expanded names for `scripts/generate-bindings.mjs` to validate and write into `src/types/generated/tauri-command-names.ts` in `src-tauri/src/commands/registry.rs:64-88` and `scripts/generate-bindings.mjs:103-165`.
+- The Tauri IPC schema is authored in Rust command signatures and collected once by the Specta builder in `src-tauri/src/commands/registry.rs:3-38`; the same builder supplies the production invoke handler in `src-tauri/src/lib.rs:17-17` and `src-tauri/src/lib.rs:73-73` and exports typed command functions plus DTOs in `src-tauri/src/commands/registry.rs:40-51`.
+- `npm run generate:bindings` exports to a temporary directory, validates and normalizes `commands.ts`, and atomically replaces `src/types/generated/` while restoring the previous directory on replacement failure in `scripts/generate-bindings.mjs:20-84` and `scripts/generate-bindings.mjs:86-118`.
 - Version sync treats `package.json` as the source, then writes package-lock.json (both root `version` fields), Tauri config, Cargo.toml, and Cargo.lock versions in `scripts/version-sync.mjs:195-206`; `npm run prebuild-check` fails on any misalignment via `collectVersionSnapshot` in `scripts/prebuild-check.mjs:329-331`.
 - `npm run prebuild-check` verifies generated bindings, version alignment, platform ZIP payloads, and the macOS trampoline stub when applicable in `scripts/prebuild-check.mjs:326-346`.
 - Tauri updater artifacts are enabled in the Tauri bundle config in `src-tauri/tauri.conf.json:27-30`.
