@@ -32,6 +32,7 @@ const zh = {
   socialBilibili: 'B 站',
   bilibiliProjectSubtitle: '教程、演示和项目内容',
   bilibiliAuthorSubtitle: 'BazaarLine 作者',
+  bilibiliCoreDevSubtitle: 'CoreDev',
 
   // Support menu + payment modal
   wechatPay: '微信支付',
@@ -287,6 +288,7 @@ const en: Record<MessageKey, string> = {
   socialBilibili: 'Bilibili',
   bilibiliProjectSubtitle: 'Tutorials, demos, and project content',
   bilibiliAuthorSubtitle: 'BazaarLine author',
+  bilibiliCoreDevSubtitle: 'CoreDev',
 
   wechatPay: 'WeChat Pay',
   wechatPayOpen: 'Open QR code',
