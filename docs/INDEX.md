@@ -16,8 +16,8 @@ Last full citation verification: `2026-07-11` on `4366cda394fe304066b55564c3c44d
 | `.trae/rules/git-commit-message.md` | ignored local rule | ignored-operational | n/a |
 | `docs/INDEX.md` | documentation manifest | manifest | 2026-07-11 |
 | `CONTEXT.md` | entry map + glossary | truth | `4366cda394fe304066b55564c3c44d1f917a2273` |
-| `docs/truth/architecture.md` | architecture | truth | `4366cda394fe304066b55564c3c44d1f917a2273` |
-| `docs/truth/frontend.md` | frontend | truth | `8d453b79679a4ab65f059fc89b35ab377ed67e58` |
+| `docs/truth/architecture.md` | architecture | truth | `692bc8e96c2877547919761be350f24032f8e9ac` |
+| `docs/truth/frontend.md` | frontend | truth | `692bc8e96c2877547919761be350f24032f8e9ac` |
 | `docs/truth/install-reset.md` | install-reset | truth | `8d453b79679a4ab65f059fc89b35ab377ed67e58` |
 | `docs/truth/launch-modes.md` | launch-modes | truth | `4366cda394fe304066b55564c3c44d1f917a2273` |
 | `docs/truth/history-stream.md` | history-stream | truth | `8d453b79679a4ab65f059fc89b35ab377ed67e58` |

@@ -1,7 +1,7 @@
 ---
 status: truth
 topic: architecture
-last-verified: 8b496bb1a31a539c4e2db8cc1777346311657478
+last-verified: 692bc8e96c2877547919761be350f24032f8e9ac
 ---
 
 # Architecture
@@ -11,7 +11,7 @@ last-verified: 8b496bb1a31a539c4e2db8cc1777346311657478
 - `package.json` defines the desktop app package as `bppinstaller` and exposes the development, build, test, type-check, and Tauri scripts in `package.json:2-21`; its `version` field is the single version source (see version sync below).
 - The frontend is built by Vite from `src/`; the Tauri config invokes `npm run dev` for development and `npm run prebuild-check && npm run build` before bundle creation in `src-tauri/tauri.conf.json:6-11`.
 - The main desktop shell is Rust/Tauri. It registers native plugins and shared state in `src-tauri/src/lib.rs:18-39`, then registers command handlers and runs the generated Tauri context in `src-tauri/src/lib.rs:72-74`.
-- The main window is configured as a 1000 x 720 window with 900 x 640 minimum dimensions in `src-tauri/tauri.conf.json:13-21`.
+- The main window is fixed at 1080 x 720 on macOS and overridden to 1080 x 680 on Windows in `src-tauri/tauri.conf.json:13-25` and `src-tauri/tauri.windows.conf.json:3-20`.
 
 ## Native Runtime
 
