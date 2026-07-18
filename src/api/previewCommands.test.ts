@@ -88,9 +88,8 @@ describe('browser-preview command adapter', () => {
     expect(await commandClient.launchGame()).toEqual({ ok: true });
   });
 
-  it('preserves nullable desktop-only preview results', async () => {
+  it('preserves nullable read-only desktop preview results', async () => {
     expect(await commandClient.getHistoryRunDetail('r')).toBeNull();
-    expect(await commandClient.deleteBattleVideo('b', 'v')).toBeNull();
     expect(await commandClient.deleteRunVideos('r', null)).toBe(
       emptyHistoryRunList
     );
@@ -115,5 +114,8 @@ describe('browser-preview command adapter', () => {
     await expect(commandClient.installMod('x', false)).rejects.toBeInstanceOf(
       Error
     );
+    await expect(
+      commandClient.deleteBattleVideo('b', 'v')
+    ).rejects.toBeInstanceOf(Error);
   });
 });

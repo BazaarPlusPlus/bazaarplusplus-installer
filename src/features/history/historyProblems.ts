@@ -1,14 +1,37 @@
-import type { SemanticProblemCode } from '../../types/backend';
 import type { Translate } from '../../i18n/LocaleProvider';
 import type { MessageKey } from '../../i18n/messages';
-import type { UiProblem } from '../shared/problems';
+import {
+  createUiProblem,
+  problemFromError,
+  type UiProblem
+} from '../shared/problems';
 
 export type HistoryPageProblemCode =
-  | SemanticProblemCode
+  | 'history_unavailable'
+  | 'history_read_failed'
   | 'history_preview_unavailable'
   | 'history_unexpected';
 
 export type HistoryPageProblem = UiProblem<HistoryPageProblemCode>;
+
+export function historyProblemFromError(error: unknown): HistoryPageProblem {
+  const problem = problemFromError(error, 'history_unexpected');
+  switch (problem.code) {
+    case 'history_unavailable':
+    case 'history_read_failed':
+    case 'history_unexpected':
+      return {
+        code: problem.code,
+        params: problem.params,
+        diagnostic: problem.diagnostic
+      };
+    default:
+      return createUiProblem('history_unexpected', {
+        params: problem.params,
+        diagnostic: problem.diagnostic
+      });
+  }
+}
 
 export function historyProblemMessageKey(
   problem: HistoryPageProblem

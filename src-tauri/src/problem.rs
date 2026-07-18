@@ -12,6 +12,7 @@ pub struct SemanticProblem {
 pub enum SemanticProblemCode {
     HistoryUnavailable,
     HistoryReadFailed,
+    HistoryActionFailed,
 }
 
 impl SemanticProblem {

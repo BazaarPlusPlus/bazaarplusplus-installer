@@ -37,7 +37,7 @@ export function createPreviewCommands(native: CommandAdapter): CommandAdapter {
     getHistoryRunDetail: async () => null,
     revealRunScreenshot: async () => null,
     revealBattleVideo: async () => null,
-    deleteBattleVideo: async () => null,
+    deleteBattleVideo: (...args) => native.deleteBattleVideo(...args),
     deleteRunVideos: async () => emptyHistoryRunList,
     previewStorageCleanup: async (scope) =>
       scope === 'screenshots'

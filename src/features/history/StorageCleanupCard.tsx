@@ -41,7 +41,7 @@ export function StorageCleanupCard({
 }: {
   onCompleted: () => Promise<void> | void;
 }) {
-  const { t } = useI18n();
+  const { locale, t } = useI18n();
   const cleanup = useStorageCleanup(onCompleted);
 
   const pendingBody = (pending: PendingCleanup): string => {
@@ -51,14 +51,14 @@ export function StorageCleanupCard({
     if (pending.scope === 'screenshots') {
       return t('storageCleanupScreenshotsConfirmBody', {
         count: pending.preview.screenshots + pending.preview.orphan_files,
-        size: formatBytes(pending.preview.estimated_bytes)
+        size: formatBytes(pending.preview.estimated_bytes, locale)
       });
     }
     return t('storageCleanupRunDataConfirmBody', {
       runs: pending.preview.runs,
       battles: pending.preview.battles,
       videos: pending.preview.videos,
-      size: formatBytes(pending.preview.estimated_bytes)
+      size: formatBytes(pending.preview.estimated_bytes, locale)
     });
   };
 
@@ -66,13 +66,13 @@ export function StorageCleanupCard({
     if (outcome.scope === 'screenshots') {
       return t('storageCleanupScreenshotsDone', {
         files: outcome.result.deleted_files,
-        size: formatBytes(outcome.result.freed_bytes)
+        size: formatBytes(outcome.result.freed_bytes, locale)
       });
     }
     return t('storageCleanupRunDataDone', {
       runs: outcome.result.deleted_runs,
       files: outcome.result.deleted_files,
-      size: formatBytes(outcome.result.freed_bytes)
+      size: formatBytes(outcome.result.freed_bytes, locale)
     });
   };
 

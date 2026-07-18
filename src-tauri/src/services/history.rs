@@ -71,7 +71,7 @@ impl History {
             .ok_or_else(|| HISTORY_UNAVAILABLE.to_string())
     }
 
-    fn from_resolved_game_path_for_list(
+    fn from_resolved_game_path_for_page(
         game_path: Option<PathBuf>,
     ) -> Result<Self, SemanticProblem> {
         Self::from_resolved_game_path(game_path)
@@ -86,6 +86,17 @@ impl History {
         self.list_runs(limit).map_err(|diagnostic| {
             SemanticProblem::new(SemanticProblemCode::HistoryReadFailed)
                 .with_param("operation", "list_runs")
+                .with_diagnostic(diagnostic)
+        })
+    }
+
+    fn run_detail_for_page(
+        &self,
+        run_id: &str,
+    ) -> Result<Option<HistoryRunDetail>, SemanticProblem> {
+        get_history_run_detail(&self.paths.database_path, run_id).map_err(|diagnostic| {
+            SemanticProblem::new(SemanticProblemCode::HistoryReadFailed)
+                .with_param("operation", "get_run_detail")
                 .with_diagnostic(diagnostic)
         })
     }
@@ -107,6 +118,15 @@ impl History {
         revealer.reveal(&path)
     }
 
+    fn reveal_run_screenshot_for_page(
+        &self,
+        run_id: &str,
+        revealer: &impl FileRevealer,
+    ) -> Result<(), SemanticProblem> {
+        self.reveal_run_screenshot(run_id, revealer)
+            .map_err(|diagnostic| history_action_problem("reveal_screenshot", diagnostic))
+    }
+
     fn reveal_battle_video(
         &self,
         battle_id: &str,
@@ -123,6 +143,16 @@ impl History {
         .ok_or_else(|| format!("No completed video is available for battle {battle_id}."))?;
         require_video_file_exists(&path)?;
         revealer.reveal(&path)
+    }
+
+    fn reveal_battle_video_for_page(
+        &self,
+        battle_id: &str,
+        video_id: Option<&str>,
+        revealer: &impl FileRevealer,
+    ) -> Result<(), SemanticProblem> {
+        self.reveal_battle_video(battle_id, video_id, revealer)
+            .map_err(|diagnostic| history_action_problem("reveal_video", diagnostic))
     }
 
     fn delete_battle_video(
@@ -146,6 +176,15 @@ impl History {
         }
 
         self.run_detail(&run_id)
+    }
+
+    fn delete_battle_video_for_page(
+        &self,
+        battle_id: &str,
+        video_id: &str,
+    ) -> Result<HistoryRunDetail, SemanticProblem> {
+        self.delete_battle_video(battle_id, video_id)
+            .map_err(|diagnostic| history_action_problem("delete_video", diagnostic))
     }
 
     fn delete_run_videos(&self, run_id: &str, limit: usize) -> Result<HistoryRunList, String> {
@@ -234,32 +273,39 @@ pub fn list_runs(
     app: &tauri::AppHandle,
     limit: Option<usize>,
 ) -> Result<HistoryRunList, SemanticProblem> {
-    History::from_resolved_game_path_for_list(History::resolved_game_path(app))?
+    History::from_resolved_game_path_for_page(History::resolved_game_path(app))?
         .list_runs_for_page(limit.unwrap_or(50))
 }
 
-pub fn get_run_detail(app: &tauri::AppHandle, run_id: &str) -> Result<HistoryRunDetail, String> {
-    History::resolve(app)?.run_detail(run_id)
+pub fn get_run_detail(
+    app: &tauri::AppHandle,
+    run_id: &str,
+) -> Result<Option<HistoryRunDetail>, SemanticProblem> {
+    History::from_resolved_game_path_for_page(History::resolved_game_path(app))?
+        .run_detail_for_page(run_id)
 }
 
-pub fn reveal_run_screenshot(app: &tauri::AppHandle, run_id: &str) -> Result<(), String> {
-    History::resolve(app)?.reveal_run_screenshot(run_id, &SystemFileRevealer)
+pub fn reveal_run_screenshot(app: &tauri::AppHandle, run_id: &str) -> Result<(), SemanticProblem> {
+    History::from_resolved_game_path_for_page(History::resolved_game_path(app))?
+        .reveal_run_screenshot_for_page(run_id, &SystemFileRevealer)
 }
 
 pub fn reveal_battle_video(
     app: &tauri::AppHandle,
     battle_id: &str,
     video_id: Option<&str>,
-) -> Result<(), String> {
-    History::resolve(app)?.reveal_battle_video(battle_id, video_id, &SystemFileRevealer)
+) -> Result<(), SemanticProblem> {
+    History::from_resolved_game_path_for_page(History::resolved_game_path(app))?
+        .reveal_battle_video_for_page(battle_id, video_id, &SystemFileRevealer)
 }
 
 pub fn delete_battle_video(
     app: &tauri::AppHandle,
     battle_id: &str,
     video_id: &str,
-) -> Result<HistoryRunDetail, String> {
-    History::resolve(app)?.delete_battle_video(battle_id, video_id)
+) -> Result<HistoryRunDetail, SemanticProblem> {
+    History::from_resolved_game_path_for_page(History::resolved_game_path(app))?
+        .delete_battle_video_for_page(battle_id, video_id)
 }
 
 pub fn delete_run_videos(
@@ -292,6 +338,12 @@ fn history_paths_for_game_path(game_path: PathBuf) -> HistoryStorage {
         database_path: paths::database_path(&game_path),
         game_path,
     }
+}
+
+fn history_action_problem(operation: &str, diagnostic: String) -> SemanticProblem {
+    SemanticProblem::new(SemanticProblemCode::HistoryActionFailed)
+        .with_param("operation", operation)
+        .with_diagnostic(diagnostic)
 }
 
 fn require_video_file_exists(path: &Path) -> Result<(), String> {
@@ -473,7 +525,7 @@ mod tests {
 
     #[test]
     fn history_page_list_uses_semantic_unavailable_and_read_failed_problems() {
-        let unavailable = History::from_resolved_game_path_for_list(None)
+        let unavailable = History::from_resolved_game_path_for_page(None)
             .err()
             .unwrap();
         assert_eq!(unavailable.code, SemanticProblemCode::HistoryUnavailable);
@@ -482,7 +534,7 @@ mod tests {
 
         let temp = tempfile::tempdir().unwrap();
         let game_path = temp.path().join("The Bazaar");
-        let history = History::from_resolved_game_path_for_list(Some(game_path.clone())).unwrap();
+        let history = History::from_resolved_game_path_for_page(Some(game_path.clone())).unwrap();
         std::fs::create_dir_all(history.paths.database_path.parent().unwrap()).unwrap();
         std::fs::write(&history.paths.database_path, b"not sqlite").unwrap();
 
@@ -493,6 +545,60 @@ mod tests {
             Some("list_runs")
         );
         assert!(read_failed.diagnostic.is_some());
+    }
+
+    #[test]
+    fn run_detail_page_distinguishes_not_found_read_and_action_problems() {
+        let unavailable = History::from_resolved_game_path_for_page(None)
+            .err()
+            .unwrap();
+        assert_eq!(unavailable.code, SemanticProblemCode::HistoryUnavailable);
+
+        let temp = tempfile::tempdir().unwrap();
+        let game_path = temp.path().join("The Bazaar");
+        let history = History::from_resolved_game_path_for_page(Some(game_path.clone())).unwrap();
+        assert_eq!(history.run_detail_for_page("missing").unwrap(), None);
+
+        std::fs::create_dir_all(history.paths.database_path.parent().unwrap()).unwrap();
+        std::fs::write(&history.paths.database_path, b"not sqlite").unwrap();
+
+        let read_failed = history.run_detail_for_page("run-1").unwrap_err();
+        assert_eq!(read_failed.code, SemanticProblemCode::HistoryReadFailed);
+        assert_eq!(
+            read_failed.params.get("operation").map(String::as_str),
+            Some("get_run_detail")
+        );
+        assert!(read_failed.diagnostic.is_some());
+
+        std::fs::remove_file(&history.paths.database_path).unwrap();
+        let revealer = RecordingRevealer::default();
+        for (operation, problem) in [
+            (
+                "reveal_screenshot",
+                history
+                    .reveal_run_screenshot_for_page("run-1", &revealer)
+                    .unwrap_err(),
+            ),
+            (
+                "reveal_video",
+                history
+                    .reveal_battle_video_for_page("battle-1", None, &revealer)
+                    .unwrap_err(),
+            ),
+            (
+                "delete_video",
+                history
+                    .delete_battle_video_for_page("battle-1", "video-1")
+                    .unwrap_err(),
+            ),
+        ] {
+            assert_eq!(problem.code, SemanticProblemCode::HistoryActionFailed);
+            assert_eq!(
+                problem.params.get("operation").map(String::as_str),
+                Some(operation)
+            );
+            assert!(problem.diagnostic.is_some());
+        }
     }
 
     #[test]

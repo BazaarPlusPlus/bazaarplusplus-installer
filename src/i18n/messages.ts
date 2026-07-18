@@ -188,6 +188,16 @@ const zh = {
   runDetailBack: '返回战绩列表',
   runDetailLoading: '读取详情中',
   runDetailNotFound: '没有找到这局战绩',
+  runDetailRefreshing: '正在刷新详情',
+  runDetailProblemUnavailable:
+    '未找到可用的本地战绩数据库。请先在安装页选择正确的游戏目录。',
+  runDetailProblemReadFailed:
+    '读取这局战绩失败。请关闭可能占用数据库的程序后重试。',
+  runDetailProblemRevealScreenshotFailed:
+    '无法打开这局战绩的截图位置，请重试。',
+  runDetailProblemRevealVideoFailed: '无法打开这场战斗的视频位置，请重试。',
+  runDetailProblemDeleteVideoFailed: '删除这场战斗的视频失败，请重试。',
+  runDetailProblemUnexpected: '处理这局战绩时发生意外错误，请重试。',
   runDetailPlayer: '玩家',
   runStatusCompleted: '已完成',
   runStatusAbandoned: '已放弃',
@@ -453,6 +463,19 @@ const en: Record<MessageKey, string> = {
   runDetailBack: 'Back to History',
   runDetailLoading: 'Loading details',
   runDetailNotFound: 'This run was not found',
+  runDetailRefreshing: 'Refreshing details',
+  runDetailProblemUnavailable:
+    'No local History database is available. Select the correct game folder on the Install page.',
+  runDetailProblemReadFailed:
+    'This run could not be read. Close apps that may be using the database, then retry.',
+  runDetailProblemRevealScreenshotFailed:
+    'The screenshot location could not be opened. Please retry.',
+  runDetailProblemRevealVideoFailed:
+    'The video location could not be opened. Please retry.',
+  runDetailProblemDeleteVideoFailed:
+    'The battle video could not be deleted. Please retry.',
+  runDetailProblemUnexpected:
+    'Something unexpected happened while handling this run. Please retry.',
   runDetailPlayer: 'Player',
   runStatusCompleted: 'Completed',
   runStatusAbandoned: 'Abandoned',
