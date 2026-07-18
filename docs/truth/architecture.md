@@ -1,7 +1,7 @@
 ---
 status: truth
 topic: architecture
-last-verified: 77052422cac58e15f7c8c6e88e6b4eaaf15b99a1
+last-verified: 4091a2a7b6490795c7ef509bbb1e717e85de98dd
 ---
 
 # Architecture
@@ -25,6 +25,7 @@ last-verified: 77052422cac58e15f7c8c6e88e6b4eaaf15b99a1
 - The complete install operation owns fact gathering, private planning, ordered production effects, first-error propagation, and a final state refresh in `src-tauri/src/services/install/operation.rs:16-102`; the Tauri command only constructs the request and invokes that operation in `src-tauri/src/commands/install.rs:40-55`. Reset, uninstall, and Steam-only launch remain in the install service facade.
 - The History facade resolves Selected game installation and privately owns storage derivation, reads, reveals, deletes, and cleanup dispatch in `src-tauri/src/services/history.rs:45-213`; commands expose ids plus domain cleanup scope/preset without raw paths or cutoffs in `src-tauri/src/commands/history.rs:6-78`. Reads use SQLite read-only connections by default, while mutation uses separate write connections in `src-tauri/src/history/queries.rs:29-54`.
 - `StreamRuntime` is the only stream lifecycle mutation boundary: it serializes ensure/restart/stop/window/maintenance operations and privately owns the task plus captured installation paths in `src-tauri/src/stream/runtime.rs:43-108` and `src-tauri/src/stream/runtime.rs:188-280`. Its private production adapter binds the local Axum service to `127.0.0.1:17654` in `src-tauri/src/stream/server.rs:16-69`.
+- The frontend Stream workflow depends inward on semantic command, scheduler, clipboard, and opener ports in `src/features/stream/streamWorkflow.ts:24-50` and `src/features/stream/streamWorkflow.ts:114-120`; the React hook provides those outer adapters and only subscribes, starts, and disposes the workflow in `src/features/stream/useStreamPage.ts:21-61`.
 
 ## Build And Generated Artifacts
 

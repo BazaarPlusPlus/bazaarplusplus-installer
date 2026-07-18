@@ -1,7 +1,7 @@
 ---
 status: truth
 topic: context
-last-verified: 77052422cac58e15f7c8c6e88e6b4eaaf15b99a1
+last-verified: 4091a2a7b6490795c7ef509bbb1e717e85de98dd
 ---
 
 # BazaarPlusPlus Installer Context
@@ -29,6 +29,7 @@ Current behavior truth lives under `docs/truth/` (topic-sliced, code-cited, hash
 - **Reset (local data)** — the only flow that deletes the mod's `BazaarPlusPlusV4/` data directory; explicit, confirmed, refused while the game runs, and performed under exclusive stream-runtime maintenance (`src-tauri/src/services/bepinex/mod.rs:20-62`, `src-tauri/src/stream/runtime.rs:100-108`). Uninstall never touches it.
 - **History** — the facade around the Selected game installation's mod-owned SQLite database, including reads, detail, reveal, video deletion, and storage cleanup (`src-tauri/src/services/history.rs:45-213`); the database is created and primarily written by the mod.
 - **Stream runtime / overlay** — the single serialized owner of the local Axum service lifecycle, window selection, and exclusive maintenance; the production service remains on `127.0.0.1:17654` and serves the OBS overlay and settings pages (`src-tauri/src/stream/runtime.rs:43-108`, `src-tauri/src/stream/server.rs:16-69`).
+- **Stream workflow** — the framework-neutral frontend owner of Stream page initialization, polling, intents, error priority, and its single derived snapshot. Browser/Tauri concerns enter through injected ports, and React only attaches lifecycle and subscription (`src/features/stream/streamWorkflow.ts:94-120`, `src/features/stream/useStreamPage.ts:21-61`).
 - **Storage cleanup** — preset-driven deletion of old screenshots and run data with upload-safety and referenced-file protections; its IPC is the two scope-tagged preview/execute operations (`src-tauri/src/commands/history.rs:60-78`, `src-tauri/src/services/history.rs:24-43`).
 - **Generated bindings** — `src/types/generated/commands.ts`, emitted by `npm run generate:bindings` from the same Specta builder that registers the Tauri invoke handler; never hand-edited (`src-tauri/src/commands/registry.rs:3-50`, `scripts/generate-bindings.mjs:86-118`).
 
