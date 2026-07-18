@@ -1,29 +1,29 @@
 ---
 status: truth
 topic: architecture
-last-verified: 506e85b363a53511d14a44db22804a53331f2c03
+last-verified: 3fd7a24bb6e734f5c50a69d3a69144e21d52fae9
 ---
 
 # Architecture
 
 ## App Shape
 
-- `package.json` defines the desktop app package as `bppinstaller` and exposes the development, build, test, type-check, and Tauri scripts in `package.json:2-21`; its `version` field is the single version source (see version sync below).
-- The frontend is built by Vite from `src/`; the Tauri config invokes `npm run dev` for development and `npm run prebuild-check && npm run build` before bundle creation in `src-tauri/tauri.conf.json:6-11`.
-- The main desktop shell is Rust/Tauri. It registers native plugins and shared state in `src-tauri/src/lib.rs:20-44`, then uses the canonical Specta builder's invoke handler and runs the generated Tauri context in `src-tauri/src/lib.rs:77-79`.
-- The main window is configured as a 1000 x 720 window with 900 x 640 minimum dimensions in `src-tauri/tauri.conf.json:13-21`.
+- `package.json` defines the desktop app package as `bppinstaller` and exposes the development, build, test, type-check, verification, and Tauri scripts in `package.json:2-36`; its `version` field is the single version source (see version sync below).
+- The frontend is built by Vite from `src/`; the Tauri config invokes `npm run dev` for development and `npm run build` before bundle creation in `src-tauri/tauri.conf.json:6-11`. That build script generates bindings, runs the prebuild source/resource checks and TypeScript check, then builds the frontend in `package.json:19-24`.
+- The main desktop shell is Rust/Tauri. It registers native plugins and shared state in `src-tauri/src/lib.rs:19-46`, then uses the canonical Specta builder's invoke handler and runs the generated Tauri context in `src-tauri/src/lib.rs:110-112`.
+- The default main window is fixed at 1020 x 680 and cannot resize or maximize in `src-tauri/tauri.conf.json:14-26`. Windows overrides it with a fixed 972 x 612 frameless window that starts hidden in `src-tauri/tauri.windows.conf.json:3-20`; setup shows it and configures the native frame in `src-tauri/src/lib.rs:47-78`.
 
 ## Native Runtime
 
-- Tauri startup builds the tray, warms `InstallerContextState`, and asks `StreamRuntime` to ensure the stream service in `src-tauri/src/lib.rs:45-59`. Install detection waits on the same `OnceLock` initializer in `src-tauri/src/services/startup.rs:23-34` and `src-tauri/src/services/detect/mod.rs:27-39`, so no frontend event/refetch race is required.
-- Close behavior is service-aware: while the stream runtime reports `running`, the main window close request is prevented and the window is hidden in `src-tauri/src/lib.rs:61-75`.
+- Tauri startup builds the tray, warms `InstallerContextState`, and asks `StreamRuntime` to ensure the stream service in `src-tauri/src/lib.rs:80-92`. Install detection waits on the same `OnceLock` initializer in `src-tauri/src/services/startup.rs:23-34` and `src-tauri/src/services/detect/mod.rs:27-39`, so no frontend event/refetch race is required.
+- Close behavior is service-aware: while the stream runtime reports `running`, the main window close request is prevented and the window is hidden in `src-tauri/src/lib.rs:94-109`.
 - The default capability grants updater check/download/install, process restart, `steam://*` opening, and dialog permissions in `src-tauri/capabilities/default.json:6-20`.
 
 ## Feature Boundaries
 
 - Install state is produced by Rust detection and serialized through `InstallState`; the contract includes selected paths, game/mod state, macOS compatibility state, action gates, resettable-data and BepInEx-folder status in `src-tauri/src/services/install/types.rs:5-20`, while warnings use typed codes plus parameters in `src-tauri/src/services/install/types.rs:73-85`.
 - The complete install operation owns payload and launch-mode fact gathering, private planning, ordered production effects, first-error propagation, and a final state refresh in `src-tauri/src/services/install/operation.rs:17-130`; the Tauri command only constructs the request and invokes that operation in `src-tauri/src/commands/install.rs:44-59`. Reset, uninstall, and Steam-only launch remain in the install service facade.
-- All Install command failures share `SemanticProblem`; detection and action boundaries classify stable codes and operation/recovery parameters in `src-tauri/src/commands/install.rs:15-99` and `src-tauri/src/services/install/mod.rs:200-235`. The frontend keeps Install page state and its sole primary-action derivation framework-independent in `src/features/install/installPageState.ts:5-132`.
+- All Install command failures share `SemanticProblem`; detection and action boundaries classify stable codes and operation/recovery parameters in `src-tauri/src/commands/install.rs:15-99` and `src-tauri/src/services/install/mod.rs:200-235`. The frontend keeps initial, blocking, ready, and preserved-refresh state framework-independent in `src/features/install/installPageState.ts:5-73`; the Install route derives install/reinstall/launch mode from native mod state in `src/pages/Install.tsx:42-47`, and the primary button gates that mode with native action availability in `src/features/install/PrimaryInstallActionButton.tsx:19-44`.
 - The History facade resolves Selected game installation and privately owns storage derivation, reads, reveals, deletes, and cleanup dispatch in `src-tauri/src/services/history.rs:48-288`; commands expose ids plus domain cleanup scope/preset without raw paths or cutoffs in `src-tauri/src/commands/history.rs:7-79`. Reads use SQLite read-only connections by default, while mutation uses separate write connections in `src-tauri/src/history/queries.rs:29-54`.
 - History list/detail/reveal/delete/cleanup commands use `SemanticProblem`; the shared Rust DTO fixes code/parameter/diagnostic shape, the detail command models not-found as a successful `Option`, and the facade classifies unavailable selection, failed reads, and failed actions before the command boundary in `src-tauri/src/problem.rs:3-38`, `src-tauri/src/services/history.rs:74-188`, `src-tauri/src/services/history.rs:258-274`, and `src-tauri/src/commands/history.rs:7-79`.
 - History internals default to private modules; only cleanup algorithms and mapper/screenshots test seams are crate-visible, and the facade receives a narrowed repository surface in `src-tauri/src/history/mod.rs:1-13`.
@@ -37,11 +37,11 @@ last-verified: 506e85b363a53511d14a44db22804a53331f2c03
 
 ## Build And Generated Artifacts
 
-- `npm run check` generates TypeScript bindings and runs `tsc --noEmit`; `npm run test` combines generated bindings, Rust tests, and Vitest in `package.json:13-20`.
-- The Tauri IPC schema is authored in Rust command signatures and collected once by the Specta builder in `src-tauri/src/commands/registry.rs:3-36`; the same builder supplies the production invoke handler in `src-tauri/src/lib.rs:18-18` and `src-tauri/src/lib.rs:77-77` and exports typed command functions plus DTOs in `src-tauri/src/commands/registry.rs:38-49`.
+- `npm run check` generates TypeScript bindings and runs `tsc --noEmit`; `npm run test` generates bindings with their Rust export tests, checks binding freshness, and runs Vitest, while `npm run test:rust` is the full locked Rust test entry point in `package.json:26-35`.
+- The Tauri IPC schema is authored in Rust command signatures and collected once by the Specta builder in `src-tauri/src/commands/registry.rs:3-36`; the same builder supplies the production invoke handler in `src-tauri/src/lib.rs:20-20` and `src-tauri/src/lib.rs:110-110` and exports typed command functions plus DTOs in `src-tauri/src/commands/registry.rs:38-49`.
 - Specta is the only direct TypeScript binding stack: the three packages are pinned in `src-tauri/Cargo.toml:39-41`, with no `ts-rs` dependency or fallback generator.
 - `npm run generate:bindings` exports to a temporary directory, validates and normalizes `commands.ts`, and atomically replaces `src/types/generated/`; replacement restores a captured backup and never removes the prior target when the backup rename itself fails in `scripts/generate-bindings.mjs:20-89` and `scripts/generate-bindings.mjs:91-123`.
 - Version sync treats `package.json` as the source, then writes package-lock.json (both root `version` fields), Tauri config, Cargo.toml, and Cargo.lock versions in `scripts/version-sync.mjs:195-206`; `npm run prebuild-check` fails on any misalignment via `collectVersionSnapshot` in `scripts/prebuild-check.mjs:329-331`.
 - `npm run prebuild-check` verifies generated bindings, version alignment, platform ZIP payloads, and the macOS trampoline stub when applicable in `scripts/prebuild-check.mjs:326-346`.
-- Tauri updater artifacts are enabled in the Tauri bundle config in `src-tauri/tauri.conf.json:27-30`.
+- Tauri updater artifacts are enabled in the Tauri bundle config in `src-tauri/tauri.conf.json:32-35`.
 - The Rust toolchain is pinned to 1.97.0 (minimal profile with `clippy` and `rustfmt`) via `rust-toolchain.toml:1-4`; rustup selects it automatically for all `cargo`/Tauri builds.

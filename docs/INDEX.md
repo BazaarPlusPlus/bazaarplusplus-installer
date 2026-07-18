@@ -26,6 +26,8 @@ Updater-recovery citation refresh: `2026-07-19` on `2bf15726776492127c3eca2162dd
 
 About-bootstrap citation refresh: `2026-07-19` on `506e85b363a53511d14a44db22804a53331f2c03` — the context glossary plus architecture, frontend, and verification topics were checked against the explicit bootstrap resource states, packaged fallback provenance, semantic recovery, and accessible About feedback.
 
+UI redesign integration citation refresh: `2026-07-19` on `3fd7a24bb6e734f5c50a69d3a69144e21d52fae9` — `CONTEXT.md` plus the architecture and frontend truth topics were checked against the fixed platform window chrome, refined `bpp-*` surfaces, Install maintenance update placement, and preserved master state-machine integrations.
+
 ## Current Manifest
 
 | Path | Topic | Status | Last verified |
@@ -35,9 +37,9 @@ About-bootstrap citation refresh: `2026-07-19` on `506e85b363a53511d14a44db22804
 | `README.md` | project entrypoint | current-entrypoint | 2026-07-11 |
 | `.trae/rules/git-commit-message.md` | ignored local rule | ignored-operational | n/a |
 | `docs/INDEX.md` | documentation manifest | manifest | 2026-07-19 |
-| `CONTEXT.md` | entry map + glossary | truth | `506e85b363a53511d14a44db22804a53331f2c03` |
-| `docs/truth/architecture.md` | architecture | truth | `506e85b363a53511d14a44db22804a53331f2c03` |
-| `docs/truth/frontend.md` | frontend | truth | `506e85b363a53511d14a44db22804a53331f2c03` |
+| `CONTEXT.md` | entry map + glossary | truth | `3fd7a24bb6e734f5c50a69d3a69144e21d52fae9` |
+| `docs/truth/architecture.md` | architecture | truth | `3fd7a24bb6e734f5c50a69d3a69144e21d52fae9` |
+| `docs/truth/frontend.md` | frontend | truth | `3fd7a24bb6e734f5c50a69d3a69144e21d52fae9` |
 | `docs/truth/install-reset.md` | install-reset | truth | `0f609de844c0cbc48e7fb53396a90d5f32776c2b` |
 | `docs/truth/launch-modes.md` | launch-modes | truth | `f23d786ab3bf1998f556f5fe05b6e47467a7ea48` |
 | `docs/truth/history-stream.md` | history-stream | truth | `0f609de844c0cbc48e7fb53396a90d5f32776c2b` |
