@@ -22,6 +22,10 @@
 - Keep port `14207` for browser and Tauri smoke checks.
 - Keep agent-authored docs minimal. Do not add or rewrite README-style files unless explicitly requested.
 
+## Commits
+
+- Write every Git commit message in Conventional Commits format: `<type>(<scope>): <description>`.
+
 ## Pull Requests
 
 - Use a clear title that describes the change.
