@@ -23,19 +23,10 @@ pub enum StreamOverlayDisplayMode {
     Herohalf,
 }
 
-#[derive(Clone, Copy, Debug, Deserialize, Serialize, PartialEq)]
+#[derive(Clone, Copy, Debug, Default, Deserialize, Serialize, PartialEq)]
 pub struct OverlaySettings {
     pub crop: OverlayCropSettings,
     pub display_mode: StreamOverlayDisplayMode,
-}
-
-impl Default for OverlaySettings {
-    fn default() -> Self {
-        Self {
-            crop: OverlayCropSettings::default(),
-            display_mode: StreamOverlayDisplayMode::default(),
-        }
-    }
 }
 
 impl Default for OverlayCropSettings {

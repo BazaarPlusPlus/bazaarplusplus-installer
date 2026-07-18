@@ -180,7 +180,7 @@ fn open_url(url: &str) -> Result<(), String> {
             .args(["/C", "start", "", url])
             .spawn()
             .map_err(|err| format!("failed to open URL: {err}"))?;
-        return Ok(());
+        Ok(())
     }
 
     #[cfg(target_os = "macos")]
@@ -189,7 +189,7 @@ fn open_url(url: &str) -> Result<(), String> {
             .arg(url)
             .spawn()
             .map_err(|err| format!("failed to open URL: {err}"))?;
-        return Ok(());
+        Ok(())
     }
 
     #[cfg(all(not(target_os = "windows"), not(target_os = "macos")))]

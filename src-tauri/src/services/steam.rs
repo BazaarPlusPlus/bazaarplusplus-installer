@@ -205,7 +205,7 @@ mod tests {
             Duration::from_millis(1),
         );
 
-        assert_eq!(result.unwrap(), false);
+        assert!(!result.unwrap());
         assert!(!quit_called);
     }
 
@@ -229,7 +229,7 @@ mod tests {
             Duration::from_millis(1),
         );
 
-        assert_eq!(result.unwrap(), true);
+        assert!(result.unwrap());
         assert!(quit_called);
     }
 

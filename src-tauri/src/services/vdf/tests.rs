@@ -36,8 +36,12 @@ fn test_inject_launch_options_inserts_when_missing() {
     let result = inject_launch_options(fixture_vdf(), "MY_ARGS")
         .unwrap()
         .unwrap();
-    assert!(result.contains("LaunchOptions"));
-    assert!(result.contains("MY_ARGS"));
+    let expected = fixture_vdf().replace(
+        "\"LastPlayed\"    \"1700000000\"",
+        "\"LastPlayed\"    \"1700000000\"\n                        \"LaunchOptions\"\t\t\"MY_ARGS\"",
+    );
+
+    assert_eq!(result, expected);
 }
 
 #[test]
@@ -50,8 +54,55 @@ fn test_inject_launch_options_replaces_existing() {
     let result = inject_launch_options(&vdf_with_lo, "NEW_ARGS")
         .unwrap()
         .unwrap();
-    assert!(result.contains("NEW_ARGS"));
-    assert!(!result.contains("OLD_ARGS"));
+    let expected = fixture_vdf().replace(
+        "\"LastPlayed\"",
+        "\"LaunchOptions\"\t\t\"NEW_ARGS\"\n\t\t\t\t\t\"LastPlayed\"",
+    );
+
+    assert_eq!(result, expected);
+}
+
+#[test]
+fn test_inject_launch_options_preserves_nested_app_block_boundaries() {
+    let nested_vdf = r#"
+"UserLocalConfigStore"
+{
+    "Software"
+    {
+        "Valve"
+        {
+            "Steam"
+            {
+                "apps"
+                {
+                    "1617400"
+                    {
+                        "Cloud"
+                        {
+                            "Enabled"    "1"
+                        }
+                        "LaunchOptions"    "OLD_ARGS"
+                        "LastPlayed"    "1700000000"
+                    }
+                    "730"
+                    {
+                        "LaunchOptions"    "NEIGHBOR_ARGS"
+                    }
+                }
+            }
+        }
+    }
+}"#;
+
+    let result = inject_launch_options(nested_vdf, "NEW_ARGS")
+        .unwrap()
+        .unwrap();
+    let expected = nested_vdf.replace(
+        "                        \"LaunchOptions\"    \"OLD_ARGS\"",
+        "                            \"LaunchOptions\"\t\t\"NEW_ARGS\"",
+    );
+
+    assert_eq!(result, expected);
 }
 
 #[test]
@@ -61,8 +112,12 @@ fn test_clear_launch_options_removes_existing_line() {
         "\"LaunchOptions\"\t\t\"OLD_ARGS\"\n\t\t\t\t\t\"LastPlayed\"",
     );
     let result = clear_launch_options(&vdf_with_lo).unwrap().unwrap();
-    assert!(!result.contains("LaunchOptions"));
-    assert!(result.contains("LastPlayed"));
+    let expected = fixture_vdf().replace(
+        "                        \"LastPlayed\"",
+        "\t\t\t\t\t\"LastPlayed\"",
+    );
+
+    assert_eq!(result, expected);
 }
 
 #[test]

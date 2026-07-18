@@ -43,7 +43,7 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .setup(|app| {
             let handle = app.app_handle();
-            build_tray(&handle)?;
+            build_tray(handle)?;
             let startup_handle = handle.clone();
             tauri::async_runtime::spawn_blocking(move || {
                 let state = startup_handle.state::<InstallerContextState>();

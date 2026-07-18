@@ -215,7 +215,7 @@ fn copy_text_to_clipboard(text: &str) -> Result<(), String> {
         child
             .wait()
             .map_err(|err| format!("failed to wait for pbcopy: {err}"))?;
-        return Ok(());
+        Ok(())
     }
 
     #[cfg(target_os = "windows")]
@@ -238,7 +238,7 @@ fn copy_text_to_clipboard(text: &str) -> Result<(), String> {
         child
             .wait()
             .map_err(|err| format!("failed to wait for clip: {err}"))?;
-        return Ok(());
+        Ok(())
     }
 
     #[cfg(not(any(target_os = "macos", target_os = "windows")))]

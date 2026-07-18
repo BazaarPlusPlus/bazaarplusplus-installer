@@ -165,6 +165,7 @@ mod tests {
         delete_battle_video, delete_run_videos, get_history_run_detail, list_history_runs,
     };
     use crate::config::DATABASE_FILE_NAME;
+    use crate::history::dto::{HistoryBattleRow, HistoryBattleVideo};
     use crate::services::paths;
 
     fn create_history_schema(conn: &rusqlite::Connection) {
@@ -364,14 +365,24 @@ mod tests {
             Some("/images/shot-win/strip")
         );
         assert_eq!(detail.battles.len(), 2);
-        assert_eq!(detail.battles[0].battle_id, "battle-1");
-        assert_eq!(detail.battles[0].result, "win");
         assert_eq!(
-            detail.battles[0]
-                .video
-                .as_ref()
-                .map(|video| video.video_id.as_str()),
-            Some("video-new")
+            detail.battles[0],
+            HistoryBattleRow {
+                battle_id: "battle-1".to_string(),
+                day: Some(8),
+                hour: Some(1),
+                result: "win".to_string(),
+                opponent_hero: Some("Dooley".to_string()),
+                opponent_name: Some("Opponent A".to_string()),
+                opponent_rank: Some("Diamond III".to_string()),
+                opponent_rating: Some(1410),
+                video: Some(HistoryBattleVideo {
+                    video_id: "video-new".to_string(),
+                    status: "COMPLETED".to_string(),
+                    file_size_bytes: Some(2200),
+                    duration_ms: Some(1200),
+                }),
+            }
         );
         assert_eq!(detail.battles[1].battle_id, "battle-2");
         assert_eq!(detail.battles[1].result, "loss");
