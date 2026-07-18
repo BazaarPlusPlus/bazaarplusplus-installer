@@ -1,7 +1,7 @@
 ---
 status: truth
 topic: context
-last-verified: 594eba30b566a42ca8846f152e5a1c1ed17149d4
+last-verified: b07adb2e67f03480d039352837037c25a75f3472
 ---
 
 # BazaarPlusPlus Installer Context
@@ -31,7 +31,7 @@ Current behavior truth lives under `docs/truth/` (topic-sliced, code-cited, hash
 - **Semantic problem** — a command failure contract made of a stable code, string parameters, and an optional troubleshooting diagnostic (`src-tauri/src/problem.rs:3-35`). History list loading currently publishes `history_unavailable` and `history_read_failed`; the frontend adapter preserves the structured payload instead of turning it into display copy (`src/api/problems.ts:3-41`, `src/api/nativeCommands.ts:5-15`).
 - **Stream runtime / overlay** — the single serialized owner of the local Axum service lifecycle, window selection, and exclusive maintenance; the production service remains on `127.0.0.1:17654` and serves the OBS overlay and settings pages (`src-tauri/src/stream/runtime.rs:43-108`, `src-tauri/src/stream/server.rs:16-69`).
 - **Stream workflow** — the framework-neutral frontend owner of Stream page initialization, polling, intents, error priority, and its single derived snapshot. Browser/Tauri concerns enter through injected ports, and React only attaches lifecycle and subscription (`src/features/stream/streamWorkflow.ts:94-120`, `src/features/stream/useStreamPage.ts:21-61`).
-- **Storage cleanup** — preset-driven deletion of old screenshots and run data with upload-safety and referenced-file protections; its IPC is the two scope-tagged preview/execute operations (`src-tauri/src/commands/history.rs:60-78`, `src-tauri/src/services/history.rs:24-43`).
+- **Storage cleanup** — preset-driven deletion of old screenshots and run data with upload-safety and referenced-file protections; its IPC is the two scope-tagged preview/execute operations (`src-tauri/src/commands/history.rs:61-79`, `src-tauri/src/services/history.rs:25-44`).
 - **Generated bindings** — `src/types/generated/commands.ts`, emitted by `npm run generate:bindings` from the same Specta builder that registers the Tauri invoke handler; never hand-edited (`src-tauri/src/commands/registry.rs:3-50`, `scripts/generate-bindings.mjs:85-123`).
 
 ## Current Topics

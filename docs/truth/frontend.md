@@ -1,7 +1,7 @@
 ---
 status: truth
 topic: frontend
-last-verified: 594eba30b566a42ca8846f152e5a1c1ed17149d4
+last-verified: b07adb2e67f03480d039352837037c25a75f3472
 ---
 
 # Frontend
@@ -36,7 +36,7 @@ last-verified: 594eba30b566a42ca8846f152e5a1c1ed17149d4
 - The reset-local-data button is disabled unless backend action gates allow reset data, and its label switches to a no-data message when the game path is valid but no resettable data exists in `src/features/install/InstallActionsPanel.tsx:93-105`.
 - History renders loading, blocking failure, and the two successful list states as mutually exclusive branches; refresh failures remain inside the ready branch and keep prior data in `src/pages/History.tsx:42-97` and `src/features/shared/pageState.ts:43-54`.
 - History summary cards are Runs, Videos, and Win Rate in `src/pages/History.tsx:50-64`.
-- History rows link to details, show lazy-decoded preview images with an error fallback, and display hero, locale-formatted date, result, progress, rank, and rating in `src/pages/History.tsx:125-229` and `src/features/history/format.ts:4-27`.
+- History rows link to details, show lazy-decoded preview images with an error fallback, and display hero, locale-formatted date, result, progress, rank, and rating in `src/pages/History.tsx:125-230` and `src/features/history/format.ts:4-27`.
 - History list loading calls `listHistoryRuns` independently from status-only Stream preview discovery; stopped or failed Stream status produces a thumbnail-only problem and never rejects the list request in `src/features/history/useHistoryPage.ts:37-64` and `src/features/history/historyPreview.ts:14-45`.
 - Run detail shows a hero/result header, run stats, screenshot reveal, and a battle table with fixed columns and video reveal/delete actions in `src/pages/RunDetail.tsx:52-176` and `src/pages/RunDetail.tsx:222-319`.
 - Storage cleanup submits only generated `StorageCleanupScope` plus `StorageCleanupPreset`, retains the tagged preview/execution result, and narrows on `scope` when rendering screenshot versus run-data copy in `src/features/history/useStorageCleanup.ts:1-59` and `src/features/history/StorageCleanupCard.tsx:32-77`.

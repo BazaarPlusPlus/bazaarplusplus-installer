@@ -1,7 +1,7 @@
 ---
 status: truth
 topic: verification
-last-verified: 594eba30b566a42ca8846f152e5a1c1ed17149d4
+last-verified: b07adb2e67f03480d039352837037c25a75f3472
 ---
 
 # Verification
@@ -37,10 +37,10 @@ Use the smallest command that verifies the changed behavior; use the authoritati
 - Selected installation priority and invalid-explicit-path preservation are tested without Tauri state in `src-tauri/src/services/selected_game_installation.rs:138-231`.
 - The complete install operation tests payload classification, fresh/changed installs, current-install no-op, launch-mode-only repair, production ordering, first-error truncation, and refreshed outcomes through its private effect boundary in `src-tauri/src/services/install/operation.rs:165-289`.
 - Stream runtime tests exercise concurrent ensure, lifecycle transitions, failed start, and exclusive maintenance blocking in `src-tauri/src/stream/runtime.rs:440-572`.
-- The History facade's tempfile test uses a real SQLite schema and managed files across queries, reveal/delete, and both cleanup scopes in `src-tauri/src/services/history.rs:365-570`.
+- The History facade's tempfile test uses a real SQLite schema and managed files across queries, reveal/delete, and both cleanup scopes in `src-tauri/src/services/history.rs:512-618`.
 - The framework-neutral Stream workflow uses fake ports and a fake scheduler to cover initialization failures, polling threshold/recovery, stale-response and lifecycle epochs, action exclusion, window/crop updates, transient feedback, disposal/restart, and both command adapters in `src/features/stream/streamWorkflow.test.ts:133-450`.
-- Semantic-problem serialization and History list classification are covered at the Rust boundary in `src-tauri/src/problem.rs:37-68` and `src-tauri/src/services/history.rs:477-501`; the native adapter preservation path is covered in `src/api/commandClient.dispatch.test.ts:38-53`.
-- Focused History tests cover exclusive empty/error/content transitions, refresh-data preservation, stale completions, stopped/failed preview capability, bilingual problem presentation, and locale-aware dates in `src/features/history/historyPageState.test.ts:46-108`, `src/features/history/historyPreview.test.ts:5-49`, `src/features/history/historyProblems.test.ts:17-32`, and `src/features/history/format.test.ts:4-12`.
+- Semantic-problem serialization and History list classification are covered at the Rust boundary in `src-tauri/src/problem.rs:37-68` and `src-tauri/src/services/history.rs:474-496`; the native adapter preservation path is covered in `src/api/commandClient.dispatch.test.ts:38-54`.
+- Focused History tests cover exclusive empty/error/content transitions, refresh-data preservation, stale completions, stopped/failed preview capability, bilingual problem presentation, and locale-aware dates in `src/features/history/historyPageState.test.ts:46-108`, `src/features/history/historyPreview.test.ts:5-49`, `src/features/history/historyProblems.test.ts:17-30`, and `src/features/history/format.test.ts:4-11`.
 
 ## Version And Platform Guards
 
