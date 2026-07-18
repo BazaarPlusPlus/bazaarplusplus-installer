@@ -1,7 +1,7 @@
 ---
 status: truth
 topic: context
-last-verified: 4091a2a7b6490795c7ef509bbb1e717e85de98dd
+last-verified: 7500016b1c4adfc7b5d0206c7def0ceabae514d5
 ---
 
 # BazaarPlusPlus Installer Context
@@ -15,7 +15,7 @@ Current behavior truth lives under `docs/truth/` (topic-sliced, code-cited, hash
 - The app is a Tauri 2 desktop app with a React/Vite frontend and Rust backend. The package entry declares the app version and scripts in `package.json:2-21`; the Tauri app config sets the product name, frontend dev URL, build hooks, window size, and updater endpoint in `src-tauri/tauri.conf.json:3-35`.
 - The native runtime registers single-instance, window-state, updater, process, dialog, opener, tray, selected-installation, installer-context, and stream-runtime state in `src-tauri/src/lib.rs:19-43`.
 - Startup warms installer context on a blocking task and emits `startup-ready`; setup asks the stream runtime to ensure the HTTP service in `src-tauri/src/lib.rs:44-59`.
-- When the stream service is running, closing the main window hides it instead of quitting so OBS can keep using the local HTTP overlay in `src-tauri/src/lib.rs:60-73`.
+- When the stream service is running, closing the main window hides it instead of quitting so OBS can keep using the local HTTP overlay in `src-tauri/src/lib.rs:60-74`.
 
 ## Glossary
 
@@ -31,7 +31,7 @@ Current behavior truth lives under `docs/truth/` (topic-sliced, code-cited, hash
 - **Stream runtime / overlay** — the single serialized owner of the local Axum service lifecycle, window selection, and exclusive maintenance; the production service remains on `127.0.0.1:17654` and serves the OBS overlay and settings pages (`src-tauri/src/stream/runtime.rs:43-108`, `src-tauri/src/stream/server.rs:16-69`).
 - **Stream workflow** — the framework-neutral frontend owner of Stream page initialization, polling, intents, error priority, and its single derived snapshot. Browser/Tauri concerns enter through injected ports, and React only attaches lifecycle and subscription (`src/features/stream/streamWorkflow.ts:94-120`, `src/features/stream/useStreamPage.ts:21-61`).
 - **Storage cleanup** — preset-driven deletion of old screenshots and run data with upload-safety and referenced-file protections; its IPC is the two scope-tagged preview/execute operations (`src-tauri/src/commands/history.rs:60-78`, `src-tauri/src/services/history.rs:24-43`).
-- **Generated bindings** — `src/types/generated/commands.ts`, emitted by `npm run generate:bindings` from the same Specta builder that registers the Tauri invoke handler; never hand-edited (`src-tauri/src/commands/registry.rs:3-50`, `scripts/generate-bindings.mjs:86-118`).
+- **Generated bindings** — `src/types/generated/commands.ts`, emitted by `npm run generate:bindings` from the same Specta builder that registers the Tauri invoke handler; never hand-edited (`src-tauri/src/commands/registry.rs:3-50`, `scripts/generate-bindings.mjs:85-123`).
 
 ## Current Topics
 

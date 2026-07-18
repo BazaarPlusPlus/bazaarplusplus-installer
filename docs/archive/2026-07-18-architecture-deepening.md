@@ -1,10 +1,23 @@
 ---
-status: active-plan
+status: implemented
 topic: architecture-deepening
-last-verified: 3eae49ccb359e7db4fbca47d94136cda6ccc2dbe
+last-verified: 7500016b1c4adfc7b5d0206c7def0ceabae514d5
 ---
 
 # 架构深化执行计划
+
+## 实施结果（2026-07-18）
+
+- 阶段 1（生成式 IPC）：`5953080a80db8ddfbc8419b869d6b0461c5d4862`；docs companion：`11e6eec26024d9eada033c7695054d2075ec8c4a`。
+- 阶段 2（Selected game installation）：`04a20c635e6d51fd56da143733f956e2638b1a5b`；docs companion：`37303b710cb7c3cf01e37899e46f1b8213638bf2`。
+- 阶段 3（Install operation）：`ee9f7f3e10716f810df078599d29a7256bcb3f6c`；docs companion：`affba9ca9039367ed8a8e7fa1fe7e07d890b2a53`。
+- 阶段 4（Stream runtime）：`faefb505c5717c3da3a71fc2361315ad2fb6658a`；docs companion：`f7961f767c8040f0279fde93c3a1d6ec533f0baa`。
+- 阶段 5（History facade / cleanup）：`77052422cac58e15f7c8c6e88e6b4eaaf15b99a1`；docs companion：`18fe3c88cc744cc720a14727917ff74bf868c636`。
+- 阶段 6（Stream workflow）：`4091a2a7b6490795c7ef509bbb1e717e85de98dd`；docs companion：`a28283984d03e76a86a61a6006178307850b030c`。
+- 阶段 7（清理与 smoke 修正）：格式门槛修正 `9fc3152bf0c16b906e161611f552477b05478f77`；Browser Preview 发现并修复 React Strict Mode 生命周期重放问题 `8b3b243e037ddf24ad9564b1673772d7b503cea2`。
+- 阶段 8（独立审查修正）：`7500016b1c4adfc7b5d0206c7def0ceabae514d5` 补齐 current payload/no-op/launch-mode-only repair 矩阵、bindings 备份 rename 失败保护，以及重叠慢轮询失败阈值。该 hash 是最终 truth docs 的验证目标。
+- 自动验证：bindings 连续生成两次均零 diff；`npm run format:check`、`npm run check`、`npm run test`（175 Rust + 110 Vitest）和 `npm run prebuild-check` 通过。Clippy 保持预检已有的 12 项历史错误，本次没有新增。
+- Smoke：Browser Preview 的 Install、History、两个 cleanup scope 和 Stream restart/crop/reset 通过且无 console error；原生 debug binary 启动、Selected installation/database 解析和固定 HTTP surface 通过。未对真实游戏数据执行 delete/reset/non-empty cleanup，且未完成 bundled window/tray 的可访问性操作验证；这些项目保留在 `docs/plans/manual-validation.md`。
 
 ## 目的与完成定义
 

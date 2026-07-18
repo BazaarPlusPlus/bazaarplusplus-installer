@@ -6,6 +6,8 @@ Last consolidation audit: `2026-06-11` on `7b18f73d4718d3e1406de9f526d1fbba09ac5
 
 Last full citation verification: `2026-07-11` on `4366cda394fe304066b55564c3c44d1f917a2273` — every `file:line` claim in `CONTEXT.md`, `docs/truth/`, and `docs/plans/manual-validation.md` checked against code; stale line ranges corrected in `launch-modes.md`, `history-stream.md`, and `manual-validation.md`.
 
+Architecture deepening citation refresh: `2026-07-18` on `7500016b1c4adfc7b5d0206c7def0ceabae514d5` — `CONTEXT.md`, the six affected truth topics, and the retained manual-validation items were checked against the final implementation and review fixes.
+
 ## Current Manifest
 
 | Path | Topic | Status | Last verified |
@@ -14,17 +16,16 @@ Last full citation verification: `2026-07-11` on `4366cda394fe304066b55564c3c44d
 | `CLAUDE.md` | agent instructions | operational | 2026-06-11 |
 | `README.md` | project entrypoint | current-entrypoint | 2026-07-11 |
 | `.trae/rules/git-commit-message.md` | ignored local rule | ignored-operational | n/a |
-| `docs/INDEX.md` | documentation manifest | manifest | 2026-07-11 |
-| `CONTEXT.md` | entry map + glossary | truth | `4091a2a7b6490795c7ef509bbb1e717e85de98dd` |
-| `docs/truth/architecture.md` | architecture | truth | `4091a2a7b6490795c7ef509bbb1e717e85de98dd` |
-| `docs/truth/frontend.md` | frontend | truth | `4091a2a7b6490795c7ef509bbb1e717e85de98dd` |
-| `docs/truth/install-reset.md` | install-reset | truth | `faefb505c5717c3da3a71fc2361315ad2fb6658a` |
+| `docs/INDEX.md` | documentation manifest | manifest | 2026-07-18 |
+| `CONTEXT.md` | entry map + glossary | truth | `7500016b1c4adfc7b5d0206c7def0ceabae514d5` |
+| `docs/truth/architecture.md` | architecture | truth | `7500016b1c4adfc7b5d0206c7def0ceabae514d5` |
+| `docs/truth/frontend.md` | frontend | truth | `7500016b1c4adfc7b5d0206c7def0ceabae514d5` |
+| `docs/truth/install-reset.md` | install-reset | truth | `7500016b1c4adfc7b5d0206c7def0ceabae514d5` |
 | `docs/truth/launch-modes.md` | launch-modes | truth | `4366cda394fe304066b55564c3c44d1f917a2273` |
-| `docs/truth/history-stream.md` | history-stream | truth | `77052422cac58e15f7c8c6e88e6b4eaaf15b99a1` |
+| `docs/truth/history-stream.md` | history-stream | truth | `7500016b1c4adfc7b5d0206c7def0ceabae514d5` |
 | `docs/truth/updater-release.md` | updater-release | truth | `4366cda394fe304066b55564c3c44d1f917a2273` |
-| `docs/truth/verification.md` | verification | truth | `5953080a80db8ddfbc8419b869d6b0461c5d4862` |
-| `docs/plans/architecture-deepening.md` | architecture-deepening | active-plan | `3eae49ccb359e7db4fbca47d94136cda6ccc2dbe` |
-| `docs/plans/manual-validation.md` | manual-validation | active-plan | `4366cda394fe304066b55564c3c44d1f917a2273` |
+| `docs/truth/verification.md` | verification | truth | `7500016b1c4adfc7b5d0206c7def0ceabae514d5` |
+| `docs/plans/manual-validation.md` | manual-validation | active-plan | `7500016b1c4adfc7b5d0206c7def0ceabae514d5` |
 | `docs/agents/issue-tracker.md` | agent skills: issue tracker | operational | 2026-07-11 |
 | `docs/agents/triage-labels.md` | agent skills: triage labels | operational | 2026-07-11 |
 | `docs/agents/domain.md` | agent skills: domain doc rules | operational | 2026-07-11 |
@@ -53,6 +54,7 @@ Last full citation verification: `2026-07-11` on `4366cda394fe304066b55564c3c44d
 | `docs/archive/2026-07-03-steam-branch-switch-impl.md` | steam-branch-switch-impl (plan) | reverted-removed | archived 2026-07-04 |
 | `docs/archive/2026-07-02-payload-ownership-hardening.md` | payload-ownership (plan) | implemented | archived 2026-07-02 |
 | `docs/archive/2026-07-02-storage-cleanup.md` | storage-cleanup (plan) | implemented | archived 2026-07-11 |
+| `docs/archive/2026-07-18-architecture-deepening.md` | architecture-deepening (plan) | implemented | `7500016b1c4adfc7b5d0206c7def0ceabae514d5` |
 
 ## Pending Decisions
 

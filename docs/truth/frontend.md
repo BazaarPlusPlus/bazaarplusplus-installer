@@ -1,7 +1,7 @@
 ---
 status: truth
 topic: frontend
-last-verified: 4091a2a7b6490795c7ef509bbb1e717e85de98dd
+last-verified: 7500016b1c4adfc7b5d0206c7def0ceabae514d5
 ---
 
 # Frontend
@@ -24,9 +24,9 @@ last-verified: 4091a2a7b6490795c7ef509bbb1e717e85de98dd
 ## Runtime Seam
 
 - `commandClient` selects the normalized generated native client or Browser Preview adapter once at module load in `src/api/commandClient.ts:1-10`; feature APIs call typed command functions rather than command strings.
-- Both adapters implement a contract derived from the generated command object in `src/api/commandAdapter.ts:1-18`. The native adapter normalizes backend rejections in `src/api/nativeCommands.ts:4-33`, while Preview declares every generated operation and returns scope-tagged cleanup values for both scopes in `src/api/previewCommands.ts:14-51`.
+- Both adapters implement a contract derived from the generated command object in `src/api/commandAdapter.ts:1-16`. The native adapter normalizes backend rejections in `src/api/nativeCommands.ts:4-33`, while Preview declares every generated operation and returns scope-tagged cleanup values for both scopes in `src/api/previewCommands.ts:14-51`.
 - Shared install, stream, crop, history, cleanup, and bootstrap preview values live in the leaf module `src/api/previewDefaults.ts`; Preview reuses those object references in `src/api/previewCommands.ts:16-50` so polling preserves React state bailouts.
-- Stream commands pass through one semantic port over the selected native or Preview command adapter in `src/features/stream/streamApi.ts:7-36`. The framework-neutral workflow owns initialization, polling, action serialization, async response epochs, error priority, transient messages, and the derived page snapshot in `src/features/stream/streamWorkflow.ts:114-215` and `src/features/stream/streamWorkflow.ts:376-515`; `useStreamPage` only supplies browser ports and binds its lifecycle to React in `src/features/stream/useStreamPage.ts:10-61`.
+- Stream commands pass through one semantic port over the selected native or Preview command adapter in `src/features/stream/streamApi.ts:7-36`. The framework-neutral workflow owns replayable lifecycle initialization, polling thresholds and response epochs, action serialization, error priority, transient messages, and the derived page snapshot in `src/features/stream/streamWorkflow.ts:139-293` and `src/features/stream/streamWorkflow.ts:395-539`; `useStreamPage` only supplies browser ports and binds its lifecycle to React in `src/features/stream/useStreamPage.ts:10-61`.
 
 ## Current Product Surfaces
 
