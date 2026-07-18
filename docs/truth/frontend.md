@@ -1,7 +1,7 @@
 ---
 status: truth
 topic: frontend
-last-verified: 838d5d6bf30e16a277e5b367b648333e8923759a
+last-verified: 2bf15726776492127c3eca2162dd26306c3ab310
 ---
 
 # Frontend
@@ -10,7 +10,7 @@ last-verified: 838d5d6bf30e16a277e5b367b648333e8923759a
 
 - `GlobalShell` wraps the app in bootstrap, updater, and modal-coordinator providers before rendering the shell header, nav rail, and route outlet in `src/layouts/GlobalShell.tsx:18-27` and `src/layouts/GlobalShell.tsx:66-107`.
 - Bilibili and Support are controlled disclosures: Escape closes the open menu and restores its trigger, while outside pointer-down closes it in `src/layouts/GlobalShell.tsx:39-64`; their triggers expose expanded/control/menu relationships and their entries are menu items in `src/layouts/ShellHeader.tsx:457-565` and `src/layouts/ShellHeader.tsx:590-679`.
-- Payment and update dialogs register as global modal sources. Payment is informational; idle update phases are system priority; uncancellable download/install adopts critical blocked semantics without losing source identity in `src/layouts/GlobalShell.tsx:109-133`.
+- Payment and update dialogs register as global modal sources. Payment is informational; the updater's pure presentation contract supplies its open state, priority, dismissal policy, and modal action from the same snapshot used by the header in `src/layouts/GlobalShell.tsx:30-38`, `src/layouts/GlobalShell.tsx:110-128`, and `src/layouts/ShellHeader.tsx:183-239`.
 
 ## Native-Feel Rules
 
@@ -50,6 +50,7 @@ last-verified: 838d5d6bf30e16a277e5b367b648333e8923759a
 
 ## Update Modal
 
-- The update modal is phase-driven: `available`, `downloading`, `installing`, `ready`, and install-sourced `error` render in the modal path in `src/features/about/updater.ts:90-103`.
-- During download/install the modal source adopts critical blocked policy because `downloadAndInstall` is not cancellable; the shared dialog enforces Escape/backdrop behavior while the modal removes dismiss actions in `src/layouts/GlobalShell.tsx:118-133` and `src/layouts/ShellUpdateModal.tsx:23-41`.
-- Download progress reports downloaded MB and percentage when total size is known in `src/layouts/ShellUpdateModal.tsx:162-190`.
+- The updater snapshot explicitly separates `checking`, `available`, `downloading`, `installing`, `ready-to-restart`, `restarting`, and `failed`; empty phases cannot retain update data, only downloading can retain progress, and failures retain a structured problem in `src/features/about/updater.ts:61-120`.
+- Header label/icon/busy/error tone and modal title/action/priority/dismissal are derived together for every phase. Available, ready, and recovery decisions are system/dismissible; downloading, installing, and restarting are critical/blocked and have no fake cancel action in `src/features/about/updaterPresentation.ts:39-118` and `src/layouts/ShellUpdateModal.tsx:19-149`.
+- Progress exposes an accessible label, minimum, known maximum/value, value text, and polite status announcement; unknown totals stay indeterminate rather than inventing a maximum in `src/layouts/ShellUpdateModal.tsx:155-207`.
+- Check, download, install, and restart failures use stable semantic codes with localized retry guidance and optional diagnostic disclosure. Restart failure preserves the installed version, explains reopening the app from Applications, and offers another restart attempt in `src/features/about/updaterProblems.ts:9-63`, `src/features/about/updater.ts:305-319`, and `src/layouts/ShellUpdateModal.tsx:112-147`.

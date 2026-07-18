@@ -1,7 +1,7 @@
 ---
 status: truth
 topic: updater-release
-last-verified: 838d5d6bf30e16a277e5b367b648333e8923759a
+last-verified: 2bf15726776492127c3eca2162dd26306c3ab310
 ---
 
 # Updater And Release
@@ -11,11 +11,11 @@ last-verified: 838d5d6bf30e16a277e5b367b648333e8923759a
 - The Tauri bundle config creates updater artifacts in `src-tauri/tauri.conf.json:27-30`.
 - The updater endpoint is `https://bppinstaller.bazaarplusplus.com/latest.json`, and the public key is configured in `src-tauri/tauri.conf.json:31-36`.
 - Runtime capabilities allow updater check, updater download/install, and process restart in `src-tauri/capabilities/default.json:6-11`.
-- The updater implementation keeps the `Update` handle alive across user interactions because `downloadAndInstall` must run on the same handle returned by `check()` in `src/features/about/updater.ts:6-14`.
-- `runCheck` returns `preview` outside Tauri runtime, `available` with version/notes/handle when a plugin update exists, or `current` when none exists in `src/features/about/updater.ts:42-56`.
-- The state machine deduplicates checks, surfaces manual check errors in the header, keeps startup checks silent, tracks download progress, drops consumed handles after `downloadAndInstall`, and transitions to ready/error in `src/features/about/updater.ts:139-240`.
-- The update dialog registers with the global modal coordinator at system priority, so it cannot interrupt an active destructive confirmation; downloading/installing upgrades the same source to critical blocked policy because the native updater operation cannot be cancelled in `src/layouts/GlobalShell.tsx:118-133` and `src/layouts/ShellUpdateModal.tsx:23-41`.
-- On Windows, `downloadAndInstall` tries `relaunch()` as a fallback while expecting the NSIS installer to own close/restart behavior in `src/features/about/updater.ts:221-230`.
+- The updater implementation keeps the `Update` handle alive across user interactions because `downloadAndInstall` must run on the same handle returned by `check()` in `src/features/about/updater.ts:9-17`.
+- `runCheck` returns `preview` outside Tauri runtime, `available` with version/notes/handle when a plugin update exists, or `current` when none exists in `src/features/about/updater.ts:45-59`.
+- The discriminated snapshot encodes checking, available, downloading, installing, ready-to-restart, restarting, and failed states without contradictory progress/problem fields in `src/features/about/updater.ts:61-120`. The machine guards duplicate work/dismissal, consumes handles once, refreshes a handle on retry, separates download from install failure at the Finished event, and preserves known version/notes across restart failure in `src/features/about/updater.ts:132-335`.
+- Known updater failures are stable semantic problems rather than native error copy. Check/download/install/restart codes carry operation and optional version parameters plus diagnostic detail; bilingual presenters supply recovery text in `src/features/about/updaterProblems.ts:9-63`, `src/i18n/messages.ts:175-204`, and `src/i18n/messages.ts:530-564`.
+- One phase presentation supplies both the header status and modal contract. Update decisions remain system priority behind confirmations, while download/install/restart work upgrades the same modal source to critical blocked policy in `src/features/about/updaterPresentation.ts:22-118` and `src/layouts/GlobalShell.tsx:119-128`.
 
 ## Reproducible Release Inputs
 
