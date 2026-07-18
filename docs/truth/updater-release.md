@@ -1,7 +1,7 @@
 ---
 status: truth
 topic: updater-release
-last-verified: 33d130731f030148b6e8d4f3981264002b5379cd
+last-verified: 45764680a4476063a46a92f4606dd520f0ce29ef
 ---
 
 # Updater And Release
