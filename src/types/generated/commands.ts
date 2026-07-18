@@ -247,6 +247,14 @@ export type ScreenshotCleanupResult = {
 	skipped_pending_uploads: number,
 };
 
+export type SemanticProblem = {
+	code: SemanticProblemCode,
+	params: { [key in string]: string },
+	diagnostic: string | null,
+};
+
+export type SemanticProblemCode = "history_unavailable" | "history_read_failed";
+
 export type StorageCleanupExecution = { scope: "screenshots"; result: ScreenshotCleanupResult } | { scope: "run_data"; result: RunDataCleanupResult };
 
 /**  Wire strings are a stable contract with the frontend preset buttons. */

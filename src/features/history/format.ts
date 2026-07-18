@@ -1,17 +1,29 @@
 import type { MessageKey } from '../../i18n/messages';
+import type { Locale } from '../../i18n/messages';
 
-const dateTimeFormatter = new Intl.DateTimeFormat('zh-CN', {
-  month: '2-digit',
-  day: '2-digit',
-  hour: '2-digit',
-  minute: '2-digit'
-});
+const dateTimeFormatters: Record<Locale, Intl.DateTimeFormat> = {
+  zh: new Intl.DateTimeFormat('zh-CN', {
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit'
+  }),
+  en: new Intl.DateTimeFormat('en-US', {
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit'
+  })
+};
 
-export function formatDateTime(value: string | null | undefined) {
+export function formatDateTime(
+  value: string | null | undefined,
+  locale: Locale
+) {
   if (!value) return '-';
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
-  return dateTimeFormatter.format(date);
+  return dateTimeFormatters[locale].format(date);
 }
 
 export function formatRunResultLabel(result: string): {

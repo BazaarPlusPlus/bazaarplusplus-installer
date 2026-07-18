@@ -10,6 +10,7 @@ use crate::history::{
     delete_run_videos as delete_run_videos_in_repo, get_history_run_detail, list_history_runs,
     load_battle_video_path, load_run_id_for_battle, load_run_screenshot_path,
 };
+use crate::problem::{SemanticProblem, SemanticProblemCode};
 use crate::services::game_path::GamePathAcceptance;
 use crate::services::paths;
 use crate::services::selected_game_installation::SelectedGameInstallationState;
@@ -53,12 +54,14 @@ struct History {
 }
 
 impl History {
-    fn resolve(app: &tauri::AppHandle) -> Result<Self, String> {
-        let game_path = app
-            .state::<SelectedGameInstallationState>()
+    fn resolved_game_path(app: &tauri::AppHandle) -> Option<PathBuf> {
+        app.state::<SelectedGameInstallationState>()
             .resolve(app, None, GamePathAcceptance::DatabaseExists)
-            .map(|resolution| resolution.game_path);
-        Self::from_resolved_game_path(game_path)
+            .map(|resolution| resolution.game_path)
+    }
+
+    fn resolve(app: &tauri::AppHandle) -> Result<Self, String> {
+        Self::from_resolved_game_path(Self::resolved_game_path(app))
     }
 
     fn from_resolved_game_path(game_path: Option<PathBuf>) -> Result<Self, String> {
@@ -68,8 +71,23 @@ impl History {
             .ok_or_else(|| HISTORY_UNAVAILABLE.to_string())
     }
 
+    fn from_resolved_game_path_for_list(
+        game_path: Option<PathBuf>,
+    ) -> Result<Self, SemanticProblem> {
+        Self::from_resolved_game_path(game_path)
+            .map_err(|_| SemanticProblem::new(SemanticProblemCode::HistoryUnavailable))
+    }
+
     fn list_runs(&self, limit: usize) -> Result<HistoryRunList, String> {
         list_history_runs(&self.paths.database_path, limit.clamp(1, 200))
+    }
+
+    fn list_runs_for_page(&self, limit: usize) -> Result<HistoryRunList, SemanticProblem> {
+        self.list_runs(limit).map_err(|diagnostic| {
+            SemanticProblem::new(SemanticProblemCode::HistoryReadFailed)
+                .with_param("operation", "list_runs")
+                .with_diagnostic(diagnostic)
+        })
     }
 
     fn run_detail(&self, run_id: &str) -> Result<HistoryRunDetail, String> {
@@ -212,8 +230,12 @@ impl History {
     }
 }
 
-pub fn list_runs(app: &tauri::AppHandle, limit: Option<usize>) -> Result<HistoryRunList, String> {
-    History::resolve(app)?.list_runs(limit.unwrap_or(50))
+pub fn list_runs(
+    app: &tauri::AppHandle,
+    limit: Option<usize>,
+) -> Result<HistoryRunList, SemanticProblem> {
+    History::from_resolved_game_path_for_list(History::resolved_game_path(app))?
+        .list_runs_for_page(limit.unwrap_or(50))
 }
 
 pub fn get_run_detail(app: &tauri::AppHandle, run_id: &str) -> Result<HistoryRunDetail, String> {
@@ -347,6 +369,7 @@ mod tests {
         StorageCleanupExecution, StorageCleanupPreset, StorageCleanupPreview, StorageCleanupScope,
         HISTORY_UNAVAILABLE,
     };
+    use crate::problem::SemanticProblemCode;
     use crate::services::paths;
     use std::{path::Path, sync::Mutex};
 
@@ -446,6 +469,30 @@ mod tests {
         let error = History::from_resolved_game_path(None).err().unwrap();
 
         assert_eq!(error, HISTORY_UNAVAILABLE);
+    }
+
+    #[test]
+    fn history_page_list_uses_semantic_unavailable_and_read_failed_problems() {
+        let unavailable = History::from_resolved_game_path_for_list(None)
+            .err()
+            .unwrap();
+        assert_eq!(unavailable.code, SemanticProblemCode::HistoryUnavailable);
+        assert!(unavailable.params.is_empty());
+        assert_eq!(unavailable.diagnostic, None);
+
+        let temp = tempfile::tempdir().unwrap();
+        let game_path = temp.path().join("The Bazaar");
+        let history = History::from_resolved_game_path_for_list(Some(game_path.clone())).unwrap();
+        std::fs::create_dir_all(history.paths.database_path.parent().unwrap()).unwrap();
+        std::fs::write(&history.paths.database_path, b"not sqlite").unwrap();
+
+        let read_failed = history.list_runs_for_page(50).unwrap_err();
+        assert_eq!(read_failed.code, SemanticProblemCode::HistoryReadFailed);
+        assert_eq!(
+            read_failed.params.get("operation").map(String::as_str),
+            Some("list_runs")
+        );
+        assert!(read_failed.diagnostic.is_some());
     }
 
     #[test]
