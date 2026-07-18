@@ -19,7 +19,11 @@ import {
   type RunDetailActionState,
   type RunDetailActionTarget
 } from './runDetailPageState';
-import { runDetailProblemFromError } from './runDetailProblems';
+import {
+  runDetailProblemFromError,
+  type RunDetailProblem
+} from './runDetailProblems';
+import type { ConfirmedOperationOutcome } from '../shared/confirmedOperation';
 
 export function useRunDetailPage() {
   const { runId } = useParams<{ runId: string }>();
@@ -78,11 +82,28 @@ export function useRunDetailPage() {
   }, [load]);
 
   const runAction = useCallback(
-    async (name: RunDetailActionName, task: () => Promise<void>) => {
-      if (requestInFlightRef.current) return false;
+    async (
+      name: RunDetailActionName,
+      task: () => Promise<void>
+    ): Promise<ConfirmedOperationOutcome<RunDetailProblem>> => {
+      if (requestInFlightRef.current) {
+        return {
+          ok: false,
+          problem: runDetailProblemFromError(
+            new Error('Run Detail request is already in progress.')
+          )
+        };
+      }
       const previous = actionStateRef.current;
       const started = beginRunDetailAction(previous, name);
-      if (started === previous) return false;
+      if (started === previous) {
+        return {
+          ok: false,
+          problem: runDetailProblemFromError(
+            new Error('Another Run Detail action is already in progress.')
+          )
+        };
+      }
       commitActionState(started);
 
       try {
@@ -90,16 +111,13 @@ export function useRunDetailPage() {
         commitActionState(
           completeRunDetailAction(actionStateRef.current, name)
         );
-        return true;
+        return { ok: true };
       } catch (caught) {
+        const problem = runDetailProblemFromError(caught);
         commitActionState(
-          failRunDetailAction(
-            actionStateRef.current,
-            name,
-            runDetailProblemFromError(caught)
-          )
+          failRunDetailAction(actionStateRef.current, name, problem)
         );
-        return false;
+        return { ok: false, problem };
       }
     },
     [commitActionState]
@@ -107,17 +125,21 @@ export function useRunDetailPage() {
 
   const revealScreenshot = useCallback(async () => {
     if (state.phase !== 'ready') return false;
-    return runAction('screenshot', () =>
-      revealRunScreenshot(state.data.run.run_id)
-    );
+    return (
+      await runAction('screenshot', () =>
+        revealRunScreenshot(state.data.run.run_id)
+      )
+    ).ok;
   }, [runAction, state]);
 
   const revealVideo = useCallback(
     async (battleId: string, videoId?: string) => {
       if (state.phase !== 'ready' || !videoId) return false;
-      return runAction(`video:${battleId}`, () =>
-        revealBattleVideo(battleId, videoId)
-      );
+      return (
+        await runAction(`video:${battleId}`, () =>
+          revealBattleVideo(battleId, videoId)
+        )
+      ).ok;
     },
     [runAction, state.phase]
   );

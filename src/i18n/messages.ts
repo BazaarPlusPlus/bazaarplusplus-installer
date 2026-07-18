@@ -94,6 +94,7 @@ const zh = {
   modNotInstalled: '尚未安装',
   installDone: '安装完成',
   resetDataConfirmTitle: '重置本地数据',
+  resetDataTarget: '目标：{path} 内的 BazaarPlusPlusV4 文件夹',
   resetDataConfirmBody:
     '这会删除 The Bazaar 安装目录中 BazaarPlusPlusV4 下的本地数据库、截图和战斗回放视频。',
   resetDataConfirmKeepsInstall:
@@ -101,6 +102,7 @@ const zh = {
   resetDataConfirmGameClosed: '请先退出 The Bazaar，避免数据文件仍被占用。',
   resetDataConfirmAcknowledge: '我知道这些本地数据会被删除。',
   resetDataConfirmAction: '删除本地数据',
+  resetDataRunning: '正在删除目标本地数据…',
   resetDataDone: '本地数据已删除',
   resetDataNothingToDelete: '未找到可重置的本地数据',
   resetDataBlockedByGame: 'The Bazaar 仍在运行。请先退出游戏，再重置本地数据。',
@@ -111,6 +113,7 @@ const zh = {
   resetDataFailureCopied: '已复制',
   resetDataFailureCopyFailed: '复制失败，请手动选择文本复制',
   resetBepinexConfirmTitle: '重置 BepInEx 文件夹',
+  resetBepinexTarget: '目标：{path} 内的 BepInEx 文件夹',
   resetBepinexConfirmBody:
     '这会删除 The Bazaar 安装目录中的整个 BepInEx 文件夹。',
   resetBepinexConfirmOtherMods:
@@ -121,11 +124,13 @@ const zh = {
   resetBepinexConfirmAcknowledge:
     '我知道整个 BepInEx 文件夹（含其他模组）会被删除。',
   resetBepinexConfirmAction: '删除 BepInEx 文件夹',
+  resetBepinexRunning: '正在删除目标 BepInEx 文件夹…',
   resetBepinexDone: 'BepInEx 文件夹已删除',
   resetBepinexNothingToDelete: '未找到 BepInEx 文件夹',
   resetBepinexBlockedByGame:
     'The Bazaar 仍在运行。请先退出游戏，再重置 BepInEx 文件夹。',
   resetBepinexPartialFailure: '有 {count} 个项目未能删除。请关闭游戏后重试。',
+  operationCannotBeCancelled: '操作已开始，完成前无法取消或关闭此窗口。',
   uninstallDone: '卸载完成',
   selectGameDirFirst: '请先选择 The Bazaar 安装目录。',
   installWarningGameMissing:
@@ -245,8 +250,10 @@ const zh = {
   openVideoLocation: '打开视频位置',
   deleteVideo: '删除视频',
   deleteVideoConfirmTitle: '删除视频',
+  deleteVideoTarget: '目标：战斗 {battleId} · 视频 {videoId}',
   deleteVideoConfirmBody: '这会永久删除该场战斗的回放视频文件，且无法恢复。',
   deleteVideoConfirmAction: '删除视频',
+  deleteVideoRunning: '正在删除目标视频…',
 
   // Storage cleanup (History page)
   storageCleanupTitle: '存储清理',
@@ -256,6 +263,7 @@ const zh = {
   storageCleanupPresetOlderThan7Days: '清理 7 天前',
   storageCleanupPresetBeforeThisMonth: '仅保留本月',
   storageCleanupConfirmTitle: '确认清理',
+  storageCleanupTarget: '目标：{scope} · 范围：{preset}',
   storageCleanupScreenshotsConfirmBody:
     '将删除 {count} 张结算截图（约 {size}），删除后无法恢复。',
   storageCleanupRunDataConfirmBody:
@@ -263,6 +271,14 @@ const zh = {
   storageCleanupSkippedPending: '另有 {count} 项尚未完成上传，将自动跳过。',
   storageCleanupNothingToClean: '没有符合条件的可清理数据。',
   storageCleanupConfirmAction: '确认清理',
+  storageCleanupRunningScreenshots: '正在删除结算截图…',
+  storageCleanupRunningRunData: '正在删除对局数据…',
+  storageCleanupProblemUnavailable:
+    '未找到可清理的本地战绩数据库，请先在安装页选择正确的游戏目录。',
+  storageCleanupProblemPreviewFailed: '无法预览清理范围，请重试。',
+  storageCleanupProblemExecuteFailed:
+    '清理未完成，目标和范围已保留；请查看诊断后重试或安全关闭。',
+  storageCleanupProblemUnexpected: '清理存储时发生意外错误，请重试。',
   storageCleanupScreenshotsDone: '已删除 {files} 个文件，释放约 {size}。',
   storageCleanupRunDataDone:
     '已删除 {runs} 局对局和 {files} 个文件，释放约 {size}。',
@@ -411,6 +427,7 @@ const en: Record<MessageKey, string> = {
   modNotInstalled: 'Not installed yet',
   installDone: 'Install complete',
   resetDataConfirmTitle: 'Reset Local Data',
+  resetDataTarget: 'Target: the BazaarPlusPlusV4 folder inside {path}',
   resetDataConfirmBody:
     'This deletes the local database, screenshots, and combat replay videos under BazaarPlusPlusV4 in The Bazaar install directory.',
   resetDataConfirmKeepsInstall:
@@ -419,6 +436,7 @@ const en: Record<MessageKey, string> = {
     'Quit The Bazaar first so data files are not held open.',
   resetDataConfirmAcknowledge: 'I understand this local data will be deleted.',
   resetDataConfirmAction: 'Delete Local Data',
+  resetDataRunning: 'Deleting the target local data…',
   resetDataDone: 'Local data deleted',
   resetDataNothingToDelete: 'No resettable local data found',
   resetDataBlockedByGame:
@@ -430,6 +448,7 @@ const en: Record<MessageKey, string> = {
   resetDataFailureCopied: 'Copied',
   resetDataFailureCopyFailed: 'Copy failed. Select the text and copy manually.',
   resetBepinexConfirmTitle: 'Reset BepInEx Folder',
+  resetBepinexTarget: 'Target: the BepInEx folder inside {path}',
   resetBepinexConfirmBody:
     'This deletes the entire BepInEx folder in The Bazaar install directory.',
   resetBepinexConfirmOtherMods:
@@ -441,12 +460,15 @@ const en: Record<MessageKey, string> = {
   resetBepinexConfirmAcknowledge:
     'I understand the entire BepInEx folder (including other mods) will be deleted.',
   resetBepinexConfirmAction: 'Delete BepInEx Folder',
+  resetBepinexRunning: 'Deleting the target BepInEx folder…',
   resetBepinexDone: 'BepInEx folder deleted',
   resetBepinexNothingToDelete: 'No BepInEx folder found',
   resetBepinexBlockedByGame:
     'The Bazaar is still running. Quit the game before resetting the BepInEx folder.',
   resetBepinexPartialFailure:
     '{count} item(s) could not be deleted. Close the game, then try again.',
+  operationCannotBeCancelled:
+    'This operation has started and cannot be canceled or dismissed until it finishes.',
   uninstallDone: 'Uninstall complete',
   selectGameDirFirst: 'Select The Bazaar install directory first.',
   installWarningGameMissing:
@@ -570,9 +592,11 @@ const en: Record<MessageKey, string> = {
   openVideoLocation: 'Open video location',
   deleteVideo: 'Delete video',
   deleteVideoConfirmTitle: 'Delete Video',
+  deleteVideoTarget: 'Target: battle {battleId} · video {videoId}',
   deleteVideoConfirmBody:
     'This permanently deletes the replay video file for this battle and cannot be undone.',
   deleteVideoConfirmAction: 'Delete Video',
+  deleteVideoRunning: 'Deleting the target video…',
 
   storageCleanupTitle: 'Storage Cleanup',
   storageCleanupScreenshotsLabel: 'End-of-run screenshots',
@@ -581,6 +605,7 @@ const en: Record<MessageKey, string> = {
   storageCleanupPresetOlderThan7Days: 'Older than 7 days',
   storageCleanupPresetBeforeThisMonth: 'Keep this month only',
   storageCleanupConfirmTitle: 'Confirm Cleanup',
+  storageCleanupTarget: 'Target: {scope} · Range: {preset}',
   storageCleanupScreenshotsConfirmBody:
     'This will permanently delete {count} end-of-run screenshots (about {size}). This cannot be undone.',
   storageCleanupRunDataConfirmBody:
@@ -589,6 +614,16 @@ const en: Record<MessageKey, string> = {
     '{count} items are still pending upload and will be skipped.',
   storageCleanupNothingToClean: 'Nothing matches the selected range.',
   storageCleanupConfirmAction: 'Clean Up',
+  storageCleanupRunningScreenshots: 'Deleting end-of-run screenshots…',
+  storageCleanupRunningRunData: 'Deleting run data…',
+  storageCleanupProblemUnavailable:
+    'No local History database is available to clean. Select the correct game folder on the Install page.',
+  storageCleanupProblemPreviewFailed:
+    'The cleanup range could not be previewed. Please retry.',
+  storageCleanupProblemExecuteFailed:
+    'Cleanup did not finish. The target and range are preserved; review diagnostics, then retry or close safely.',
+  storageCleanupProblemUnexpected:
+    'Something unexpected happened while cleaning storage. Please retry.',
   storageCleanupScreenshotsDone: 'Deleted {files} files, freed about {size}.',
   storageCleanupRunDataDone:
     'Deleted {runs} runs and {files} files, freed about {size}.',

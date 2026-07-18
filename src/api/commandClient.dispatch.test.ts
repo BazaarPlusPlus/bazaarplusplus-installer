@@ -93,6 +93,29 @@ describe('native command adapter', () => {
       problem
     });
   });
+
+  it('preserves cleanup operation failures for localized retry', async () => {
+    vi.stubGlobal('window', { __TAURI_INTERNALS__: {} });
+    const problem = {
+      code: 'history_action_failed',
+      params: { operation: 'execute_storage_cleanup' },
+      diagnostic: 'database is locked'
+    };
+    invokeMock.mockRejectedValueOnce(problem);
+    const { commandClient } = await import('./commandClient');
+
+    await expect(
+      commandClient.executeStorageCleanup('run_data', 'all')
+    ).rejects.toMatchObject({
+      name: 'SemanticProblemError',
+      message: 'history_action_failed',
+      problem
+    });
+    expect(invokeMock).toHaveBeenCalledWith('execute_storage_cleanup', {
+      scope: 'run_data',
+      preset: 'all'
+    });
+  });
 });
 
 describe('normalizeBackendError sentinel contract', () => {

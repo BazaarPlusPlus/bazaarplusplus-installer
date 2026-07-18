@@ -37,6 +37,7 @@ export function InstallConfirmModal({
       confirmLabel={t('confirmInstall')}
       busyLabel={t('installing')}
       busy={busy}
+      activeDismissalPolicy={{ kind: 'blocked' }}
       onConfirm={onConfirm}
       onClose={onClose}
     >

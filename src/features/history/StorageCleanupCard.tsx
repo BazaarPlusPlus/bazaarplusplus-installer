@@ -1,9 +1,14 @@
 import { ChevronRight, Trash2 } from 'lucide-react';
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
-import { ErrorBanner } from '../../components/ui/ErrorBanner';
+import { ProblemBanner } from '../../components/ui/ProblemBanner';
 import { useI18n } from '../../i18n/LocaleProvider';
 import type { StorageCleanupPreset } from '../../types/backend';
 import { formatBytes } from './format';
+import { formatProblemDiagnostic } from '../shared/problems';
+import {
+  presentStorageCleanupProblem,
+  type StorageCleanupProblem
+} from './storageCleanupProblems';
 import {
   useStorageCleanup,
   type CleanupOutcome,
@@ -91,7 +96,9 @@ export function StorageCleanupCard({
         </summary>
 
         <div className="mt-3 flex flex-col gap-3">
-          {cleanup.error && <ErrorBanner message={cleanup.error} />}
+          {cleanup.previewProblem && (
+            <StorageCleanupProblemBanner problem={cleanup.previewProblem} />
+          )}
 
           <CleanupRow
             label={t('storageCleanupScreenshotsLabel')}
@@ -119,12 +126,35 @@ export function StorageCleanupCard({
           titleId="cleanup-confirm-modal-title"
           title={t('storageCleanupConfirmTitle')}
           tone="danger"
-          confirmLabel={t('storageCleanupConfirmAction')}
+          confirmLabel={
+            cleanup.problem ? t('retry') : t('storageCleanupConfirmAction')
+          }
+          busyLabel={
+            cleanup.pending.scope === 'screenshots'
+              ? t('storageCleanupRunningScreenshots')
+              : t('storageCleanupRunningRunData')
+          }
           busy={cleanup.busy}
+          activeDismissalPolicy={{ kind: 'blocked' }}
+          dismissLabel={
+            cleanup.operation?.phase === 'failed' ? t('close') : undefined
+          }
           confirmDisabled={pendingItemCount(cleanup.pending) === 0}
           onConfirm={cleanup.confirm}
           onClose={cleanup.cancel}
         >
+          <p className="m-0 text-[12px] leading-relaxed text-[rgba(232,200,122,0.86)] fira-code selectable">
+            {t('storageCleanupTarget', {
+              scope:
+                cleanup.pending.scope === 'screenshots'
+                  ? t('storageCleanupScreenshotsLabel')
+                  : t('storageCleanupRunDataLabel'),
+              preset: t(
+                PRESETS.find(({ preset }) => preset === cleanup.pending?.preset)
+                  ?.labelKey ?? 'storageCleanupPresetAll'
+              )
+            })}
+          </p>
           <p className="m-0 text-[13px] leading-relaxed text-[rgba(245,220,220,0.86)]">
             {pendingBody(cleanup.pending)}
           </p>
@@ -135,9 +165,27 @@ export function StorageCleanupCard({
               })}
             </p>
           )}
+          {cleanup.problem && (
+            <StorageCleanupProblemBanner problem={cleanup.problem} />
+          )}
         </ConfirmDialog>
       )}
     </>
+  );
+}
+
+function StorageCleanupProblemBanner({
+  problem
+}: {
+  problem: StorageCleanupProblem;
+}) {
+  const { t } = useI18n();
+  return (
+    <ProblemBanner
+      message={presentStorageCleanupProblem(problem, t)}
+      diagnostic={problem.diagnostic ? formatProblemDiagnostic(problem) : null}
+      diagnosticLabel={t('problemDiagnostics')}
+    />
   );
 }
 

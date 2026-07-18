@@ -31,6 +31,9 @@ import {
   presentInstallProblem,
   type InstallProblem
 } from './installProblems';
+import type { ConfirmedOperationOutcome } from '../shared/confirmedOperation';
+
+export type InstallActionResult = ConfirmedOperationOutcome<InstallProblem>;
 
 export function useInstallPage() {
   const { t } = useI18n();
@@ -98,11 +101,22 @@ export function useInstallPage() {
   );
 
   const runInstallAction = useCallback(
-    async (name: InstallOperation, task: () => Promise<void>) => {
-      if (requestInFlightRef.current || actionInFlightRef.current) return false;
+    async (
+      name: InstallOperation,
+      task: () => Promise<void>
+    ): Promise<InstallActionResult> => {
+      if (requestInFlightRef.current || actionInFlightRef.current) {
+        return {
+          ok: false,
+          problem: installProblemFromError(
+            new Error('Another Install action is already in progress.')
+          )
+        };
+      }
       actionInFlightRef.current = true;
+      let actionFailure: InstallProblem | null = null;
       try {
-        return await run(name, task, {
+        const completed = await run(name, task, {
           onStart: () => {
             setTransient(null);
             setActionProblem(null);
@@ -110,11 +124,21 @@ export function useInstallPage() {
           },
           errorMessage: (caught) => {
             const problem = installProblemFromError(caught);
+            actionFailure = problem;
             setActionProblem(problem);
             setResetDataFailurePaths(installFailurePaths(problem));
             return presentInstallProblem(problem, t);
           }
         });
+        if (completed) return { ok: true };
+        return {
+          ok: false,
+          problem:
+            actionFailure ??
+            installProblemFromError(
+              new Error('Install action did not start or finish.')
+            )
+        };
       } finally {
         actionInFlightRef.current = false;
       }

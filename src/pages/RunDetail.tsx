@@ -7,7 +7,6 @@ import {
   Trash2,
   Video
 } from 'lucide-react';
-import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { LoadingPanel } from '../components/ui/LoadingPanel';
@@ -25,9 +24,11 @@ import {
 } from '../features/history/format';
 import {
   presentRunDetailProblem,
+  runDetailProblemFromError,
   type RunDetailProblem
 } from '../features/history/runDetailProblems';
 import { formatProblemDiagnostic } from '../features/shared/problems';
+import { useConfirmedOperation } from '../features/shared/confirmedOperation';
 import { useI18n } from '../i18n/LocaleProvider';
 
 // Shared 7-track grid for the battle table header + rows so columns align and
@@ -42,26 +43,19 @@ export default function RunDetail() {
   const detail = page.detail;
   const { locale, t } = useI18n();
   const runResult = detail ? formatRunResultLabel(detail.run.result) : null;
-  const [pendingDelete, setPendingDelete] = useState<{
-    battleId: string;
-    videoId: string;
-  } | null>(null);
+  const deleteOperation = useConfirmedOperation<
+    { kind: 'delete-video'; battleId: string; videoId: string },
+    RunDetailProblem
+  >();
+  const pendingDelete = deleteOperation.state?.target ?? null;
   const screenshotAvailability = page.availability('screenshot');
   const screenshotFailure = page.problemFor('screenshot');
-  const pendingDeleteFailure = pendingDelete
-    ? page.problemFor(`battle:${pendingDelete.battleId}`)
-    : null;
 
-  const confirmDelete = async () => {
-    if (!pendingDelete) return;
-    const deleted = await page.deleteVideo(
-      pendingDelete.battleId,
-      pendingDelete.videoId
+  const confirmDelete = () =>
+    deleteOperation.controller.run(
+      (target) => page.deleteVideo(target.battleId, target.videoId),
+      runDetailProblemFromError
     );
-    if (deleted) {
-      setPendingDelete(null);
-    }
-  };
 
   return (
     <div className="flex flex-col gap-6 h-full overflow-hidden pb-8 max-w-5xl mx-auto w-full">
@@ -234,7 +228,11 @@ export default function RunDetail() {
                       battle={battle}
                       page={page}
                       onRequestDelete={(battleId, videoId) =>
-                        setPendingDelete({ battleId, videoId })
+                        deleteOperation.controller.request({
+                          kind: 'delete-video',
+                          battleId,
+                          videoId
+                        })
                       }
                     />
                   ))
@@ -250,20 +248,31 @@ export default function RunDetail() {
           titleId="delete-video-modal-title"
           title={t('deleteVideoConfirmTitle')}
           tone="danger"
-          confirmLabel={t('deleteVideoConfirmAction')}
-          busy={page.action === `delete:${pendingDelete.battleId}`}
-          dismissDisabled={page.action === `delete:${pendingDelete.battleId}`}
+          confirmLabel={
+            deleteOperation.state?.phase === 'failed'
+              ? t('retry')
+              : t('deleteVideoConfirmAction')
+          }
+          busyLabel={t('deleteVideoRunning')}
+          busy={deleteOperation.state?.phase === 'running'}
+          activeDismissalPolicy={{ kind: 'blocked' }}
+          dismissLabel={
+            deleteOperation.state?.phase === 'failed' ? t('close') : undefined
+          }
           onConfirm={confirmDelete}
-          onClose={() => setPendingDelete(null)}
+          onClose={deleteOperation.controller.dismiss}
         >
+          <p className="m-0 text-[12px] leading-relaxed text-[rgba(232,200,122,0.86)] fira-code selectable">
+            {t('deleteVideoTarget', {
+              battleId: pendingDelete.battleId,
+              videoId: pendingDelete.videoId
+            })}
+          </p>
           <p className="m-0 text-[13px] leading-relaxed text-[rgba(245,220,220,0.86)]">
             {t('deleteVideoConfirmBody')}
           </p>
-          {pendingDeleteFailure?.action.startsWith('delete:') && (
-            <RunDetailProblemBanner
-              problem={pendingDeleteFailure.problem}
-              onRetry={confirmDelete}
-            />
+          {deleteOperation.state?.phase === 'failed' && (
+            <RunDetailProblemBanner problem={deleteOperation.state.problem} />
           )}
         </ConfirmDialog>
       )}
@@ -428,7 +437,7 @@ function RunDetailProblemBanner({
   onRetry
 }: {
   problem: RunDetailProblem;
-  onRetry: () => void;
+  onRetry?: () => void;
 }) {
   const { t } = useI18n();
   return (
@@ -437,20 +446,24 @@ function RunDetailProblemBanner({
       diagnostic={problem.diagnostic ? formatProblemDiagnostic(problem) : null}
       diagnosticLabel={t('problemDiagnostics')}
       actions={
-        <>
-          {problem.code === 'history_unavailable' && (
-            <Link to="/" className="underline underline-offset-2">
-              {t('historyOpenInstall')}
-            </Link>
-          )}
-          <button
-            type="button"
-            onClick={onRetry}
-            className="underline underline-offset-2"
-          >
-            {t('retry')}
-          </button>
-        </>
+        problem.code === 'history_unavailable' || onRetry ? (
+          <>
+            {problem.code === 'history_unavailable' && (
+              <Link to="/" className="underline underline-offset-2">
+                {t('historyOpenInstall')}
+              </Link>
+            )}
+            {onRetry && (
+              <button
+                type="button"
+                onClick={onRetry}
+                className="underline underline-offset-2"
+              >
+                {t('retry')}
+              </button>
+            )}
+          </>
+        ) : undefined
       }
     />
   );

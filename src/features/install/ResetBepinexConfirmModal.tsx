@@ -1,16 +1,22 @@
 import { FolderX, ShieldCheck } from 'lucide-react';
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 import { useI18n } from '../../i18n/LocaleProvider';
+import { InstallProblemBanner } from './InstallProblemBanner';
+import type { InstallProblem } from './installProblems';
 
 export function ResetBepinexConfirmModal({
   busy,
   acknowledged,
+  targetPath,
+  problem,
   onAcknowledgedChange,
   onClose,
   onConfirm
 }: {
   busy: boolean;
   acknowledged: boolean;
+  targetPath: string;
+  problem: InstallProblem | null;
   onAcknowledgedChange: (acknowledged: boolean) => void;
   onClose: () => void;
   onConfirm: () => void | Promise<void>;
@@ -27,11 +33,17 @@ export function ResetBepinexConfirmModal({
         checked: acknowledged,
         onChange: onAcknowledgedChange
       }}
-      confirmLabel={t('resetBepinexConfirmAction')}
+      confirmLabel={problem ? t('retry') : t('resetBepinexConfirmAction')}
+      busyLabel={t('resetBepinexRunning')}
       busy={busy}
+      activeDismissalPolicy={{ kind: 'blocked' }}
+      dismissLabel={problem ? t('close') : undefined}
       onConfirm={onConfirm}
       onClose={onClose}
     >
+      <p className="m-0 text-[12px] leading-relaxed text-[rgba(232,200,122,0.86)] fira-code selectable break-all">
+        {t('resetBepinexTarget', { path: targetPath })}
+      </p>
       <div className="flex items-start gap-3 p-4 border border-[rgba(190,80,80,0.24)] rounded-[4px] bg-[rgba(160,50,50,0.08)] text-[rgba(245,220,220,0.86)]">
         <FolderX
           size={16}
@@ -53,6 +65,7 @@ export function ResetBepinexConfirmModal({
           <p className="m-0">{t('resetBepinexConfirmGameClosed')}</p>
         </div>
       </div>
+      {problem && <InstallProblemBanner problem={problem} />}
     </ConfirmDialog>
   );
 }

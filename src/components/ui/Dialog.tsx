@@ -15,7 +15,7 @@ export function Dialog({
   className = '',
   children
 }: {
-  onClose: () => void;
+  onClose: (reason: DialogCloseReason) => void;
   labelledBy?: string;
   className?: string;
   children: ReactNode;
@@ -38,14 +38,16 @@ export function Dialog({
       onCancel={(event) => {
         // Escape fires `cancel`; we own the close so the parent state stays in sync.
         event.preventDefault();
-        onClose();
+        onClose('escape');
       }}
       onClick={(event) => {
         // A click on the dialog itself (the backdrop area around the card) closes it.
-        if (event.target === event.currentTarget) onClose();
+        if (event.target === event.currentTarget) onClose('backdrop');
       }}
     >
       {children}
     </dialog>
   );
 }
+
+export type DialogCloseReason = 'escape' | 'backdrop';

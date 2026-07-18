@@ -255,6 +255,24 @@ impl History {
         }
     }
 
+    fn preview_cleanup_for_page(
+        &self,
+        scope: StorageCleanupScope,
+        preset: StorageCleanupPreset,
+    ) -> Result<StorageCleanupPreview, SemanticProblem> {
+        self.preview_cleanup(scope, preset)
+            .map_err(|diagnostic| history_action_problem("preview_storage_cleanup", diagnostic))
+    }
+
+    fn execute_cleanup_for_page(
+        &self,
+        scope: StorageCleanupScope,
+        preset: StorageCleanupPreset,
+    ) -> Result<StorageCleanupExecution, SemanticProblem> {
+        self.execute_cleanup(scope, preset)
+            .map_err(|diagnostic| history_action_problem("execute_storage_cleanup", diagnostic))
+    }
+
     fn require_database_exists(&self) -> Result<(), String> {
         self.paths
             .database_path
@@ -320,16 +338,18 @@ pub fn preview_storage_cleanup(
     app: &tauri::AppHandle,
     scope: StorageCleanupScope,
     preset: StorageCleanupPreset,
-) -> Result<StorageCleanupPreview, String> {
-    History::resolve(app)?.preview_cleanup(scope, preset)
+) -> Result<StorageCleanupPreview, SemanticProblem> {
+    History::from_resolved_game_path_for_page(History::resolved_game_path(app))?
+        .preview_cleanup_for_page(scope, preset)
 }
 
 pub fn execute_storage_cleanup(
     app: &tauri::AppHandle,
     scope: StorageCleanupScope,
     preset: StorageCleanupPreset,
-) -> Result<StorageCleanupExecution, String> {
-    History::resolve(app)?.execute_cleanup(scope, preset)
+) -> Result<StorageCleanupExecution, SemanticProblem> {
+    History::from_resolved_game_path_for_page(History::resolved_game_path(app))?
+        .execute_cleanup_for_page(scope, preset)
 }
 
 fn history_paths_for_game_path(game_path: PathBuf) -> HistoryStorage {
@@ -589,6 +609,43 @@ mod tests {
                 "delete_video",
                 history
                     .delete_battle_video_for_page("battle-1", "video-1")
+                    .unwrap_err(),
+            ),
+        ] {
+            assert_eq!(problem.code, SemanticProblemCode::HistoryActionFailed);
+            assert_eq!(
+                problem.params.get("operation").map(String::as_str),
+                Some(operation)
+            );
+            assert!(problem.diagnostic.is_some());
+        }
+    }
+
+    #[test]
+    fn storage_cleanup_page_classifies_preview_and_execute_failures() {
+        let temp = tempfile::tempdir().unwrap();
+        let game_path = temp.path().join("The Bazaar");
+        let history = History::from_resolved_game_path_for_page(Some(game_path.clone())).unwrap();
+        std::fs::create_dir_all(history.paths.database_path.parent().unwrap()).unwrap();
+        std::fs::write(&history.paths.database_path, b"not sqlite").unwrap();
+
+        for (operation, problem) in [
+            (
+                "preview_storage_cleanup",
+                history
+                    .preview_cleanup_for_page(
+                        StorageCleanupScope::RunData,
+                        StorageCleanupPreset::All,
+                    )
+                    .unwrap_err(),
+            ),
+            (
+                "execute_storage_cleanup",
+                history
+                    .execute_cleanup_for_page(
+                        StorageCleanupScope::RunData,
+                        StorageCleanupPreset::All,
+                    )
                     .unwrap_err(),
             ),
         ] {
