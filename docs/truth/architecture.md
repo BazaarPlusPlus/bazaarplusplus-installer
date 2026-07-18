@@ -1,7 +1,7 @@
 ---
 status: truth
 topic: architecture
-last-verified: 3fd7a24bb6e734f5c50a69d3a69144e21d52fae9
+last-verified: 2af743045b72631519a11dadea4b474c903519bd
 ---
 
 # Architecture
@@ -32,7 +32,7 @@ last-verified: 3fd7a24bb6e734f5c50a69d3a69144e21d52fae9
 - The frontend Stream workflow depends inward on command, scheduler, clipboard, and opener ports and exposes capability-oriented semantic snapshots in `src/features/stream/streamWorkflow.ts:25-122`. It owns response ordering and capability gates in `src/features/stream/streamWorkflow.ts:185-320` and `src/features/stream/streamWorkflow.ts:640-733`; the React hook provides outer adapters and only subscribes, starts, and disposes one locale-independent workflow in `src/features/stream/useStreamPage.ts:9-42`.
 - Frontend destructive confirmation state is centralized in a framework-neutral external-store controller rather than page-local booleans. It owns target retention, single-flight execution, success-only closure, and semantic failure retention in `src/features/shared/confirmedOperation.ts:3-94`; React only memoizes and subscribes to the controller at `src/features/shared/confirmedOperation.ts:82-94`.
 - Frontend modal scheduling is a separate framework-neutral external store. It owns priority/FIFO ordering, active-source retention, updates, and safe unregistration in `src/features/shared/modalCoordinator.ts:1-113`; the React provider only registers sources, renders the active one, carries dismissal policy into `Dialog`, and restores focus after the queue drains in `src/components/ui/ModalCoordinator.tsx:25-126` and `src/components/ui/Dialog.tsx:13-55`.
-- The updater is a framework-neutral state machine over injected Tauri check/relaunch effects and a retained native update handle. Its discriminated snapshot prevents phase/progress/problem contradictions, classifies check/download/install/restart failures semantically, and publishes guarded transitions in `src/features/about/updater.ts:29-130` and `src/features/about/updater.ts:132-335`; one pure presentation contract derives both shell status and coordinated-modal policy/actions in `src/features/about/updaterPresentation.ts:22-129`.
+- The updater is a framework-neutral state machine over injected Tauri check/relaunch effects and a retained native update handle. Its discriminated snapshot prevents phase/progress/problem contradictions, classifies check/download/install/restart failures semantically, and publishes guarded transitions in `src/features/about/updater.ts:29-130` and `src/features/about/updater.ts:132-335`; one pure presentation contract derives updater phase metadata and coordinated-modal policy/actions in `src/features/about/updaterPresentation.ts:22-129`.
 - About bootstrap loading is a framework-neutral state machine over an injected loader and optional packaged fallback. Its discriminated snapshot separates initial loading, authoritative native data, fallback data, and blocking failure; retry remains single-flight and preserves usable fallback until native recovery in `src/features/about/appBootstrap.ts:18-66` and `src/features/about/appBootstrap.ts:90-178`. The runtime adapter labels Browser Preview as fallback rather than native authority in `src/features/about/aboutApi.ts:5-10`.
 
 ## Build And Generated Artifacts
