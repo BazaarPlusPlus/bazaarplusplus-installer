@@ -1,24 +1,26 @@
 import {
-  AlertCircle,
-  Check,
   Coffee,
-  Download,
-  Eye,
-  Globe,
   Heart,
+  Languages,
+  Minus,
   MonitorPlay,
   QrCode,
-  RefreshCw,
-  Users
+  Users,
+  X
 } from 'lucide-react';
-import type { CSSProperties, ReactNode, RefObject } from 'react';
+import { getCurrentWindow } from '@tauri-apps/api/window';
+import {
+  useState,
+  type CSSProperties,
+  type ReactNode,
+  type RefObject
+} from 'react';
+import { hasTauriRuntime } from '../api/runtime';
 import type { AppBootstrapController } from '../features/about/useAppBootstrap';
-import { useUpdater } from '../features/about/UpdaterProvider';
-import { getUpdaterUiContract } from '../features/about/updaterPresentation';
-import { presentUpdaterProblem } from '../features/about/updaterProblems';
 import { useI18n } from '../i18n/LocaleProvider';
 import douyinPng from '../../static/support/douyin.png';
 import xiaohongshuSvg from '../../static/support/xiaohongshu.svg';
+import brandLogo from '../../static/brand/bazaarplusplus-logo.webp';
 
 type ShellHeaderProps = {
   app: AppBootstrapController;
@@ -48,16 +50,7 @@ export function ShellHeader({
   const { bootstrap } = app;
 
   return (
-    <header
-      className="flex-none relative px-6 py-4 border-b border-[rgba(200,148,55,0.18)] z-20 flex flex-row items-center justify-between gap-4"
-      style={{
-        background:
-          'linear-gradient(175deg, rgba(36,22,9,0.9), rgba(15,9,5,0.86))',
-        boxShadow:
-          '0 0 0 1px rgba(200,148,55,0.06) inset, 0 16px 42px rgba(0,0,0,0.42)'
-      }}
-    >
-      <ShellHeaderCorners />
+    <header className="bpp-header" data-tauri-drag-region>
       <ShellBrand />
       <ShellHeaderActions
         bootstrap={bootstrap}
@@ -75,84 +68,27 @@ export function ShellHeader({
   );
 }
 
-function ShellHeaderCorners() {
+function ShellBrand() {
+  const app = useAppBootstrapVersion();
   return (
-    <>
-      <div className="absolute top-2 left-2 text-[rgba(200,148,55,0.42)] pointer-events-none block">
-        <svg width="28" height="28" viewBox="0 0 40 40" fill="none">
-          <path
-            d="M2 2L2 16M2 2L16 2"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            strokeLinecap="square"
-          />
-          <circle cx="2" cy="2" r="1.5" fill="currentColor" />
-        </svg>
-      </div>
-      <div className="absolute top-2 right-2 text-[rgba(200,148,55,0.42)] pointer-events-none block">
-        <svg width="28" height="28" viewBox="0 0 40 40" fill="none">
-          <path
-            d="M38 2L38 16M38 2L24 2"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            strokeLinecap="square"
-          />
-          <circle cx="38" cy="2" r="1.5" fill="currentColor" />
-        </svg>
-      </div>
-    </>
+    <div
+      className="flex min-w-0 items-center gap-3 z-10"
+      data-tauri-drag-region
+    >
+      <img
+        src={brandLogo}
+        alt=""
+        className="bpp-brand-logo"
+        draggable={false}
+      />
+      <h1 className="bpp-brand-title">BazaarPlusPlus</h1>
+      <span className="bpp-version-chip">v{app}</span>
+    </div>
   );
 }
 
-function ShellBrand() {
-  const { t } = useI18n();
-  return (
-    <div className="flex items-center gap-3 z-10 ml-6">
-      <div
-        className="text-[rgba(205,150,60,0.65)] flex-shrink-0"
-        style={{ filter: 'drop-shadow(0 0 7px rgba(205,150,60,0.22))' }}
-      >
-        <svg width="28" height="28" viewBox="0 0 44 44" fill="none">
-          <polygon
-            points="22,3 41,34 3,34"
-            stroke="currentColor"
-            strokeWidth="1"
-            fill="none"
-            opacity="0.55"
-          />
-          <polygon
-            points="22,11 35,31 9,31"
-            stroke="currentColor"
-            strokeWidth="0.5"
-            fill="none"
-            opacity="0.3"
-          />
-          <circle
-            cx="22"
-            cy="22"
-            r="5"
-            stroke="currentColor"
-            strokeWidth="0.8"
-            fill="none"
-          />
-          <circle cx="22" cy="22" r="2" fill="currentColor" opacity="0.75" />
-        </svg>
-      </div>
-      <div className="flex flex-row items-baseline gap-3">
-        <h1
-          className="cinzel-decorative text-2xl font-bold m-0 leading-none text-gold-text"
-          style={{
-            filter: 'drop-shadow(0 2px 10px rgba(205,150,60,0.28))'
-          }}
-        >
-          BazaarPlusPlus
-        </h1>
-        <p className="m-0 italic text-[13px] text-[rgba(200,170,120,0.8)]">
-          {t('kicker')}
-        </p>
-      </div>
-    </div>
-  );
+function useAppBootstrapVersion() {
+  return __FRONTEND_VERSION__;
 }
 
 type ShellHeaderActionsProps = {
@@ -181,26 +117,9 @@ function ShellHeaderActions({
   onCloseSupport
 }: ShellHeaderActionsProps) {
   const { t, toggle } = useI18n();
-  const updater = useUpdater();
-  const updaterUi = getUpdaterUiContract(updater);
-  const checkLabel = t(updaterUi.header.labelKey);
-  const checkTitle =
-    updater.phase === 'failed'
-      ? presentUpdaterProblem(updater.problem, t)
-      : undefined;
-  const CheckIcon =
-    updaterUi.header.icon === 'current'
-      ? Check
-      : updaterUi.header.icon === 'preview'
-        ? Eye
-        : updaterUi.header.icon === 'restart'
-          ? RefreshCw
-          : updaterUi.header.icon === 'error'
-            ? AlertCircle
-            : Download;
 
   return (
-    <div className="flex items-center gap-3 z-10 justify-end mr-6">
+    <div className="flex min-w-0 items-center gap-2 z-10 justify-end">
       <ShellSocialLinks
         bootstrap={bootstrap}
         triggerRef={bilibiliTriggerRef}
@@ -208,35 +127,6 @@ function ShellHeaderActions({
         onToggleBilibili={onToggleBilibili}
         onCloseBilibili={onCloseBilibili}
       />
-
-      <button
-        type="button"
-        onClick={updater.checkNow}
-        disabled={updaterUi.header.disabled}
-        title={checkTitle}
-        aria-label={checkTitle ? `${checkLabel}: ${checkTitle}` : checkLabel}
-        className="flex items-center gap-2 px-3 h-8 border border-[rgba(200,148,55,0.24)] rounded-[2px] cinzel text-[10px] tracking-widest uppercase transition-all hover:border-[rgba(200,148,55,0.4)] disabled:opacity-60"
-        style={{
-          background:
-            'linear-gradient(180deg, rgba(200,148,55,0.12), rgba(200,148,55,0.06))',
-          color:
-            updaterUi.header.tone === 'error'
-              ? 'rgba(224,150,130,0.92)'
-              : 'rgba(228,216,191,0.82)',
-          boxShadow: '0 0 0 1px rgba(255,198,98,0.08) inset'
-        }}
-      >
-        <CheckIcon
-          size={14}
-          className={updaterUi.header.busy ? 'animate-pulse' : ''}
-        />
-        <span className="inline">{checkLabel}</span>
-        {checkTitle && (
-          <span role="alert" className="sr-only">
-            {checkTitle}
-          </span>
-        )}
-      </button>
 
       <ShellSupportMenu
         bootstrap={bootstrap}
@@ -250,17 +140,65 @@ function ShellHeaderActions({
       <button
         type="button"
         onClick={toggle}
-        className="flex items-center justify-center size-8 border border-[rgba(200,148,55,0.24)] rounded-[2px] transition-all hover:border-[rgba(200,148,55,0.4)]"
-        style={{
-          background:
-            'linear-gradient(180deg, rgba(200,148,55,0.12), rgba(200,148,55,0.06))',
-          color: 'rgba(228,216,191,0.82)',
-          boxShadow: '0 0 0 1px rgba(255,198,98,0.08) inset'
-        }}
+        className="bpp-button bpp-language-button size-9"
         title={t('languageToggle')}
         aria-label={t('languageToggle')}
       >
-        <Globe size={16} />
+        <Languages size={17} strokeWidth={1.8} aria-hidden="true" />
+      </button>
+
+      <WindowsWindowControls />
+    </div>
+  );
+}
+
+function isWindowsTauriRuntime() {
+  return (
+    hasTauriRuntime() &&
+    typeof navigator !== 'undefined' &&
+    navigator.userAgent.includes('Windows')
+  );
+}
+
+function WindowsWindowControls() {
+  const [isWindowsRuntime] = useState(isWindowsTauriRuntime);
+
+  if (!isWindowsRuntime) return null;
+
+  const minimize = () => {
+    void getCurrentWindow()
+      .minimize()
+      .catch((error) => {
+        console.error('Failed to minimize the Windows window.', error);
+      });
+  };
+  const close = () => {
+    void getCurrentWindow()
+      .close()
+      .catch((error) => {
+        console.error('Failed to close the Windows window.', error);
+      });
+  };
+
+  return (
+    <div className="bpp-window-controls" aria-label="Window controls">
+      <button
+        type="button"
+        onClick={minimize}
+        className="bpp-button bpp-window-control-button size-9 shrink-0"
+        title="Minimize window"
+        aria-label="Minimize window"
+      >
+        <Minus size={17} strokeWidth={1.8} aria-hidden="true" />
+      </button>
+      <button
+        type="button"
+        onClick={close}
+        className="bpp-button bpp-window-control-button bpp-window-close-button size-9 shrink-0"
+        title="Close window"
+        aria-label="Close window"
+      >
+        <X size={16} strokeWidth={1.8} aria-hidden="true" />
       </button>
     </div>
   );
@@ -366,7 +304,7 @@ function ShellSocialLinks({
 }) {
   const { t } = useI18n();
   return (
-    <div className="flex items-center gap-1 mr-2">
+    <div className="bpp-header-socials flex items-center gap-1 mr-1">
       <a
         href={bootstrap.links.github}
         target="_blank"
@@ -464,13 +402,7 @@ function ShellSocialLinks({
           ref={triggerRef}
           type="button"
           onClick={onToggleBilibili}
-          className="flex min-w-[66px] items-center justify-center gap-1.5 px-2.5 h-8 border border-[rgba(0,161,214,0.28)] rounded-[2px] text-[11px] font-medium tracking-[0.04em] transition-all hover:border-[rgba(0,161,214,0.55)] hover:text-[#7ad8ff]"
-          style={{
-            background:
-              'linear-gradient(180deg, rgba(0,161,214,0.1), rgba(200,148,55,0.05))',
-            color: 'rgba(228,216,191,0.82)',
-            boxShadow: '0 0 0 1px rgba(255,198,98,0.06) inset'
-          }}
+          className="bpp-button h-9 min-w-[68px] px-3 text-[11px] font-medium tracking-[0.04em]"
           aria-label={t('socialBilibili')}
           aria-expanded={showBilibili}
           aria-controls="shell-bilibili-menu"
@@ -570,7 +502,6 @@ function ShellSocialLinks({
           </div>
         )}
       </div>
-      <div className="w-px h-4 bg-[rgba(200,148,55,0.2)] mx-1" />
     </div>
   );
 }
@@ -596,13 +527,7 @@ function ShellSupportMenu({
       <button
         ref={triggerRef}
         type="button"
-        className="flex items-center gap-2 px-3 h-8 border border-[rgba(200,148,55,0.24)] rounded-[2px] cinzel text-[10px] tracking-widest uppercase transition-all hover:border-[rgba(200,148,55,0.4)]"
-        style={{
-          background:
-            'linear-gradient(180deg, rgba(200,148,55,0.12), rgba(200,148,55,0.06))',
-          color: 'rgba(228,216,191,0.82)',
-          boxShadow: '0 0 0 1px rgba(255,198,98,0.08) inset'
-        }}
+        className="bpp-button h-9 text-[10px] tracking-wider uppercase"
         onClick={onToggleSupport}
         aria-expanded={showSupport}
         aria-controls="shell-support-menu"

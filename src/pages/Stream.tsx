@@ -41,8 +41,8 @@ export default function Stream() {
 
   return (
     <PageShell eyebrow="Stream" title={t('streamTitle')}>
-      <div className="flex flex-col gap-6 flex-1 min-h-0 w-full">
-        <div className="p-6 bg-[rgba(18,11,5,0.88)] border border-[rgba(180,130,48,0.13)] rounded-sm shadow-[0_6px_28px_rgba(0,0,0,0.35)] flex flex-col gap-8 relative overflow-hidden">
+      <div className="flex min-h-0 w-full flex-1 flex-col gap-5">
+        <div className="bpp-panel relative flex flex-col gap-8 overflow-hidden p-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div
@@ -91,7 +91,7 @@ export default function Stream() {
                 type="button"
                 disabled={!snapshot.oneOff.canOpenOverlay}
                 onClick={() => void intents.openOverlay()}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-[rgba(200,148,55,0.06)] border border-[rgba(180,130,48,0.2)] rounded-sm hover:bg-[rgba(200,148,55,0.12)] disabled:opacity-40 disabled:hover:bg-[rgba(200,148,55,0.06)] transition-colors text-xs text-[#e8dcc8]"
+                className="bpp-button"
               >
                 <ExternalLink size={14} /> {t('streamOpenOverlay')}
               </button>
@@ -99,7 +99,7 @@ export default function Stream() {
                 type="button"
                 disabled={!snapshot.service.canRestart}
                 onClick={() => void intents.restart()}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-[rgba(200,148,55,0.06)] border border-[rgba(180,130,48,0.2)] rounded-sm hover:bg-[rgba(200,148,55,0.12)] disabled:opacity-40 disabled:hover:bg-[rgba(200,148,55,0.06)] transition-colors text-xs text-[#e8dcc8]"
+                className="bpp-button"
               >
                 <RefreshCw
                   size={14}
@@ -151,7 +151,7 @@ export default function Stream() {
             <div className="flex gap-2">
               <div
                 id="stream-obs-url"
-                className="flex-1 px-3 py-2 bg-[rgba(0,0,0,0.4)] border border-[rgba(180,130,48,0.2)] rounded-sm fira-code text-sm text-[rgba(228,216,191,0.8)] overflow-hidden text-ellipsis whitespace-nowrap selectable"
+                className="bpp-input selectable flex min-w-0 flex-1 items-center truncate px-4 fira-code text-xs"
                 aria-labelledby="stream-obs-url-label"
               >
                 {snapshot.oneOff.obsUrl ?? t('streamObsPlaceholder')}
@@ -160,7 +160,7 @@ export default function Stream() {
                 type="button"
                 disabled={!snapshot.oneOff.canCopyObsUrl}
                 onClick={() => void intents.copyObsUrl()}
-                className="flex items-center gap-2 px-4 py-2 bg-[rgba(200,148,55,0.1)] border border-[rgba(180,130,48,0.3)] rounded-sm hover:bg-[rgba(200,148,55,0.2)] disabled:opacity-40 disabled:hover:bg-[rgba(200,148,55,0.1)] transition-colors text-sm text-[#e8dcc8]"
+                className="bpp-button shrink-0"
               >
                 <Copy size={16} /> {t('copy')}
               </button>
@@ -175,7 +175,7 @@ export default function Stream() {
             )}
           </div>
 
-          <div className="flex flex-col gap-4 bg-[rgba(200,148,55,0.02)] p-4 rounded-sm border border-[rgba(200,148,55,0.08)]">
+          <div className="bpp-panel-subtle flex flex-col gap-4 p-4">
             <div className="flex justify-between items-center">
               <span className="cinzel text-[10px] tracking-widest text-[rgba(220,195,145,0.8)] uppercase">
                 {t('streamWindowSection')}
@@ -189,7 +189,7 @@ export default function Stream() {
                     type="button"
                     disabled={!snapshot.window.canMoveMoreHistory}
                     onClick={() => void intents.moveWindow(1)}
-                    className="flex items-center gap-1.5 px-2 py-1 bg-[rgba(200,148,55,0.06)] border border-[rgba(180,130,48,0.2)] rounded-sm hover:bg-[rgba(200,148,55,0.12)] disabled:opacity-40 disabled:hover:bg-[rgba(200,148,55,0.06)] transition-colors text-[10px] text-[#e8dcc8]"
+                    className="bpp-button !min-h-8 !px-3 text-[10px]"
                   >
                     <Maximize size={12} />
                     {t('streamMoreHistory')}
@@ -198,7 +198,7 @@ export default function Stream() {
                     type="button"
                     disabled={!snapshot.window.canMoveLessHistory}
                     onClick={() => void intents.moveWindow(-1)}
-                    className="flex items-center gap-1.5 px-2 py-1 bg-[rgba(200,148,55,0.06)] border border-[rgba(180,130,48,0.2)] rounded-sm hover:bg-[rgba(200,148,55,0.12)] disabled:opacity-40 disabled:hover:bg-[rgba(200,148,55,0.06)] transition-colors text-[10px] text-[#e8dcc8]"
+                    className="bpp-button !min-h-8 !px-3 text-[10px]"
                   >
                     <Minimize size={12} />
                     {t('streamLessHistory')}
@@ -269,7 +269,7 @@ export default function Stream() {
                     disabled={!snapshot.crop.canEdit}
                     onChange={() => void intents.changeDisplayMode(mode.value)}
                   />
-                  <div className="px-3 py-2 text-center text-sm border border-[rgba(180,130,48,0.3)] rounded-sm text-[rgba(228,216,191,0.6)] peer-checked:bg-[rgba(200,148,55,0.15)] peer-checked:text-[#e8c87a] peer-checked:border-[rgba(200,148,55,0.6)] transition-all">
+                  <div className="bpp-button flex w-full peer-checked:border-[rgba(237,139,24,.72)] peer-checked:bg-[rgba(223,126,15,.1)] peer-checked:text-[#ed8b18] peer-checked:shadow-[0_0_16px_rgba(229,129,15,.12)]">
                     {t(mode.labelKey)}
                   </div>
                 </label>
@@ -287,13 +287,13 @@ export default function Stream() {
                 value={snapshot.crop.code}
                 disabled={!snapshot.crop.canEdit}
                 onChange={(event) => intents.setCropCode(event.target.value)}
-                className="flex-1 min-w-[12rem] px-3 py-2 bg-[rgba(0,0,0,0.4)] border border-[rgba(180,130,48,0.2)] rounded-sm fira-code text-sm text-[rgba(228,216,191,0.8)] focus:border-[rgba(200,148,55,0.6)]"
+                className="bpp-input min-w-[14rem] flex-1 px-4 fira-code text-xs outline-none"
               />
               <button
                 type="button"
                 onClick={() => void intents.submitCropCode()}
                 disabled={!snapshot.crop.canEdit}
-                className="shrink-0 whitespace-nowrap px-4 py-2 bg-[rgba(200,148,55,0.06)] border border-[rgba(180,130,48,0.2)] rounded-sm hover:bg-[rgba(200,148,55,0.12)] disabled:opacity-40 transition-colors text-sm text-[#e8dcc8]"
+                className="bpp-button"
               >
                 {t('streamApplyCrop')}
               </button>
@@ -301,7 +301,7 @@ export default function Stream() {
                 type="button"
                 onClick={() => void intents.resetCropCode()}
                 disabled={!snapshot.crop.canEdit}
-                className="shrink-0 whitespace-nowrap px-4 py-2 bg-transparent border border-transparent hover:bg-[rgba(255,255,255,0.05)] rounded-sm transition-colors text-sm text-[rgba(200,170,120,0.8)]"
+                className="bpp-button"
               >
                 {t('streamResetCrop')}
               </button>
@@ -309,7 +309,7 @@ export default function Stream() {
                 type="button"
                 disabled={!snapshot.oneOff.canOpenSettings}
                 onClick={() => void intents.openSettings()}
-                className="shrink-0 whitespace-nowrap px-4 py-2 bg-[rgba(200,148,55,0.06)] border border-[rgba(180,130,48,0.2)] rounded-sm hover:bg-[rgba(200,148,55,0.12)] disabled:opacity-40 transition-colors text-sm text-[#e8dcc8] flex items-center gap-2"
+                className="bpp-button"
               >
                 <Settings2 size={16} /> {t('streamOpenSettings')}
               </button>

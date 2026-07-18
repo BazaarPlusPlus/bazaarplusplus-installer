@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { PageShell } from '../components/ui/PageShell';
 import { LoadingPanel } from '../components/ui/LoadingPanel';
+import { useAppBootstrap } from '../features/about/AppBootstrapProvider';
+import { useUpdater } from '../features/about/UpdaterProvider';
 import { InstallActionsPanel } from '../features/install/InstallActionsPanel';
 import { InstallConfirmModal } from '../features/install/InstallConfirmModal';
 import { InstallStatusPanel } from '../features/install/InstallStatusPanel';
@@ -15,6 +17,7 @@ import {
   type InstallProblem
 } from '../features/install/installProblems';
 import { ModalSource } from '../components/ui/ModalCoordinator';
+import type { PrimaryInstallMode } from '../features/install/PrimaryInstallActionButton';
 
 type InstallResetTarget = {
   kind: 'reset-data' | 'reset-bepinex';
@@ -23,6 +26,8 @@ type InstallResetTarget = {
 
 export default function Install() {
   const { t } = useI18n();
+  const app = useAppBootstrap();
+  const updater = useUpdater();
   const page = useInstallPage();
   const [showInstallModal, setShowInstallModal] = useState(false);
   const resetOperation = useConfirmedOperation<
@@ -34,6 +39,14 @@ export default function Install() {
   const [resetBepinexAcknowledged, setResetBepinexAcknowledged] =
     useState(false);
   const [compatOptIn, setCompatOptIn] = useState(false);
+  const primaryMode: PrimaryInstallMode = !page.installState?.mod_state
+    .installed
+    ? 'install'
+    : page.installState.mod_state.version_matches
+      ? 'launch'
+      : 'reinstall';
+  const appVersion =
+    app.resource.data?.app_version ?? app.bootstrap.app_version;
 
   const openInstallModal = () => {
     setShowInstallModal(true);
@@ -85,7 +98,11 @@ export default function Install() {
   };
 
   return (
-    <PageShell eyebrow="Install" title={t('installTitle')}>
+    <PageShell
+      eyebrow="Install"
+      title={t('installTitle')}
+      className="bpp-install-page"
+    >
       {page.pageState.phase === 'initial-loading' ? (
         <LoadingPanel label={t('installDetecting')} className="h-64" />
       ) : page.pageState.phase === 'blocking-failure' ? (
@@ -93,7 +110,7 @@ export default function Install() {
           problem={page.pageState.problem}
           onRetry={() => void page.refresh()}
         />
-      ) : page.installState && page.status && page.primaryAction ? (
+      ) : page.installState ? (
         <>
           {page.pageState.refresh.phase === 'failed' && (
             <InstallProblemBanner
@@ -110,21 +127,20 @@ export default function Install() {
               {t('installRefreshing')}
             </p>
           )}
-          <div className="grid grid-cols-12 gap-8 w-full">
-            <InstallStatusPanel
-              page={page}
-              state={page.installState}
-              status={page.status}
-            />
-            <InstallActionsPanel
-              page={page}
-              state={page.installState}
-              primaryAction={page.primaryAction}
-              onOpenInstallModal={openInstallModal}
-              onOpenResetDataModal={openResetDataModal}
-              onOpenResetBepinexModal={openResetBepinexModal}
-            />
-          </div>
+          <InstallStatusPanel
+            page={page}
+            state={page.installState}
+            primaryMode={primaryMode}
+            appVersion={appVersion}
+            onOpenInstallModal={openInstallModal}
+          />
+          <InstallActionsPanel
+            page={page}
+            updateChecking={updater.phase === 'checking'}
+            onCheckUpdate={updater.checkNow}
+            onOpenResetDataModal={openResetDataModal}
+            onOpenResetBepinexModal={openResetBepinexModal}
+          />
         </>
       ) : null}
 

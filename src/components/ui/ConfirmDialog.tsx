@@ -33,6 +33,7 @@ export interface ConfirmDialogProps {
    *  useId changes rendered bytes. Wired to <h2 id> and Dialog labelledBy. */
   titleId: string;
   title: string;
+  subtitle?: string;
   /** gold => DownloadCloud + gold chrome + body gap-6;
    *  danger => AlertTriangle + red chrome + body gap-5. */
   tone: ConfirmTone;
@@ -65,23 +66,23 @@ export interface ConfirmDialogProps {
 const TONE = {
   gold: {
     Icon: DownloadCloud as LucideIcon,
-    card: 'bg-[#0b0906] border border-[rgba(200,148,55,0.18)] rounded-[4px] shadow-[0_24px_64px_rgba(0,0,0,0.5)] w-full max-w-md mx-4 relative',
-    bar: 'flex justify-between items-center px-5 py-4 border-b border-[rgba(200,148,55,0.15)] bg-[rgba(200,148,55,0.02)]',
+    card: 'bpp-modal-card bpp-install-confirm-card w-full max-w-[560px] mx-4 relative',
+    bar: 'bpp-modal-header bpp-install-confirm-header flex justify-between items-center px-5 py-4',
     icon: 'text-[rgba(200,148,55,0.8)]',
     title: 'cinzel text-[1.1rem] text-[#e8dcc8] m-0 tracking-wider',
     close:
-      'text-[rgba(200,170,120,0.72)] hover:text-[#e8dcc8] transition-colors',
-    body: 'p-6 flex flex-col gap-6',
+      'bpp-install-confirm-close text-[rgba(200,170,120,0.72)] hover:text-[#e8dcc8] transition-colors',
+    body: 'bpp-install-confirm-body p-6 flex flex-col gap-6',
     ackBox:
-      'flex items-start gap-3 p-3 border border-[rgba(200,148,55,0.18)] rounded-[4px] bg-gradient-to-b from-[rgba(200,148,55,0.055)] to-[rgba(200,148,55,0.015)] group',
+      'bpp-install-confirm-ack flex items-start gap-3 p-3 border border-[rgba(200,148,55,0.18)] rounded-[4px] bg-gradient-to-b from-[rgba(200,148,55,0.055)] to-[rgba(200,148,55,0.015)] group',
     ackText: 'text-[13px] leading-relaxed text-[rgba(232,220,194,0.78)]',
     confirm:
-      'px-5 py-2 rounded-sm text-sm cinzel font-bold tracking-wider transition-all bg-gradient-to-b from-[#d4a040] to-[#9e5c1e] text-[#0b0906] shadow-[0_0_15px_rgba(212,160,64,0.4)] hover:brightness-110 active:brightness-95 disabled:opacity-45 disabled:hover:brightness-100'
+      'bpp-install-confirm-submit px-5 py-2 rounded-sm text-sm cinzel font-bold tracking-wider transition-all bg-gradient-to-b from-[#d4a040] to-[#9e5c1e] text-[#0b0906] shadow-[0_0_15px_rgba(212,160,64,0.4)] hover:brightness-110 active:brightness-95 disabled:opacity-45 disabled:hover:brightness-100'
   },
   danger: {
     Icon: AlertTriangle as LucideIcon,
-    card: 'bg-[#0b0906] border border-[rgba(190,80,80,0.24)] rounded-[4px] shadow-[0_24px_64px_rgba(0,0,0,0.5)] w-full max-w-md mx-4 relative',
-    bar: 'flex justify-between items-center px-5 py-4 border-b border-[rgba(190,80,80,0.18)] bg-[rgba(160,50,50,0.06)]',
+    card: 'bpp-modal-card bpp-modal-danger w-full max-w-md mx-4 relative',
+    bar: 'bpp-modal-header flex justify-between items-center px-5 py-4',
     icon: 'text-[rgba(232,120,120,0.9)]',
     title: 'cinzel text-[1.1rem] text-[#f0d8d8] m-0 tracking-wider',
     close:
@@ -98,6 +99,7 @@ const TONE = {
 export function ConfirmDialog({
   titleId,
   title,
+  subtitle,
   tone,
   children,
   acknowledge,
@@ -130,14 +132,24 @@ export function ConfirmDialog({
     });
 
   return (
-    <Dialog onClose={requestDismiss} labelledBy={titleId}>
+    <Dialog
+      onClose={requestDismiss}
+      labelledBy={titleId}
+      focusContainerOnOpen={tone === 'gold'}
+      className={tone === 'gold' ? 'bpp-install-confirm-dialog' : undefined}
+    >
       <div className={s.card}>
         <div className={s.bar}>
-          <div className="flex items-center gap-3">
-            <Icon size={18} className={s.icon} />
-            <h2 id={titleId} className={s.title}>
-              {title}
-            </h2>
+          <div className="flex items-center gap-4">
+            <Icon size={tone === 'gold' ? 30 : 18} className={s.icon} />
+            <div className="min-w-0">
+              <h2 id={titleId} className={s.title}>
+                {title}
+              </h2>
+              {subtitle && (
+                <p className="bpp-install-confirm-subtitle">{subtitle}</p>
+              )}
+            </div>
           </div>
           <button
             type="button"
@@ -165,12 +177,12 @@ export function ConfirmDialog({
               <span className={s.ackText}>{acknowledge.label}</span>
             </label>
           )}
-          <div className="flex justify-end gap-3 pt-2">
+          <div className="bpp-confirm-footer flex justify-end gap-3 pt-2">
             {secondaryLabel ? (
               <button
                 type="button"
                 onClick={() => requestDismiss('secondary-action')}
-                className="px-5 py-2 bg-[rgba(200,148,55,0.04)] border border-[rgba(180,130,48,0.2)] rounded-sm hover:bg-[rgba(200,148,55,0.1)] transition-colors text-sm text-[#e8dcc8]"
+                className="bpp-confirm-cancel px-5 py-2 bg-[rgba(200,148,55,0.04)] border border-[rgba(180,130,48,0.2)] rounded-sm hover:bg-[rgba(200,148,55,0.1)] transition-colors text-sm text-[#e8dcc8]"
               >
                 {secondaryLabel}
               </button>

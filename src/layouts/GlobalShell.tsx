@@ -1,4 +1,4 @@
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 import { useEffect, useRef, useState } from 'react';
 import {
   AppBootstrapProvider,
@@ -65,7 +65,8 @@ function GlobalShellContent() {
   }, [showBilibili, showSupport]);
 
   return (
-    <div className="flex flex-col h-full bg-[#0b0906] text-[#e8dcc8]">
+    <div className="bpp-app flex flex-col text-[#d9d4cb]">
+      <div className="bpp-app-vignette" aria-hidden="true" />
       <ShellHeader
         app={app}
         bilibiliTriggerRef={bilibiliTriggerRef}
@@ -88,21 +89,11 @@ function GlobalShellContent() {
         onCloseSupport={() => setShowSupport(false)}
       />
 
-      <div className="flex-1 flex overflow-hidden">
+      <div className="bpp-shell-body">
         <ShellNavRail />
-        <main
-          tabIndex={-1}
-          className="flex-1 overflow-y-auto bg-transparent relative"
-        >
-          <div
-            className="absolute inset-0 pointer-events-none opacity-5"
-            style={{
-              backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='turbulence' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23g)'/%3E%3C/svg%3E")`,
-              backgroundRepeat: 'repeat'
-            }}
-          />
-          <div className="p-8 h-full w-full relative z-10">
-            <Outlet />
+        <main tabIndex={-1} className="bpp-main custom-scrollbar">
+          <div className="bpp-main-inner">
+            <AnimatedOutlet />
           </div>
         </main>
       </div>
@@ -126,6 +117,39 @@ function GlobalShellContent() {
           <ShellUpdateModal updater={updater} presentation={updaterUi.modal} />
         )}
       </ModalSource>
+    </div>
+  );
+}
+
+function primaryPageIndex(pathname: string): number {
+  if (pathname.startsWith('/history')) return 1;
+  if (pathname.startsWith('/stream')) return 2;
+  if (pathname.startsWith('/about')) return 3;
+  return 0;
+}
+
+function AnimatedOutlet() {
+  const location = useLocation();
+  const currentIndex = primaryPageIndex(location.pathname);
+  const previousIndex = useRef(currentIndex);
+  const direction =
+    currentIndex > previousIndex.current
+      ? 'forward'
+      : currentIndex < previousIndex.current
+        ? 'backward'
+        : 'neutral';
+
+  useEffect(() => {
+    previousIndex.current = currentIndex;
+  }, [currentIndex]);
+
+  return (
+    <div
+      key={location.key}
+      className={`bpp-route-page is-${direction}`}
+      data-route-index={currentIndex}
+    >
+      <Outlet />
     </div>
   );
 }

@@ -60,7 +60,15 @@ function renderHeader({
   );
 }
 
-describe('ShellHeader Bilibili menu', () => {
+describe('ShellHeader', () => {
+  it('shows the brand logo and language icon without an update check', () => {
+    const html = renderHeader();
+
+    expect(html).not.toContain('检查更新');
+    expect(html).toContain('lucide-languages');
+    expect(html).toContain('bpp-brand-logo');
+  });
+
   it('shows the author, CoreDev, and project entries in order', () => {
     const html = renderHeader({ showBilibili: true });
 

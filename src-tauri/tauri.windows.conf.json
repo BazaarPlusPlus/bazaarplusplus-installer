@@ -1,5 +1,24 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
+  "app": {
+    "windows": [
+      {
+        "title": "BazaarPlusPlus",
+        "width": 972,
+        "height": 612,
+        "minWidth": 972,
+        "minHeight": 612,
+        "maxWidth": 972,
+        "maxHeight": 612,
+        "resizable": false,
+        "maximizable": false,
+        "fullscreen": false,
+        "decorations": false,
+        "shadow": true,
+        "visible": false
+      }
+    ]
+  },
   "bundle": {
     "targets": ["nsis"],
     "icon": ["icons/icon.ico"],

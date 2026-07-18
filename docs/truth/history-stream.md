@@ -1,7 +1,7 @@
 ---
 status: truth
 topic: history-stream
-last-verified: 0f609de844c0cbc48e7fb53396a90d5f32776c2b
+last-verified: 2af743045b72631519a11dadea4b474c903519bd
 ---
 
 # History And Stream
@@ -20,14 +20,14 @@ last-verified: 0f609de844c0cbc48e7fb53396a90d5f32776c2b
 
 ## History UI
 
-- History independently starts list loading and status-only preview discovery; it never ensures or starts a Stream session in `src/features/history/useHistoryPage.ts:37-68`. Stopped/failed Stream status becomes a non-blocking preview problem, and image load failures fall back inside the row in `src/features/history/historyPreview.ts:14-45` and `src/pages/History.tsx:194-230`.
-- The History page state union makes initial loading, blocking failure, ready-empty, and ready-content exclusive, while refreshing and refresh failure retain successful data in `src/features/shared/pageState.ts:1-60`, `src/features/history/historyPageState.ts:10-42`, and `src/pages/History.tsx:42-97`.
-- The History page renders Runs, Videos, and Win Rate summary cards in `src/pages/History.tsx:50-64`.
-- History rows include optional preview images and link to `/history/:run_id` details in `src/pages/History.tsx:125-230`.
-- Run detail makes initial loading, not-found, blocking failure, and ready content exclusive; refresh failure retains the last successful detail and stale completions are ignored in `src/features/history/runDetailPageState.ts:5-90` and `src/pages/RunDetail.tsx:66-130`.
-- Detail refresh, screenshot reveal, video reveal, and video deletion share one visible single-flight gate. Action failures stay scoped to the screenshot or affected battle and clear when that target retries in `src/features/history/runDetailPageState.ts:93-167`, `src/features/history/useRunDetailPage.ts:46-165`, `src/pages/RunDetail.tsx:160-181`, and `src/pages/RunDetail.tsx:306-432`.
-- Run detail formats dates, replay durations, and replay sizes through shared locale-aware helpers in `src/features/history/format.ts:4-61` and `src/features/history/format.ts:113-150`, with replay metadata rendered beside each video action in `src/pages/RunDetail.tsx:365-409`.
-- The History page renders the storage cleanup card after the summary cards only in a successful ready state in `src/pages/History.tsx:50-67`; the card offers separate end-of-run screenshot and run-data rows, then confirms the exact scope, preset, counts, and consequence. Execute failure keeps that target and localized semantic problem in place for retry or safe close; success alone closes and refreshes History in `src/features/history/StorageCleanupCard.tsx:84-171` and `src/features/history/useStorageCleanup.ts:23-78`.
+- History independently starts list loading and status-only preview discovery; it never ensures or starts a Stream session in `src/features/history/useHistoryPage.ts:37-68`. Stopped/failed Stream status becomes a non-blocking preview problem, and image load failures fall back inside the row in `src/features/history/historyPreview.ts:14-45` and `src/pages/History.tsx:196-230`.
+- The History page state union makes initial loading, blocking failure, ready-empty, and ready-content exclusive, while refreshing and refresh failure retain successful data in `src/features/shared/pageState.ts:1-60`, `src/features/history/historyPageState.ts:10-42`, and `src/pages/History.tsx:43-105`.
+- The History page renders Runs, Videos, and Win Rate summary cards in `src/pages/History.tsx:52-72`.
+- History rows include optional preview images and link to `/history/:run_id` details in `src/pages/History.tsx:130-230`.
+- Run detail makes initial loading, not-found, blocking failure, and ready content exclusive; refresh failure retains the last successful detail and stale completions are ignored in `src/features/history/runDetailPageState.ts:5-90` and `src/pages/RunDetail.tsx:86-130`.
+- Detail refresh, screenshot reveal, video reveal, and video deletion share one visible single-flight gate. Action failures stay scoped to the screenshot or affected battle and clear when that target retries in `src/features/history/runDetailPageState.ts:93-167`, `src/features/history/useRunDetailPage.ts:46-165`, `src/pages/RunDetail.tsx:155-177`, and `src/pages/RunDetail.tsx:320-445`.
+- Run detail formats dates, replay durations, and replay sizes through shared locale-aware helpers in `src/features/history/format.ts:4-61` and `src/features/history/format.ts:113-150`, with replay metadata rendered beside each video action in `src/pages/RunDetail.tsx:379-423`.
+- The History page renders the storage cleanup card after the summary cards only in a successful ready state in `src/pages/History.tsx:51-75`; the card offers separate end-of-run screenshot and run-data rows, then confirms the exact scope, preset, counts, and consequence. Execute failure keeps that target and localized semantic problem in place for retry or safe close; success alone closes and refreshes History in `src/features/history/StorageCleanupCard.tsx:87-199` and `src/features/history/useStorageCleanup.ts:23-78`.
 
 ## Storage Cleanup
 
@@ -46,7 +46,7 @@ last-verified: 0f609de844c0cbc48e7fb53396a90d5f32776c2b
 - `StreamRuntime` is the single lifecycle owner. Its async lifecycle mutex serializes ensure, restart, stop, window changes, and exclusive maintenance; task handles and captured installation paths remain private in `src-tauri/src/stream/runtime.rs:43-108` and `src-tauri/src/stream/runtime.rs:188-280`.
 - Ensure and restart resolve one Selected game installation snapshot while holding the lifecycle gate; window changes reuse the captured record path instead of re-resolving a possibly changed selection in `src-tauri/src/stream/runtime.rs:66-98`, `src-tauri/src/stream/runtime.rs:203-220`, and `src-tauri/src/stream/runtime.rs:300-357`.
 - The production server adapter constructs the overlay repository and settings store, reports database/window status, and serves the router with graceful shutdown in `src-tauri/src/stream/server.rs:19-102`; stop sends shutdown and awaits the task before publishing idle state in `src-tauri/src/stream/runtime.rs:188-201`.
-- Startup, stream commands, tray stop/quit, and window-close behavior use the runtime rather than composing server mutations directly in `src-tauri/src/lib.rs:41-75`, `src-tauri/src/commands/stream.rs:12-92`, and `src-tauri/src/tray.rs:32-48`.
+- Startup, stream commands, tray stop/quit, and window-close behavior use the runtime rather than composing server mutations directly in `src-tauri/src/lib.rs:80-109`, `src-tauri/src/commands/stream.rs:12-92`, and `src-tauri/src/tray.rs:32-48`.
 - Stream commands return `SemanticProblem`: service, display-window, and crop-setting failures keep stable capability and operation codes while native details remain optional diagnostics in `src-tauri/src/commands/stream.rs:12-110` and `src-tauri/src/problem.rs:3-42`.
 
 ## Stream UI Capabilities
