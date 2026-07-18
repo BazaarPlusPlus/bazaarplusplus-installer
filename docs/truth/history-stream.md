@@ -1,7 +1,7 @@
 ---
 status: truth
 topic: history-stream
-last-verified: 68f2b1ef20e7c1c5c789bd5cde34821cf28efd57
+last-verified: 5bbe32c870bc06e35e5064f3c8403ff22b359d32
 ---
 
 # History And Stream
@@ -46,7 +46,15 @@ last-verified: 68f2b1ef20e7c1c5c789bd5cde34821cf28efd57
 - `StreamRuntime` is the single lifecycle owner. Its async lifecycle mutex serializes ensure, restart, stop, window changes, and exclusive maintenance; task handles and captured installation paths remain private in `src-tauri/src/stream/runtime.rs:43-108` and `src-tauri/src/stream/runtime.rs:188-280`.
 - Ensure and restart resolve one Selected game installation snapshot while holding the lifecycle gate; window changes reuse the captured record path instead of re-resolving a possibly changed selection in `src-tauri/src/stream/runtime.rs:66-98`, `src-tauri/src/stream/runtime.rs:203-220`, and `src-tauri/src/stream/runtime.rs:300-357`.
 - The production server adapter constructs the overlay repository and settings store, reports database/window status, and serves the router with graceful shutdown in `src-tauri/src/stream/server.rs:19-102`; stop sends shutdown and awaits the task before publishing idle state in `src-tauri/src/stream/runtime.rs:188-201`.
-- Startup, stream commands, tray stop/quit, and window-close behavior use the runtime rather than composing server mutations directly in `src-tauri/src/lib.rs:41-75`, `src-tauri/src/commands/stream.rs:11-50`, and `src-tauri/src/tray.rs:32-48`.
+- Startup, stream commands, tray stop/quit, and window-close behavior use the runtime rather than composing server mutations directly in `src-tauri/src/lib.rs:41-75`, `src-tauri/src/commands/stream.rs:12-92`, and `src-tauri/src/tray.rs:32-48`.
+- Stream commands return `SemanticProblem`: service, display-window, and crop-setting failures keep stable capability and operation codes while native details remain optional diagnostics in `src-tauri/src/commands/stream.rs:12-110` and `src-tauri/src/problem.rs:3-42`.
+
+## Stream UI Capabilities
+
+- The Stream snapshot keeps service, polling freshness, display window, crop settings, and clipboard/opener actions as independent capability states with their own phase, operation, problem, and action gates in `src/features/stream/streamWorkflow.ts:53-103` and `src/features/stream/streamWorkflow.ts:640-733`.
+- Service and crop initialization run independently; crop loading or failure does not block service/window controls, and crop plus one-off operations use separate single-flight gates in `src/features/stream/streamWorkflow.ts:185-268` and `src/features/stream/streamWorkflow.ts:509-590`.
+- Three consecutive status-poll failures preserve the last value but mark it stale, disable actions that require an authoritative running service, and expose a manual refresh; a successful poll restores freshness in `src/features/stream/streamWorkflow.ts:271-320` and `src/features/stream/streamWorkflow.ts:640-733`.
+- Workflow state stores semantic problems and notices rather than localized copy. Translation is a pure presentation step, and `useStreamPage` creates the workflow independently of locale so language switches do not dispose, restart, or re-ensure the session in `src/features/stream/streamProblems.ts:7-105`, `src/features/stream/streamPresentation.ts:20-80`, and `src/features/stream/useStreamPage.ts:20-42`.
 
 ## HTTP Surface
 

@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useSyncExternalStore } from 'react';
-import { useI18n } from '../../i18n/LocaleProvider';
 import { streamCommandPort, streamOpener } from './streamApi';
 import {
   createStreamWorkflow,
@@ -19,33 +18,15 @@ const browserClipboard: StreamClipboard = {
 };
 
 export function useStreamPage() {
-  const { t } = useI18n();
   const workflow = useMemo(
     () =>
       createStreamWorkflow({
         commands: streamCommandPort,
         scheduler: browserScheduler,
         clipboard: browserClipboard,
-        opener: streamOpener,
-        copy: {
-          statusError: t('streamStatusError'),
-          statusStarting: t('streamStatusStarting'),
-          statusRunning: t('streamStatusRunning'),
-          statusIdle: t('streamStatusIdle'),
-          startingDetail: t('streamStarting'),
-          idleDetail: t('streamIdleDetail'),
-          portDetail: (port) => t('streamPortDetail', { port }),
-          dbConnected: t('dbConnected'),
-          dbMissing: t('dbMissing'),
-          windowLatest: t('streamWindowLatest'),
-          windowOffset: (count) => t('streamWindowOffset', { count }),
-          copied: t('streamCopied'),
-          copyFailed: t('streamCopyFailed'),
-          cropSaved: t('streamCropSaved'),
-          cropReset: t('streamCropReset')
-        }
+        opener: streamOpener
       }),
-    [t]
+    []
   );
   const snapshot = useSyncExternalStore(
     workflow.subscribe,

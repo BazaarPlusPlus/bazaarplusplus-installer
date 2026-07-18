@@ -7,7 +7,10 @@ const semanticProblemCodes: Record<SemanticProblem['code'], true> = {
   install_detection_failed: true,
   install_action_failed: true,
   install_game_running: true,
-  install_partial_failure: true
+  install_partial_failure: true,
+  stream_service_failed: true,
+  stream_window_failed: true,
+  stream_crop_failed: true
 };
 
 export class SemanticProblemError extends Error {

@@ -74,6 +74,25 @@ describe('native command adapter', () => {
       problem
     });
   });
+
+  it('preserves Stream capability and operation failures', async () => {
+    vi.stubGlobal('window', { __TAURI_INTERNALS__: {} });
+    const problem = {
+      code: 'stream_crop_failed',
+      params: { operation: 'apply_code' },
+      diagnostic: 'invalid crop payload'
+    };
+    invokeMock.mockRejectedValueOnce(problem);
+    const { commandClient } = await import('./commandClient');
+
+    await expect(
+      commandClient.applyOverlayCropCode('bad')
+    ).rejects.toMatchObject({
+      name: 'SemanticProblemError',
+      message: 'stream_crop_failed',
+      problem
+    });
+  });
 });
 
 describe('normalizeBackendError sentinel contract', () => {

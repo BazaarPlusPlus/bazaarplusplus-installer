@@ -295,13 +295,33 @@ const zh = {
   streamStatusStarting: '正在启动叠加层',
   streamStatusRunning: '叠加层运行中',
   streamStatusIdle: '叠加层空闲',
+  streamStatusStale: '叠加层状态可能已过期',
+  streamStatusUnavailable: '叠加层状态不可用',
   streamStarting: '正在启动本地服务',
   streamIdleDetail: '服务尚未启动',
+  streamStaleRunningDetail: '上次检测为运行中，正在等待最新状态',
+  streamStaleIdleDetail: '上次检测为未运行，正在等待最新状态',
+  streamStatusUnavailableDetail: '尚未取得可信的服务状态',
   streamPortDetail: '端口 {port}',
+  streamRetryStatus: '重新获取状态',
+  streamRetryCrop: '重新加载配置',
   streamCopied: 'OBS 地址已复制',
   streamCopyFailed: '复制失败，请手动选择文本复制',
   streamCropSaved: '裁切代码已保存',
   streamCropReset: '裁切设置已恢复默认',
+  streamProblemServiceFailed:
+    '叠加层服务未能启动。请确认端口 17654 可用后重试。',
+  streamProblemRestartFailed:
+    '叠加层服务重启失败。请确认端口 17654 可用后重试。',
+  streamProblemPollFailed:
+    '暂时无法确认叠加层的最新状态；上次状态已标记为过期，请重新获取。',
+  streamProblemWindowFailed: '无法调整展示窗口，请重试。',
+  streamProblemCropLoadFailed:
+    '无法加载叠加层配置；其他直播控制仍可使用，请重新加载。',
+  streamProblemCropSaveFailed: '无法保存叠加层配置；请检查裁切代码并重试。',
+  streamProblemOpenOverlayFailed: '无法打开叠加层预览，请重试。',
+  streamProblemOpenSettingsFailed: '无法打开叠加层校准页，请重试。',
+  streamProblemUnexpected: '处理直播功能时发生意外错误，请重试。',
   dbConnected: '数据库已连接',
   dbMissing: '数据库未找到',
 
@@ -601,13 +621,39 @@ const en: Record<MessageKey, string> = {
   streamStatusStarting: 'Overlay Starting',
   streamStatusRunning: 'Overlay Running',
   streamStatusIdle: 'Overlay Idle',
+  streamStatusStale: 'Overlay Status May Be Stale',
+  streamStatusUnavailable: 'Overlay Status Unavailable',
   streamStarting: 'Starting local service',
   streamIdleDetail: 'Service not started',
+  streamStaleRunningDetail:
+    'Last seen running; waiting for an up-to-date service status',
+  streamStaleIdleDetail:
+    'Last seen stopped; waiting for an up-to-date service status',
+  streamStatusUnavailableDetail: 'No authoritative service status is available',
   streamPortDetail: 'Port {port}',
+  streamRetryStatus: 'Refresh Status',
+  streamRetryCrop: 'Reload Config',
   streamCopied: 'OBS URL copied',
   streamCopyFailed: 'Copy failed. Select the text and copy manually.',
   streamCropSaved: 'Crop code saved',
   streamCropReset: 'Crop settings reset to default',
+  streamProblemServiceFailed:
+    'The overlay service could not start. Make sure port 17654 is available, then retry.',
+  streamProblemRestartFailed:
+    'The overlay service could not restart. Make sure port 17654 is available, then retry.',
+  streamProblemPollFailed:
+    'The latest overlay status could not be confirmed. The previous value is marked stale; refresh it.',
+  streamProblemWindowFailed: 'The display window could not be changed. Retry.',
+  streamProblemCropLoadFailed:
+    'Overlay configuration could not be loaded. Other stream controls remain available; reload it.',
+  streamProblemCropSaveFailed:
+    'Overlay configuration could not be saved. Check the crop code and retry.',
+  streamProblemOpenOverlayFailed:
+    'The overlay preview could not be opened. Retry.',
+  streamProblemOpenSettingsFailed:
+    'The overlay calibration page could not be opened. Retry.',
+  streamProblemUnexpected:
+    'Something unexpected happened while handling Stream. Please retry.',
   dbConnected: 'DB Connected',
   dbMissing: 'DB Missing',
 

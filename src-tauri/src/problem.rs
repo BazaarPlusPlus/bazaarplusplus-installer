@@ -17,6 +17,9 @@ pub enum SemanticProblemCode {
     InstallActionFailed,
     InstallGameRunning,
     InstallPartialFailure,
+    StreamServiceFailed,
+    StreamWindowFailed,
+    StreamCropFailed,
 }
 
 impl SemanticProblem {
@@ -77,6 +80,18 @@ mod tests {
             .unwrap(),
             serde_json::json!({
                 "code": "install_detection_failed",
+                "params": {},
+                "diagnostic": null
+            })
+        );
+
+        assert_eq!(
+            serde_json::to_value(SemanticProblem::new(
+                SemanticProblemCode::StreamServiceFailed
+            ))
+            .unwrap(),
+            serde_json::json!({
+                "code": "stream_service_failed",
                 "params": {},
                 "diagnostic": null
             })

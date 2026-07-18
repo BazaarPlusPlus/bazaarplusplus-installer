@@ -1,7 +1,7 @@
 ---
 status: truth
 topic: frontend
-last-verified: f23d786ab3bf1998f556f5fe05b6e47467a7ea48
+last-verified: 5bbe32c870bc06e35e5064f3c8403ff22b359d32
 ---
 
 # Frontend
@@ -26,7 +26,7 @@ last-verified: f23d786ab3bf1998f556f5fe05b6e47467a7ea48
 - `commandClient` selects the normalized generated native client or Browser Preview adapter once at module load in `src/api/commandClient.ts:1-10`; feature APIs call typed command functions rather than command strings.
 - Both adapters implement a contract derived from the generated command object in `src/api/commandAdapter.ts:1-16`. The native adapter normalizes backend rejections and preserves validated semantic problems in `src/api/nativeCommands.ts:5-37` and `src/api/problems.ts:3-41`, while Preview declares every generated operation and returns scope-tagged cleanup values for both scopes in `src/api/previewCommands.ts:14-51`.
 - Shared install, stream, crop, history, cleanup, and bootstrap preview values live in the leaf module `src/api/previewDefaults.ts`; Preview reuses those object references in `src/api/previewCommands.ts:16-50` so polling preserves React state bailouts.
-- Stream commands pass through one semantic port over the selected native or Preview command adapter in `src/features/stream/streamApi.ts:7-36`. The framework-neutral workflow owns replayable lifecycle initialization, polling thresholds and response epochs, action serialization, error priority, transient messages, and the derived page snapshot in `src/features/stream/streamWorkflow.ts:139-293` and `src/features/stream/streamWorkflow.ts:395-539`; `useStreamPage` only supplies browser ports and binds its lifecycle to React in `src/features/stream/useStreamPage.ts:10-61`.
+- Stream commands pass through one semantic port over the selected native or Preview command adapter in `src/features/stream/streamApi.ts:7-36`. The framework-neutral workflow owns replayable initialization, polling freshness and response epochs, capability-scoped operations/problems, semantic notices, and the derived page snapshot in `src/features/stream/streamWorkflow.ts:185-320` and `src/features/stream/streamWorkflow.ts:509-733`; `useStreamPage` supplies browser ports and creates the workflow once, independently of locale, before binding its lifecycle to React in `src/features/stream/useStreamPage.ts:9-42`.
 - The shared page-state seam is a discriminated union of initial loading, blocking failure, ready-empty, and ready-content with nested idle/refreshing/failed refresh state; request ids reject stale completions in `src/features/shared/pageState.ts:1-60`. Shared UI problems retain code, parameters, and optional diagnostics separately from localized copy in `src/features/shared/problems.ts:4-40` and `src/components/ui/ProblemBanner.tsx:3-43`.
 - Run Detail specializes that seam with a distinct not-found state, preserved ready content on refresh failure, and a separate action state that globally gates conflicting work while retaining target-scoped failures in `src/features/history/runDetailPageState.ts:5-167`. Its semantic problem presenter maps stable backend codes and operation parameters to localized copy without using diagnostics as user-facing text in `src/features/history/runDetailProblems.ts:9-62`.
 
@@ -43,7 +43,8 @@ last-verified: f23d786ab3bf1998f556f5fe05b6e47467a7ea48
 - History list loading calls `listHistoryRuns` independently from status-only Stream preview discovery; stopped or failed Stream status produces a thumbnail-only problem and never rejects the list request in `src/features/history/useHistoryPage.ts:37-64` and `src/features/history/historyPreview.ts:14-45`.
 - Run detail renders explicit initial-loading, not-found, blocking-failure, and ready branches, preserving ready content behind a localized refresh-failure banner in `src/pages/RunDetail.tsx:66-130`. Screenshot, video, delete, and refresh controls share one action gate, failures retry beside their screenshot or battle target, and replay duration/size use locale-aware formatters in `src/pages/RunDetail.tsx:160-181`, `src/pages/RunDetail.tsx:297-421`, and `src/features/history/format.ts:113-150`.
 - Storage cleanup submits only generated `StorageCleanupScope` plus `StorageCleanupPreset`, retains the tagged preview/execution result, and narrows on `scope` when rendering screenshot versus run-data copy in `src/features/history/useStorageCleanup.ts:1-59` and `src/features/history/StorageCleanupCard.tsx:32-77`.
-- Stream renders only the workflow snapshot and invokes its intents; status copy, feedback, and control availability are no longer recomputed in the page in `src/pages/Stream.tsx:26-131` and `src/pages/Stream.tsx:135-240`.
+- Stream renders capability-localized service, polling, display-window, crop, and one-off action problems beside the controls that can recover them; diagnostics remain in the optional disclosure rather than becoming user copy in `src/pages/Stream.tsx:34-137`, `src/pages/Stream.tsx:182-319`, and `src/pages/Stream.tsx:324-358`.
+- Stream status, database, window, and notice copy is derived from the current translator at render time. Stale running/stopped values have distinct presentation and are not presented as authoritative in `src/features/stream/streamPresentation.ts:20-80`.
 
 ## Update Modal
 

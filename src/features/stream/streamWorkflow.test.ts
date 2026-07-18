@@ -1,19 +1,19 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
-  createStreamWorkflow,
-  type StreamCommandPort,
-  type StreamScheduler
-} from './streamWorkflow';
-import {
   defaultCropSettings,
   idleStreamStatus
 } from '../../api/previewDefaults';
+import { commandClient } from '../../api/commandClient';
 import type {
   StreamOverlayCropSettingsPayload,
   StreamServiceStatus
 } from '../../types/backend';
-import { commandClient } from '../../api/commandClient';
 import { createStreamCommandPort } from './streamApi';
+import {
+  createStreamWorkflow,
+  type StreamCommandPort,
+  type StreamScheduler
+} from './streamWorkflow';
 
 function runningStatus(
   overrides: Partial<StreamServiceStatus> = {}
@@ -92,35 +92,18 @@ function fakeCommands(
   };
 }
 
-const copy = {
-  statusError: 'Error',
-  statusStarting: 'Starting',
-  statusRunning: 'Running',
-  statusIdle: 'Idle',
-  startingDetail: 'Starting service',
-  idleDetail: 'Service idle',
-  portDetail: (port: number) => `Port ${port}`,
-  dbConnected: 'Database connected',
-  dbMissing: 'Database missing',
-  windowLatest: 'Latest run',
-  windowOffset: (count: number) => `${count} earlier`,
-  copied: 'Copied',
-  copyFailed: 'Copy failed',
-  cropSaved: 'Crop saved',
-  cropReset: 'Crop reset'
-};
-
-function setup(commandOverrides: Partial<StreamCommandPort> = {}) {
+function setup(
+  commandOverrides: Partial<StreamCommandPort> = {},
+  clipboard = { writeText: vi.fn().mockResolvedValue(undefined) },
+  opener = { open: vi.fn().mockResolvedValue(undefined) }
+) {
   const scheduler = new FakeScheduler();
   const commands = fakeCommands(commandOverrides);
-  const clipboard = { writeText: vi.fn().mockResolvedValue(undefined) };
-  const opener = { open: vi.fn().mockResolvedValue(undefined) };
   const workflow = createStreamWorkflow({
     commands,
     scheduler,
     clipboard,
-    opener,
-    copy
+    opener
   });
   return { workflow, commands, scheduler, clipboard, opener };
 }
@@ -130,146 +113,8 @@ async function flush() {
   await Promise.resolve();
 }
 
-describe('stream workflow', () => {
-  it('loads status and crop settings in parallel into one derived snapshot', async () => {
-    const { workflow, scheduler } = setup();
-
-    await workflow.start();
-
-    const snapshot = workflow.getSnapshot();
-    expect(snapshot.phase).toBe('running');
-    expect(snapshot.statusLabel).toBe('Running');
-    expect(snapshot.statusDetail).toBe('Port 17654');
-    expect(snapshot.dbLabel).toBe('Database connected');
-    expect(snapshot.windowLabel).toBe('Latest run');
-    expect(snapshot.cropSettings).toBe(defaultCropSettings);
-    expect(snapshot.canOpenOverlay).toBe(true);
-    expect(scheduler.intervals.size).toBe(1);
-  });
-
-  it('preserves successful initial data and applies stable error priority', async () => {
-    const crop: StreamOverlayCropSettingsPayload = {
-      ...defaultCropSettings,
-      code: 'crop-ok'
-    };
-    const partial = setup({
-      ensureSession: vi.fn().mockRejectedValue(new Error('status failed')),
-      loadCropSettings: vi.fn().mockResolvedValue(crop)
-    });
-
-    await partial.workflow.start();
-
-    expect(partial.workflow.getSnapshot().cropCode).toBe('crop-ok');
-    expect(partial.workflow.getSnapshot().error).toBe('status failed');
-
-    const allFailed = setup({
-      ensureSession: vi.fn().mockRejectedValue(new Error('status first')),
-      loadCropSettings: vi.fn().mockRejectedValue(new Error('crop second'))
-    });
-    await allFailed.workflow.start();
-    expect(allFailed.workflow.getSnapshot().error).toBe('status first');
-  });
-
-  it('surfaces polling errors only at the threshold and stops after dispose', async () => {
-    const getStatus = vi.fn().mockRejectedValue(new Error('poll failed'));
-    const { workflow, scheduler } = setup({ getStatus });
-    await workflow.start();
-
-    scheduler.fireIntervals();
-    await flush();
-    scheduler.fireIntervals();
-    await flush();
-    expect(workflow.getSnapshot().error).toBeNull();
-
-    scheduler.fireIntervals();
-    await flush();
-    expect(workflow.getSnapshot().error).toBe('poll failed');
-
-    getStatus.mockResolvedValueOnce(runningStatus());
-    scheduler.fireIntervals();
-    await flush();
-    expect(workflow.getSnapshot().error).toBeNull();
-
-    workflow.dispose();
-    expect(scheduler.intervals.size).toBe(0);
-    scheduler.fireIntervals();
-    await flush();
-    expect(getStatus).toHaveBeenCalledTimes(4);
-  });
-
-  it('counts overlapping slow failures toward the polling threshold', async () => {
-    const polls = [
-      deferred<StreamServiceStatus>(),
-      deferred<StreamServiceStatus>(),
-      deferred<StreamServiceStatus>()
-    ];
-    const getStatus = vi
-      .fn()
-      .mockImplementationOnce(() => polls[0].promise)
-      .mockImplementationOnce(() => polls[1].promise)
-      .mockImplementationOnce(() => polls[2].promise);
-    const { workflow, scheduler } = setup({ getStatus });
-    await workflow.start();
-
-    scheduler.fireIntervals();
-    scheduler.fireIntervals();
-    scheduler.fireIntervals();
-    expect(getStatus).toHaveBeenCalledTimes(3);
-    polls[0].reject(new Error('slow poll 1'));
-    await flush();
-    polls[1].reject(new Error('slow poll 2'));
-    await flush();
-    expect(workflow.getSnapshot().error).toBeNull();
-    polls[2].reject(new Error('slow poll 3'));
-    await flush();
-
-    expect(workflow.getSnapshot().error).toBe('slow poll 3');
-  });
-
-  it('refreshes after restart and preserves the usable status on failure', async () => {
-    const refreshed = runningStatus({ active_window_offset: 2 });
-    const success = setup({
-      restartSession: vi.fn().mockResolvedValue(runningStatus()),
-      getStatus: vi.fn().mockResolvedValue(refreshed)
-    });
-    await success.workflow.start();
-
-    expect(await success.workflow.intents.restart()).toBe(true);
-    expect(success.workflow.getSnapshot().status).toBe(refreshed);
-
-    const failure = setup({
-      restartSession: vi.fn().mockRejectedValue(new Error('restart failed'))
-    });
-    await failure.workflow.start();
-    const before = failure.workflow.getSnapshot().status;
-
-    expect(await failure.workflow.intents.restart()).toBe(false);
-    expect(failure.workflow.getSnapshot().status).toBe(before);
-    expect(failure.workflow.getSnapshot().error).toBe('restart failed');
-  });
-
-  it('does not let a slow poll overwrite the restart epoch', async () => {
-    const slowPoll = deferred<StreamServiceStatus>();
-    const refreshed = runningStatus({ active_window_offset: 3 });
-    let statusCalls = 0;
-    const getStatus = vi.fn(() => {
-      statusCalls += 1;
-      return statusCalls === 1 ? slowPoll.promise : Promise.resolve(refreshed);
-    });
-    const { workflow, scheduler } = setup({ getStatus });
-    await workflow.start();
-
-    scheduler.fireIntervals();
-    await flush();
-    await workflow.intents.restart();
-    expect(workflow.getSnapshot().status).toBe(refreshed);
-
-    slowPoll.resolve(runningStatus({ active_window_offset: 1 }));
-    await flush();
-    expect(workflow.getSnapshot().status).toBe(refreshed);
-  });
-
-  it('does not let an older poll overwrite a newer poll', async () => {
+describe('stream workflow lifecycle and effects', () => {
+  it('ignores an older poll after a newer poll succeeds', async () => {
     const first = deferred<StreamServiceStatus>();
     const second = deferred<StreamServiceStatus>();
     const getStatus = vi
@@ -286,105 +131,119 @@ describe('stream workflow', () => {
     first.resolve(runningStatus({ active_window_offset: 1 }));
     await flush();
 
-    expect(workflow.getSnapshot().status.active_window_offset).toBe(2);
+    expect(workflow.getSnapshot().service.status?.active_window_offset).toBe(2);
   });
 
-  it('clamps window offsets and rejects conflicting actions while busy', async () => {
-    const pendingWindow = deferred<StreamServiceStatus>();
-    const setWindow = vi.fn(() => pendingWindow.promise);
-    const { workflow } = setup({ setWindow });
+  it('does not mark a newer status stale when an older poll fails', async () => {
+    const first = deferred<StreamServiceStatus>();
+    const second = deferred<StreamServiceStatus>();
+    const getStatus = vi
+      .fn()
+      .mockImplementationOnce(() => first.promise)
+      .mockImplementationOnce(() => second.promise);
+    const { workflow, scheduler } = setup({ getStatus });
     await workflow.start();
 
-    const first = workflow.intents.moveWindow(-100);
-    expect(await workflow.intents.moveWindow(1)).toBe(false);
-    expect(workflow.getSnapshot().action).toBe('window');
-    expect(workflow.getSnapshot().canRestart).toBe(false);
-    expect(workflow.getSnapshot().canEditCrop).toBe(false);
-    expect(setWindow).toHaveBeenCalledTimes(1);
-    expect(setWindow).toHaveBeenCalledWith(0);
+    scheduler.fireIntervals();
+    scheduler.fireIntervals();
+    second.resolve(runningStatus({ active_window_offset: 2 }));
+    await flush();
+    first.reject(new Error('outdated failure'));
+    await flush();
 
-    pendingWindow.resolve(runningStatus({ active_window_offset: 0 }));
-    expect(await first).toBe(true);
+    expect(workflow.getSnapshot().polling).toMatchObject({
+      phase: 'available',
+      freshness: 'fresh',
+      problem: null
+    });
   });
 
-  it('normalizes crop input and applies returned settings', async () => {
-    const saved = { ...defaultCropSettings, code: 'normalized' };
-    const applyCropCode = vi.fn().mockResolvedValue(saved);
-    const { workflow } = setup({ applyCropCode });
+  it('does not let a slow poll overwrite a completed restart', async () => {
+    const slowPoll = deferred<StreamServiceStatus>();
+    const refreshed = runningStatus({ active_window_offset: 3 });
+    const { workflow, scheduler } = setup({
+      getStatus: vi.fn(() => slowPoll.promise),
+      restartSession: vi.fn().mockResolvedValue(refreshed)
+    });
     await workflow.start();
 
-    workflow.intents.setCropCode('  input  ');
-    expect(await workflow.intents.submitCropCode()).toBe(true);
+    scheduler.fireIntervals();
+    await flush();
+    expect(await workflow.intents.restart()).toBe(true);
+    slowPoll.resolve(runningStatus({ active_window_offset: 1 }));
+    await flush();
 
-    expect(applyCropCode).toHaveBeenCalledWith('input');
-    expect(workflow.getSnapshot().cropSettings).toBe(saved);
-    expect(workflow.getSnapshot().cropCode).toBe('normalized');
-    expect(workflow.getSnapshot().feedback?.text).toBe('Crop saved');
+    expect(workflow.getSnapshot().service.status).toBe(refreshed);
   });
 
-  it('applies display-mode and reset responses through the same crop state', async () => {
-    const modeSettings = {
-      ...defaultCropSettings,
-      display_mode: 'hero' as const
+  it('maps an authoritative runtime error separately from polling staleness', async () => {
+    const failedStatus = {
+      ...idleStreamStatus,
+      last_error: 'port occupied'
     };
-    const resetSettings = { ...defaultCropSettings, code: 'reset-code' };
-    const saveDisplayMode = vi.fn().mockResolvedValue(modeSettings);
-    const resetCropSettings = vi.fn().mockResolvedValue(resetSettings);
-    const { workflow } = setup({ saveDisplayMode, resetCropSettings });
+    const { workflow } = setup({
+      ensureSession: vi.fn().mockResolvedValue(failedStatus)
+    });
     await workflow.start();
 
-    expect(await workflow.intents.changeDisplayMode('hero')).toBe(true);
-    expect(workflow.getSnapshot().cropSettings).toBe(modeSettings);
-    expect(await workflow.intents.resetCropCode()).toBe(true);
-    expect(workflow.getSnapshot().cropSettings).toBe(resetSettings);
-    expect(workflow.getSnapshot().cropCode).toBe('reset-code');
-    expect(workflow.getSnapshot().feedback?.text).toBe('Crop reset');
+    expect(workflow.getSnapshot().service).toMatchObject({
+      phase: 'degraded',
+      status: failedStatus,
+      problem: {
+        code: 'stream_service_failed',
+        diagnostic: 'port occupied'
+      }
+    });
+    expect(workflow.getSnapshot().polling.freshness).toBe('fresh');
   });
 
-  it('handles copy/open outcomes and clears transient messages on schedule', async () => {
-    const { workflow, scheduler, clipboard, opener } = setup();
+  it('keeps semantic notices transient and one-off failures target-scoped', async () => {
+    const clipboard = {
+      writeText: vi
+        .fn()
+        .mockResolvedValueOnce(undefined)
+        .mockRejectedValueOnce(new Error('clipboard denied'))
+    };
+    const opener = {
+      open: vi.fn().mockRejectedValueOnce(new Error('open denied'))
+    };
+    const { workflow, scheduler } = setup({}, clipboard, opener);
     await workflow.start();
 
     expect(await workflow.intents.copyObsUrl()).toBe(true);
-    expect(clipboard.writeText).toHaveBeenCalledWith(
-      'http://127.0.0.1:17654/overlay'
-    );
-    expect(workflow.getSnapshot().feedback).toEqual({
-      text: 'Copied',
-      tone: 'success'
-    });
+    expect(workflow.getSnapshot().notice?.code).toBe('stream_obs_url_copied');
     scheduler.fireTimeouts();
-    expect(workflow.getSnapshot().feedback).toBeNull();
+    expect(workflow.getSnapshot().notice).toBeNull();
 
-    clipboard.writeText.mockRejectedValueOnce(new Error('denied'));
-    expect(await workflow.intents.copyObsUrl()).toBe(true);
-    expect(workflow.getSnapshot().feedback).toEqual({
-      text: 'Copy failed',
-      tone: 'error'
+    expect(await workflow.intents.copyObsUrl()).toBe(false);
+    expect(workflow.getSnapshot().oneOff.problems.copy).toMatchObject({
+      code: 'stream_copy_failed',
+      diagnostic: 'clipboard denied'
     });
-
-    expect(await workflow.intents.openOverlay()).toBe(true);
-    expect(opener.open).toHaveBeenCalledWith('http://127.0.0.1:17654/overlay');
-    opener.open.mockRejectedValueOnce(new Error('open failed'));
-    expect(await workflow.intents.openSettings()).toBe(false);
-    expect(workflow.getSnapshot().error).toBe('open failed');
+    expect(await workflow.intents.openOverlay()).toBe(false);
+    expect(workflow.getSnapshot().oneOff.problems.open_overlay).toMatchObject({
+      code: 'stream_open_failed',
+      diagnostic: 'open denied'
+    });
+    expect(workflow.getSnapshot().crop.canEdit).toBe(true);
   });
 
-  it('ignores slow responses after disposal', async () => {
+  it('ignores responses and cancels timers after disposal', async () => {
     const slow = deferred<StreamServiceStatus>();
     const { workflow, scheduler } = setup({ getStatus: () => slow.promise });
     await workflow.start();
-    const before = workflow.getSnapshot();
 
     scheduler.fireIntervals();
+    const before = workflow.getSnapshot();
     workflow.dispose();
     slow.resolve(runningStatus({ active_window_offset: 9 }));
     await flush();
 
     expect(workflow.getSnapshot()).toBe(before);
+    expect(scheduler.intervals.size).toBe(0);
   });
 
-  it('supports a dispose-start lifecycle replay without accepting the old initialization', async () => {
+  it('supports a dispose-start replay without accepting old initialization', async () => {
     const firstStatus = deferred<StreamServiceStatus>();
     const firstCrop = deferred<StreamOverlayCropSettingsPayload>();
     const secondStatus = deferred<StreamServiceStatus>();
@@ -405,22 +264,20 @@ describe('stream workflow', () => {
     const firstStart = workflow.start();
     workflow.dispose();
     const secondStart = workflow.start();
-
     firstStatus.resolve(runningStatus({ active_window_offset: 1 }));
     firstCrop.resolve({ ...defaultCropSettings, code: 'stale' });
     await firstStart;
-    expect(workflow.getSnapshot().phase).toBe('starting');
 
     secondStatus.resolve(runningStatus({ active_window_offset: 2 }));
     secondCrop.resolve({ ...defaultCropSettings, code: 'current' });
     await secondStart;
 
-    expect(workflow.getSnapshot().status.active_window_offset).toBe(2);
-    expect(workflow.getSnapshot().cropCode).toBe('current');
+    expect(workflow.getSnapshot().service.status?.active_window_offset).toBe(2);
+    expect(workflow.getSnapshot().crop.code).toBe('current');
     expect(scheduler.intervals.size).toBe(1);
   });
 
-  it('runs unchanged with generated/native-shaped and Preview semantic adapters', async () => {
+  it('runs through generated/native-shaped and Preview command adapters', async () => {
     const nativeLike = {
       ensureStreamSession: vi.fn().mockResolvedValue(runningStatus()),
       getStreamStatus: vi.fn().mockResolvedValue(runningStatus()),
@@ -440,11 +297,10 @@ describe('stream workflow', () => {
         commands,
         scheduler: new FakeScheduler(),
         clipboard: { writeText: async () => undefined },
-        opener: { open: async () => undefined },
-        copy
+        opener: { open: async () => undefined }
       });
       await workflow.start();
-      expect(workflow.getSnapshot().phase).not.toBe('starting');
+      expect(workflow.getSnapshot().service.phase).not.toBe('loading');
       workflow.dispose();
     }
   });

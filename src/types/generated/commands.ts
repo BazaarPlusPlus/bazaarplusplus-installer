@@ -258,7 +258,7 @@ export type SemanticProblem = {
 	diagnostic: string | null,
 };
 
-export type SemanticProblemCode = "history_unavailable" | "history_read_failed" | "history_action_failed" | "install_detection_failed" | "install_action_failed" | "install_game_running" | "install_partial_failure";
+export type SemanticProblemCode = "history_unavailable" | "history_read_failed" | "history_action_failed" | "install_detection_failed" | "install_action_failed" | "install_game_running" | "install_partial_failure" | "stream_service_failed" | "stream_window_failed" | "stream_crop_failed";
 
 export type StorageCleanupExecution = { scope: "screenshots"; result: ScreenshotCleanupResult } | { scope: "run_data"; result: RunDataCleanupResult };
 
