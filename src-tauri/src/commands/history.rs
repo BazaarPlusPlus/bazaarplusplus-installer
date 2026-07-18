@@ -64,7 +64,7 @@ pub fn preview_storage_cleanup(
     app: tauri::AppHandle,
     scope: StorageCleanupScope,
     preset: StorageCleanupPreset,
-) -> Result<StorageCleanupPreview, String> {
+) -> Result<StorageCleanupPreview, SemanticProblem> {
     history::preview_storage_cleanup(&app, scope, preset)
 }
 
@@ -74,6 +74,6 @@ pub fn execute_storage_cleanup(
     app: tauri::AppHandle,
     scope: StorageCleanupScope,
     preset: StorageCleanupPreset,
-) -> Result<StorageCleanupExecution, String> {
+) -> Result<StorageCleanupExecution, SemanticProblem> {
     history::execute_storage_cleanup(&app, scope, preset)
 }
