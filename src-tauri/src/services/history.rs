@@ -7,8 +7,10 @@ use crate::history::{
     list_history_runs as list_runs_from_repo, load_battle_video_path, load_run_id_for_battle,
     load_run_screenshot_path, HistoryRunDetail, HistoryRunList, HistorySummary,
 };
-use crate::services::game_path::{resolve_game_path, GamePathAcceptance};
+use crate::services::game_path::GamePathAcceptance;
 use crate::services::paths;
+use crate::services::selected_game_installation::SelectedGameInstallationState;
+use tauri::Manager;
 
 pub struct HistoryPaths {
     pub game_path: PathBuf,
@@ -18,13 +20,11 @@ pub struct HistoryPaths {
 
 pub fn resolve_history_paths(
     app: &tauri::AppHandle,
-    session_game_path: Option<PathBuf>,
     game_path: Option<String>,
 ) -> Option<HistoryPaths> {
-    let resolution = resolve_game_path(
+    let resolution = app.state::<SelectedGameInstallationState>().resolve(
         app,
         game_path,
-        session_game_path,
         GamePathAcceptance::DatabaseExists,
     )?;
     Some(history_paths_for_game_path(resolution.game_path))
@@ -32,11 +32,9 @@ pub fn resolve_history_paths(
 
 pub fn require_history_paths(
     app: &tauri::AppHandle,
-    session_game_path: Option<PathBuf>,
     game_path: Option<String>,
 ) -> Result<HistoryPaths, String> {
-    resolve_history_paths(app, session_game_path, game_path)
-        .ok_or_else(|| "Game path is not configured.".to_string())
+    resolve_history_paths(app, game_path).ok_or_else(|| "Game path is not configured.".to_string())
 }
 
 pub fn list_runs(database_path: &Path, limit: usize) -> Result<HistoryRunList, String> {

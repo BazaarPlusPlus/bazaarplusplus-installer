@@ -4,12 +4,13 @@ mod steam;
 pub(crate) use game::{is_bepinex_installed, is_valid_game_path};
 pub(crate) use steam::detect_installation_paths;
 
-use crate::services::game_path::{resolve_game_path, GamePathAcceptance};
+use crate::services::game_path::GamePathAcceptance;
 use crate::services::launch_mode::{LaunchModeGate, LaunchModeState};
+use crate::services::selected_game_installation::SelectedGameInstallationState;
 use crate::services::startup::InstallerContextState;
 use game::read_installed_bpp_version;
 use serde::{Deserialize, Serialize};
-use tauri::{AppHandle, State};
+use tauri::{AppHandle, Manager, State};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub(crate) struct InstallEnvironmentSnapshot {
@@ -37,7 +38,9 @@ pub fn detect_for_install(
     let startup = state.get_or_initialize(&app);
 
     let steam_path = startup.steam_path.clone();
-    let game_path = resolve_game_path(&app, game_path, None, GamePathAcceptance::DetectionPick)
+    let game_path = app
+        .state::<SelectedGameInstallationState>()
+        .resolve(&app, game_path, GamePathAcceptance::DetectionPick)
         .map(|resolution| resolution.game_path);
     let game_path_valid = game_path
         .as_ref()

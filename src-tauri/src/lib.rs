@@ -34,6 +34,9 @@ pub fn run() {
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_dialog::init())
+        .manage(
+            crate::services::selected_game_installation::SelectedGameInstallationState::default(),
+        )
         .manage(crate::stream::state::StreamRuntimeState::default())
         .manage(InstallerContextState::default())
         .manage(TrayMenuState::default())

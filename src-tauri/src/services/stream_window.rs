@@ -1,8 +1,10 @@
-use crate::services::game_path::{resolve_game_path, GamePathAcceptance};
+use crate::services::game_path::GamePathAcceptance;
+use crate::services::selected_game_installation::SelectedGameInstallationState;
 use crate::stream::{
     records::OverlayRecordRepository,
     state::{StreamRuntimeState, StreamServiceStatus},
 };
+use tauri::Manager;
 
 pub fn apply_stream_window_offset(
     app: &tauri::AppHandle,
@@ -19,13 +21,10 @@ pub fn apply_stream_window_offset(
         .started_at
         .clone()
         .ok_or_else(|| "Stream start time is unavailable.".to_string())?;
-    let resolved_game_path = resolve_game_path(
-        app,
-        game_path,
-        state.get_game_path(),
-        GamePathAcceptance::DatabaseExists,
-    )
-    .map(|resolution| resolution.game_path);
+    let resolved_game_path = app
+        .state::<SelectedGameInstallationState>()
+        .resolve(app, game_path, GamePathAcceptance::DatabaseExists)
+        .map(|resolution| resolution.game_path);
     let repository = OverlayRecordRepository::new(resolved_game_path);
 
     if offset == 0 {

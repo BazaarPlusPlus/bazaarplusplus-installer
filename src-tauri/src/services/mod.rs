@@ -9,6 +9,7 @@ pub mod macos_version;
 pub mod path;
 pub mod paths;
 pub mod process_snapshot;
+pub mod selected_game_installation;
 pub mod startup;
 pub mod steam;
 pub mod stream_window;

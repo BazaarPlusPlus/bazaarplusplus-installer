@@ -7,10 +7,12 @@ use super::{
         StreamWindowStatus,
     },
 };
-use crate::services::game_path::{resolve_game_path, GamePathAcceptance};
+use crate::services::game_path::GamePathAcceptance;
 use crate::services::paths;
+use crate::services::selected_game_installation::SelectedGameInstallationState;
 use chrono::{Local, SecondsFormat};
 use std::path::PathBuf;
+use tauri::Manager;
 use tokio::{net::TcpListener, sync::oneshot};
 
 const HOST: &str = "127.0.0.1";
@@ -21,8 +23,15 @@ pub async fn start(
     state: &StreamRuntimeState,
     requested_game_path: Option<PathBuf>,
 ) -> Result<StreamServiceStatus, String> {
+    let requested_game_path = requested_game_path.map(|path| path.to_string_lossy().into_owned());
+    let selected_installation = app.state::<SelectedGameInstallationState>();
+    let game_resolution =
+        selected_installation.resolve(&app, requested_game_path.clone(), GamePathAcceptance::Any);
+    let game_path = game_resolution
+        .as_ref()
+        .map(|resolution| resolution.game_path.clone());
     let snapshot = state.snapshot();
-    if state.is_running_for_game_path(requested_game_path.as_deref()) {
+    if state.is_running_for_game_path(game_path.as_deref()) {
         return Ok(snapshot);
     }
     if snapshot.running {
@@ -40,28 +49,17 @@ pub async fn start(
     };
     let urls = service_urls(HOST, PREFERRED_PORT);
     let status_with_start = state.mark_started(current_timestamp());
-    let requested_game_path = requested_game_path.map(|path| path.to_string_lossy().into_owned());
-    let game_resolution = resolve_game_path(
-        &app,
-        requested_game_path.clone(),
-        None,
-        GamePathAcceptance::Any,
-    );
     let record_resolution = game_resolution
         .as_ref()
         .filter(|resolution| resolution.database_path.is_some())
         .cloned()
         .or_else(|| {
-            resolve_game_path(
+            selected_installation.resolve(
                 &app,
                 requested_game_path,
-                None,
                 GamePathAcceptance::DatabaseExists,
             )
         });
-    let game_path = game_resolution
-        .as_ref()
-        .map(|resolution| resolution.game_path.clone());
     let record_game_path = record_resolution
         .as_ref()
         .map(|resolution| resolution.game_path.clone());

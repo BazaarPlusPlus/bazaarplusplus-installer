@@ -71,7 +71,7 @@ pub struct StreamRuntimeState {
 struct StreamRuntimeInner {
     status: StreamServiceStatus,
     task: Option<StreamTaskHandle>,
-    game_path: Option<PathBuf>,
+    active_installation_path: Option<PathBuf>,
 }
 
 impl StreamRuntimeState {
@@ -83,14 +83,6 @@ impl StreamRuntimeState {
             .clone()
     }
 
-    pub fn get_game_path(&self) -> Option<PathBuf> {
-        self.inner
-            .lock()
-            .expect("stream runtime poisoned")
-            .game_path
-            .clone()
-    }
-
     pub fn is_running_for_game_path(&self, requested_game_path: Option<&Path>) -> bool {
         let inner = self.inner.lock().expect("stream runtime poisoned");
         if !inner.status.running {
@@ -98,7 +90,7 @@ impl StreamRuntimeState {
         }
 
         match requested_game_path {
-            Some(path) => inner.game_path.as_deref() == Some(path),
+            Some(path) => inner.active_installation_path.as_deref() == Some(path),
             None => true,
         }
     }
@@ -107,12 +99,12 @@ impl StreamRuntimeState {
         &self,
         status: StreamServiceStatus,
         task: StreamTaskHandle,
-        game_path: Option<PathBuf>,
+        active_installation_path: Option<PathBuf>,
     ) {
         let mut inner = self.inner.lock().expect("stream runtime poisoned");
         inner.status = status;
         inner.task = Some(task);
-        inner.game_path = game_path;
+        inner.active_installation_path = active_installation_path;
     }
 
     pub fn mark_started(&self, started_at: String) -> StreamServiceStatus {
@@ -147,6 +139,7 @@ impl StreamRuntimeState {
         inner.status.db = StreamDbStatus::default();
         inner.status.window = StreamWindowStatus::default();
         inner.task = None;
+        inner.active_installation_path = None;
         inner.status.clone()
     }
 
@@ -164,6 +157,7 @@ impl StreamRuntimeState {
         inner.status.window = StreamWindowStatus::default();
         inner.status.last_error = Some(message);
         inner.task = None;
+        inner.active_installation_path = None;
     }
 
     pub fn clear_error(&self) {
