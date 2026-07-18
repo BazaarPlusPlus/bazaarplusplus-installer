@@ -4,6 +4,8 @@ mod history;
 mod services;
 mod stream;
 mod tray;
+#[cfg(target_os = "windows")]
+mod windows_window;
 
 use tauri::{Emitter, Manager, WindowEvent};
 
@@ -17,16 +19,12 @@ pub fn run() {
 
     #[cfg(not(any(target_os = "android", target_os = "ios")))]
     {
-        // single-instance must be registered first; window-state restores the
-        // remembered window size/position on launch and saves it on close.
-        builder = builder
-            .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
-                if let Some(window) = app.get_webview_window("main") {
-                    let _ = window.show();
-                    let _ = window.set_focus();
-                }
-            }))
-            .plugin(tauri_plugin_window_state::Builder::default().build());
+        builder = builder.plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
+            if let Some(window) = app.get_webview_window("main") {
+                let _ = window.show();
+                let _ = window.set_focus();
+            }
+        }));
     }
 
     builder
@@ -38,6 +36,38 @@ pub fn run() {
         .manage(TrayMenuState::default())
         .plugin(tauri_plugin_opener::init())
         .setup(|app| {
+            #[cfg(target_os = "windows")]
+            {
+                let window = app
+                    .get_webview_window("main")
+                    .ok_or_else(|| std::io::Error::other("main window is unavailable"))?;
+                window.set_decorations(false)?;
+                window.show()?;
+
+                // Showing the window can refresh its Win32 frame. Compact Tao's
+                // wide resize insets after the window has its final native frame.
+                let border_window = window.clone();
+                window.run_on_main_thread(move || {
+                    if let Err(error) =
+                        crate::windows_window::configure_native_frame(&border_window)
+                    {
+                        eprintln!("failed to configure the Windows native frame: {error}");
+                    }
+                })?;
+
+                // Reapply after activation changes as recommended for DWM border
+                // color overrides. This also makes tray hide/show cycles robust.
+                let border_window = window.clone();
+                window.on_window_event(move |event| {
+                    if matches!(event, WindowEvent::Focused(_)) {
+                        if let Err(error) = crate::windows_window::refresh_dwm_frame(&border_window)
+                        {
+                            eprintln!("failed to reapply the Windows DWM border override: {error}");
+                        }
+                    }
+                });
+            }
+
             let handle = app.app_handle();
             build_tray(&handle)?;
             let startup_handle = handle.clone();

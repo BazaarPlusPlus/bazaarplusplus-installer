@@ -35,7 +35,7 @@ export function ShellNavRail() {
         to="/"
         index={0}
         activeIndex={activeIndex}
-        icon={<Download size={20} />}
+        icon={<Download size={21} />}
         label={t('navInstall')}
         secondary={locale === 'zh' ? 'INSTALL' : undefined}
       />
@@ -43,7 +43,7 @@ export function ShellNavRail() {
         to="/history"
         index={1}
         activeIndex={activeIndex}
-        icon={<History size={20} />}
+        icon={<History size={21} />}
         label={t('navHistory')}
         secondary={locale === 'zh' ? 'RECORD' : undefined}
       />
@@ -51,7 +51,7 @@ export function ShellNavRail() {
         to="/stream"
         index={2}
         activeIndex={activeIndex}
-        icon={<MonitorPlay size={20} />}
+        icon={<MonitorPlay size={21} />}
         label={t('navStream')}
         secondary={locale === 'zh' ? 'STREAM' : undefined}
       />
@@ -59,7 +59,7 @@ export function ShellNavRail() {
         to="/about"
         index={3}
         activeIndex={activeIndex}
-        icon={<Info size={20} />}
+        icon={<Info size={21} />}
         label={t('navAbout')}
         secondary={locale === 'zh' ? 'ABOUT' : undefined}
       />

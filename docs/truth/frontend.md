@@ -1,7 +1,7 @@
 ---
 status: truth
 topic: frontend
-last-verified: 36d1f84d398d78fb7103bb78ba7c559dacaecd85
+last-verified: 18a3d49
 ---
 
 # Frontend
@@ -13,7 +13,7 @@ last-verified: 36d1f84d398d78fb7103bb78ba7c559dacaecd85
 - The four primary rail links run a direction-aware exit before navigation, then `AnimatedOutlet` mounts the destination with the matching vertical entry animation while the shell remains fixed in `src/layouts/ShellNavRail.tsx`, `src/layouts/GlobalShell.tsx`, and `src/styles/index.css`.
 - The update modal is rendered only for updater phases considered modal phases by `isUpdateModalPhase` in `src/layouts/GlobalShell.tsx:86-89` and `src/features/about/updater.ts:90-103`.
 - The shell's dark industrial visual system, supplied background image, navigation rail, panels, buttons, page headers, install-dashboard effects, and history-dashboard effects are centralized in `src/styles/index.css`; individual product pages reuse those semantic classes.
-- The desktop window is fixed at 1080×760 and cannot be resized, maximized, or launched fullscreen in `src-tauri/tauri.conf.json:13-26`.
+- The desktop window is fixed at 1080×760 and cannot be resized, maximized, or launched fullscreen. Windows is created hidden with `decorations: false` and native shadow enabled; Rust replaces Tao's wide non-client resize insets with a compact frame, suppresses the Windows 11 DWM border, requests native rounded corners, and shows the window. No window state is persisted, preventing stale decorations or visibility from overriding startup configuration. The header supplies Windows-only minimize and close controls immediately after the language button. macOS keeps native decorations.
 
 ## Native-Feel Rules
 

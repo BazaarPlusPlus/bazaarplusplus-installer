@@ -43,6 +43,13 @@ function renderOpenHeader() {
 }
 
 describe('ShellHeader Bilibili menu', () => {
+  it('keeps update checks on the install page and shows a language icon', () => {
+    const html = renderOpenHeader();
+
+    expect(html).not.toContain('检查更新');
+    expect(html).toContain('lucide-languages');
+  });
+
   it('shows the author entry before the project entry', () => {
     const html = renderOpenHeader();
 

@@ -1,18 +1,17 @@
 import {
-  AlertCircle,
-  Check,
   Coffee,
-  Download,
-  Eye,
-  Globe,
   Heart,
+  Languages,
+  Minus,
   MonitorPlay,
   QrCode,
-  Users
+  Users,
+  X
 } from 'lucide-react';
-import type { CSSProperties, ReactNode } from 'react';
+import { getCurrentWindow } from '@tauri-apps/api/window';
+import { useState, type CSSProperties, type ReactNode } from 'react';
+import { hasTauriRuntime } from '../api/runtime';
 import type { AppBootstrapController } from '../features/about/useAppBootstrap';
-import { useUpdater } from '../features/about/UpdaterProvider';
 import { useI18n } from '../i18n/LocaleProvider';
 import douyinPng from '../../static/support/douyin.png';
 import xiaohongshuSvg from '../../static/support/xiaohongshu.svg';
@@ -42,7 +41,7 @@ export function ShellHeader({
   const { bootstrap } = app;
 
   return (
-    <header className="bpp-header">
+    <header className="bpp-header" data-tauri-drag-region>
       <ShellBrand />
       <ShellHeaderActions
         bootstrap={bootstrap}
@@ -61,7 +60,10 @@ export function ShellHeader({
 function ShellBrand() {
   const app = useAppBootstrapVersion();
   return (
-    <div className="flex min-w-0 items-center gap-3 z-10">
+    <div
+      className="flex min-w-0 items-center gap-3 z-10"
+      data-tauri-drag-region
+    >
       {/* <BrandMark /> */}
       <h1 className="bpp-brand-title">BazaarPlusPlus</h1>
       <span className="bpp-version-chip">v{app}</span>
@@ -95,31 +97,6 @@ function ShellHeaderActions({
   onCloseSupport
 }: ShellHeaderActionsProps) {
   const { t, toggle } = useI18n();
-  const updater = useUpdater();
-  const checking = updater.phase === 'checking';
-
-  // The check button folds its own result in: "检查中" → a brief result flash
-  // ("已是最新" / "浏览器预览" / "检查失败"), then auto-reverts once useUpdater
-  // clears the result phase on a timer. Install errors render in the modal.
-  let checkIcon = Download;
-  let checkLabel = t('headerCheckUpdate');
-  let checkTitle: string | undefined;
-  let checkErrorTone = false;
-  if (checking) {
-    checkLabel = t('headerCheckingUpdate');
-  } else if (updater.phase === 'current') {
-    checkIcon = Check;
-    checkLabel = t('updaterCurrent');
-  } else if (updater.phase === 'preview') {
-    checkIcon = Eye;
-    checkLabel = t('updaterPreview');
-  } else if (updater.phase === 'error' && updater.errorSource === 'check') {
-    checkIcon = AlertCircle;
-    checkLabel = t('headerCheckFailed');
-    checkTitle = updater.error ?? undefined;
-    checkErrorTone = true;
-  }
-  const CheckIcon = checkIcon;
 
   return (
     <div className="flex min-w-0 items-center gap-2 z-10 justify-end">
@@ -129,17 +106,6 @@ function ShellHeaderActions({
         onToggleBilibili={onToggleBilibili}
         onCloseBilibili={onCloseBilibili}
       />
-
-      <button
-        type="button"
-        onClick={updater.checkNow}
-        disabled={checking}
-        title={checkTitle}
-        className={`bpp-button h-9 cinzel text-[10px] tracking-wider uppercase disabled:opacity-60 ${checkErrorTone ? 'text-[#dc8c7d]' : ''}`}
-      >
-        <CheckIcon size={14} className={checking ? 'animate-pulse' : ''} />
-        <span className="inline">{checkLabel}</span>
-      </button>
 
       <ShellSupportMenu
         bootstrap={bootstrap}
@@ -152,11 +118,61 @@ function ShellHeaderActions({
       <button
         type="button"
         onClick={toggle}
-        className="bpp-button size-9 p-0"
+        className="bpp-button bpp-language-button size-9"
         title={t('languageToggle')}
         aria-label={t('languageToggle')}
       >
-        <Globe size={16} />
+        <Languages size={17} strokeWidth={1.8} aria-hidden="true" />
+      </button>
+
+      <WindowsWindowControls />
+    </div>
+  );
+}
+
+function isWindowsTauriRuntime() {
+  return (
+    hasTauriRuntime() &&
+    typeof navigator !== 'undefined' &&
+    navigator.userAgent.includes('Windows')
+  );
+}
+
+function WindowsWindowControls() {
+  const [isWindowsRuntime] = useState(isWindowsTauriRuntime);
+
+  if (!isWindowsRuntime) return null;
+
+  const minimize = () => {
+    void getCurrentWindow().minimize().catch((error) => {
+      console.error('Failed to minimize the Windows window.', error);
+    });
+  };
+  const close = () => {
+    void getCurrentWindow().close().catch((error) => {
+      console.error('Failed to close the Windows window.', error);
+    });
+  };
+
+  return (
+    <div className="bpp-window-controls" aria-label="Window controls">
+      <button
+        type="button"
+        onClick={minimize}
+        className="bpp-button bpp-window-control-button size-9 shrink-0"
+        title="Minimize window"
+        aria-label="Minimize window"
+      >
+        <Minus size={17} strokeWidth={1.8} aria-hidden="true" />
+      </button>
+      <button
+        type="button"
+        onClick={close}
+        className="bpp-button bpp-window-control-button bpp-window-close-button size-9 shrink-0"
+        title="Close window"
+        aria-label="Close window"
+      >
+        <X size={16} strokeWidth={1.8} aria-hidden="true" />
       </button>
     </div>
   );
@@ -426,7 +442,6 @@ function ShellSocialLinks({
           </div>
         )}
       </div>
-      <div className="w-px h-4 bg-[rgba(200,148,55,0.2)] mx-1" />
     </div>
   );
 }
@@ -449,7 +464,7 @@ function ShellSupportMenu({
     <div className="relative" data-dropdown>
       <button
         type="button"
-        className="bpp-button h-9 cinzel text-[10px] tracking-wider uppercase"
+        className="bpp-button h-9 text-[10px] tracking-wider uppercase"
         onClick={onToggleSupport}
       >
         <Heart size={14} />
