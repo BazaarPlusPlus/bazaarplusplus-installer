@@ -24,6 +24,8 @@ Modal-coordination citation refresh: `2026-07-19` on `838d5d6bf30e16a277e5b367b6
 
 Updater-recovery citation refresh: `2026-07-19` on `2bf15726776492127c3eca2162dd26306c3ab310` — the context glossary plus architecture, frontend, updater, and verification topics were checked against the explicit updater snapshot, semantic problems, shared header/modal presentation, accessible progress, and manual restart recovery.
 
+About-bootstrap citation refresh: `2026-07-19` on `506e85b363a53511d14a44db22804a53331f2c03` — the context glossary plus architecture, frontend, and verification topics were checked against the explicit bootstrap resource states, packaged fallback provenance, semantic recovery, and accessible About feedback.
+
 ## Current Manifest
 
 | Path | Topic | Status | Last verified |
@@ -33,14 +35,14 @@ Updater-recovery citation refresh: `2026-07-19` on `2bf15726776492127c3eca2162dd
 | `README.md` | project entrypoint | current-entrypoint | 2026-07-11 |
 | `.trae/rules/git-commit-message.md` | ignored local rule | ignored-operational | n/a |
 | `docs/INDEX.md` | documentation manifest | manifest | 2026-07-19 |
-| `CONTEXT.md` | entry map + glossary | truth | `2bf15726776492127c3eca2162dd26306c3ab310` |
-| `docs/truth/architecture.md` | architecture | truth | `2bf15726776492127c3eca2162dd26306c3ab310` |
-| `docs/truth/frontend.md` | frontend | truth | `2bf15726776492127c3eca2162dd26306c3ab310` |
+| `CONTEXT.md` | entry map + glossary | truth | `506e85b363a53511d14a44db22804a53331f2c03` |
+| `docs/truth/architecture.md` | architecture | truth | `506e85b363a53511d14a44db22804a53331f2c03` |
+| `docs/truth/frontend.md` | frontend | truth | `506e85b363a53511d14a44db22804a53331f2c03` |
 | `docs/truth/install-reset.md` | install-reset | truth | `0f609de844c0cbc48e7fb53396a90d5f32776c2b` |
 | `docs/truth/launch-modes.md` | launch-modes | truth | `f23d786ab3bf1998f556f5fe05b6e47467a7ea48` |
 | `docs/truth/history-stream.md` | history-stream | truth | `0f609de844c0cbc48e7fb53396a90d5f32776c2b` |
 | `docs/truth/updater-release.md` | updater-release | truth | `2bf15726776492127c3eca2162dd26306c3ab310` |
-| `docs/truth/verification.md` | verification | truth | `2bf15726776492127c3eca2162dd26306c3ab310` |
+| `docs/truth/verification.md` | verification | truth | `506e85b363a53511d14a44db22804a53331f2c03` |
 | `docs/plans/manual-validation.md` | manual-validation | active-plan | `7500016b1c4adfc7b5d0206c7def0ceabae514d5` |
 | `docs/agents/issue-tracker.md` | agent skills: issue tracker | operational | 2026-07-11 |
 | `docs/agents/triage-labels.md` | agent skills: triage labels | operational | 2026-07-11 |

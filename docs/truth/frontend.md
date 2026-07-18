@@ -1,7 +1,7 @@
 ---
 status: truth
 topic: frontend
-last-verified: 2bf15726776492127c3eca2162dd26306c3ab310
+last-verified: 506e85b363a53511d14a44db22804a53331f2c03
 ---
 
 # Frontend
@@ -29,6 +29,7 @@ last-verified: 2bf15726776492127c3eca2162dd26306c3ab310
 - Shared install, stream, crop, history, cleanup, and bootstrap preview values live in the leaf module `src/api/previewDefaults.ts`; Preview reuses those object references in `src/api/previewCommands.ts:16-50` so polling preserves React state bailouts.
 - Stream commands pass through one semantic port over the selected native or Preview command adapter in `src/features/stream/streamApi.ts:7-36`. The framework-neutral workflow owns replayable initialization, polling freshness and response epochs, capability-scoped operations/problems, semantic notices, and the derived page snapshot in `src/features/stream/streamWorkflow.ts:185-320` and `src/features/stream/streamWorkflow.ts:509-733`; `useStreamPage` supplies browser ports and creates the workflow once, independently of locale, before binding its lifecycle to React in `src/features/stream/useStreamPage.ts:9-42`.
 - The shared page-state seam is a discriminated union of initial loading, blocking failure, ready-empty, and ready-content with nested idle/refreshing/failed refresh state; request ids reject stale completions in `src/features/shared/pageState.ts:1-60`. Shared UI problems retain code, parameters, and optional diagnostics separately from localized copy in `src/features/shared/problems.ts:4-40` and `src/components/ui/ProblemBanner.tsx:3-43`.
+- About bootstrap uses its own discriminated resource snapshot because packaged data can remain usable while native provenance fails. The machine labels unavailable fallback fields, keeps retry single-flight, and replaces fallback in place after recovery in `src/features/about/appBootstrap.ts:18-55` and `src/features/about/appBootstrap.ts:90-178`; React creates it once and exposes the packaged fallback to existing shell consumers in `src/features/about/useAppBootstrap.ts:12-42`.
 - Destructive workflows use a framework-neutral confirmed-operation controller that keeps the target across confirming/running/failure, rejects conflicting requests and repeat execution, blocks dismissal while running, closes only after success, and retains a semantic problem for retry or safe exit after failure in `src/features/shared/confirmedOperation.ts:3-94`.
 - Run Detail specializes that seam with a distinct not-found state, preserved ready content on refresh failure, and a separate action state that globally gates conflicting work while retaining target-scoped failures in `src/features/history/runDetailPageState.ts:5-167`. Its semantic problem presenter maps stable backend codes and operation parameters to localized copy without using diagnostics as user-facing text in `src/features/history/runDetailProblems.ts:9-62`.
 
@@ -47,6 +48,7 @@ last-verified: 2bf15726776492127c3eca2162dd26306c3ab310
 - Storage cleanup submits only generated `StorageCleanupScope` plus `StorageCleanupPreset`. Preview and execute are separately single-flight; the selected scope, preset, counts, and consequence remain in the confirmed-operation target through running/failure, and success refreshes History before publishing the outcome in `src/features/history/useStorageCleanup.ts:23-78` and `src/features/history/StorageCleanupCard.tsx:125-185`. Cleanup failures are localized from semantic problem codes/operation parameters while diagnostics remain separate in `src/features/history/storageCleanupProblems.ts:9-52`.
 - Stream renders capability-localized service, polling, display-window, crop, and one-off action problems beside the controls that can recover them; diagnostics remain in the optional disclosure rather than becoming user copy in `src/pages/Stream.tsx:34-137`, `src/pages/Stream.tsx:182-319`, and `src/pages/Stream.tsx:324-358`.
 - Stream status, database, window, and notice copy is derived from the current translator at render time. Stale running/stopped values have distinct presentation and are not presented as authoritative in `src/features/stream/streamPresentation.ts:20-80`.
+- About renders source and unavailable-field labels beside selectable version values. Initial/fallback/blocking feedback uses live regions, native retry controls, bilingual semantic copy, and optional diagnostics; Browser Preview is explicitly labeled as packaged fallback rather than authoritative native data in `src/pages/About.tsx:38-107` and `src/pages/About.tsx:171-264`.
 
 ## Update Modal
 
