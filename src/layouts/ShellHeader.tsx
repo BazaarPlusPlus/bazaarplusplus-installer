@@ -498,6 +498,28 @@ function ShellSocialLinks({
             <div className="h-px bg-gradient-to-r from-transparent via-[rgba(200,148,55,0.2)] to-transparent my-0.5 mx-2" />
 
             <a
+              href={bootstrap.links.bilibili_core_dev}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-3 px-3 py-2.5 hover:bg-[rgba(200,148,55,0.1)] rounded-sm text-left transition-all group no-underline"
+              onClick={onCloseBilibili}
+            >
+              <div className="flex items-center justify-center size-8 rounded-sm bg-[rgba(200,148,55,0.05)] border border-[rgba(200,148,55,0.1)] group-hover:border-[rgba(200,148,55,0.3)] group-hover:bg-[rgba(200,148,55,0.15)] transition-colors text-[rgba(200,170,120,0.8)] group-hover:text-[#e8c87a]">
+                <Users size={16} />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-sm font-medium text-[#e8dcc8] group-hover:text-[#f4ead5] transition-colors">
+                  hisenser
+                </span>
+                <span className="text-[10px] text-[rgba(200,170,120,0.8)]">
+                  {t('bilibiliCoreDevSubtitle')}
+                </span>
+              </div>
+            </a>
+
+            <div className="h-px bg-gradient-to-r from-transparent via-[rgba(200,148,55,0.2)] to-transparent my-0.5 mx-2" />
+
+            <a
               href={bootstrap.links.bilibili_project}
               target="_blank"
               rel="noopener noreferrer"

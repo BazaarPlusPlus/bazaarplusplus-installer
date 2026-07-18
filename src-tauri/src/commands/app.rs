@@ -32,6 +32,7 @@ pub struct AppLinks {
     pub x: String,
     pub bilibili_project: String,
     pub bilibili_author: String,
+    pub bilibili_core_dev: String,
     pub xiaohongshu: String,
     pub kofi: String,
     pub supporter_list: String,
