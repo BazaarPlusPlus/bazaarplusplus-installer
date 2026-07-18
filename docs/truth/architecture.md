@@ -1,7 +1,7 @@
 ---
 status: truth
 topic: architecture
-last-verified: f23d786ab3bf1998f556f5fe05b6e47467a7ea48
+last-verified: 5bbe32c870bc06e35e5064f3c8403ff22b359d32
 ---
 
 # Architecture
@@ -28,7 +28,8 @@ last-verified: f23d786ab3bf1998f556f5fe05b6e47467a7ea48
 - History list/detail/reveal/delete commands use `SemanticProblem`; the shared Rust DTO fixes code/parameter/diagnostic shape, the detail command models not-found as a successful `Option`, and the facade classifies unavailable selection, failed reads, and failed actions before the command boundary in `src-tauri/src/problem.rs:3-38`, `src-tauri/src/services/history.rs:74-188`, and `src-tauri/src/commands/history.rs:7-49`.
 - History internals default to private modules; only cleanup algorithms and mapper/screenshots test seams are crate-visible, and the facade receives a narrowed repository surface in `src-tauri/src/history/mod.rs:1-13`.
 - `StreamRuntime` is the only stream lifecycle mutation boundary: it serializes ensure/restart/stop/window/maintenance operations and privately owns the task plus captured installation paths in `src-tauri/src/stream/runtime.rs:43-108` and `src-tauri/src/stream/runtime.rs:188-280`. Its private production adapter binds the local Axum service to `127.0.0.1:17654` in `src-tauri/src/stream/server.rs:16-69`.
-- The frontend Stream workflow depends inward on semantic command, scheduler, clipboard, and opener ports in `src/features/stream/streamWorkflow.ts:24-50` and `src/features/stream/streamWorkflow.ts:114-120`; the React hook provides those outer adapters and only subscribes, starts, and disposes the workflow in `src/features/stream/useStreamPage.ts:21-61`.
+- Stream Tauri commands map service, window, and crop failures into the shared semantic problem contract before crossing IPC in `src-tauri/src/commands/stream.rs:12-110`; stable codes are part of the generated `SemanticProblemCode` union from `src-tauri/src/problem.rs:3-42`.
+- The frontend Stream workflow depends inward on command, scheduler, clipboard, and opener ports and exposes capability-oriented semantic snapshots in `src/features/stream/streamWorkflow.ts:25-122`. It owns response ordering and capability gates in `src/features/stream/streamWorkflow.ts:185-320` and `src/features/stream/streamWorkflow.ts:640-733`; the React hook provides outer adapters and only subscribes, starts, and disposes one locale-independent workflow in `src/features/stream/useStreamPage.ts:9-42`.
 
 ## Build And Generated Artifacts
 

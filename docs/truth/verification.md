@@ -1,7 +1,7 @@
 ---
 status: truth
 topic: verification
-last-verified: f23d786ab3bf1998f556f5fe05b6e47467a7ea48
+last-verified: 5bbe32c870bc06e35e5064f3c8403ff22b359d32
 ---
 
 # Verification
@@ -38,7 +38,8 @@ Use the smallest command that verifies the changed behavior; use the authoritati
 - The complete install operation tests payload classification, fresh/changed installs, current-install no-op, launch-mode-only repair, production ordering, first-error truncation, and refreshed outcomes through its private effect boundary in `src-tauri/src/services/install/operation.rs:165-289`.
 - Stream runtime tests exercise concurrent ensure, lifecycle transitions, failed start, and exclusive maintenance blocking in `src-tauri/src/stream/runtime.rs:440-572`.
 - The History facade's tempfile test uses a real SQLite schema and managed files across queries, reveal/delete, and both cleanup scopes in `src-tauri/src/services/history.rs:619-725`.
-- The framework-neutral Stream workflow uses fake ports and a fake scheduler to cover initialization failures, polling threshold/recovery, stale-response and lifecycle epochs, action exclusion, window/crop updates, transient feedback, disposal/restart, and both command adapters in `src/features/stream/streamWorkflow.test.ts:133-450`.
+- Focused Stream capability tests cover independently completing initialization, crop degradation without global failure, stale polling and recovery, scoped operations/problems, bilingual problem presentation, and locale changes without workflow restart in `src/features/stream/streamCapabilityState.test.ts:109-249`. Workflow lifecycle tests cover poll response ordering (including older failures), restart invalidation, authoritative runtime errors, semantic notices, target-scoped one-off failures, disposal/replay, and both command adapters in `src/features/stream/streamWorkflow.test.ts:116-307`.
+- Stream native semantic classification is pinned at the command boundary in `src-tauri/src/commands/stream.rs:94-139`, and native adapter preservation is covered in `src/api/commandClient.dispatch.test.ts:78-96`.
 - Semantic-problem serialization plus History list/detail/action classification are covered at the Rust boundary in `src-tauri/src/problem.rs:42-84` and `src-tauri/src/services/history.rs:526-602`; the native adapter preservation path is covered in `src/api/commandClient.dispatch.test.ts:39-55`.
 - Focused History tests cover exclusive empty/error/content transitions, refresh-data preservation, stale completions, stopped/failed preview capability, bilingual problem presentation, and locale-aware dates in `src/features/history/historyPageState.test.ts:46-108`, `src/features/history/historyPreview.test.ts:5-49`, `src/features/history/historyProblems.test.ts:17-30`, and `src/features/history/format.test.ts:4-19`.
 - Run Detail tests cover its four page states, preserved refresh failure, stale completion, global action gate, target-scoped retry, and bilingual semantic problem presentation in `src/features/history/runDetailPageState.test.ts:56-187` and `src/features/history/runDetailProblems.test.ts:6-39`. The shared confirmation test verifies all dismiss controls can be visibly disabled for an uncancellable action in `src/components/ui/ConfirmDialog.test.tsx:98-101`.
