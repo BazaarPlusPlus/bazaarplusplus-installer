@@ -119,35 +119,47 @@ function ShellHeaderActions({
   const { t, toggle } = useI18n();
 
   return (
-    <div className="flex min-w-0 items-center gap-2 z-10 justify-end">
-      <ShellSocialLinks
-        bootstrap={bootstrap}
-        triggerRef={bilibiliTriggerRef}
-        showBilibili={showBilibili}
-        onToggleBilibili={onToggleBilibili}
-        onCloseBilibili={onCloseBilibili}
-      />
-
-      <ShellSupportMenu
-        bootstrap={bootstrap}
-        triggerRef={supportTriggerRef}
-        showSupport={showSupport}
-        onToggleSupport={onToggleSupport}
-        onOpenPayment={onOpenPayment}
-        onCloseSupport={onCloseSupport}
-      />
-
-      <button
-        type="button"
-        onClick={toggle}
-        className="bpp-button bpp-language-button size-9"
-        title={t('languageToggle')}
-        aria-label={t('languageToggle')}
+    <div className="bpp-header-actions">
+      <div
+        className="bpp-header-community-actions"
+        data-header-group="community"
       >
-        <Languages size={17} strokeWidth={1.8} aria-hidden="true" />
-      </button>
+        <ShellSocialLinks
+          bootstrap={bootstrap}
+          triggerRef={bilibiliTriggerRef}
+          showBilibili={showBilibili}
+          onToggleBilibili={onToggleBilibili}
+          onCloseBilibili={onCloseBilibili}
+        />
+      </div>
 
-      <WindowsWindowControls />
+      <span className="bpp-header-actions-divider" aria-hidden="true" />
+
+      <div
+        className="bpp-header-application-actions"
+        data-header-group="application"
+      >
+        <ShellSupportMenu
+          bootstrap={bootstrap}
+          triggerRef={supportTriggerRef}
+          showSupport={showSupport}
+          onToggleSupport={onToggleSupport}
+          onOpenPayment={onOpenPayment}
+          onCloseSupport={onCloseSupport}
+        />
+
+        <button
+          type="button"
+          onClick={toggle}
+          className="bpp-button bpp-language-button size-9"
+          title={t('languageToggle')}
+          aria-label={t('languageToggle')}
+        >
+          <Languages size={17} strokeWidth={1.8} aria-hidden="true" />
+        </button>
+
+        <WindowsWindowControls />
+      </div>
     </div>
   );
 }
@@ -229,8 +241,7 @@ function QrSocialEntry({
   title,
   children
 }: QrSocialEntryProps) {
-  const triggerClassName =
-    'flex items-center justify-center size-8 text-[rgba(200,170,120,0.72)] hover:text-[var(--social-accent)] focus-visible:text-[var(--social-accent)] transition-colors';
+  const triggerClassName = 'bpp-header-icon-control';
 
   const trigger = href ? (
     <a
@@ -254,9 +265,9 @@ function QrSocialEntry({
       style={{ '--social-accent': accent } as CSSProperties}
     >
       {trigger}
-      <div className="absolute top-[calc(100%+0.5rem)] left-1/2 w-[260px] bg-[#0b0906] border border-[rgba(200,148,55,0.2)] rounded-[4px] shadow-[0_16px_40px_rgba(0,0,0,0.6),inset_0_0_0_1px_rgba(255,198,98,0.05)] p-5 z-50 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:pointer-events-auto transition-all duration-200 transform -translate-x-1/2 translate-y-2 group-hover:translate-y-0 group-focus-within:translate-y-0 flex flex-col items-center gap-4">
+      <div className="bpp-header-popover bpp-qr-popover">
         <div
-          className="border rounded-[2px] px-3 py-[0.15rem] text-[0.55rem] tracking-[0.15em] font-bold"
+          className="bpp-qr-badge"
           style={{
             borderColor: `${accent}80`,
             color: accent,
@@ -265,9 +276,7 @@ function QrSocialEntry({
         >
           {badge}
         </div>
-        <div
-          className={`w-full aspect-square bg-[#f8f0e3] ${qrRound ? 'rounded-full' : 'rounded-[2px]'} p-2 shadow-[inset_0_0_0_1px_rgba(212,160,64,0.4)] flex items-center justify-center`}
-        >
+        <div className={`bpp-qr-image-frame ${qrRound ? 'is-round' : ''}`}>
           <img
             src={qrSrc}
             alt={qrAlt}
@@ -276,13 +285,9 @@ function QrSocialEntry({
             className="w-full h-full object-contain"
           />
         </div>
-        <div className="flex flex-col items-center gap-[0.15rem]">
-          <h3 className="font-bold text-[#d4a040] tracking-[0.08em] text-[1.05rem] m-0 leading-none">
-            {title}
-          </h3>
-          <p className="text-[rgba(200,170,120,0.8)] text-[0.72rem] tracking-wide m-0">
-            {subtitle}
-          </p>
+        <div className="bpp-qr-copy">
+          <h3 className="bpp-qr-title">{title}</h3>
+          <p className="bpp-qr-subtitle">{subtitle}</p>
         </div>
       </div>
     </div>
@@ -304,12 +309,12 @@ function ShellSocialLinks({
 }) {
   const { t } = useI18n();
   return (
-    <div className="bpp-header-socials flex items-center gap-1 mr-1">
+    <div className="bpp-header-socials">
       <a
         href={bootstrap.links.github}
         target="_blank"
         rel="noopener noreferrer"
-        className="flex items-center justify-center size-8 text-[rgba(200,170,120,0.72)] hover:text-[#e8c87a] transition-colors"
+        className="bpp-header-icon-control"
         aria-label="GitHub"
       >
         <svg
@@ -331,7 +336,7 @@ function ShellSocialLinks({
         href={bootstrap.links.x}
         target="_blank"
         rel="noopener noreferrer"
-        className="flex items-center justify-center size-8 text-[rgba(200,170,120,0.72)] hover:text-[#e8c87a] transition-colors"
+        className="bpp-header-icon-control"
         aria-label="X"
       >
         <svg
@@ -402,7 +407,7 @@ function ShellSocialLinks({
           ref={triggerRef}
           type="button"
           onClick={onToggleBilibili}
-          className="bpp-button h-9 min-w-[68px] px-3 text-[11px] font-medium tracking-[0.04em]"
+          className="bpp-button bpp-header-labelled-control"
           aria-label={t('socialBilibili')}
           aria-expanded={showBilibili}
           aria-controls="shell-bilibili-menu"
@@ -431,70 +436,64 @@ function ShellSocialLinks({
           <div
             id="shell-bilibili-menu"
             role="menu"
-            className="absolute top-[calc(100%+0.5rem)] left-1/2 w-[260px] bg-[rgba(18,11,5,0.95)] backdrop-blur-md border border-[rgba(200,148,55,0.2)] rounded-sm shadow-[0_16px_40px_rgba(0,0,0,0.6)] p-1.5 z-50 flex flex-col gap-1 transform -translate-x-1/2"
+            className="bpp-header-popover bpp-header-menu bpp-header-menu-centered"
           >
             <a
               role="menuitem"
               href={bootstrap.links.bilibili_author}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-3 px-3 py-2.5 hover:bg-[rgba(200,148,55,0.1)] rounded-sm text-left transition-all group no-underline"
+              className="bpp-header-menu-item group"
               onClick={onCloseBilibili}
             >
-              <div className="flex items-center justify-center size-8 rounded-sm bg-[rgba(200,148,55,0.05)] border border-[rgba(200,148,55,0.1)] group-hover:border-[rgba(200,148,55,0.3)] group-hover:bg-[rgba(200,148,55,0.15)] transition-colors text-[rgba(200,170,120,0.8)] group-hover:text-[#e8c87a]">
+              <div className="bpp-header-menu-icon">
                 <Users size={16} />
               </div>
               <div className="flex flex-col">
-                <span className="text-sm font-medium text-[#e8dcc8] group-hover:text-[#f4ead5] transition-colors">
-                  仓鼠小猫
-                </span>
-                <span className="text-[10px] text-[rgba(200,170,120,0.8)]">
+                <span className="bpp-header-menu-title">仓鼠小猫</span>
+                <span className="bpp-header-menu-subtitle">
                   {t('bilibiliAuthorSubtitle')}
                 </span>
               </div>
             </a>
 
-            <div className="h-px bg-gradient-to-r from-transparent via-[rgba(200,148,55,0.2)] to-transparent my-0.5 mx-2" />
+            <div className="bpp-header-menu-divider" />
 
             <a
               role="menuitem"
               href={bootstrap.links.bilibili_core_dev}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-3 px-3 py-2.5 hover:bg-[rgba(200,148,55,0.1)] rounded-sm text-left transition-all group no-underline"
+              className="bpp-header-menu-item group"
               onClick={onCloseBilibili}
             >
-              <div className="flex items-center justify-center size-8 rounded-sm bg-[rgba(200,148,55,0.05)] border border-[rgba(200,148,55,0.1)] group-hover:border-[rgba(200,148,55,0.3)] group-hover:bg-[rgba(200,148,55,0.15)] transition-colors text-[rgba(200,170,120,0.8)] group-hover:text-[#e8c87a]">
+              <div className="bpp-header-menu-icon">
                 <Users size={16} />
               </div>
               <div className="flex flex-col">
-                <span className="text-sm font-medium text-[#e8dcc8] group-hover:text-[#f4ead5] transition-colors">
-                  hisenser
-                </span>
-                <span className="text-[10px] text-[rgba(200,170,120,0.8)]">
+                <span className="bpp-header-menu-title">hisenser</span>
+                <span className="bpp-header-menu-subtitle">
                   {t('bilibiliCoreDevSubtitle')}
                 </span>
               </div>
             </a>
 
-            <div className="h-px bg-gradient-to-r from-transparent via-[rgba(200,148,55,0.2)] to-transparent my-0.5 mx-2" />
+            <div className="bpp-header-menu-divider" />
 
             <a
               role="menuitem"
               href={bootstrap.links.bilibili_project}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-3 px-3 py-2.5 hover:bg-[rgba(200,148,55,0.1)] rounded-sm text-left transition-all group no-underline"
+              className="bpp-header-menu-item group"
               onClick={onCloseBilibili}
             >
-              <div className="flex items-center justify-center size-8 rounded-sm bg-[rgba(200,148,55,0.05)] border border-[rgba(200,148,55,0.1)] group-hover:border-[rgba(200,148,55,0.3)] group-hover:bg-[rgba(200,148,55,0.15)] transition-colors text-[rgba(200,170,120,0.8)] group-hover:text-[#e8c87a]">
+              <div className="bpp-header-menu-icon">
                 <MonitorPlay size={16} />
               </div>
               <div className="flex flex-col">
-                <span className="text-sm font-medium text-[#e8dcc8] group-hover:text-[#f4ead5] transition-colors">
-                  BazaarPlusPlus
-                </span>
-                <span className="text-[10px] text-[rgba(200,170,120,0.8)]">
+                <span className="bpp-header-menu-title">BazaarPlusPlus</span>
+                <span className="bpp-header-menu-subtitle">
                   {t('bilibiliProjectSubtitle')}
                 </span>
               </div>
@@ -527,7 +526,7 @@ function ShellSupportMenu({
       <button
         ref={triggerRef}
         type="button"
-        className="bpp-button h-9 text-[10px] tracking-wider uppercase"
+        className="bpp-button bpp-header-labelled-control"
         onClick={onToggleSupport}
         aria-expanded={showSupport}
         aria-controls="shell-support-menu"
@@ -540,68 +539,64 @@ function ShellSupportMenu({
         <div
           id="shell-support-menu"
           role="menu"
-          className="absolute top-[calc(100%+0.5rem)] right-0 w-56 bg-[rgba(18,11,5,0.95)] backdrop-blur-md border border-[rgba(200,148,55,0.2)] rounded-sm shadow-[0_16px_40px_rgba(0,0,0,0.6)] p-1.5 z-50 flex flex-col gap-1"
+          className="bpp-header-popover bpp-header-menu bpp-header-menu-right"
         >
           <button
             role="menuitem"
             type="button"
-            className="flex items-center gap-3 px-3 py-2.5 hover:bg-[rgba(200,148,55,0.1)] rounded-sm text-left transition-all group"
+            className="bpp-header-menu-item group"
             onClick={onOpenPayment}
           >
-            <div className="flex items-center justify-center size-8 rounded-sm bg-[rgba(200,148,55,0.05)] border border-[rgba(200,148,55,0.1)] group-hover:border-[rgba(200,148,55,0.3)] group-hover:bg-[rgba(200,148,55,0.15)] transition-colors text-[rgba(200,170,120,0.8)] group-hover:text-[#e8c87a]">
+            <div className="bpp-header-menu-icon">
               <QrCode size={16} />
             </div>
             <div className="flex flex-col">
-              <span className="text-sm font-medium text-[#e8dcc8] group-hover:text-[#f4ead5] transition-colors">
-                {t('wechatPay')}
-              </span>
-              <span className="text-[10px] text-[rgba(200,170,120,0.8)]">
+              <span className="bpp-header-menu-title">{t('wechatPay')}</span>
+              <span className="bpp-header-menu-subtitle">
                 {t('wechatPayOpen')}
               </span>
             </div>
           </button>
 
-          <div className="h-px bg-gradient-to-r from-transparent via-[rgba(200,148,55,0.2)] to-transparent my-0.5 mx-2" />
+          <div className="bpp-header-menu-divider" />
 
           <a
             role="menuitem"
             href={bootstrap.links.kofi}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-3 px-3 py-2.5 hover:bg-[rgba(200,148,55,0.1)] rounded-sm text-left transition-all group no-underline"
+            className="bpp-header-menu-item group"
             onClick={onCloseSupport}
           >
-            <div className="flex items-center justify-center size-8 rounded-sm bg-[rgba(200,148,55,0.05)] border border-[rgba(200,148,55,0.1)] group-hover:border-[rgba(200,148,55,0.3)] group-hover:bg-[rgba(200,148,55,0.15)] transition-colors text-[rgba(200,170,120,0.8)] group-hover:text-[#e8c87a]">
+            <div className="bpp-header-menu-icon">
               <Coffee size={16} />
             </div>
             <div className="flex flex-col">
-              <span className="text-sm font-medium text-[#e8dcc8] group-hover:text-[#f4ead5] transition-colors">
-                Ko-fi
-              </span>
-              <span className="text-[10px] text-[rgba(200,170,120,0.8)]">
+              <span className="bpp-header-menu-title">Ko-fi</span>
+              <span className="bpp-header-menu-subtitle">
                 {t('kofiSubtitle')}
               </span>
             </div>
           </a>
 
-          <div className="h-px bg-gradient-to-r from-transparent via-[rgba(200,148,55,0.2)] to-transparent my-0.5 mx-2" />
+          <div className="bpp-header-menu-divider" />
 
           <a
             role="menuitem"
             href={bootstrap.links.supporter_list}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-3 px-3 py-2.5 hover:bg-[rgba(200,148,55,0.1)] rounded-sm text-left transition-all group no-underline"
+            className="bpp-header-menu-item group"
             onClick={onCloseSupport}
           >
-            <div className="flex items-center justify-center size-8 rounded-sm bg-[rgba(200,148,55,0.05)] border border-[rgba(200,148,55,0.1)] group-hover:border-[rgba(200,148,55,0.3)] group-hover:bg-[rgba(200,148,55,0.15)] transition-colors text-[rgba(200,170,120,0.8)] group-hover:text-[#e8c87a]">
+            <div className="bpp-header-menu-icon">
               <Users size={16} />
             </div>
             <div className="flex flex-col">
-              <span className="text-sm font-medium text-[#e8dcc8] group-hover:text-[#f4ead5] transition-colors">
+              <span className="bpp-header-menu-title">
                 {t('supporterList')}
               </span>
-              <span className="text-[10px] text-[rgba(200,170,120,0.8)]">
+              <span className="bpp-header-menu-subtitle">
                 {t('supporterListSubtitle')}
               </span>
             </div>

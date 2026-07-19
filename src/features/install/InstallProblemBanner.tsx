@@ -1,3 +1,4 @@
+import { Button } from '../../components/ui/Button';
 import { ProblemBanner } from '../../components/ui/ProblemBanner';
 import { useI18n } from '../../i18n/LocaleProvider';
 import { formatProblemDiagnostic } from '../shared/problems';
@@ -18,13 +19,9 @@ export function InstallProblemBanner({
       diagnosticLabel={t('problemDiagnostics')}
       actions={
         onRetry ? (
-          <button
-            type="button"
-            onClick={onRetry}
-            className="underline underline-offset-2"
-          >
+          <Button type="button" size="small" variant="ghost" onClick={onRetry}>
             {t('retry')}
-          </button>
+          </Button>
         ) : undefined
       }
     />

@@ -12,6 +12,17 @@ describe('messages catalog', () => {
     expect(formatMessage('zh', 'navInstall')).toBe('安装');
     expect(formatMessage('en', 'navInstall')).toBe('Install');
   });
+
+  it('provides localized History empty-state guidance and actions', () => {
+    expect(messages.zh.historyEmptyDescription).toContain('The Bazaar');
+    expect(messages.en.historyEmptyDescription).toContain('The Bazaar');
+    expect(messages.zh.historyEmptyRefresh).not.toBe(
+      messages.en.historyEmptyRefresh
+    );
+    expect(messages.zh.historyEmptyInstall).not.toBe(
+      messages.en.historyEmptyInstall
+    );
+  });
 });
 
 describe('formatMessage', () => {

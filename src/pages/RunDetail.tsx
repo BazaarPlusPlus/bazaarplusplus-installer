@@ -88,13 +88,13 @@ export default function RunDetail() {
       ) : page.state.phase === 'not-found' ? (
         <div
           role="status"
-          className="p-6 flex items-center justify-between gap-4 bg-[rgba(18,11,5,0.88)] border border-[rgba(180,130,48,0.13)] rounded-sm text-[rgba(200,170,120,0.8)]"
+          className="bpp-run-detail-not-found p-6 flex items-center justify-between gap-4"
         >
           <span>{t('runDetailNotFound')}</span>
           <button
             type="button"
             onClick={() => void page.refresh()}
-            className="underline underline-offset-2 text-[#e8c87a]"
+            className="bpp-run-detail-inline-link underline underline-offset-2"
           >
             {t('retry')}
           </button>
@@ -117,7 +117,7 @@ export default function RunDetail() {
             <div
               role="status"
               aria-live="polite"
-              className="flex items-center gap-2 text-xs text-[rgba(200,170,120,0.8)]"
+              className="bpp-run-detail-refreshing flex items-center gap-2 text-xs"
             >
               <Loader2 size={14} className="animate-spin" />
               {t('runDetailRefreshing')}
@@ -127,14 +127,14 @@ export default function RunDetail() {
           <div className="bpp-panel flex flex-col gap-6 p-6">
             <div className="flex justify-between items-start">
               <div className="flex flex-col gap-1 min-w-0">
-                <h2 className="cinzel-decorative text-2xl font-bold text-[#e8dcc8] m-0 truncate">
+                <h2 className="bpp-run-detail-title cinzel-decorative text-2xl font-bold m-0 truncate">
                   {detail.run.hero}
                   <span className={toneColorClass(runResult?.tone)}>
                     {' '}
                     · {runResult ? t(runResult.key) : '-'}
                   </span>
                 </h2>
-                <div className="flex flex-wrap items-center gap-3 fira-code text-xs text-[rgba(200,170,120,0.8)] selectable">
+                <div className="bpp-run-detail-meta flex flex-wrap items-center gap-3 fira-code text-xs selectable">
                   <span>
                     {t('runDetailPlayer')} {detail.run.player_name ?? '-'}
                   </span>
@@ -146,9 +146,7 @@ export default function RunDetail() {
                     {formatDateTime(detail.run.ended_at_utc, locale)}
                   </span>
                   <span>•</span>
-                  <span className="text-[rgba(200,170,120,0.8)]">
-                    {t(formatRunStatusKey(detail.run.status))}
-                  </span>
+                  <span>{t(formatRunStatusKey(detail.run.status))}</span>
                 </div>
               </div>
 
@@ -176,7 +174,7 @@ export default function RunDetail() {
               />
             )}
 
-            <div className="flex gap-12 border-t border-[rgba(200,148,55,0.1)] pt-5">
+            <div className="bpp-run-detail-stats flex gap-12 pt-5">
               <StatBlock
                 label={t('statWinLoss')}
                 value={`${detail.run.victories ?? '-'} / ${detail.run.losses ?? '-'}`}
@@ -207,7 +205,7 @@ export default function RunDetail() {
             <div className="flex-1 overflow-auto custom-scrollbar">
               <div className="min-w-[640px]">
                 <div
-                  className={`${BATTLE_GRID} px-6 py-3 border-b border-[rgba(200,148,55,0.15)] bg-[rgba(200,148,55,0.02)] cinzel text-[10px] tracking-widest text-[rgba(200,170,120,0.8)] uppercase`}
+                  className={`${BATTLE_GRID} bpp-battle-table-header px-6 py-3 cinzel text-[10px] tracking-widest uppercase`}
                 >
                   <div>{t('battleColDay')}</div>
                   <div>{t('battleColResult')}</div>
@@ -219,7 +217,7 @@ export default function RunDetail() {
                 </div>
 
                 {detail.battles.length === 0 ? (
-                  <div className="px-6 py-8 text-sm text-[rgba(200,170,120,0.8)]">
+                  <div className="bpp-run-detail-empty px-6 py-8 text-sm">
                     {t('noLocalBattles')}
                   </div>
                 ) : (
@@ -275,13 +273,13 @@ export default function RunDetail() {
             onConfirm={confirmDelete}
             onClose={deleteOperation.controller.dismiss}
           >
-            <p className="m-0 text-[12px] leading-relaxed text-[rgba(232,200,122,0.86)] fira-code selectable">
+            <p className="bpp-confirm-target m-0 text-[12px] leading-relaxed fira-code selectable">
               {t('deleteVideoTarget', {
                 battleId: pendingDelete.battleId,
                 videoId: pendingDelete.videoId
               })}
             </p>
-            <p className="m-0 text-[13px] leading-relaxed text-[rgba(245,220,220,0.86)]">
+            <p className="bpp-confirm-danger-copy m-0 text-[13px] leading-relaxed">
               {t('deleteVideoConfirmBody')}
             </p>
             {deleteOperation.state?.phase === 'failed' && (
@@ -305,11 +303,11 @@ function StatBlock({
 }) {
   return (
     <div className="flex flex-col gap-1">
-      <span className="cinzel text-[10px] tracking-widest text-[rgba(200,170,120,0.8)] uppercase">
+      <span className="bpp-run-detail-stat-label cinzel text-[10px] tracking-widest uppercase">
         {label}
       </span>
       <span
-        className={`text-xl text-[#e8c87a] ${isText ? 'cinzel font-bold' : 'fira-code'}`}
+        className={`bpp-run-detail-stat-value text-xl ${isText ? 'cinzel font-bold' : 'fira-code'}`}
       >
         {value}
       </span>
@@ -344,18 +342,18 @@ function BattleRow({
   };
 
   return (
-    <div className="border-b border-[rgba(200,148,55,0.05)] group hover:bg-[rgba(200,148,55,0.03)] transition-colors">
+    <div className="bpp-battle-row group transition-colors">
       <div className={`${BATTLE_GRID} px-6 py-4 items-center relative`}>
         <div
           aria-hidden="true"
           className="absolute inset-0 overflow-hidden pointer-events-none opacity-[0.02] flex items-center justify-center"
         >
-          <span className="cinzel-decorative text-8xl font-bold text-[#e8c87a]">
+          <span className="bpp-battle-watermark cinzel-decorative text-8xl font-bold">
             {battle.opponent_hero ?? '-'}
           </span>
         </div>
 
-        <div className="fira-code text-sm text-[rgba(228,216,191,0.8)] relative z-10">
+        <div className="bpp-battle-primary-data fira-code text-sm relative z-10">
           {battle.day === null ? '-' : String(battle.day)}
         </div>
         <div
@@ -363,16 +361,16 @@ function BattleRow({
         >
           {t(battleResult.key)}
         </div>
-        <div className="cinzel text-sm text-[#e8dcc8] relative z-10 min-w-0 truncate">
+        <div className="bpp-battle-hero cinzel text-sm relative z-10 min-w-0 truncate">
           {battle.opponent_hero ?? '-'}
         </div>
-        <div className="fira-code text-sm text-[rgba(200,170,120,0.8)] relative z-10 min-w-0 truncate">
+        <div className="bpp-battle-secondary-data fira-code text-sm relative z-10 min-w-0 truncate">
           {battle.opponent_name ?? '-'}
         </div>
-        <div className="cinzel text-sm text-[#e8c87a] relative z-10">
+        <div className="bpp-battle-rank cinzel text-sm relative z-10">
           {battle.opponent_rank ?? '-'}
         </div>
-        <div className="fira-code text-sm text-[rgba(228,216,191,0.8)] relative z-10">
+        <div className="bpp-battle-primary-data fira-code text-sm relative z-10">
           {battle.opponent_rating === null ? '-' : battle.opponent_rating}
         </div>
 
@@ -391,7 +389,7 @@ function BattleRow({
                   }
                   title={t('openVideoLocation')}
                   aria-label={t('openVideoLocation')}
-                  className="flex items-center justify-center size-8 rounded-sm bg-[rgba(200,148,55,0.06)] border border-[rgba(180,130,48,0.2)] hover:bg-[rgba(200,148,55,0.12)] disabled:opacity-40 transition-colors text-[#e8dcc8]"
+                  className="bpp-battle-video-action flex items-center justify-center size-8 disabled:opacity-50 transition-colors"
                 >
                   {videoAvailability.running ? (
                     <Loader2 size={14} className="animate-spin" />
@@ -408,7 +406,7 @@ function BattleRow({
                   }
                   title={t('deleteVideo')}
                   aria-label={t('deleteVideo')}
-                  className="flex items-center justify-center size-8 rounded-sm text-[rgba(200,170,120,0.72)] hover:text-[#ff4444] hover:bg-[rgba(255,68,68,0.1)] opacity-0 group-hover:opacity-100 focus-visible:opacity-100 disabled:opacity-40 transition-all"
+                  className="bpp-battle-delete-action flex items-center justify-center size-8 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 disabled:opacity-50 transition-all"
                 >
                   {deleteAvailability.running ? (
                     <Loader2 size={14} className="animate-spin" />
@@ -417,7 +415,7 @@ function BattleRow({
                   )}
                 </button>
               </div>
-              <span className="fira-code text-[10px] text-[rgba(200,170,120,0.65)] whitespace-nowrap selectable">
+              <span className="bpp-battle-video-meta fira-code text-[10px] whitespace-nowrap selectable">
                 {formatDuration(battle.video.duration_ms, locale)} ·{' '}
                 {formatBytes(battle.video.file_size_bytes, locale)}
               </span>
@@ -426,7 +424,7 @@ function BattleRow({
             <span
               title={t('noVideo')}
               aria-label={t('noVideo')}
-              className="flex items-center justify-center size-8 text-[rgba(200,170,120,0.6)]"
+              className="bpp-battle-no-video flex items-center justify-center size-8"
             >
               <FileQuestion size={14} />
             </span>

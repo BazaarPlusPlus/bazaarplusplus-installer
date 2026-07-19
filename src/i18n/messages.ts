@@ -206,6 +206,10 @@ const zh = {
   // History page
   historyLoading: '读取战绩中',
   noLocalRuns: '暂无本地战绩',
+  historyEmptyDescription:
+    '完成一局 The Bazaar 对局后，战绩会自动显示在这里。你也可以刷新，或前往安装页检查游戏目录。',
+  historyEmptyRefresh: '刷新战绩',
+  historyEmptyInstall: '检查安装目录',
   viewDetail: '查看详情',
   historySummaryRuns: '对局数',
   historySummaryVideos: '视频数',
@@ -360,6 +364,7 @@ const zh = {
   aboutAppLabel: '应用',
   aboutBppLabel: '插件',
   aboutCredits: '致谢',
+  aboutContributors: '贡献者',
   aboutAcknowledgements: '数据与灵感',
   aboutLicenses: '开源许可',
   aboutVerifiedBadge: 'Fable 5 认证',
@@ -619,6 +624,10 @@ const en: Record<MessageKey, string> = {
 
   historyLoading: 'Loading runs',
   noLocalRuns: 'No local runs yet',
+  historyEmptyDescription:
+    'Completed The Bazaar runs appear here automatically. Refresh, or check the selected game folder on the Install page.',
+  historyEmptyRefresh: 'Refresh History',
+  historyEmptyInstall: 'Check Install Folder',
   viewDetail: 'View details',
   historySummaryRuns: 'Runs',
   historySummaryVideos: 'Videos',
@@ -784,6 +793,7 @@ const en: Record<MessageKey, string> = {
   aboutAppLabel: 'App',
   aboutBppLabel: 'BPP',
   aboutCredits: 'Credits',
+  aboutContributors: 'Contributors',
   aboutAcknowledgements: 'Data & Inspiration',
   aboutLicenses: 'Licenses',
   aboutVerifiedBadge: 'Fable 5 Verified',

@@ -65,9 +65,42 @@ describe('About bootstrap feedback', () => {
 
     expect(html).toContain('role="alert"');
     expect(html).toContain('<button type="button"');
-    expect(html).toContain('>重试</button>');
+    expect(html).toContain('>重试</span>');
     expect(html).toContain('<details');
     expect(html).toContain('IPC unavailable');
     expect(html).toContain('aria-label="插件 不可用"');
+  });
+
+  it('uses distinct Credits and contributor heading levels', () => {
+    const html = render({
+      phase: 'authoritative',
+      data: {
+        ...fallback,
+        credits: [
+          {
+            name: 'Team Member',
+            role: 'AUTHOR',
+            href: null,
+            group: 'team'
+          },
+          {
+            name: 'Data Source',
+            role: 'GAMEDATA SOURCE',
+            href: null,
+            group: 'acknowledgement'
+          }
+        ]
+      },
+      source: 'native',
+      unavailableFields: [],
+      problem: null,
+      retrying: false
+    });
+
+    expect(html.match(/>致谢<\/h[34]>/g)).toHaveLength(1);
+    expect(html).toContain('>贡献者</h4>');
+    expect(html).toContain('>数据与灵感</h4>');
+    expect(html).toContain('AUTHOR');
+    expect(html).toContain('GAMEDATA SOURCE');
   });
 });

@@ -31,9 +31,9 @@ export function ShellUpdateModal({
   return (
     <Dialog onClose={updater.dismiss} labelledBy="update-modal-title">
       <div className="bpp-modal-card w-[min(460px,calc(100vw-32px))]">
-        <div className="border-b border-[rgba(200,148,55,0.18)] px-6 py-5">
+        <div className="bpp-update-modal-header px-6 py-5">
           <div className="flex items-start gap-4">
-            <div className="flex size-10 items-center justify-center rounded-[2px] border border-[rgba(200,148,55,0.28)] bg-[rgba(200,148,55,0.1)] text-[rgba(232,212,174,0.9)]">
+            <div className="bpp-update-modal-icon flex size-10 items-center justify-center">
               {updater.phase === 'downloading' ||
               updater.phase === 'installing' ||
               updater.phase === 'restarting' ? (
@@ -47,12 +47,12 @@ export function ShellUpdateModal({
               )}
             </div>
             <div>
-              <p className="m-0 cinzel text-[10px] uppercase text-[rgba(200,170,120,0.68)]">
+              <p className="bpp-update-modal-kicker m-0 cinzel text-[10px] uppercase">
                 {t('updateModalKicker')}
               </p>
               <h2
                 id="update-modal-title"
-                className="m-0 mt-2 cinzel text-xl leading-tight text-[#f2e4c8]"
+                className="bpp-update-modal-title m-0 mt-2 cinzel text-xl leading-tight"
               >
                 {t(presentation.titleKey)}
               </h2>
@@ -63,15 +63,15 @@ export function ShellUpdateModal({
         <div className="px-6 py-5">
           {updater.phase === 'available' && (
             <>
-              <p className="m-0 text-sm leading-6 text-[rgba(232,220,200,0.82)]">
+              <p className="bpp-update-modal-copy m-0 text-sm leading-6">
                 {t('updateModalBody', { version: updater.version })}
               </p>
               {updater.notes && (
                 <div className="mt-4">
-                  <p className="m-0 cinzel text-[10px] uppercase text-[rgba(200,170,120,0.68)]">
+                  <p className="bpp-update-modal-kicker m-0 cinzel text-[10px] uppercase">
                     {t('updateNotesLabel')}
                   </p>
-                  <p className="m-0 mt-2 max-h-44 overflow-y-auto whitespace-pre-wrap text-[13px] leading-6 text-[rgba(232,220,200,0.72)]">
+                  <p className="bpp-update-modal-notes m-0 mt-2 max-h-44 overflow-y-auto whitespace-pre-wrap text-[13px] leading-6">
                     {updater.notes}
                   </p>
                 </div>
@@ -87,14 +87,14 @@ export function ShellUpdateModal({
             <p
               role="status"
               aria-live="polite"
-              className="m-0 text-sm leading-6 text-[rgba(232,220,200,0.82)]"
+              className="bpp-update-modal-copy m-0 text-sm leading-6"
             >
               {t('updateInstallingBody', { version: updater.version })}
             </p>
           )}
 
           {updater.phase === 'ready-to-restart' && (
-            <p className="m-0 text-sm leading-6 text-[rgba(232,220,200,0.82)]">
+            <p className="bpp-update-modal-copy m-0 text-sm leading-6">
               {t('updateReadyBody', { version: updater.version })}
             </p>
           )}
@@ -103,7 +103,7 @@ export function ShellUpdateModal({
             <p
               role="status"
               aria-live="polite"
-              className="m-0 text-sm leading-6 text-[rgba(232,220,200,0.82)]"
+              className="bpp-update-modal-copy m-0 text-sm leading-6"
             >
               {t('updateRestarting')}
             </p>
@@ -123,11 +123,11 @@ export function ShellUpdateModal({
         </div>
 
         {dismissible && (
-          <div className="flex justify-end gap-3 border-t border-[rgba(200,148,55,0.14)] px-6 py-4">
+          <div className="bpp-update-modal-footer flex justify-end gap-3 px-6 py-4">
             <button
               type="button"
               onClick={updater.dismiss}
-              className="h-9 px-4 border border-[rgba(200,148,55,0.22)] rounded-[2px] text-[11px] uppercase text-[rgba(232,220,200,0.72)] transition-colors hover:border-[rgba(200,148,55,0.38)]"
+              className="bpp-update-modal-later h-9 px-4 text-[11px] uppercase transition-colors"
             >
               {t('updateModalLater')}
             </button>
@@ -135,7 +135,7 @@ export function ShellUpdateModal({
               <button
                 type="button"
                 onClick={actionHandler}
-                className="inline-flex h-9 items-center gap-2 rounded-[2px] border border-[rgba(255,198,98,0.38)] bg-[rgba(200,148,55,0.16)] px-4 cinzel text-[11px] uppercase text-[#f2e4c8] transition-colors hover:bg-[rgba(200,148,55,0.24)]"
+                className="bpp-update-modal-action inline-flex h-9 items-center gap-2 px-4 cinzel text-[11px] uppercase transition-colors"
               >
                 {action === 'install' ? (
                   <Download size={14} />
@@ -186,10 +186,10 @@ export function UpdateDownloadProgress({
         aria-valuemax={total ?? undefined}
         aria-valuenow={accessibleValue}
         aria-valuetext={status}
-        className="h-1.5 w-full overflow-hidden rounded-[2px] bg-[rgba(200,148,55,0.14)]"
+        className="bpp-update-progress-track h-1.5 w-full overflow-hidden"
       >
         <div
-          className={`h-full bg-[rgba(228,178,88,0.85)] transition-[width] duration-200 ${
+          className={`bpp-update-progress-value h-full transition-[width] duration-200 ${
             percent === null ? 'w-1/3 animate-pulse' : ''
           }`}
           style={percent === null ? undefined : { width: `${percent}%` }}
@@ -198,7 +198,7 @@ export function UpdateDownloadProgress({
       <p
         role="status"
         aria-live="polite"
-        className="m-0 mt-3 text-[12px] tabular-nums text-[rgba(232,220,200,0.72)]"
+        className="bpp-update-progress-status m-0 mt-3 text-[12px] tabular-nums"
       >
         {status}
       </p>

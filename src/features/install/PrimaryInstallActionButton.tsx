@@ -40,6 +40,7 @@ export function PrimaryInstallActionButton({
     <button
       type="button"
       disabled={disabled}
+      aria-busy={busy || undefined}
       onClick={isLaunch ? page.launch : onOpenInstallModal}
       className="bpp-install-primary-button w-full"
     >
@@ -49,7 +50,7 @@ export function PrimaryInstallActionButton({
         ) : (
           <Icon size={30} className="bpp-primary-action-icon" />
         )}
-        <span className="bpp-primary-action-label text-[18px] font-semibold text-white">
+        <span className="bpp-primary-action-label text-[18px] font-semibold">
           {label}
         </span>
       </span>
