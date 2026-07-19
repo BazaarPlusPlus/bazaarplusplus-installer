@@ -82,19 +82,37 @@ body {
   min-height: 0;
   overflow: hidden;
   color: var(--bpp-text-1);
-  background: linear-gradient(
-    160deg,
-    var(--bpp-surface-inset) 0%,
-    var(--bpp-bg) 50%,
-    color-mix(in srgb, var(--bpp-bg) 82%, black) 100%
-  );
+  /* Layered light pools recreate the reference's blue-black canvas without
+     shipping a raster background. Keep the strongest colour away from the
+     content centre so the existing dark panels remain easy to read. */
+  background:
+    radial-gradient(
+      ellipse 78% 54% at 89% -7%,
+      rgba(36, 76, 98, 0.62) 0%,
+      rgba(20, 45, 61, 0.4) 38%,
+      transparent 70%
+    ),
+    radial-gradient(
+      ellipse 64% 47% at 30% 108%,
+      rgba(100, 66, 46, 0.42) 0%,
+      rgba(63, 45, 38, 0.28) 40%,
+      transparent 72%
+    ),
+    radial-gradient(
+      ellipse 56% 52% at 100% 96%,
+      rgba(30, 57, 75, 0.42) 0%,
+      transparent 74%
+    ),
+    linear-gradient(155deg, #080d13 0%, #0d131a 46%, #10161d 100%);
 }
 .bpp-app-vignette {
   position: absolute;
   inset: 0;
   z-index: 30;
   pointer-events: none;
-  box-shadow: inset 0 0 120px rgba(0, 0, 0, 0.2);
+  box-shadow:
+    inset 0 0 120px rgba(0, 0, 0, 0.24),
+    inset 0 -44px 88px rgba(0, 0, 0, 0.12);
 }
 .bpp-header {
   position: relative;
@@ -1854,59 +1872,224 @@ body {
 }
 .bpp-install-primary-slot {
   position: relative;
+  isolation: isolate;
   z-index: 2;
-  width: 100%;
+  width: calc(100% - 28px);
   min-width: 0;
-  padding: 7px;
-  border: 1px solid var(--bpp-line-accent);
+  justify-self: center;
+  overflow: hidden;
+  padding: 5px;
+  border-style: solid;
+  border-width: 1px;
+  border-color:
+    rgba(244, 145, 25, 0.76) rgba(224, 126, 17, 0.62)
+    rgba(211, 112, 12, 0.58) rgba(239, 137, 21, 0.72);
   border-radius: var(--bpp-radius-panel);
-  background: color-mix(in srgb, var(--bpp-accent) 4%, transparent);
+  background:
+    radial-gradient(
+      ellipse 92% 155% at 5% -16%,
+      rgba(246, 146, 24, 0.34) 0%,
+      rgba(206, 101, 11, 0.2) 38%,
+      rgba(116, 58, 16, 0.08) 68%,
+      transparent 88%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(255, 164, 36, 0.08) 0%,
+      transparent 47%,
+      rgba(8, 10, 12, 0.17) 100%
+    ),
+    linear-gradient(102deg, #68380f 0%, #4c3019 37%, #34271e 68%, #1d1b1a 100%);
+  box-shadow:
+    inset 0 1px rgba(255, 190, 80, 0.16),
+    inset -1px 0 rgba(76, 37, 9, 0.12),
+    inset 0 -1px rgba(96, 46, 7, 0.22),
+    inset 0 0 2px rgba(255, 193, 82, 0.28),
+    inset 0 0 12px rgba(235, 124, 13, 0.13),
+    -5px 0 18px rgba(237, 139, 24, 0.12),
+    0 0 17px rgba(237, 139, 24, 0.14),
+    0 8px 22px rgba(0, 0, 0, 0.27);
+  transition:
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    transform 180ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.bpp-install-primary-slot::before {
+  content: '';
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  pointer-events: none;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='118' height='62' viewBox='0 0 118 62'%3E%3Cfilter id='n' x='-10%25' y='-10%25' width='120%25' height='120%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.48 .82' numOctaves='4' seed='17' result='noise'/%3E%3CfeComponentTransfer in='noise'%3E%3CfeFuncR type='linear' slope='1.65' intercept='-.32'/%3E%3CfeFuncG type='linear' slope='1.42' intercept='-.24'/%3E%3CfeFuncB type='linear' slope='1.15' intercept='-.12'/%3E%3CfeFuncA type='table' tableValues='0 .72'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.48'/%3E%3C/svg%3E"),
+    repeating-linear-gradient(
+      176deg,
+      transparent 0 2px,
+      rgba(255, 221, 164, 0.026) 2px 3px,
+      transparent 3px 7px,
+      rgba(43, 20, 5, 0.035) 7px 8px
+    ),
+    repeating-linear-gradient(
+      112deg,
+      transparent 0 9px,
+      rgba(255, 218, 148, 0.025) 9px 10px,
+      transparent 10px 23px,
+      rgba(37, 17, 4, 0.035) 23px 24px
+    ),
+    linear-gradient(rgba(255, 193, 96, 0.028) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 193, 96, 0.026) 1px, transparent 1px);
+  background-size: 118px 62px, auto, auto, 100% 18px, 31px 100%;
+  background-blend-mode: soft-light, overlay, soft-light, screen, screen;
+  mask-image: linear-gradient(
+    90deg,
+    black 0%,
+    rgba(0, 0, 0, 0.7) 58%,
+    rgba(0, 0, 0, 0.32) 100%
+  );
+  mix-blend-mode: soft-light;
+  opacity: 0.9;
+  transition: opacity 180ms ease;
+}
+.bpp-install-primary-slot::after {
+  content: '';
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, rgba(255, 220, 157, 0.14), transparent 44%) top / 70% 1px no-repeat,
+    linear-gradient(180deg, rgba(255, 174, 40, 0.13), transparent 72%) left / 1px 78% no-repeat,
+    linear-gradient(90deg, rgba(255, 165, 28, 0.18), transparent) 9px 9px / 21px 1px no-repeat,
+    linear-gradient(180deg, rgba(255, 165, 28, 0.18), transparent) 9px 9px / 1px 11px no-repeat,
+    linear-gradient(90deg, rgba(255, 154, 22, 0.16), transparent) 10px calc(100% - 9px) / 24px 1px no-repeat,
+    linear-gradient(0deg, rgba(255, 154, 22, 0.16), transparent) 10px calc(100% - 9px) / 1px 11px no-repeat,
+    radial-gradient(circle at 18% 30%, rgba(255, 203, 112, 0.18) 0 0.6px, transparent 1.2px),
+    radial-gradient(circle at 38% 72%, rgba(255, 178, 57, 0.12) 0 0.5px, transparent 1.1px),
+    radial-gradient(circle at 68% 23%, rgba(255, 207, 124, 0.1) 0 0.6px, transparent 1.2px),
+    radial-gradient(circle at 87% 65%, rgba(255, 174, 48, 0.08) 0 0.5px, transparent 1px),
+    radial-gradient(ellipse 36% 95% at 7% 50%, rgba(255, 173, 39, 0.07), transparent 78%),
+    linear-gradient(97deg, transparent 14%, rgba(255, 202, 111, 0.07) 14.4%, transparent 15.2%) 0 0 / 86px 100%,
+    linear-gradient(83deg, transparent 62%, rgba(28, 13, 4, 0.12) 62.4%, transparent 63.2%) 0 0 / 137px 100%;
+  box-shadow:
+    inset 12px 0 28px rgba(235, 124, 13, 0.035),
+    inset 0 0 14px rgba(242, 139, 20, 0.035);
+  transition:
+    box-shadow 180ms ease,
+    opacity 180ms ease;
+}
+.bpp-install-primary-slot:has(.bpp-install-primary-button:hover:not(:disabled)) {
+  transform: translateY(-1px);
+  border-color:
+    rgba(255, 181, 73, 0.92) rgba(244, 146, 31, 0.78)
+    rgba(229, 125, 19, 0.72) rgba(255, 168, 49, 0.88);
+  box-shadow:
+    inset 0 1px rgba(255, 216, 142, 0.24),
+    inset -1px 0 rgba(120, 58, 10, 0.12),
+    inset 0 -1px rgba(119, 57, 8, 0.24),
+    inset 0 0 3px rgba(255, 202, 112, 0.38),
+    inset 0 0 18px rgba(245, 139, 23, 0.2),
+    -7px 0 24px rgba(245, 147, 31, 0.19),
+    0 0 24px rgba(237, 139, 24, 0.2),
+    0 11px 26px rgba(0, 0, 0, 0.3);
+}
+.bpp-install-primary-slot:has(.bpp-install-primary-button:hover:not(:disabled))::before {
+  opacity: 1;
+}
+.bpp-install-primary-slot:has(.bpp-install-primary-button:hover:not(:disabled))::after {
+  opacity: 1;
+  box-shadow:
+    inset 18px 0 34px rgba(255, 160, 30, 0.075),
+    inset 0 0 20px rgba(255, 166, 35, 0.065);
+}
+.bpp-install-primary-slot:has(.bpp-install-primary-button:focus-visible) {
+  outline: 2px solid color-mix(in srgb, var(--bpp-accent-hover) 70%, white);
+  outline-offset: 3px;
+}
+.bpp-install-primary-slot:has(.bpp-install-primary-button:disabled) {
+  opacity: 0.5;
+  filter: saturate(0.65);
 }
 .bpp-install-primary-button {
   position: relative;
+  z-index: 2;
   display: flex;
-  min-height: 58px;
+  min-height: 52px;
   align-items: center;
   justify-content: center;
   overflow: hidden;
   padding: 0 20px;
-  border: 1px solid var(--bpp-accent-hover);
+  border: 0;
   border-radius: var(--bpp-radius-control);
   color: var(--bpp-text-1);
+  background: transparent;
+  box-shadow: none;
+  transition: background 180ms ease;
+}
+.bpp-install-primary-button::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
   background: linear-gradient(
-    110deg,
-    var(--bpp-accent-muted),
-    var(--bpp-accent) 53%,
-    var(--bpp-accent-muted)
+    105deg,
+    rgba(255, 190, 90, 0.08),
+    rgba(255, 184, 73, 0.025) 42%,
+    transparent 72%
   );
-  box-shadow:
-    inset 0 1px color-mix(in srgb, var(--bpp-text-1) 32%, transparent),
-    0 0 14px color-mix(in srgb, var(--bpp-accent) 26%, transparent),
-    0 8px 22px rgba(0, 0, 0, 0.26);
-  transition:
-    box-shadow 150ms ease,
-    filter 150ms ease;
+  opacity: 0;
+  transition: opacity 180ms ease;
+}
+.bpp-install-primary-button::after {
+  content: none;
 }
 .bpp-install-primary-button:hover:not(:disabled) {
-  box-shadow:
-    inset 0 1px color-mix(in srgb, var(--bpp-text-1) 40%, transparent),
-    0 0 20px color-mix(in srgb, var(--bpp-accent-hover) 30%, transparent),
-    0 12px 25px rgba(0, 0, 0, 0.28);
-  filter: brightness(1.05);
+  filter: none;
+  background: rgba(255, 174, 49, 0.035);
+}
+.bpp-install-primary-button:hover:not(:disabled)::before {
+  opacity: 1;
+}
+.bpp-install-primary-button:focus-visible {
+  outline: none;
 }
 .bpp-install-primary-button:disabled {
-  opacity: 0.5;
-  filter: saturate(0.65);
+  opacity: 1;
+  filter: none;
 }
 .bpp-install-primary-content {
   position: relative;
-  z-index: 2;
+  z-index: 3;
+  transition: transform 180ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.bpp-install-primary-button:hover:not(:disabled) .bpp-install-primary-content {
+  transform: translateY(-0.5px);
 }
 .bpp-install-primary-button .bpp-primary-action-icon {
-  color: var(--bpp-text-1);
-  filter: drop-shadow(
-    0 0 6px color-mix(in srgb, var(--bpp-accent-hover) 40%, transparent)
-  );
+  color: #f3a52d;
+  filter: drop-shadow(0 0 2px rgba(255, 163, 32, 0.18));
+  transition:
+    color 180ms ease,
+    filter 180ms ease,
+    transform 180ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.bpp-install-primary-button:hover:not(:disabled) .bpp-primary-action-icon {
+  color: #ffb84f;
+  filter: drop-shadow(0 0 6px rgba(255, 170, 42, 0.4));
+  transform: scale(1.04);
+}
+.bpp-install-primary-button .bpp-primary-action-label {
+  text-shadow:
+    0 1px 1px rgba(32, 15, 2, 0.72),
+    0 0 8px rgba(255, 178, 53, 0.16);
+  transition:
+    color 180ms ease,
+    text-shadow 180ms ease;
+}
+.bpp-install-primary-button:hover:not(:disabled) .bpp-primary-action-label {
+  color: #fff3df;
+  text-shadow:
+    0 1px 1px rgba(32, 15, 2, 0.72),
+    0 0 12px rgba(255, 187, 72, 0.28);
 }
 .bpp-install-info-grid {
   display: grid;
