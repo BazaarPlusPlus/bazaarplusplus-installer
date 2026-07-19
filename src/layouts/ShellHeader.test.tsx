@@ -69,6 +69,22 @@ describe('ShellHeader', () => {
     expect(html).toContain('bpp-brand-logo');
   });
 
+  it('groups community links before application actions', () => {
+    const html = renderHeader();
+    const community = html.indexOf('data-header-group="community"');
+    const divider = html.indexOf('bpp-header-actions-divider');
+    const application = html.indexOf('data-header-group="application"');
+    const github = html.indexOf('aria-label="GitHub"');
+    const support = html.indexOf('aria-controls="shell-support-menu"');
+
+    expect(community).toBeGreaterThanOrEqual(0);
+    expect(divider).toBeGreaterThan(community);
+    expect(application).toBeGreaterThan(divider);
+    expect(github).toBeGreaterThan(community);
+    expect(github).toBeLessThan(divider);
+    expect(support).toBeGreaterThan(application);
+  });
+
   it('shows the author, CoreDev, and project entries in order', () => {
     const html = renderHeader({ showBilibili: true });
 

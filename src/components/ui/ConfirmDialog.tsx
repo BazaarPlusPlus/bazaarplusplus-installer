@@ -68,31 +68,30 @@ const TONE = {
     Icon: DownloadCloud as LucideIcon,
     card: 'bpp-modal-card bpp-install-confirm-card w-full max-w-[560px] mx-4 relative',
     bar: 'bpp-modal-header bpp-install-confirm-header flex justify-between items-center px-5 py-4',
-    icon: 'text-[rgba(200,148,55,0.8)]',
-    title: 'cinzel text-[1.1rem] text-[#e8dcc8] m-0 tracking-wider',
+    icon: 'bpp-confirm-tone-icon is-gold',
+    title: 'bpp-confirm-title is-gold cinzel text-[1.1rem] m-0 tracking-wider',
     close:
-      'bpp-install-confirm-close text-[rgba(200,170,120,0.72)] hover:text-[#e8dcc8] transition-colors',
+      'bpp-confirm-close is-gold bpp-install-confirm-close transition-colors',
     body: 'bpp-install-confirm-body p-6 flex flex-col gap-6',
     ackBox:
-      'bpp-install-confirm-ack flex items-start gap-3 p-3 border border-[rgba(200,148,55,0.18)] rounded-[4px] bg-gradient-to-b from-[rgba(200,148,55,0.055)] to-[rgba(200,148,55,0.015)] group',
-    ackText: 'text-[13px] leading-relaxed text-[rgba(232,220,194,0.78)]',
+      'bpp-confirm-ack is-gold bpp-install-confirm-ack flex items-start gap-3 p-3 group',
+    ackText: 'bpp-confirm-ack-text is-gold text-[13px] leading-relaxed',
     confirm:
-      'bpp-install-confirm-submit px-5 py-2 rounded-sm text-sm cinzel font-bold tracking-wider transition-all bg-gradient-to-b from-[#d4a040] to-[#9e5c1e] text-[#0b0906] shadow-[0_0_15px_rgba(212,160,64,0.4)] hover:brightness-110 active:brightness-95 disabled:opacity-45 disabled:hover:brightness-100'
+      'bpp-confirm-submit is-gold bpp-install-confirm-submit px-5 py-2 text-sm cinzel font-bold tracking-wider transition-all hover:brightness-110 active:brightness-95 disabled:opacity-50 disabled:hover:brightness-100'
   },
   danger: {
     Icon: AlertTriangle as LucideIcon,
     card: 'bpp-modal-card bpp-modal-danger w-full max-w-md mx-4 relative',
     bar: 'bpp-modal-header flex justify-between items-center px-5 py-4',
-    icon: 'text-[rgba(232,120,120,0.9)]',
-    title: 'cinzel text-[1.1rem] text-[#f0d8d8] m-0 tracking-wider',
-    close:
-      'text-[rgba(232,190,190,0.72)] hover:text-[#f0d8d8] transition-colors',
+    icon: 'bpp-confirm-tone-icon is-danger',
+    title:
+      'bpp-confirm-title is-danger cinzel text-[1.1rem] m-0 tracking-wider',
+    close: 'bpp-confirm-close is-danger transition-colors',
     body: 'p-6 flex flex-col gap-5',
-    ackBox:
-      'flex items-start gap-3 p-3 border border-[rgba(190,80,80,0.22)] rounded-[4px] bg-[rgba(160,50,50,0.06)] group',
-    ackText: 'text-[13px] leading-relaxed text-[rgba(245,220,220,0.82)]',
+    ackBox: 'bpp-confirm-ack is-danger flex items-start gap-3 p-3 group',
+    ackText: 'bpp-confirm-ack-text is-danger text-[13px] leading-relaxed',
     confirm:
-      'px-5 py-2 rounded-sm text-sm cinzel font-bold tracking-wider transition-all bg-gradient-to-b from-[#d85d5d] to-[#9a2a2a] text-[#fff1f1] shadow-[0_0_15px_rgba(160,50,50,0.35)] hover:brightness-110 active:brightness-95 disabled:opacity-45 disabled:hover:brightness-100'
+      'bpp-confirm-submit is-danger px-5 py-2 text-sm cinzel font-bold tracking-wider transition-all hover:brightness-110 active:brightness-95 disabled:opacity-50 disabled:hover:brightness-100'
   }
 } as const;
 
@@ -155,7 +154,7 @@ export function ConfirmDialog({
             type="button"
             onClick={() => requestDismiss('close-button')}
             disabled={!dismissAllowed}
-            className={`${s.close} disabled:opacity-40 disabled:pointer-events-none`}
+            className={`${s.close} disabled:opacity-50 disabled:pointer-events-none`}
             aria-label={
               busy && activeDismissLabel ? activeDismissLabel : t('close')
             }
@@ -182,7 +181,7 @@ export function ConfirmDialog({
               <button
                 type="button"
                 onClick={() => requestDismiss('secondary-action')}
-                className="bpp-confirm-cancel px-5 py-2 bg-[rgba(200,148,55,0.04)] border border-[rgba(180,130,48,0.2)] rounded-sm hover:bg-[rgba(200,148,55,0.1)] transition-colors text-sm text-[#e8dcc8]"
+                className="bpp-confirm-cancel px-5 py-2 transition-colors text-sm"
               >
                 {secondaryLabel}
               </button>
@@ -190,7 +189,7 @@ export function ConfirmDialog({
               <p
                 role="status"
                 aria-live="polite"
-                className="m-0 mr-auto text-xs text-[rgba(232,200,122,0.8)]"
+                className="bpp-confirm-blocked-status m-0 mr-auto text-xs"
               >
                 {t('operationCannotBeCancelled')}
               </p>
@@ -204,21 +203,29 @@ export function ConfirmDialog({
               }
               onClick={onConfirm}
               className={s.confirm}
+              aria-busy={busy || undefined}
             >
-              {busyLabel !== undefined ? (
-                busy ? (
-                  busyLabel
-                ) : (
-                  confirmLabel
-                )
-              ) : busy ? (
-                <span className="inline-flex items-center gap-2">
-                  <Loader2 size={14} className="animate-spin" />
+              <span className="bpp-busy-label-sizer">
+                <span
+                  className="bpp-busy-label-idle"
+                  aria-hidden={busy ? true : undefined}
+                >
                   {confirmLabel}
                 </span>
-              ) : (
-                confirmLabel
-              )}
+                <span
+                  className="bpp-busy-label-active"
+                  aria-hidden={!busy ? true : undefined}
+                >
+                  {busyLabel !== undefined ? (
+                    busyLabel
+                  ) : (
+                    <>
+                      <Loader2 size={14} className="animate-spin" />
+                      {confirmLabel}
+                    </>
+                  )}
+                </span>
+              </span>
             </button>
           </div>
         </div>

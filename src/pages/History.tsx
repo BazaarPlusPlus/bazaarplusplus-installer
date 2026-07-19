@@ -1,6 +1,13 @@
 import { useState } from 'react';
-import { ChevronRight, Image as ImageIcon, RefreshCw } from 'lucide-react';
+import {
+  ChevronRight,
+  History as HistoryIcon,
+  Image as ImageIcon,
+  RefreshCw
+} from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { Button } from '../components/ui/Button';
+import { EmptyState } from '../components/ui/EmptyState';
 import { LoadingPanel } from '../components/ui/LoadingPanel';
 import { PageShell } from '../components/ui/PageShell';
 import { ProblemBanner } from '../components/ui/ProblemBanner';
@@ -29,15 +36,15 @@ export default function History() {
       title={t('historyTitle')}
       className="bpp-history-page"
       action={
-        <button
+        <Button
           type="button"
           onClick={page.refresh}
           disabled={page.busy}
-          className="bpp-button"
+          busy={page.busy}
         >
           <RefreshCw size={16} className={page.busy ? 'animate-spin' : ''} />
           {t('refresh')}
-        </button>
+        </Button>
       }
     >
       {page.state.phase === 'initial-loading' ? (
@@ -88,9 +95,32 @@ export default function History() {
 
           <div className="flex flex-col gap-3 flex-1 min-h-0 overflow-y-auto custom-scrollbar pr-2">
             {page.state.phase === 'ready-empty' ? (
-              <div className="bpp-panel flex h-48 items-center justify-center text-[#777871]">
-                {t('noLocalRuns')}
-              </div>
+              <EmptyState
+                icon={<HistoryIcon size={24} />}
+                heading={t('noLocalRuns')}
+                description={t('historyEmptyDescription')}
+                primaryAction={
+                  <Button
+                    variant="primary"
+                    busy={page.busy}
+                    onClick={page.refresh}
+                  >
+                    <RefreshCw
+                      size={16}
+                      className={page.busy ? 'animate-spin' : undefined}
+                    />
+                    {t('historyEmptyRefresh')}
+                  </Button>
+                }
+                secondaryAction={
+                  <Link
+                    to="/"
+                    className="bpp-button bpp-ui-button bpp-ui-button-default bpp-link-button"
+                  >
+                    {t('historyEmptyInstall')}
+                  </Link>
+                }
+              />
             ) : (
               page.state.data.runs.map((run: HistoryRunRow) => (
                 <RunRow

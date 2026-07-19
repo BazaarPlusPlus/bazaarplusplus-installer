@@ -1,5 +1,6 @@
 import { ChevronDown, Trash2 } from 'lucide-react';
 import { useState } from 'react';
+import { Button } from '../../components/ui/Button';
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 import { ModalSource } from '../../components/ui/ModalCoordinator';
 import { ProblemBanner } from '../../components/ui/ProblemBanner';
@@ -244,15 +245,16 @@ function CleanupRow({
       </div>
       <div className="bpp-history-cleanup-actions">
         {PRESETS.map(({ preset, labelKey }) => (
-          <button
+          <Button
             key={preset}
             type="button"
+            size="small"
             disabled={busy}
             onClick={() => void onSelect(scope, preset)}
-            className="bpp-button bpp-history-cleanup-action"
+            className="bpp-history-cleanup-action"
           >
             {t(labelKey)}
-          </button>
+          </Button>
         ))}
       </div>
     </div>

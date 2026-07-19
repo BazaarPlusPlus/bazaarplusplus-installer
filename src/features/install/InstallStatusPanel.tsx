@@ -2,6 +2,8 @@ import { openPath } from '@tauri-apps/plugin-opener';
 import { CircleAlert, Copy, Folder } from 'lucide-react';
 import { useState } from 'react';
 import type { ReactNode } from 'react';
+import { Button } from '../../components/ui/Button';
+import { StatusBanner } from '../../components/ui/StatusBanner';
 import { useI18n } from '../../i18n/LocaleProvider';
 import type { InstallState } from '../../types/backend';
 import { PrimaryInstallActionButton } from './PrimaryInstallActionButton';
@@ -53,11 +55,11 @@ export function InstallStatusPanel({
       <section className="bpp-install-hero">
         <div className="bpp-install-hero-summary">
           <div className="min-w-0">
-            <p className="m-0 text-[21px] font-medium tracking-[.01em] text-[#e5e1da]">
+            <p className="bpp-install-hero-title">
               <span className="bpp-mod-name">BazaarPlusPlus</span>
               <span className="ml-2">{heroState}</span>
             </p>
-            <p className="mt-2 text-[12px] text-[#85838a]">{heroDescription}</p>
+            <p className="bpp-install-hero-description">{heroDescription}</p>
           </div>
         </div>
         <div className="bpp-install-hero-divider" aria-hidden="true" />
@@ -83,26 +85,26 @@ export function InstallStatusPanel({
               {selectedPath ?? t('gamePathEmpty')}
             </p>
             <div className="bpp-install-path-actions">
-              <button
+              <Button
                 type="button"
+                size="small"
                 disabled={!selectedPath}
                 onClick={() => void copyPath()}
-                className="bpp-install-secondary-button bpp-install-copy-path-button"
                 title={copied ? t('pathCopied') : t('copyPath')}
                 aria-label={copied ? t('pathCopied') : t('copyPath')}
               >
                 <Copy size={14} />
                 {copied ? t('pathCopied') : t('copyPath')}
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
+                size="small"
                 disabled={!selectedPath}
                 onClick={() => selectedPath && void openPath(selectedPath)}
-                className="bpp-install-secondary-button"
               >
                 <Folder size={14} />
                 {t('openDirectory')}
-              </button>
+              </Button>
             </div>
           </div>
         </InfoCard>
@@ -114,21 +116,26 @@ export function InstallStatusPanel({
               {import.meta.env.DEV ? t('developmentBuild') : t('stableBuild')}
             </span>
           </div>
-          <p className="mt-auto fira-code text-[10px] text-[#74737a]">
+          <p className="bpp-install-version-meta">
             v{appVersion} · BazaarPlusPlus Desktop
           </p>
         </InfoCard>
       </div>
 
       {state.warnings.length > 0 && (
-        <div className="bpp-install-notices" role="status" aria-live="polite">
-          {state.warnings.map((warning) => (
-            <p key={warning.code} className="m-0 flex items-start gap-2">
-              <CircleAlert size={14} className="mt-0.5 shrink-0" />
-              <span>{presentInstallWarning(warning, t)}</span>
-            </p>
-          ))}
-        </div>
+        <StatusBanner
+          tone="warning"
+          message={
+            <div className="bpp-install-warning-list">
+              {state.warnings.map((warning) => (
+                <p key={warning.code} className="m-0 flex items-start gap-2">
+                  <CircleAlert size={14} className="mt-0.5 shrink-0" />
+                  <span>{presentInstallWarning(warning, t)}</span>
+                </p>
+              ))}
+            </div>
+          }
+        />
       )}
     </div>
   );
@@ -146,7 +153,7 @@ function InfoCard({
   return (
     <section className="bpp-install-info-card">
       <h3 className="bpp-install-info-title">
-        {icon && <span className="text-[#ef8b17]">{icon}</span>}
+        {icon && <span className="bpp-install-info-icon">{icon}</span>}
         {title}
       </h3>
       {children}

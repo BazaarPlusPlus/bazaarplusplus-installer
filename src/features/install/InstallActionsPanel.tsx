@@ -1,5 +1,7 @@
 import { Box, CloudDownload, Layers3, Loader2, Trash2 } from 'lucide-react';
 import type { ReactNode } from 'react';
+import { ActionTile } from '../../components/ui/ActionTile';
+import { StatusBanner } from '../../components/ui/StatusBanner';
 import { useI18n } from '../../i18n/LocaleProvider';
 import { ResetDataFailureDetails } from './ResetDataFailureDetails';
 import { InstallProblemBanner } from './InstallProblemBanner';
@@ -76,13 +78,7 @@ export function InstallActionsPanel({
         </div>
       )}
       {page.message && (
-        <p
-          role="status"
-          aria-live="polite"
-          className="selectable mt-4 flex items-start gap-2 text-xs text-[#58b66f]"
-        >
-          <span>{page.message}</span>
-        </p>
+        <StatusBanner tone="success" className="mt-4" message={page.message} />
       )}
       {page.resetDataFailurePaths.length > 0 && (
         <ResetDataFailureDetails paths={page.resetDataFailurePaths} />
@@ -109,23 +105,14 @@ function MaintenanceAction({
   danger?: boolean;
 }) {
   return (
-    <button
-      type="button"
+    <ActionTile
       disabled={disabled}
+      busy={busy}
       onClick={onClick}
-      className={`bpp-install-maintenance-action ${danger ? 'is-danger' : ''}`}
-    >
-      <span className="bpp-install-maintenance-icon">
-        {busy ? <Loader2 size={22} className="animate-spin" /> : icon}
-      </span>
-      <span className="min-w-0">
-        <span className="block text-[13px] font-medium text-[#d6d1ca]">
-          {title}
-        </span>
-        <span className="mt-0.5 block truncate text-[10px] text-[#77757b]">
-          {detail}
-        </span>
-      </span>
-    </button>
+      danger={danger}
+      icon={busy ? <Loader2 size={22} className="animate-spin" /> : icon}
+      title={title}
+      description={detail}
+    />
   );
 }

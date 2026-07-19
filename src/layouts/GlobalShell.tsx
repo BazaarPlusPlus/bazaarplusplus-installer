@@ -65,7 +65,7 @@ function GlobalShellContent() {
   }, [showBilibili, showSupport]);
 
   return (
-    <div className="bpp-app flex flex-col text-[#d9d4cb]">
+    <div className="bpp-app flex flex-col">
       <div className="bpp-app-vignette" aria-hidden="true" />
       <ShellHeader
         app={app}

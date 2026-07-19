@@ -1,4 +1,5 @@
 import { ExternalLink } from 'lucide-react';
+import { Button } from '../components/ui/Button';
 import { PageHeader } from '../components/ui/PageHeader';
 import { ProblemBanner } from '../components/ui/ProblemBanner';
 import { useAppBootstrap } from '../features/about/AppBootstrapProvider';
@@ -16,7 +17,7 @@ import fableVerifiedBadge from '../../static/about/fable-5-verified.webp';
 // Credits are split into ordered groups by their `group` field so contributors
 // stay separate from the external data/inspiration sources we acknowledge.
 const CREDIT_GROUP_LABELS: Record<string, MessageKey> = {
-  team: 'aboutCredits',
+  team: 'aboutContributors',
   acknowledgement: 'aboutAcknowledgements'
 };
 
@@ -78,19 +79,15 @@ function AboutBootstrapContent({
   return (
     <>
       <section className="bpp-panel relative overflow-hidden p-5">
-        <div className="absolute right-5 top-4 text-[10px] tracking-[.24em] text-[rgba(220,128,18,.34)]">
-          B++
-        </div>
+        <div className="bpp-about-brand-watermark">B++</div>
         <div className="flex items-center gap-5">
           <div className="min-w-0 flex-1">
-            <h3 className="bpp-mod-name m-0 text-[26px] text-[#dcd7cf]">
+            <h3 className="bpp-mod-name bpp-about-product-name">
               BazaarPlusPlus
             </h3>
-            <p className="mt-1.5 text-[12px] text-[#77766f]">
-              {t('aboutTagline')}
-            </p>
+            <p className="bpp-about-tagline">{t('aboutTagline')}</p>
             <div className="bpp-about-version-row mt-5 selectable">
-              <span className="text-[11px] text-[#858079]">
+              <span className="bpp-about-version-label">
                 {t('aboutAppLabel')}
               </span>
               <span
@@ -103,7 +100,7 @@ function AboutBootstrapContent({
                 className="bpp-about-version-separator"
                 aria-hidden="true"
               />
-              <span className="text-[11px] text-[#858079]">
+              <span className="bpp-about-version-label">
                 {t('aboutBppLabel')}
               </span>
               <span
@@ -139,8 +136,8 @@ function AboutBootstrapContent({
         <div className="flex flex-col gap-5">
           {groupCredits(bootstrap.credits).map((group) => (
             <div key={group.key} className="flex flex-col gap-3">
-              <h4 className="m-0 text-[9px] uppercase tracking-[.14em] text-[#a06b2c]">
-                {t(CREDIT_GROUP_LABELS[group.key] ?? 'aboutCredits')}
+              <h4 className="bpp-about-group-heading">
+                {t(CREDIT_GROUP_LABELS[group.key] ?? 'aboutContributors')}
               </h4>
               <ul className="m-0 grid list-none grid-cols-2 gap-1 p-0 max-[900px]:grid-cols-1">
                 {group.items.map((credit) => (
@@ -158,9 +155,9 @@ function AboutBootstrapContent({
       </section>
 
       <details className="bpp-panel group p-5">
-        <summary className="list-none text-[11px] font-semibold uppercase tracking-[.12em] text-[#8f8a82] [&::-webkit-details-marker]:hidden">
+        <summary className="bpp-about-license-summary">
           {t('aboutLicenses')}
-          <span className="ml-2 text-[#d17b18]">+</span>
+          <span className="bpp-about-license-symbol">+</span>
         </summary>
         <ul className="m-0 mt-4 grid list-none grid-cols-2 gap-1 p-0">
           {bootstrap.licenses.map((license) => (
@@ -211,15 +208,17 @@ function AboutBootstrapFeedback({
     ? formatProblemDiagnostic(resource.problem)
     : null;
   const retryAction = resource.problem ? (
-    <button
+    <Button
       type="button"
+      size="small"
+      variant="ghost"
       onClick={onRetry}
       disabled={resource.retrying}
-      aria-busy={resource.retrying}
-      className="underline underline-offset-2 disabled:opacity-60"
+      busy={resource.retrying}
+      busyLabel={t('aboutRetrying')}
     >
-      {resource.retrying ? t('aboutRetrying') : t('retry')}
-    </button>
+      {t('retry')}
+    </Button>
   ) : null;
 
   if (resource.phase === 'blocking-failure') {
@@ -259,7 +258,7 @@ function BootstrapProvenance({ resource }: { resource: AppBootstrapSnapshot }) {
     .join(', ');
 
   return (
-    <div className="flex flex-col gap-1 text-[10px] text-[rgba(200,170,120,0.68)]">
+    <div className="bpp-about-provenance">
       <p className="m-0">
         {t('aboutDataSourceLabel')}:{' '}
         <span className="selectable">{source}</span>
@@ -292,17 +291,17 @@ function ListItem({
   href?: string | null;
   isLicense?: boolean;
 }) {
-  const nameClassName = 'fira-code text-xs text-[#bdb8b0]';
+  const nameClassName = 'bpp-about-list-name fira-code';
 
   return (
-    <li className="flex items-center justify-between rounded-[3px] border border-[rgba(203,132,38,.1)] bg-[rgba(213,131,26,.025)] px-3 py-2 transition-colors hover:bg-[rgba(213,131,26,.055)]">
+    <li className="bpp-about-list-item">
       {href ? (
         <a
           href={href}
           target="_blank"
           rel="noopener noreferrer"
           aria-label={`${name} GitHub`}
-          className={`${nameClassName} inline-flex items-center gap-1 rounded-[2px] no-underline hover:text-[#e8c87a] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[rgba(200,148,55,0.55)] focus-visible:ring-offset-2 focus-visible:ring-offset-[#120b05]`}
+          className={`${nameClassName} bpp-about-list-link`}
         >
           {name}
           <ExternalLink size={11} aria-hidden="true" />
@@ -312,7 +311,7 @@ function ListItem({
       )}
       {role && (
         <span
-          className={`${isLicense ? 'fira-code text-[10px]' : 'cinzel text-[10px] tracking-widest uppercase'} text-[rgba(200,170,120,0.8)]`}
+          className={`bpp-about-list-role ${isLicense ? 'fira-code' : 'cinzel is-credit'}`}
         >
           {role}
         </span>

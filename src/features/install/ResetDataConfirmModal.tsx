@@ -44,23 +44,20 @@ export function ResetDataConfirmModal({
       onConfirm={onConfirm}
       onClose={onClose}
     >
-      <p className="m-0 text-[12px] leading-relaxed text-[rgba(232,200,122,0.86)] fira-code selectable break-all">
+      <p className="bpp-confirm-target m-0 text-[12px] leading-relaxed fira-code selectable break-all">
         {t('resetDataTarget', { path: targetPath })}
       </p>
-      <div className="flex items-start gap-3 p-4 border border-[rgba(190,80,80,0.24)] rounded-[4px] bg-[rgba(160,50,50,0.08)] text-[rgba(245,220,220,0.86)]">
-        <Database
-          size={16}
-          className="mt-0.5 shrink-0 text-[rgba(232,120,120,0.9)]"
-        />
+      <div className="bpp-confirm-note is-danger flex items-start gap-3 p-4">
+        <Database size={16} className="bpp-confirm-note-icon mt-0.5 shrink-0" />
         <p className="m-0 text-[13px] leading-relaxed">
           {t('resetDataConfirmBody')}
         </p>
       </div>
 
-      <div className="flex items-start gap-3 p-4 border border-[rgba(200,148,55,0.18)] rounded-[4px] bg-[rgba(200,148,55,0.05)] text-[rgba(232,220,194,0.82)]">
+      <div className="bpp-confirm-note is-warning flex items-start gap-3 p-4">
         <ShieldCheck
           size={16}
-          className="mt-0.5 shrink-0 text-[rgba(232,190,120,0.9)]"
+          className="bpp-confirm-note-icon mt-0.5 shrink-0"
         />
         <div className="flex flex-col gap-2 text-[13px] leading-relaxed">
           <p className="m-0">{t('resetDataConfirmKeepsInstall')}</p>

@@ -45,25 +45,28 @@ describe('ConfirmDialog', () => {
     expect(fi).toBeGreaterThan(ci);
   });
 
-  it('tone axis: danger red gradient + gap-5 + AlertTriangle tint', () => {
+  it('maps danger and gold tones to distinct dialog semantics', () => {
     const d = render();
-    expect(d).toContain('from-[#d85d5d]');
-    expect(d).toContain('text-[rgba(232,120,120,0.9)]');
+    expect(d).toContain('bpp-confirm-submit is-danger');
+    expect(d).toContain('bpp-confirm-tone-icon is-danger');
     expect(d).toContain('p-6 flex flex-col gap-5');
-    expect(d).not.toContain('from-[#d4a040]');
+    expect(d).not.toContain('bpp-confirm-submit is-gold');
     const g = render({ tone: 'gold' });
-    expect(g).toContain('from-[#d4a040]');
-    expect(g).toContain('text-[rgba(200,148,55,0.8)]');
+    expect(g).toContain('bpp-confirm-submit is-gold');
+    expect(g).toContain('bpp-confirm-tone-icon is-gold');
     expect(g).toContain('p-6 flex flex-col gap-6');
   });
 
   it('busy WITHOUT busyLabel: spinner + same label; confirm disabled', () => {
-    expect(render()).not.toContain('animate-spin');
-    expect(render()).not.toContain('disabled=""');
+    const idle = render();
+    expect(idle).toContain('animate-spin');
+    expect(idle).toContain('bpp-busy-label-active" aria-hidden="true"');
+    expect(idle).not.toContain('disabled=""');
     const busy = render({ busy: true });
     expect(busy).toContain('animate-spin');
     expect(busy).toContain('Confirm It');
     expect(busy).toContain('disabled=""');
+    expect(busy).toContain('aria-busy="true"');
   });
 
   it('busy WITH busyLabel (Install affordance): text swap, NO spinner', () => {
@@ -73,7 +76,8 @@ describe('ConfirmDialog', () => {
       busy: true
     });
     expect(busy).toContain('Working…');
-    expect(busy).not.toContain('Confirm It');
+    expect(busy).toContain('bpp-busy-label-idle" aria-hidden="true"');
+    expect(busy).toContain('Confirm It');
     expect(busy).not.toContain('animate-spin');
     expect(busy).toContain('disabled=""');
   });

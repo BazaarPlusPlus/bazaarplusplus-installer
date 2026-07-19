@@ -122,7 +122,7 @@ export default function Install() {
             <p
               role="status"
               aria-live="polite"
-              className="m-0 text-xs text-[rgba(200,170,120,0.8)]"
+              className="bpp-install-refreshing m-0 text-xs"
             >
               {t('installRefreshing')}
             </p>
