@@ -30,6 +30,8 @@ UI redesign integration citation refresh: `2026-07-19` on `3fd7a24bb6e734f5c50a6
 
 UI redesign standards follow-up: `2026-07-19` on `2af743045b72631519a11dadea4b474c903519bd` — the architecture, Install/Reset, History/Stream, Updater/Release, and verification truth topics were rechecked after the portability fix and final standards review.
 
+UI consistency citation refresh: `2026-07-19` on `a2c197e7fcd8fe21ed07482bd8db8c787a91c29c` — the frontend truth was rechecked against the semantic token/control system, grouped Header, guided History empty state, and restructured Stream presentation after final visual and automated verification.
+
 ## Current Manifest
 
 | Path | Topic | Status | Last verified |
@@ -41,7 +43,7 @@ UI redesign standards follow-up: `2026-07-19` on `2af743045b72631519a11dadea4b47
 | `docs/INDEX.md` | documentation manifest | manifest | 2026-07-19 |
 | `CONTEXT.md` | entry map + glossary | truth | `3fd7a24bb6e734f5c50a69d3a69144e21d52fae9` |
 | `docs/truth/architecture.md` | architecture | truth | `2af743045b72631519a11dadea4b474c903519bd` |
-| `docs/truth/frontend.md` | frontend | truth | `3fd7a24bb6e734f5c50a69d3a69144e21d52fae9` |
+| `docs/truth/frontend.md` | frontend | truth | `a2c197e7fcd8fe21ed07482bd8db8c787a91c29c` |
 | `docs/truth/install-reset.md` | install-reset | truth | `2af743045b72631519a11dadea4b474c903519bd` |
 | `docs/truth/launch-modes.md` | launch-modes | truth | `f23d786ab3bf1998f556f5fe05b6e47467a7ea48` |
 | `docs/truth/history-stream.md` | history-stream | truth | `2af743045b72631519a11dadea4b474c903519bd` |
@@ -77,6 +79,7 @@ UI redesign standards follow-up: `2026-07-19` on `2af743045b72631519a11dadea4b47
 | `docs/archive/2026-07-02-payload-ownership-hardening.md` | payload-ownership (plan) | implemented | archived 2026-07-02 |
 | `docs/archive/2026-07-02-storage-cleanup.md` | storage-cleanup (plan) | implemented | archived 2026-07-11 |
 | `docs/archive/2026-07-18-architecture-deepening.md` | architecture-deepening (plan) | implemented | `7500016b1c4adfc7b5d0206c7def0ceabae514d5` |
+| `docs/archive/2026-07-19-ui-consistency-refactor.md` | ui-consistency-refactor (plan) | implemented | `a2c197e7fcd8fe21ed07482bd8db8c787a91c29c` |
 
 ## Pending Decisions
 
