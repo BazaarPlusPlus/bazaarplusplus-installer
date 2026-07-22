@@ -1,10 +1,10 @@
 import { Box, CloudDownload, Layers3, Loader2, Trash2 } from 'lucide-react';
-import type { ReactNode } from 'react';
+import { useEffect, type ReactNode } from 'react';
 import { ActionTile } from '../../components/ui/ActionTile';
-import { StatusBanner } from '../../components/ui/StatusBanner';
+import { useToast } from '../../components/ui/Toast';
 import { useI18n } from '../../i18n/LocaleProvider';
 import { ResetDataFailureDetails } from './ResetDataFailureDetails';
-import { InstallProblemBanner } from './InstallProblemBanner';
+import { presentInstallProblem } from './installProblems';
 import type { useInstallPage } from './useInstallPage';
 
 type InstallPage = ReturnType<typeof useInstallPage>;
@@ -23,7 +23,29 @@ export function InstallActionsPanel({
   onOpenResetBepinexModal: () => void;
 }) {
   const { t } = useI18n();
+  const { dismissToast, showToast } = useToast();
   const state = page.installState;
+
+  useEffect(() => {
+    if (!page.message) return;
+    showToast({
+      id: 'install:action',
+      tone: 'success',
+      message: page.message
+    });
+  }, [page.message, showToast]);
+
+  useEffect(() => {
+    if (!page.actionProblem) {
+      dismissToast('install:action-problem');
+      return;
+    }
+    showToast({
+      id: 'install:action-problem',
+      tone: 'error',
+      message: presentInstallProblem(page.actionProblem, t)
+    });
+  }, [dismissToast, page.actionProblem, showToast, t]);
 
   if (!state) return null;
 
@@ -72,14 +94,6 @@ export function InstallActionsPanel({
         />
       </div>
 
-      {page.actionProblem && (
-        <div className="mt-4">
-          <InstallProblemBanner problem={page.actionProblem} />
-        </div>
-      )}
-      {page.message && (
-        <StatusBanner tone="success" className="mt-4" message={page.message} />
-      )}
       {page.resetDataFailurePaths.length > 0 && (
         <ResetDataFailureDetails paths={page.resetDataFailurePaths} />
       )}

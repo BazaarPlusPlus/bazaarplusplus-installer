@@ -52,6 +52,7 @@ const zh = {
 
   // Shared actions
   close: '关闭',
+  notifications: '通知',
   cancel: '取消',
   copy: '复制',
   refresh: '刷新',
@@ -461,6 +462,7 @@ const en: Record<MessageKey, string> = {
   navAbout: 'About',
 
   close: 'Close',
+  notifications: 'Notifications',
   cancel: 'Cancel',
   copy: 'Copy',
   refresh: 'Refresh',

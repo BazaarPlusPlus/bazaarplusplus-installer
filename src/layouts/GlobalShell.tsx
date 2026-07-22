@@ -14,14 +14,19 @@ import {
   ModalCoordinatorProvider,
   ModalSource
 } from '../components/ui/ModalCoordinator';
+import { ToastProvider, useToast } from '../components/ui/Toast';
+import { presentUpdaterProblem } from '../features/about/updaterProblems';
+import { useI18n } from '../i18n/LocaleProvider';
 
 export default function GlobalShell() {
   return (
     <AppBootstrapProvider>
       <UpdaterProvider>
-        <ModalCoordinatorProvider>
-          <GlobalShellContent />
-        </ModalCoordinatorProvider>
+        <ToastProvider>
+          <ModalCoordinatorProvider>
+            <GlobalShellContent />
+          </ModalCoordinatorProvider>
+        </ToastProvider>
       </UpdaterProvider>
     </AppBootstrapProvider>
   );
@@ -35,7 +40,40 @@ function GlobalShellContent() {
   const supportTriggerRef = useRef<HTMLButtonElement>(null);
   const app = useAppBootstrap();
   const updater = useUpdater();
+  const { t } = useI18n();
+  const { showToast } = useToast();
   const updaterUi = getUpdaterUiContract(updater);
+  const previousUpdaterPhase = useRef(updater.phase);
+
+  useEffect(() => {
+    const changed = previousUpdaterPhase.current !== updater.phase;
+    previousUpdaterPhase.current = updater.phase;
+    if (!changed) return;
+
+    if (updater.phase === 'current') {
+      showToast({
+        id: 'updater:check',
+        tone: 'success',
+        message: t('updaterCurrent')
+      });
+    } else if (updater.phase === 'preview') {
+      showToast({
+        id: 'updater:check',
+        tone: 'info',
+        message: t('updaterPreview')
+      });
+    } else if (
+      updater.phase === 'failed' &&
+      updater.problem.code === 'updater_check_failed'
+    ) {
+      showToast({
+        id: 'updater:check',
+        tone: 'error',
+        message: presentUpdaterProblem(updater.problem, t),
+        action: { label: t('retry'), onClick: updater.checkNow }
+      });
+    }
+  }, [showToast, t, updater]);
 
   // Close the header popovers on Escape or a click outside them — the native
   // behaviour these controlled dropdowns were missing.
