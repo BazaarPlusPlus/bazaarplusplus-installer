@@ -9,19 +9,18 @@ import {
   RefreshCw,
   Settings2
 } from 'lucide-react';
+import { useEffect } from 'react';
 import type { StreamOverlayDisplayMode } from '../types/backend';
 import { Button } from '../components/ui/Button';
 import { PageShell } from '../components/ui/PageShell';
-import { ProblemBanner } from '../components/ui/ProblemBanner';
 import { SegmentedControl } from '../components/ui/SegmentedControl';
-import { StatusBanner } from '../components/ui/StatusBanner';
+import { useToast, type ToastTone } from '../components/ui/Toast';
 import { useStreamPage } from '../features/stream/useStreamPage';
 import {
   presentStreamProblem,
   presentStreamSnapshot
 } from '../features/stream/streamPresentation';
 import type { StreamProblem } from '../features/stream/streamProblems';
-import { formatProblemDiagnostic } from '../features/shared/problems';
 import { useI18n } from '../i18n/LocaleProvider';
 import type { MessageKey } from '../i18n/messages';
 
@@ -41,6 +40,43 @@ export default function Stream() {
   const status = snapshot.service.status;
   const cropSettings = snapshot.crop.settings;
   const statusTone = presentation.status.tone;
+
+  useStreamProblemToast(
+    snapshot.service.problem,
+    'stream:service',
+    'error',
+    t('streamRestart'),
+    intents.restart
+  );
+  useStreamProblemToast(
+    snapshot.polling.problem,
+    'stream:polling',
+    'warning',
+    t('streamRetryStatus'),
+    intents.retryStatus
+  );
+  useStreamProblemToast(
+    snapshot.oneOff.problems.open_overlay,
+    'stream:open-overlay'
+  );
+  useStreamProblemToast(snapshot.oneOff.problems.copy, 'stream:copy');
+  useStreamProblemToast(snapshot.window.problem, 'stream:window');
+  useStreamProblemToast(
+    snapshot.crop.problem,
+    'stream:crop',
+    'error',
+    snapshot.crop.problem?.params.operation === 'load'
+      ? t('streamRetryCrop')
+      : undefined,
+    snapshot.crop.problem?.params.operation === 'load'
+      ? intents.reloadCropSettings
+      : undefined
+  );
+  useStreamProblemToast(
+    snapshot.oneOff.problems.open_settings,
+    'stream:open-settings'
+  );
+  useStreamNoticeToast(presentation.notice);
 
   return (
     <PageShell eyebrow="Stream" title={t('streamTitle')}>
@@ -103,32 +139,6 @@ export default function Stream() {
             </div>
           </div>
 
-          <div className="bpp-stream-service-feedback">
-            {snapshot.service.problem && (
-              <StreamProblemBanner
-                problem={snapshot.service.problem}
-                onRetry={() => void intents.restart()}
-              />
-            )}
-            {snapshot.polling.problem && (
-              <StreamProblemBanner
-                problem={snapshot.polling.problem}
-                tone="warning"
-                actionLabel={t('streamRetryStatus')}
-                busy={snapshot.polling.operation === 'retry'}
-                onRetry={() => void intents.retryStatus()}
-              />
-            )}
-            {snapshot.oneOff.problems.open_overlay && (
-              <StreamProblemBanner
-                problem={snapshot.oneOff.problems.open_overlay}
-              />
-            )}
-            {presentation.notice && (
-              <StatusBanner tone="success" message={presentation.notice} />
-            )}
-          </div>
-
           <div className="bpp-stream-section">
             <span
               id="stream-obs-url-label"
@@ -151,9 +161,6 @@ export default function Stream() {
                 <Copy size={16} /> {t('copy')}
               </Button>
             </div>
-            {snapshot.oneOff.problems.copy && (
-              <StreamProblemBanner problem={snapshot.oneOff.problems.copy} />
-            )}
           </div>
 
           <div className="bpp-stream-section">
@@ -203,37 +210,12 @@ export default function Stream() {
                 </div>
               </div>
             </div>
-            {snapshot.window.problem && (
-              <StreamProblemBanner problem={snapshot.window.problem} />
-            )}
           </div>
 
           <div className="bpp-stream-section bpp-stream-config-section">
             <span className="bpp-stream-section-label">
               {t('streamOverlayConfig')}
             </span>
-
-            {snapshot.crop.problem && (
-              <StreamProblemBanner
-                problem={snapshot.crop.problem}
-                actionLabel={
-                  snapshot.crop.problem.params.operation === 'load'
-                    ? t('streamRetryCrop')
-                    : undefined
-                }
-                busy={snapshot.crop.operation === 'load'}
-                onRetry={
-                  snapshot.crop.problem.params.operation === 'load'
-                    ? () => void intents.reloadCropSettings()
-                    : undefined
-                }
-              />
-            )}
-            {snapshot.oneOff.problems.open_settings && (
-              <StreamProblemBanner
-                problem={snapshot.oneOff.problems.open_settings}
-              />
-            )}
 
             <SegmentedControl
               label={t('streamOverlayConfig')}
@@ -286,36 +268,43 @@ export default function Stream() {
   );
 }
 
-function StreamProblemBanner({
-  problem,
-  tone = 'error',
-  actionLabel,
-  busy = false,
-  onRetry
-}: {
-  problem: StreamProblem;
-  tone?: 'error' | 'warning';
-  actionLabel?: string;
-  busy?: boolean;
-  onRetry?: () => void;
-}) {
+function useStreamProblemToast(
+  problem: StreamProblem | null,
+  id: string,
+  tone: Extract<ToastTone, 'error' | 'warning'> = 'error',
+  actionLabel?: string,
+  onAction?: () => void
+) {
   const { t } = useI18n();
-  const label = actionLabel ?? t('retry');
-  return (
-    <ProblemBanner
-      tone={tone}
-      message={presentStreamProblem(problem, t)}
-      diagnostic={problem.diagnostic ? formatProblemDiagnostic(problem) : null}
-      diagnosticLabel={t('problemDiagnostics')}
-      actions={
-        onRetry ? (
-          <Button size="small" variant="ghost" busy={busy} onClick={onRetry}>
-            {label}
-          </Button>
-        ) : undefined
-      }
-    />
-  );
+  const { dismissToast, showToast } = useToast();
+
+  useEffect(() => {
+    if (!problem) {
+      dismissToast(id);
+      return;
+    }
+    showToast({
+      id,
+      tone,
+      message: presentStreamProblem(problem, t),
+      action:
+        actionLabel && onAction
+          ? { label: actionLabel, onClick: onAction }
+          : undefined
+    });
+  }, [actionLabel, dismissToast, id, onAction, problem, showToast, t, tone]);
+}
+
+function useStreamNoticeToast(notice: string | null) {
+  const { dismissToast, showToast } = useToast();
+
+  useEffect(() => {
+    if (!notice) {
+      dismissToast('stream:notice');
+      return;
+    }
+    showToast({ id: 'stream:notice', tone: 'success', message: notice });
+  }, [dismissToast, notice, showToast]);
 }
 
 function InfoMetric({ label, value }: { label: string; value: string }) {
