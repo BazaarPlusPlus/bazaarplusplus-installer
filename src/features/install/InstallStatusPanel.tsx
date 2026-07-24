@@ -1,4 +1,3 @@
-import { openPath } from '@tauri-apps/plugin-opener';
 import { CircleAlert, Copy, Folder } from 'lucide-react';
 import { useState } from 'react';
 import type { ReactNode } from 'react';
@@ -99,11 +98,13 @@ export function InstallStatusPanel({
               <Button
                 type="button"
                 size="small"
-                disabled={!selectedPath}
-                onClick={() => selectedPath && void openPath(selectedPath)}
+                disabled={page.busy}
+                onClick={() => void page.chooseDirectory()}
+                title={t('selectDirectory')}
+                aria-label={t('selectDirectory')}
               >
                 <Folder size={14} />
-                {t('openDirectory')}
+                {t('selectDirectory')}
               </Button>
             </div>
           </div>
