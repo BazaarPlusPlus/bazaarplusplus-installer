@@ -146,7 +146,8 @@ const zh = {
     '当前 Steam 安装不支持自动写入启动项，请检查 Steam 目录后重试。',
   installWarningTrampolineReverted:
     '游戏文件已还原，BazaarPlusPlus 的启动配置需要修复。',
-  installWarningUnexpected: '检测到未知的安装警告。',
+  installWarningUnexpected:
+    '检测到未知的安装警告，请重新检测；若持续出现，请查看诊断信息。',
   installProblemDetectionFailed: '检测安装状态失败，请重试。',
   installProblemChooseDirectoryFailed: '无法打开游戏目录选择器，请重试。',
   installProblemInstallFailed:
@@ -197,7 +198,7 @@ const zh = {
   updateRestartNow: '立即重启',
   updateRestarting: '正在重启…',
   updateError: '自动更新失败',
-  updateRestartFailedTitle: '更新已安装，需要手动重启',
+  updateRestartFailedTitle: '自动重启失败',
   updateRetry: '重试',
   updateRetryRestart: '再次尝试重启',
   updateDownloadProgressLabel: '更新下载进度',
@@ -231,6 +232,8 @@ const zh = {
   historyOpenInstall: '前往安装页',
   historyOpenStream: '前往直播页',
   historyPreviewFallback: '缩略图不可用；刷新页面可重试。',
+  historyPreviewServiceOffline:
+    '缩略图服务未启动，请前往直播页启动',
   runResultVictory: '胜利',
   runResultDefeat: '失败',
   runResultAbandoned: '放弃',
@@ -263,6 +266,8 @@ const zh = {
   statFinalRank: '最终段位',
   statFinalRating: '段位分',
   noLocalBattles: '暂无本地战斗记录',
+  noLocalBattlesDescription:
+    '对局完成后战斗记录会自动出现在这里；也可刷新重试',
   battleColDay: '天数',
   battleColResult: '结果',
   battleColOpponentHero: '对手英雄',
@@ -315,8 +320,11 @@ const zh = {
   streamModeHero: '完整英雄',
   streamModeHeroHalf: '半高英雄',
   streamOpenOverlay: '打开预览页',
+  streamStart: '启动服务',
   streamRestart: '重启服务',
   streamObsPlaceholder: '服务启动后显示 OBS Browser Source 地址',
+  streamObsGuide:
+    '将此地址添加为 OBS 的 Browser Source，即可在直播画面中显示叠加层',
   streamWindowSection: '展示窗口',
   streamWindowLatest: '当前展示最新记录',
   streamWindowOffset: '向前补 {count} 条记录',
@@ -567,7 +575,8 @@ const en: Record<MessageKey, string> = {
     'This Steam installation cannot update launch options automatically. Check the Steam directory and retry.',
   installWarningTrampolineReverted:
     'Game files were restored and the BazaarPlusPlus launch configuration needs repair.',
-  installWarningUnexpected: 'An unknown installation warning was detected.',
+  installWarningUnexpected:
+    'An unknown installation warning was detected. Re-detect; if it persists, check the diagnostics.',
   installProblemDetectionFailed:
     'Installation state could not be detected. Please retry.',
   installProblemChooseDirectoryFailed:
@@ -622,7 +631,7 @@ const en: Record<MessageKey, string> = {
   updateRestartNow: 'Restart Now',
   updateRestarting: 'Restarting…',
   updateError: 'Update failed',
-  updateRestartFailedTitle: 'Update installed — manual restart needed',
+  updateRestartFailedTitle: 'Automatic restart failed',
   updateRetry: 'Retry',
   updateRetryRestart: 'Try Restart Again',
   updateDownloadProgressLabel: 'Update download progress',
@@ -659,6 +668,8 @@ const en: Record<MessageKey, string> = {
   historyOpenInstall: 'Open Install',
   historyOpenStream: 'Open Stream',
   historyPreviewFallback: 'Thumbnail unavailable; refresh to retry.',
+  historyPreviewServiceOffline:
+    'Thumbnail service is not running. Start it from the Stream page.',
   runResultVictory: 'VICTORY',
   runResultDefeat: 'DEFEAT',
   runResultAbandoned: 'ABANDONED',
@@ -693,6 +704,8 @@ const en: Record<MessageKey, string> = {
   statFinalRank: 'Final Rank',
   statFinalRating: 'Rating',
   noLocalBattles: 'No local battle records',
+  noLocalBattlesDescription:
+    'Battle records appear here automatically after a run finishes. You can also refresh to retry.',
   battleColDay: 'Day',
   battleColResult: 'Result',
   battleColOpponentHero: 'Opponent Hero',
@@ -747,9 +760,12 @@ const en: Record<MessageKey, string> = {
   streamModeHero: 'Full Hero',
   streamModeHeroHalf: 'Half Hero',
   streamOpenOverlay: 'Open Preview',
+  streamStart: 'Start Service',
   streamRestart: 'Restart Service',
   streamObsPlaceholder:
     'The OBS Browser Source URL appears after the service starts',
+  streamObsGuide:
+    'Add this URL as an OBS Browser Source to show the overlay on your stream',
   streamWindowSection: 'Display Window',
   streamWindowLatest: 'Showing the latest record',
   streamWindowOffset: 'Back {count} record(s)',

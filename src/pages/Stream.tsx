@@ -134,7 +134,7 @@ export default function Stream() {
                       : ''
                   }
                 />
-                {t('streamRestart')}
+                {status?.running ? t('streamRestart') : t('streamStart')}
               </Button>
             </div>
           </div>
@@ -161,6 +161,9 @@ export default function Stream() {
                 <Copy size={16} /> {t('copy')}
               </Button>
             </div>
+            <p className="bpp-stream-section-hint m-0 mt-2 text-[12px] leading-relaxed">
+              {t('streamObsGuide')}
+            </p>
           </div>
 
           <div className="bpp-stream-section">
