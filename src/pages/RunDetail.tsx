@@ -409,7 +409,7 @@ function BattleRow({
                   }
                   title={t('openVideoLocation')}
                   aria-label={t('openVideoLocation')}
-                  className="bpp-battle-video-action flex items-center justify-center size-8 disabled:opacity-50 transition-colors"
+                  className="bpp-battle-video-action flex items-center justify-center size-9 disabled:opacity-50 transition-colors"
                 >
                   {videoAvailability.running ? (
                     <Loader2 size={14} className="animate-spin" />
@@ -426,7 +426,7 @@ function BattleRow({
                   }
                   title={t('deleteVideo')}
                   aria-label={t('deleteVideo')}
-                  className="bpp-battle-delete-action flex items-center justify-center size-8 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 disabled:opacity-50 transition-all"
+                  className="bpp-battle-delete-action flex items-center justify-center size-9 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100 focus-visible:pointer-events-auto disabled:opacity-50 transition-all"
                 >
                   {deleteAvailability.running ? (
                     <Loader2 size={14} className="animate-spin" />
@@ -444,7 +444,7 @@ function BattleRow({
             <span
               title={t('noVideo')}
               aria-label={t('noVideo')}
-              className="bpp-battle-no-video flex items-center justify-center size-8"
+              className="bpp-battle-no-video flex items-center justify-center size-9"
             >
               <FileQuestion size={14} />
             </span>
