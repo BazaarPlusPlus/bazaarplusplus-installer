@@ -2,7 +2,7 @@ import clsx from 'clsx';
 import { forwardRef, type ButtonHTMLAttributes } from 'react';
 
 export type ButtonVariant = 'default' | 'primary' | 'danger' | 'ghost';
-export type ButtonSize = 'small' | 'default' | 'icon';
+export type ButtonSize = 'small' | 'default' | 'large' | 'icon';
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant;
