@@ -4,29 +4,25 @@ import type { ReactNode } from 'react';
 import { Button } from '../../components/ui/Button';
 import { StatusBanner } from '../../components/ui/StatusBanner';
 import { useI18n } from '../../i18n/LocaleProvider';
-import type { InstallState } from '../../types/backend';
 import { PrimaryInstallActionButton } from './PrimaryInstallActionButton';
-import type { PrimaryInstallMode } from './PrimaryInstallActionButton';
 import { presentInstallWarning } from './installProblems';
-import type { useInstallPage } from './useInstallPage';
-
-type InstallPage = ReturnType<typeof useInstallPage>;
+import type {
+  InstallPageSnapshot,
+  InstallWorkflowIntents
+} from './installWorkflow';
 
 export function InstallStatusPanel({
-  page,
-  state,
-  primaryMode,
-  appVersion,
-  onOpenInstallModal
+  snapshot,
+  intents,
+  appVersion
 }: {
-  page: InstallPage;
-  state: InstallState;
-  primaryMode: PrimaryInstallMode;
+  snapshot: Extract<InstallPageSnapshot, { phase: 'ready' }>;
+  intents: InstallWorkflowIntents;
   appVersion: string;
-  onOpenInstallModal: () => void;
 }) {
   const { t } = useI18n();
   const [copied, setCopied] = useState(false);
+  const state = snapshot.data;
   const installed = state.mod_state.installed;
   const healthy = installed && state.mod_state.version_matches;
   const needsReinstall = installed && !state.mod_state.version_matches;
@@ -63,11 +59,7 @@ export function InstallStatusPanel({
         </div>
         <div className="bpp-install-hero-divider" aria-hidden="true" />
         <div className="bpp-install-primary-slot">
-          <PrimaryInstallActionButton
-            page={page}
-            mode={primaryMode}
-            onOpenInstallModal={onOpenInstallModal}
-          />
+          <PrimaryInstallActionButton snapshot={snapshot} intents={intents} />
         </div>
       </section>
 
@@ -98,8 +90,8 @@ export function InstallStatusPanel({
               <Button
                 type="button"
                 size="small"
-                disabled={page.busy}
-                onClick={() => void page.chooseDirectory()}
+                disabled={!snapshot.actions.chooseDirectory}
+                onClick={() => void intents.chooseDirectory()}
                 title={t('selectDirectory')}
                 aria-label={t('selectDirectory')}
               >

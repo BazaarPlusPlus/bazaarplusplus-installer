@@ -2,6 +2,8 @@ import { BookOpen, ExternalLink, TriangleAlert } from 'lucide-react';
 import type { InstallCompatState } from '../../types/backend';
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 import { useI18n } from '../../i18n/LocaleProvider';
+import { InstallProblemBanner } from './InstallProblemBanner';
+import type { InstallProblem } from './installProblems';
 
 export function InstallConfirmModal({
   busy,
@@ -10,6 +12,7 @@ export function InstallConfirmModal({
   compat,
   compatOptIn,
   onCompatOptInChange,
+  problem,
   onClose,
   onConfirm
 }: {
@@ -19,6 +22,7 @@ export function InstallConfirmModal({
   compat: InstallCompatState;
   compatOptIn: boolean;
   onCompatOptInChange: (value: boolean) => void;
+  problem: InstallProblem | null;
   onClose: () => void;
   onConfirm: () => void | Promise<void>;
 }) {
@@ -35,10 +39,11 @@ export function InstallConfirmModal({
         checked: installAcknowledged,
         onChange: onAcknowledgedChange
       }}
-      confirmLabel={t('confirmInstall')}
+      confirmLabel={problem ? t('retry') : t('confirmInstall')}
       busyLabel={t('installing')}
       busy={busy}
       activeDismissalPolicy={{ kind: 'blocked' }}
+      dismissLabel={problem ? t('close') : undefined}
       onConfirm={onConfirm}
       onClose={onClose}
     >
@@ -80,7 +85,7 @@ export function InstallConfirmModal({
             type="checkbox"
             className="bpp-install-checkbox"
             checked={compat.forced ? true : compatOptIn}
-            disabled={compat.forced}
+            disabled={compat.forced || busy || problem !== null}
             onChange={(event) => onCompatOptInChange(event.target.checked)}
           />
           <span className="bpp-install-card-copy">
@@ -96,6 +101,7 @@ export function InstallConfirmModal({
           <span className="bpp-install-compat-orbit" aria-hidden="true" />
         </label>
       )}
+      {problem && <InstallProblemBanner problem={problem} />}
     </ConfirmDialog>
   );
 }

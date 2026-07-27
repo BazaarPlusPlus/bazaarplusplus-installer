@@ -21,7 +21,10 @@ export interface ConfirmedOperationController<TTarget, TProblem> {
   getSnapshot(): ConfirmedOperationState<TTarget, TProblem>;
   subscribe(listener: () => void): () => void;
   request(target: TTarget): boolean;
+  /** Replace the retained target while still confirming (e.g. pending install options). */
+  updateTarget(target: TTarget): boolean;
   dismiss(): boolean;
+  clear(): void;
   run(
     execute: (target: TTarget) => Promise<ConfirmedOperationOutcome<TProblem>>,
     problemFromError: (error: unknown) => TProblem
@@ -51,10 +54,18 @@ export function createConfirmedOperationController<
       publish({ phase: 'confirming', target, problem: null });
       return true;
     },
+    updateTarget: (target) => {
+      if (!state || state.phase !== 'confirming') return false;
+      publish({ phase: 'confirming', target, problem: null });
+      return true;
+    },
     dismiss: () => {
       if (!state || state.phase === 'running') return false;
       publish(null);
       return true;
+    },
+    clear: () => {
+      publish(null);
     },
     run: async (execute, problemFromError) => {
       if (!state || state.phase === 'running') return false;

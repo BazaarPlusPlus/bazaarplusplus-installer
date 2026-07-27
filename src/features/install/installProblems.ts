@@ -59,6 +59,34 @@ export function installFailurePaths(problem: InstallProblem): string[] {
     .filter(Boolean);
 }
 
+export type InstallNoticePresentationCode =
+  | 'install_done'
+  | 'uninstall_done'
+  | 'reset_data_done'
+  | 'reset_data_nothing_to_delete'
+  | 'reset_bepinex_done'
+  | 'reset_bepinex_nothing_to_delete';
+
+export function presentInstallNotice(
+  code: InstallNoticePresentationCode,
+  t: Translate
+): string {
+  switch (code) {
+    case 'install_done':
+      return t('installDone');
+    case 'uninstall_done':
+      return t('uninstallDone');
+    case 'reset_data_done':
+      return t('resetDataDone');
+    case 'reset_data_nothing_to_delete':
+      return t('resetDataNothingToDelete');
+    case 'reset_bepinex_done':
+      return t('resetBepinexDone');
+    case 'reset_bepinex_nothing_to_delete':
+      return t('resetBepinexNothingToDelete');
+  }
+}
+
 function installWarningMessageKey(code: string): MessageKey {
   switch (code) {
     case 'game_missing':

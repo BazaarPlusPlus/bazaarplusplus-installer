@@ -32,6 +32,8 @@ UI redesign standards follow-up: `2026-07-19` on `2af743045b72631519a11dadea4b47
 
 UI consistency citation refresh: `2026-07-19` on `a2c197e7fcd8fe21ed07482bd8db8c787a91c29c` — the frontend truth was rechecked against the semantic token/control system, grouped Header, guided History empty state, and restructured Stream presentation after final visual and automated verification.
 
+Install workflow deep-module citation refresh: `2026-07-27` on `e0fa9a649114ddcab7409c2c86ebade41372cec7` — the context glossary plus architecture, frontend, Install/Reset, updater, and verification topics were checked against the framework-neutral Install workflow, React adapter, and black-box workflow tests after vertical replacement.
+
 ## Current Manifest
 
 | Path | Topic | Status | Last verified |
@@ -40,15 +42,15 @@ UI consistency citation refresh: `2026-07-19` on `a2c197e7fcd8fe21ed07482bd8db8c
 | `CLAUDE.md` | agent instructions | operational | 2026-06-11 |
 | `README.md` | project entrypoint | current-entrypoint | 2026-07-11 |
 | `.trae/rules/git-commit-message.md` | ignored local rule | ignored-operational | n/a |
-| `docs/INDEX.md` | documentation manifest | manifest | 2026-07-19 |
-| `CONTEXT.md` | entry map + glossary | truth | `3fd7a24bb6e734f5c50a69d3a69144e21d52fae9` |
-| `docs/truth/architecture.md` | architecture | truth | `2af743045b72631519a11dadea4b474c903519bd` |
-| `docs/truth/frontend.md` | frontend | truth | `a2c197e7fcd8fe21ed07482bd8db8c787a91c29c` |
-| `docs/truth/install-reset.md` | install-reset | truth | `2af743045b72631519a11dadea4b474c903519bd` |
+| `docs/INDEX.md` | documentation manifest | manifest | 2026-07-27|
+| `CONTEXT.md` | entry map + glossary | truth | `e0fa9a649114ddcab7409c2c86ebade41372cec7` |
+| `docs/truth/architecture.md` | architecture | truth | `e0fa9a649114ddcab7409c2c86ebade41372cec7` |
+| `docs/truth/frontend.md` | frontend | truth | `e0fa9a649114ddcab7409c2c86ebade41372cec7` |
+| `docs/truth/install-reset.md` | install-reset | truth | `e0fa9a649114ddcab7409c2c86ebade41372cec7` |
 | `docs/truth/launch-modes.md` | launch-modes | truth | `f23d786ab3bf1998f556f5fe05b6e47467a7ea48` |
 | `docs/truth/history-stream.md` | history-stream | truth | `2af743045b72631519a11dadea4b474c903519bd` |
-| `docs/truth/updater-release.md` | updater-release | truth | `2af743045b72631519a11dadea4b474c903519bd` |
-| `docs/truth/verification.md` | verification | truth | `2af743045b72631519a11dadea4b474c903519bd` |
+| `docs/truth/updater-release.md` | updater-release | truth | `e0fa9a649114ddcab7409c2c86ebade41372cec7` |
+| `docs/truth/verification.md` | verification | truth | `e0fa9a649114ddcab7409c2c86ebade41372cec7` |
 | `docs/plans/manual-validation.md` | manual-validation | active-plan | `7500016b1c4adfc7b5d0206c7def0ceabae514d5` |
 | `docs/agents/issue-tracker.md` | agent skills: issue tracker | operational | 2026-07-11 |
 | `docs/agents/triage-labels.md` | agent skills: triage labels | operational | 2026-07-11 |
