@@ -115,7 +115,7 @@ export default function History() {
                 secondaryAction={
                   <Link
                     to="/"
-                    className="bpp-button bpp-ui-button bpp-ui-button-default bpp-link-button"
+                    className="bpp-button bpp-ui-button bpp-ui-button-ghost bpp-link-button"
                   >
                     {t('historyEmptyInstall')}
                   </Link>

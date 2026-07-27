@@ -124,7 +124,7 @@ function AboutBootstrapContent({
 
   return (
     <>
-      <section className="bpp-panel relative overflow-hidden p-5">
+      <section className="bpp-panel bpp-card-pad relative overflow-hidden">
         <div className="bpp-about-brand-watermark">B++</div>
         <div className="flex items-center gap-5">
           <div className="min-w-0 flex-1">
@@ -182,7 +182,7 @@ function AboutBootstrapContent({
         </div>
       </section>
 
-      <section className="bpp-panel p-5">
+      <section className="bpp-panel bpp-card-pad">
         <h3 className="bpp-section-label">{t('aboutCredits')}</h3>
         <div className="flex flex-col gap-5">
           {groupCredits(bootstrap.credits).map((group) => (
@@ -205,7 +205,7 @@ function AboutBootstrapContent({
         </div>
       </section>
 
-      <details className="bpp-panel group p-5">
+      <details className="bpp-panel bpp-card-pad group">
         <summary className="bpp-about-license-summary">
           {t('aboutLicenses')}
           <span className="bpp-about-license-symbol">+</span>

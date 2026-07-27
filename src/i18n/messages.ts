@@ -249,6 +249,7 @@ const zh = {
   runStatRating: '段位分',
 
   // Run detail page
+  runDetailEyebrow: '对局',
   runDetailBack: '返回战绩列表',
   runDetailLoading: '读取详情中',
   runDetailNotFound: '没有找到这局战绩',
@@ -689,6 +690,7 @@ const en: Record<MessageKey, string> = {
   runStatRank: 'Rank',
   runStatRating: 'Rating',
 
+  runDetailEyebrow: 'Run',
   runDetailBack: 'Back to History',
   runDetailLoading: 'Loading details',
   runDetailNotFound: 'This run was not found',

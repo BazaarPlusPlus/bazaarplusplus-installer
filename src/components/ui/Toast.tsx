@@ -119,11 +119,29 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     () => ({ showToast, dismissToast }),
     [dismissToast, showToast]
   );
+  const viewportRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const viewport = viewportRef.current;
+    if (!viewport || typeof viewport.showPopover !== 'function') return;
+    try {
+      if (viewport.matches(':popover-open') === false) {
+        viewport.showPopover();
+      }
+    } catch {
+      // Browsers without popover or already-open state are fine.
+    }
+  }, [toasts.length]);
 
   return (
     <ToastContext.Provider value={controller}>
       {children}
-      <div className="bpp-toast-viewport" aria-label={t('notifications')}>
+      <div
+        ref={viewportRef}
+        popover="manual"
+        className="bpp-toast-viewport"
+        aria-label={t('notifications')}
+      >
         {toasts.map((toast) => (
           <ToastItem
             key={toast.id}

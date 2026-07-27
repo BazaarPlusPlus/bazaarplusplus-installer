@@ -123,6 +123,7 @@ export default function Stream() {
                 <ExternalLink size={14} /> {t('streamOpenOverlay')}
               </Button>
               <Button
+                variant="primary"
                 disabled={!snapshot.service.canRestart}
                 onClick={() => void intents.restart()}
               >
@@ -246,6 +247,7 @@ export default function Stream() {
                 className="bpp-input bpp-stream-crop-input fira-code"
               />
               <Button
+                variant="primary"
                 onClick={() => void intents.submitCropCode()}
                 disabled={!snapshot.crop.canEdit}
               >
