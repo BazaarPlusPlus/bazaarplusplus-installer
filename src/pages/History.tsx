@@ -32,7 +32,7 @@ export default function History() {
 
   return (
     <PageShell
-      eyebrow="History"
+      eyebrow={t('historyEyebrow')}
       title={t('historyTitle')}
       className="bpp-history-page"
       action={

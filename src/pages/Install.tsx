@@ -73,7 +73,7 @@ export default function Install() {
 
   return (
     <PageShell
-      eyebrow="Install"
+      eyebrow={t('installEyebrow')}
       title={t('installTitle')}
       className="bpp-install-page"
     >
