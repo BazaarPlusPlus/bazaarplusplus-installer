@@ -74,8 +74,8 @@ const zh = {
   // Install page
   installActionsHeading: '安装操作',
   currentStatusHeading: '当前状态',
-  gamePathHeading: '游戏路径',
-  gamePathEmpty: '未选择 The Bazaar 安装目录',
+  gamePathHeading: '游戏目录',
+  gamePathEmpty: '未选择 The Bazaar 游戏目录',
   notSelected: '未选择',
   chooseAgain: '重新选择',
   recheck: '重新检测',
@@ -96,16 +96,16 @@ const zh = {
   missing: '缺失',
   gameFilesOk: '游戏文件完整',
   gameNotFound: '未找到游戏',
-  modReady: '核心组件就绪',
+  modReady: '插件就绪',
   modNeedsReinstall: '需要重新安装',
   modNotInstalled: '尚未安装',
   installDone: '安装完成',
   resetDataConfirmTitle: '删除本地数据',
   resetDataTarget: '目标：{path} 内的 BazaarPlusPlusV4 文件夹',
   resetDataConfirmBody:
-    '这会删除 The Bazaar 安装目录中 BazaarPlusPlusV4 下的本地数据库、截图和战斗回放视频。',
+    '这会删除 The Bazaar 游戏目录中 BazaarPlusPlusV4 下的本地数据库、截图和战斗回放视频。',
   resetDataConfirmKeepsInstall:
-    '不会卸载 The Bazaar，也不会卸载 BazaarPlusPlus 模组。',
+    '不会卸载 The Bazaar，也不会卸载 BazaarPlusPlus 插件。',
   resetDataConfirmGameClosed: '请先退出 The Bazaar，避免数据文件仍被占用。',
   resetDataConfirmAcknowledge: '我知道这些本地数据会被删除。',
   resetDataConfirmAction: '删除本地数据',
@@ -122,14 +122,14 @@ const zh = {
   resetBepinexConfirmTitle: '删除 BepInEx 文件夹',
   resetBepinexTarget: '目标：{path} 内的 BepInEx 文件夹',
   resetBepinexConfirmBody:
-    '这会删除 The Bazaar 安装目录中的整个 BepInEx 文件夹。',
+    '这会删除 The Bazaar 游戏目录中的整个 BepInEx 文件夹。',
   resetBepinexConfirmOtherMods:
-    '文件夹内的所有内容都会被删除，包括你安装的其他 BepInEx 模组。',
+    '文件夹内的所有内容都会被删除，包括你安装的其他 BepInEx 插件。',
   resetBepinexConfirmReinstall:
     '删除后 BazaarPlusPlus 将不再生效，需要重新点击“安装”来恢复。',
   resetBepinexConfirmGameClosed: '请先退出 The Bazaar，避免文件仍被占用。',
   resetBepinexConfirmAcknowledge:
-    '我知道整个 BepInEx 文件夹（含其他模组）会被删除。',
+    '我知道整个 BepInEx 文件夹（含其他插件）会被删除。',
   resetBepinexConfirmAction: '删除 BepInEx 文件夹',
   resetBepinexRunning: '正在删除目标 BepInEx 文件夹…',
   resetBepinexDone: 'BepInEx 文件夹已删除',
@@ -145,9 +145,9 @@ const zh = {
   uninstallConfirmAction: '卸载',
   uninstallRunning: '正在卸载…',
   uninstallDone: '卸载完成',
-  selectGameDirFirst: '请先选择 The Bazaar 安装目录。',
+  selectGameDirFirst: '请先选择 The Bazaar 游戏目录。',
   installWarningGameMissing:
-    '未找到有效的 The Bazaar 安装目录，请选择游戏目录。',
+    '未找到有效的 The Bazaar 游戏目录，请选择游戏目录。',
   installWarningLaunchOptionsUnsupported:
     '当前 Steam 安装不支持自动写入启动项，请检查 Steam 目录后重试。',
   installWarningTrampolineReverted:
@@ -182,7 +182,7 @@ const zh = {
     '改为从游戏内部注入，不再依赖 Steam 启动脚本。更稳健，但会清空当前启动项；如遇游戏校验/更新还原，需要在此重新安装修复。仅在默认方式无法启动时开启。',
   compatModeForcedNotice:
     'macOS 27 及以上必须使用兼容模式：新版 Steam 不再支持启动脚本，已自动开启且无法关闭。',
-  installing: '安装中...',
+  installing: '安装中…',
   confirmInstall: '确认安装',
 
   // Update check (header)
@@ -192,15 +192,15 @@ const zh = {
   updateHeaderAvailable: '发现更新',
   updateModalKicker: '应用更新',
   updateModalTitle: '发现新版本',
-  updateModalBody: 'BazaarPlusPlus {version} 已可用。',
+  updateModalBody: 'BazaarPlusPlus Installer {version} 已可用。',
   updateModalLater: '稍后',
   updateInstall: '下载并安装',
   updateNotesLabel: '更新内容',
   updateDownloading: '正在下载…',
   updateInstalling: '正在安装…',
-  updateInstallingBody: '下载已完成，正在安装 BazaarPlusPlus {version}。',
+  updateInstallingBody: '下载已完成，正在安装 BazaarPlusPlus Installer {version}。',
   updateReady: '更新完成，重启后生效',
-  updateReadyBody: 'BazaarPlusPlus {version} 已安装完成。重启应用后即可使用。',
+  updateReadyBody: 'BazaarPlusPlus Installer {version} 已安装完成。重启应用后即可使用。',
   updateRestartNow: '立即重启',
   updateRestarting: '正在重启…',
   updateError: '自动更新失败',
@@ -215,7 +215,7 @@ const zh = {
   updaterProblemInstallFailed:
     '更新安装失败。请重试；如果问题持续，请重新打开应用后再次检查更新。',
   updaterProblemRestartFailed:
-    '自动重启失败，但 BazaarPlusPlus {version} 已安装完成。请退出 BazaarPlusPlus Installer，再从“应用程序”中重新打开。',
+    '自动重启失败，但 BazaarPlusPlus Installer {version} 已安装完成。请退出 BazaarPlusPlus Installer，再从“应用程序”中重新打开。',
 
   // History page
   historyLoading: '读取战绩中',
@@ -223,7 +223,7 @@ const zh = {
   historyEmptyDescription:
     '完成一局 The Bazaar 对局后，战绩会自动显示在这里。你也可以刷新，或前往安装页检查游戏目录。',
   historyEmptyRefresh: '刷新战绩',
-  historyEmptyInstall: '检查安装目录',
+  historyEmptyInstall: '检查游戏目录',
   viewDetail: '查看详情',
   historySummaryRuns: '对局数',
   historySummaryVideos: '视频数',
@@ -299,7 +299,7 @@ const zh = {
   storageCleanupRunDataLabel: '对局数据',
   storageCleanupPresetAll: '清理全部',
   storageCleanupPresetOlderThan7Days: '清理 7 天前',
-  storageCleanupPresetBeforeThisMonth: '仅保留本月',
+  storageCleanupPresetBeforeThisMonth: '清理本月以前',
   storageCleanupConfirmTitle: '确认清理',
   storageCleanupTarget: '目标：{scope} · 范围：{preset}',
   storageCleanupScreenshotsConfirmBody:
@@ -339,7 +339,7 @@ const zh = {
   streamLessHistory: '更少历史',
   streamOverlayConfig: '叠加层配置',
   streamCropCodeLabel: '裁切代码',
-  streamCropCodePlaceholder: '输入裁切代码...',
+  streamCropCodePlaceholder: '输入裁切代码…',
   streamApplyCrop: '应用裁切代码',
   streamResetCrop: '恢复默认裁切',
   streamOpenSettings: '打开校准页',
@@ -407,7 +407,7 @@ const zh = {
   installOverviewInstalled: 'BazaarPlusPlus 已安装',
   installOverviewUpdateRequired: 'BazaarPlusPlus 需要重新安装',
   installOverviewNotInstalled: 'BazaarPlusPlus 尚未安装',
-  installOverviewHealthy: '所有核心组件运行正常，可以直接启动游戏',
+  installOverviewHealthy: '所有插件运行正常，可以直接启动游戏',
   installOverviewHealthyShort: '所有组件运行正常',
   installOverviewUpdateDescription: '当前组件版本不一致，重新安装即可完成更新',
   installOverviewNotInstalledDescription: '选择游戏目录后即可安装插件',
@@ -417,7 +417,7 @@ const zh = {
   installedModVersionLabel: '已安装插件',
   bundledModVersionLabel: '安装器内置',
   maintenanceOperationsHeading: '维护操作',
-  installationDirectoryHeading: '安装目录',
+  installationDirectoryHeading: '游戏目录',
   copyPath: '复制路径',
   pathCopied: '已复制',
   selectDirectory: '选择目录',
@@ -432,8 +432,8 @@ const zh = {
   maintenanceUninstallDescription: '移除所有组件',
   actionInstallDescription: '安装插件至游戏目录',
   actionReinstallDescription: '将覆盖当前版本并保留本地数据',
-  resetBepinexDescription: '移除扩展框架及其内容',
-  uninstallDescription: '移除模组文件并保留游戏本体',
+  resetBepinexDescription: '删除 BepInEx 及其内容',
+  uninstallDescription: '移除插件文件并保留游戏本体',
   launchGameDescription: '通过当前插件启动游戏',
   installModalSubtitle: '安装前确认与环境检查',
   historySummaryRunsDescription: '总对局场次',
@@ -502,7 +502,7 @@ const en: Record<MessageKey, string> = {
 
   installActionsHeading: 'Actions',
   currentStatusHeading: 'Current Status',
-  gamePathHeading: 'Game Path',
+  gamePathHeading: 'Game Directory',
   gamePathEmpty: 'No The Bazaar install directory selected',
   notSelected: 'Not selected',
   chooseAgain: 'Choose again',
@@ -524,7 +524,7 @@ const en: Record<MessageKey, string> = {
   missing: 'Missing',
   gameFilesOk: 'Game files OK',
   gameNotFound: 'Game not found',
-  modReady: 'Core components ready',
+  modReady: 'Plugin ready',
   modNeedsReinstall: 'Reinstall required',
   modNotInstalled: 'Not installed yet',
   installDone: 'Install complete',
@@ -533,7 +533,7 @@ const en: Record<MessageKey, string> = {
   resetDataConfirmBody:
     'This deletes the local database, screenshots, and combat replay videos under BazaarPlusPlusV4 in The Bazaar install directory.',
   resetDataConfirmKeepsInstall:
-    'This does not uninstall The Bazaar or the BazaarPlusPlus mod.',
+    'This does not uninstall The Bazaar or the BazaarPlusPlus plugin.',
   resetDataConfirmGameClosed:
     'Quit The Bazaar first so data files are not held open.',
   resetDataConfirmAcknowledge: 'I understand this local data will be deleted.',
@@ -554,13 +554,13 @@ const en: Record<MessageKey, string> = {
   resetBepinexConfirmBody:
     'This deletes the entire BepInEx folder in The Bazaar install directory.',
   resetBepinexConfirmOtherMods:
-    'Everything inside it is removed, including any other BepInEx mods you installed.',
+    'Everything inside it is removed, including any other BepInEx plugins you installed.',
   resetBepinexConfirmReinstall:
     'After this, BazaarPlusPlus stops working — click Install again to restore it.',
   resetBepinexConfirmGameClosed:
     'Quit The Bazaar first so the files are not held open.',
   resetBepinexConfirmAcknowledge:
-    'I understand the entire BepInEx folder (including other mods) will be deleted.',
+    'I understand the entire BepInEx folder (including other plugins) will be deleted.',
   resetBepinexConfirmAction: 'Delete BepInEx Folder',
   resetBepinexRunning: 'Deleting the target BepInEx folder…',
   resetBepinexDone: 'BepInEx folder deleted',
@@ -594,7 +594,7 @@ const en: Record<MessageKey, string> = {
   installProblemChooseDirectoryFailed:
     'The game directory picker could not be opened. Please retry.',
   installProblemInstallFailed:
-    'Install or repair failed. Quit The Bazaar and Steam, check folder permissions, then retry.',
+    'Install or repair failed. Quit The Bazaar and Steam, check directory permissions, then retry.',
   installProblemResetDataFailed:
     'Local data could not be reset. Close apps using those files, then retry.',
   installProblemResetBepinexFailed:
@@ -620,7 +620,7 @@ const en: Record<MessageKey, string> = {
     'Inject from inside the game instead of relying on the Steam launch script. More robust, but it clears your current launch options; if a game verify/update reverts it, reinstall here to repair. Enable only if the default launch fails.',
   compatModeForcedNotice:
     'Required on macOS 27+: the new Steam client no longer supports the launch script, so this is enabled automatically and cannot be turned off.',
-  installing: 'Installing...',
+  installing: 'Installing…',
   confirmInstall: 'Confirm Install',
 
   updaterPreview: 'Preview mode',
@@ -629,17 +629,17 @@ const en: Record<MessageKey, string> = {
   updateHeaderAvailable: 'Update available',
   updateModalKicker: 'App Update',
   updateModalTitle: 'Update Available',
-  updateModalBody: 'BazaarPlusPlus {version} is available.',
+  updateModalBody: 'BazaarPlusPlus Installer {version} is available.',
   updateModalLater: 'Later',
   updateInstall: 'Download & Install',
   updateNotesLabel: "What's new",
   updateDownloading: 'Downloading…',
   updateInstalling: 'Installing…',
   updateInstallingBody:
-    'The download is complete. Installing BazaarPlusPlus {version}.',
+    'The download is complete. Installing BazaarPlusPlus Installer {version}.',
   updateReady: 'Update ready — restart to apply',
   updateReadyBody:
-    'BazaarPlusPlus {version} is installed. Restart the app to use it.',
+    'BazaarPlusPlus Installer {version} is installed. Restart the app to use it.',
   updateRestartNow: 'Restart Now',
   updateRestarting: 'Restarting…',
   updateError: 'Update failed',
@@ -657,20 +657,20 @@ const en: Record<MessageKey, string> = {
   updaterProblemInstallFailed:
     'The update could not be installed. Retry; if the problem continues, reopen the app and check again.',
   updaterProblemRestartFailed:
-    'Automatic restart failed, but BazaarPlusPlus {version} is installed. Quit BazaarPlusPlus Installer, then open it again from Applications.',
+    'Automatic restart failed, but BazaarPlusPlus Installer {version} is installed. Quit BazaarPlusPlus Installer, then open it again from Applications.',
 
   historyLoading: 'Loading runs',
   noLocalRuns: 'No local runs yet',
   historyEmptyDescription:
-    'Completed The Bazaar runs appear here automatically. Refresh, or check the selected game folder on the Install page.',
+    'Completed The Bazaar runs appear here automatically. Refresh, or check the selected game directory on the Install page.',
   historyEmptyRefresh: 'Refresh History',
-  historyEmptyInstall: 'Check Install Folder',
-  viewDetail: 'View details',
+  historyEmptyInstall: 'Check Game Directory',
+  viewDetail: 'View Details',
   historySummaryRuns: 'Runs',
   historySummaryVideos: 'Videos',
   historySummaryWinRate: 'Win Rate',
   historyProblemUnavailable:
-    'No local History database is available. Select the correct game folder on the Install page.',
+    'No local History database is available. Select the correct game directory on the Install page.',
   historyProblemReadFailed:
     'Local History could not be read. Close apps that may be using the database, then retry.',
   historyProblemPreviewUnavailable:
@@ -696,7 +696,7 @@ const en: Record<MessageKey, string> = {
   runDetailNotFound: 'This run was not found',
   runDetailRefreshing: 'Refreshing details',
   runDetailProblemUnavailable:
-    'No local History database is available. Select the correct game folder on the Install page.',
+    'No local History database is available. Select the correct game directory on the Install page.',
   runDetailProblemReadFailed:
     'This run could not be read. Close apps that may be using the database, then retry.',
   runDetailProblemRevealScreenshotFailed:
@@ -729,8 +729,8 @@ const en: Record<MessageKey, string> = {
   battleResultWin: 'WIN',
   battleResultLoss: 'LOSS',
   battleResultNeutral: 'DRAW',
-  openVideoLocation: 'Open video location',
-  deleteVideo: 'Delete video',
+  openVideoLocation: 'Open Video Location',
+  deleteVideo: 'Delete Video',
   deleteVideoConfirmTitle: 'Delete Video',
   deleteVideoTarget: 'Target: battle {battleId} · video {videoId}',
   deleteVideoConfirmBody:
@@ -741,9 +741,9 @@ const en: Record<MessageKey, string> = {
   storageCleanupTitle: 'Storage Cleanup',
   storageCleanupScreenshotsLabel: 'End-of-run screenshots',
   storageCleanupRunDataLabel: 'Run data',
-  storageCleanupPresetAll: 'Clean all',
-  storageCleanupPresetOlderThan7Days: 'Older than 7 days',
-  storageCleanupPresetBeforeThisMonth: 'Keep this month only',
+  storageCleanupPresetAll: 'Clean All',
+  storageCleanupPresetOlderThan7Days: 'Clean Older Than 7 Days',
+  storageCleanupPresetBeforeThisMonth: 'Clean Before This Month',
   storageCleanupConfirmTitle: 'Confirm Cleanup',
   storageCleanupTarget: 'Target: {scope} · Range: {preset}',
   storageCleanupScreenshotsConfirmBody:
@@ -757,7 +757,7 @@ const en: Record<MessageKey, string> = {
   storageCleanupRunningScreenshots: 'Deleting end-of-run screenshots…',
   storageCleanupRunningRunData: 'Deleting run data…',
   storageCleanupProblemUnavailable:
-    'No local History database is available to clean. Select the correct game folder on the Install page.',
+    'No local History database is available to clean. Select the correct game directory on the Install page.',
   storageCleanupProblemPreviewFailed:
     'The cleanup range could not be previewed. Please retry.',
   storageCleanupProblemExecuteFailed:
@@ -767,7 +767,7 @@ const en: Record<MessageKey, string> = {
   storageCleanupScreenshotsDone: 'Deleted {files} files, freed about {size}.',
   storageCleanupRunDataDone:
     'Deleted {runs} runs and {files} files, freed about {size}.',
-  noVideo: 'No video',
+  noVideo: 'No Video',
 
   streamModeCurrent: 'Battle Count',
   streamModeHero: 'Full Hero',
@@ -786,7 +786,7 @@ const en: Record<MessageKey, string> = {
   streamLessHistory: 'Less History',
   streamOverlayConfig: 'Overlay Config',
   streamCropCodeLabel: 'Crop code',
-  streamCropCodePlaceholder: 'Enter crop code...',
+  streamCropCodePlaceholder: 'Enter crop code…',
   streamApplyCrop: 'Apply Crop Code',
   streamResetCrop: 'Reset Crop',
   streamOpenSettings: 'Open Calibration',
@@ -861,7 +861,7 @@ const en: Record<MessageKey, string> = {
   installOverviewInstalled: 'BazaarPlusPlus is installed',
   installOverviewUpdateRequired: 'BazaarPlusPlus needs reinstalling',
   installOverviewNotInstalled: 'BazaarPlusPlus is not installed',
-  installOverviewHealthy: 'All core components are healthy and ready to launch',
+  installOverviewHealthy: 'All plugins are healthy and ready to launch',
   installOverviewHealthyShort: 'All components are running normally',
   installOverviewUpdateDescription:
     'Component versions differ; reinstall to finish updating',
@@ -876,7 +876,7 @@ const en: Record<MessageKey, string> = {
   installationDirectoryHeading: 'Install Directory',
   copyPath: 'Copy Path',
   pathCopied: 'Copied',
-  selectDirectory: 'Choose Folder',
+  selectDirectory: 'Choose Directory',
   applicationVersionHeading: 'App Version',
   developmentBuild: 'Development',
   stableBuild: 'Stable',
@@ -890,8 +890,8 @@ const en: Record<MessageKey, string> = {
   actionInstallDescription: 'Install the plugin to the game directory',
   actionReinstallDescription:
     'Overwrite the current version and keep local data',
-  resetBepinexDescription: 'Remove the extension framework and its contents',
-  uninstallDescription: 'Remove mod files and keep the base game',
+  resetBepinexDescription: 'Delete BepInEx and its contents',
+  uninstallDescription: 'Remove plugin files and keep the base game',
   launchGameDescription: 'Launch the game with the current plugin',
   installModalSubtitle: 'Pre-install confirmation and environment check',
   historySummaryRunsDescription: 'Total recorded runs',

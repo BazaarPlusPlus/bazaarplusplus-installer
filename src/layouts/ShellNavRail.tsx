@@ -36,7 +36,7 @@ export function ShellNavRail() {
         activeIndex={activeIndex}
         icon={<History size={21} />}
         label={t('navHistory')}
-        secondary={locale === 'zh' ? 'RECORD' : undefined}
+        secondary={locale === 'zh' ? 'HISTORY' : undefined}
       />
       <RailItem
         to="/stream"
