@@ -38,7 +38,8 @@ export type InstallPrimaryAction = {
 export type InstallConfirmationTarget =
   | { kind: 'install'; gamePath: string; compatOptIn: boolean }
   | { kind: 'reset-data'; gamePath: string }
-  | { kind: 'reset-bepinex'; gamePath: string };
+  | { kind: 'reset-bepinex'; gamePath: string }
+  | { kind: 'uninstall'; gamePath: string };
 
 export type InstallConfirmation =
   | {
@@ -72,7 +73,7 @@ export type InstallActionAvailability = {
   requestInstall: boolean;
   requestResetData: boolean;
   requestResetBepinex: boolean;
-  uninstall: boolean;
+  requestUninstall: boolean;
   launch: boolean;
   confirm: boolean;
   dismissConfirmation: boolean;
@@ -137,9 +138,9 @@ export interface InstallWorkflowIntents {
   setPendingCompatOptIn(value: boolean): boolean;
   requestResetData(): boolean;
   requestResetBepinex(): boolean;
+  requestUninstall(): boolean;
   confirm(): Promise<boolean>;
   dismissConfirmation(): boolean;
-  uninstall(): Promise<boolean>;
   launch(): Promise<boolean>;
   acknowledgeNotice(id: number): void;
 }
@@ -194,9 +195,9 @@ class DefaultInstallWorkflow implements InstallWorkflow {
     setPendingCompatOptIn: (value) => this.setPendingCompatOptIn(value),
     requestResetData: () => this.requestResetData(),
     requestResetBepinex: () => this.requestResetBepinex(),
+    requestUninstall: () => this.requestUninstall(),
     confirm: () => this.confirm(),
     dismissConfirmation: () => this.dismissConfirmation(),
-    uninstall: () => this.uninstall(),
     launch: () => this.launch(),
     acknowledgeNotice: (id) => this.acknowledgeNotice(id)
   };
@@ -323,6 +324,16 @@ class DefaultInstallWorkflow implements InstallWorkflow {
     });
   }
 
+  private requestUninstall(): boolean {
+    if (!this.canOpenConfirmation()) return false;
+    const data = this.readyData();
+    if (!data?.selected_game_path) return false;
+    return this.confirmation.request({
+      kind: 'uninstall',
+      gamePath: data.selected_game_path
+    });
+  }
+
   private async confirm(): Promise<boolean> {
     if (this.disposed || this.state.operation !== null) return false;
     const current = this.confirmation.getSnapshot();
@@ -351,30 +362,6 @@ class DefaultInstallWorkflow implements InstallWorkflow {
   private dismissConfirmation(): boolean {
     if (this.state.operation !== null) return false;
     return this.confirmation.dismiss();
-  }
-
-  private async uninstall(): Promise<boolean> {
-    if (!this.canEnterLane() || this.hasActiveConfirmation()) return false;
-    const data = this.readyData();
-    if (!data?.selected_game_path) return false;
-
-    const lifecycle = this.lifecycleEpoch;
-    const gamePath = data.selected_game_path;
-    this.beginOperation('uninstall');
-    try {
-      const next = await this.ports.commands.uninstallMod(gamePath);
-      if (!this.isCurrentLifecycle(lifecycle)) return false;
-      this.applyReadyData(next);
-      this.showNotice('uninstall_done');
-      return true;
-    } catch (caught) {
-      if (!this.isCurrentLifecycle(lifecycle)) return false;
-      this.state.actionProblem = installProblemFromError(caught);
-      await this.reconcile(gamePath, lifecycle);
-      return false;
-    } finally {
-      this.endOperation(lifecycle);
-    }
   }
 
   private async launch(): Promise<boolean> {
@@ -451,6 +438,13 @@ class DefaultInstallWorkflow implements InstallWorkflow {
               ? 'reset_bepinex_done'
               : 'reset_bepinex_nothing_to_delete'
           );
+          return { ok: true };
+        }
+        case 'uninstall': {
+          const next = await this.ports.commands.uninstallMod(target.gamePath);
+          if (!this.isCurrentLifecycle(lifecycle)) return { ok: true };
+          this.applyReadyData(next);
+          this.showNotice('uninstall_done');
           return { ok: true };
         }
       }
@@ -604,7 +598,7 @@ class DefaultInstallWorkflow implements InstallWorkflow {
       requestInstall: false,
       requestResetData: false,
       requestResetBepinex: false,
-      uninstall: false,
+      requestUninstall: false,
       launch: false,
       confirm: false,
       dismissConfirmation: false,
@@ -680,7 +674,7 @@ class DefaultInstallWorkflow implements InstallWorkflow {
           !confirmationActive &&
           !refreshing &&
           ready.data.actions.can_reset_bepinex,
-        uninstall:
+        requestUninstall:
           !busy &&
           !confirmationActive &&
           !refreshing &&
@@ -734,6 +728,8 @@ function operationForConfirmation(
       return 'resetData';
     case 'reset-bepinex':
       return 'resetBepinex';
+    case 'uninstall':
+      return 'uninstall';
   }
 }
 
