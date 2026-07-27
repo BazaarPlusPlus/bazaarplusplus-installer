@@ -1,7 +1,7 @@
 ---
 status: truth
 topic: context
-last-verified: 3fd7a24bb6e734f5c50a69d3a69144e21d52fae9
+last-verified: e0fa9a649114ddcab7409c2c86ebade41372cec7
 ---
 
 # BazaarPlusPlus Installer Context
@@ -35,6 +35,7 @@ Current behavior truth lives under `docs/truth/` (topic-sliced, code-cited, hash
 - **About bootstrap snapshot** — the frontend resource contract that distinguishes initial loading, authoritative native data, packaged fallback data, and no-data blocking failure. Fallback state identifies unavailable fields, retains a semantic problem separately from localized copy, and can retry in place until native data replaces it (`src/features/about/appBootstrap.ts:18-55`, `src/features/about/appBootstrap.ts:90-178`, `src/features/about/aboutProblems.ts:8-25`).
 - **Stream runtime / overlay** — the single serialized owner of the local Axum service lifecycle, window selection, and exclusive maintenance; the production service remains on `127.0.0.1:17654` and serves the OBS overlay and settings pages (`src-tauri/src/stream/runtime.rs:43-108`, `src-tauri/src/stream/server.rs:16-69`).
 - **Stream workflow** — the framework-neutral frontend owner of independent service, polling freshness, window, crop, and one-off action capabilities. It keeps semantic state and derives one snapshot; browser/Tauri concerns enter through injected ports, while React creates the workflow once and only attaches lifecycle and subscription (`src/features/stream/streamWorkflow.ts:53-122`, `src/features/stream/streamWorkflow.ts:185-320`, `src/features/stream/streamWorkflow.ts:640-733`, `src/features/stream/useStreamPage.ts:20-42`).
+- **Install workflow** — the framework-neutral frontend owner of authoritative `InstallState`, single-flight install/reset/uninstall/launch/refresh/directory operations, target-bearing confirmations, fixed-parameter retry, failure reconciliation, semantic notices, and derived primary action plus availability. Commands enter through one narrow port; React creates the workflow once per route mount and only attaches lifecycle, subscription, i18n, Toast, Modal, and acknowledgement adapters (`src/features/install/installWorkflow.ts:82-154`, `src/features/install/installWorkflow.ts:218-237`, `src/features/install/installWorkflow.ts:326-460`, `src/features/install/installWorkflow.ts:588-718`, `src/features/install/useInstallPage.ts:5-25`).
 - **Storage cleanup** — preset-driven deletion of old screenshots and run data with upload-safety and referenced-file protections; its IPC is the two scope-tagged, semantic-problem preview/execute operations (`src-tauri/src/commands/history.rs:61-79`, `src-tauri/src/services/history.rs:25-44`, `src-tauri/src/services/history.rs:337-353`).
 - **Generated bindings** — `src/types/generated/commands.ts`, emitted by `npm run generate:bindings` from the same Specta builder that registers the Tauri invoke handler; never hand-edited (`src-tauri/src/commands/registry.rs:3-50`, `scripts/generate-bindings.mjs:85-123`).
 

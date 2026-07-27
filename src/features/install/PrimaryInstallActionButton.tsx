@@ -1,47 +1,57 @@
-import { DownloadCloud, Loader2, Play, RefreshCw } from 'lucide-react';
+import { DownloadCloud, Folder, Loader2, Play, RefreshCw } from 'lucide-react';
 import { useI18n } from '../../i18n/LocaleProvider';
-import type { useInstallPage } from './useInstallPage';
-
-type InstallPage = ReturnType<typeof useInstallPage>;
-
-export type PrimaryInstallMode = 'install' | 'reinstall' | 'launch';
+import type {
+  InstallPageSnapshot,
+  InstallWorkflowIntents
+} from './installWorkflow';
 
 export function PrimaryInstallActionButton({
-  page,
-  mode,
-  onOpenInstallModal
+  snapshot,
+  intents
 }: {
-  page: InstallPage;
-  mode: PrimaryInstallMode;
-  onOpenInstallModal: () => void;
+  snapshot: Extract<InstallPageSnapshot, { phase: 'ready' }>;
+  intents: InstallWorkflowIntents;
 }) {
   const { t } = useI18n();
+  const primary = snapshot.primaryAction;
+  const mode = primary.mode;
   const isLaunch = mode === 'launch';
-  const disabled =
-    page.busy ||
-    (isLaunch
-      ? !page.installState?.actions.can_launch
-      : mode === 'reinstall'
-        ? !page.installState?.actions.can_reinstall
-        : !page.installState?.actions.can_install);
-  const label = isLaunch
-    ? t('launchGame')
-    : mode === 'reinstall'
-      ? t('actionReinstall')
-      : t('actionInstall');
-  const Icon = isLaunch
-    ? Play
-    : mode === 'reinstall'
-      ? RefreshCw
-      : DownloadCloud;
-  const busy = page.action === (isLaunch ? 'launch' : 'install');
+  const isChoose = mode === 'choose-directory';
+  const isRepair = mode === 'repair';
+  const label = isChoose
+    ? t('selectDirectory')
+    : isLaunch
+      ? t('launchGame')
+      : isRepair
+        ? t('actionReinstall')
+        : t('actionInstall');
+  const Icon = isChoose
+    ? Folder
+    : isLaunch
+      ? Play
+      : isRepair
+        ? RefreshCw
+        : DownloadCloud;
+  const busy = primary.running;
+
+  const onClick = () => {
+    if (isChoose) {
+      void intents.chooseDirectory();
+      return;
+    }
+    if (isLaunch) {
+      void intents.launch();
+      return;
+    }
+    intents.requestInstall();
+  };
 
   return (
     <button
       type="button"
-      disabled={disabled}
+      disabled={primary.disabled}
       aria-busy={busy || undefined}
-      onClick={isLaunch ? page.launch : onOpenInstallModal}
+      onClick={onClick}
       className="bpp-install-primary-button w-full"
     >
       <span className="bpp-install-primary-content flex min-w-0 items-center justify-center gap-3.5">

@@ -1,53 +1,33 @@
 import { Box, CloudDownload, Layers3, Loader2, Trash2 } from 'lucide-react';
-import { useEffect, type ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { ActionTile } from '../../components/ui/ActionTile';
-import { useToast } from '../../components/ui/Toast';
 import { useI18n } from '../../i18n/LocaleProvider';
 import { ResetDataFailureDetails } from './ResetDataFailureDetails';
-import { presentInstallProblem } from './installProblems';
-import type { useInstallPage } from './useInstallPage';
-
-type InstallPage = ReturnType<typeof useInstallPage>;
+import { installFailurePaths } from './installProblems';
+import type {
+  InstallPageSnapshot,
+  InstallWorkflowIntents
+} from './installWorkflow';
 
 export function InstallActionsPanel({
-  page,
+  snapshot,
+  intents,
   updateChecking,
-  onCheckUpdate,
-  onOpenResetDataModal,
-  onOpenResetBepinexModal
+  onCheckUpdate
 }: {
-  page: InstallPage;
+  snapshot: Extract<InstallPageSnapshot, { phase: 'ready' }>;
+  intents: InstallWorkflowIntents;
   updateChecking: boolean;
   onCheckUpdate: () => void;
-  onOpenResetDataModal: () => void;
-  onOpenResetBepinexModal: () => void;
 }) {
   const { t } = useI18n();
-  const { dismissToast, showToast } = useToast();
-  const state = page.installState;
-
-  useEffect(() => {
-    if (!page.message) return;
-    showToast({
-      id: 'install:action',
-      tone: 'success',
-      message: page.message
-    });
-  }, [page.message, showToast]);
-
-  useEffect(() => {
-    if (!page.actionProblem) {
-      dismissToast('install:action-problem');
-      return;
-    }
-    showToast({
-      id: 'install:action-problem',
-      tone: 'error',
-      message: presentInstallProblem(page.actionProblem, t)
-    });
-  }, [dismissToast, page.actionProblem, showToast, t]);
-
-  if (!state) return null;
+  const state = snapshot.data;
+  const failurePaths =
+    snapshot.confirmation?.phase === 'failed'
+      ? installFailurePaths(snapshot.confirmation.problem)
+      : snapshot.actionProblem
+        ? installFailurePaths(snapshot.actionProblem)
+        : [];
 
   return (
     <section>
@@ -56,8 +36,8 @@ export function InstallActionsPanel({
       </h3>
       <div className="bpp-install-maintenance-grid">
         <MaintenanceAction
-          disabled={page.busy || !state.actions.can_reset_data}
-          busy={page.action === 'resetData'}
+          disabled={!snapshot.actions.requestResetData}
+          busy={snapshot.operation === 'resetData'}
           icon={<Layers3 size={22} />}
           title={
             state.game.path_valid && !state.has_resettable_data
@@ -65,15 +45,15 @@ export function InstallActionsPanel({
               : t('actionResetData')
           }
           detail={t('maintenanceResetDataDescription')}
-          onClick={onOpenResetDataModal}
+          onClick={() => intents.requestResetData()}
         />
         <MaintenanceAction
-          disabled={page.busy || !state.actions.can_reset_bepinex}
-          busy={page.action === 'resetBepinex'}
+          disabled={!snapshot.actions.requestResetBepinex}
+          busy={snapshot.operation === 'resetBepinex'}
           icon={<Box size={22} />}
           title={t('actionResetBepinex')}
           detail={t('maintenanceResetBepinexDescription')}
-          onClick={onOpenResetBepinexModal}
+          onClick={() => intents.requestResetBepinex()}
         />
         <MaintenanceAction
           disabled={updateChecking}
@@ -85,17 +65,17 @@ export function InstallActionsPanel({
         />
         <MaintenanceAction
           danger
-          disabled={page.busy || !state.actions.can_uninstall}
-          busy={page.action === 'uninstall'}
+          disabled={!snapshot.actions.uninstall}
+          busy={snapshot.operation === 'uninstall'}
           icon={<Trash2 size={22} />}
           title={t('actionUninstall')}
           detail={t('maintenanceUninstallDescription')}
-          onClick={page.uninstall}
+          onClick={() => void intents.uninstall()}
         />
       </div>
 
-      {page.resetDataFailurePaths.length > 0 && (
-        <ResetDataFailureDetails paths={page.resetDataFailurePaths} />
+      {failurePaths.length > 0 && !snapshot.confirmation && (
+        <ResetDataFailureDetails paths={failurePaths} />
       )}
     </section>
   );

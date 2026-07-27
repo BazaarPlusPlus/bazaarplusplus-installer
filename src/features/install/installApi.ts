@@ -1,29 +1,34 @@
 import { commandClient } from '../../api/commandClient';
+import type { CommandAdapter } from '../../api/commandAdapter';
+import type { InstallCommandPort } from './installWorkflow';
 
-export async function loadInstallState(gamePath?: string) {
-  return commandClient.getInstallState(gamePath ?? null);
+type InstallCommandAdapter = Pick<
+  CommandAdapter,
+  | 'getInstallState'
+  | 'chooseGameDirectory'
+  | 'installMod'
+  | 'resetBppData'
+  | 'resetBepinex'
+  | 'uninstallMod'
+  | 'launchGame'
+>;
+
+/** Semantic adapter shared by native and Browser Preview command clients. */
+export function createInstallCommandPort(
+  commands: InstallCommandAdapter
+): InstallCommandPort {
+  return {
+    loadInstallState: (gamePath) => commands.getInstallState(gamePath ?? null),
+    chooseGameDirectory: () => commands.chooseGameDirectory(),
+    installMod: (gamePath, compatOptIn) =>
+      commands.installMod(gamePath, compatOptIn),
+    resetBppData: (gamePath) => commands.resetBppData(gamePath),
+    resetBepinex: (gamePath) => commands.resetBepinex(gamePath),
+    uninstallMod: (gamePath) => commands.uninstallMod(gamePath),
+    launchGame: async () => {
+      await commands.launchGame();
+    }
+  };
 }
 
-export async function chooseGameDirectory() {
-  return commandClient.chooseGameDirectory();
-}
-
-export async function installMod(gamePath: string, compatOptIn: boolean) {
-  return commandClient.installMod(gamePath, compatOptIn);
-}
-
-export async function resetBppData(gamePath: string) {
-  return commandClient.resetBppData(gamePath);
-}
-
-export async function resetBepinex(gamePath: string) {
-  return commandClient.resetBepinex(gamePath);
-}
-
-export async function uninstallMod(gamePath: string) {
-  return commandClient.uninstallMod(gamePath);
-}
-
-export async function launchGame() {
-  return commandClient.launchGame();
-}
+export const installCommandPort = createInstallCommandPort(commandClient);

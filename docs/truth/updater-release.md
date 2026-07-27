@@ -1,7 +1,7 @@
 ---
 status: truth
 topic: updater-release
-last-verified: 2af743045b72631519a11dadea4b474c903519bd
+last-verified: e0fa9a649114ddcab7409c2c86ebade41372cec7
 ---
 
 # Updater And Release
@@ -15,7 +15,7 @@ last-verified: 2af743045b72631519a11dadea4b474c903519bd
 - `runCheck` returns `preview` outside Tauri runtime, `available` with version/notes/handle when a plugin update exists, or `current` when none exists in `src/features/about/updater.ts:45-59`.
 - The discriminated snapshot encodes checking, available, downloading, installing, ready-to-restart, restarting, and failed states without contradictory progress/problem fields in `src/features/about/updater.ts:61-120`. The machine guards duplicate work/dismissal, consumes handles once, refreshes a handle on retry, separates download from install failure at the Finished event, and preserves known version/notes across restart failure in `src/features/about/updater.ts:132-335`.
 - Known updater failures are stable semantic problems rather than native error copy. Check/download/install/restart codes carry operation and optional version parameters plus diagnostic detail; bilingual presenters supply recovery text in `src/features/about/updaterProblems.ts:9-63`, `src/i18n/messages.ts:175-204`, and `src/i18n/messages.ts:530-564`.
-- One phase presentation supplies updater metadata and the modal contract. Update decisions remain system priority behind confirmations, while download/install/restart work upgrades the same modal source to critical blocked policy in `src/features/about/updaterPresentation.ts:22-118` and `src/layouts/GlobalShell.tsx:110-119`. Manual update checking is exposed on the Install page in `src/features/install/InstallActionsPanel.tsx:54-61`.
+- One phase presentation supplies updater metadata and the modal contract. Update decisions remain system priority behind confirmations, while download/install/restart work upgrades the same modal source to critical blocked policy in `src/features/about/updaterPresentation.ts:22-118` and `src/layouts/GlobalShell.tsx:110-119`. Manual update checking is exposed on the Install page in `src/features/install/InstallActionsPanel.tsx:58-65`.
 
 ## Reproducible Release Inputs
 
