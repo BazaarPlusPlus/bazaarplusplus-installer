@@ -78,9 +78,9 @@ describe('ShellUpdateModal', () => {
       )
     });
 
-    expect(html).toContain('更新已安装，需要手动重启');
+    expect(html).toContain('自动重启失败');
     expect(html).toContain(
-      '自动重启失败，但 BazaarPlusPlus 5.1.0 已安装完成。请退出 BazaarPlusPlus Installer，再从“应用程序”中重新打开。'
+      '自动重启失败，但 BazaarPlusPlus Installer 5.1.0 已安装完成。请退出 BazaarPlusPlus Installer，再从“应用程序”中重新打开。'
     );
     expect(html).toContain('再次尝试重启');
     expect(html).toContain('查看诊断信息');
