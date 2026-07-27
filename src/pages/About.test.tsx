@@ -4,7 +4,11 @@ import type { AppBootstrapSnapshot } from '../features/about/appBootstrap';
 import { createUiProblem } from '../features/shared/problems';
 import { LocaleProvider } from '../i18n/LocaleProvider';
 import type { AppBootstrap } from '../types/backend';
-import { AboutView } from './About';
+import {
+  AboutCheckUpdateButton,
+  AboutView,
+  type AboutCheckUpdateProps
+} from './About';
 
 const fallback: AppBootstrap = {
   app_version: '4.5.0',
@@ -23,10 +27,17 @@ const fallback: AppBootstrap = {
   licenses: []
 };
 
-function render(resource: AppBootstrapSnapshot) {
+function render(
+  resource: AppBootstrapSnapshot,
+  checkUpdate?: AboutCheckUpdateProps
+) {
   return renderToStaticMarkup(
     <LocaleProvider>
-      <AboutView resource={resource} onRetry={() => undefined} />
+      <AboutView
+        resource={resource}
+        onRetry={() => undefined}
+        checkUpdate={checkUpdate}
+      />
     </LocaleProvider>
   );
 }
@@ -102,5 +113,41 @@ describe('About bootstrap feedback', () => {
     expect(html).toContain('>数据与灵感</h4>');
     expect(html).toContain('AUTHOR');
     expect(html).toContain('GAMEDATA SOURCE');
+  });
+
+  it('offers check-update on the version surface and disables while checking', () => {
+    let checkCount = 0;
+    const onCheckUpdate = () => {
+      checkCount += 1;
+    };
+    const resource: AppBootstrapSnapshot = {
+      phase: 'authoritative',
+      data: fallback,
+      source: 'native',
+      unavailableFields: [],
+      problem: null,
+      retrying: false
+    };
+
+    const idle = render(resource, { phase: 'idle', onCheckUpdate });
+    expect(idle).toContain('检查更新');
+    expect(idle).not.toContain('aria-busy="true"');
+
+    // Same intent the About route passes from useUpdater().checkNow.
+    onCheckUpdate();
+    expect(checkCount).toBe(1);
+
+    const checking = render(resource, { phase: 'checking', onCheckUpdate });
+    expect(checking).toContain('检查中');
+    expect(checking).toContain('disabled');
+    expect(checking).toContain('aria-busy="true"');
+
+    const buttonIdle = renderToStaticMarkup(
+      <LocaleProvider>
+        <AboutCheckUpdateButton phase="idle" onCheckUpdate={onCheckUpdate} />
+      </LocaleProvider>
+    );
+    expect(buttonIdle).toContain('type="button"');
+    expect(buttonIdle).toContain('检查更新');
   });
 });

@@ -36,6 +36,7 @@ export function InstallActionsPanel({
       </h3>
       <div className="bpp-install-maintenance-grid">
         <MaintenanceAction
+          danger
           disabled={!snapshot.actions.requestResetData}
           busy={snapshot.operation === 'resetData'}
           icon={<Layers3 size={22} />}
@@ -44,7 +45,11 @@ export function InstallActionsPanel({
               ? t('actionNoResettableData')
               : t('actionResetData')
           }
-          detail={t('maintenanceResetDataDescription')}
+          detail={
+            state.game.path_valid && !state.has_resettable_data
+              ? t('maintenanceNoResettableDataDescription')
+              : t('maintenanceResetDataDescription')
+          }
           onClick={() => intents.requestResetData()}
         />
         <MaintenanceAction
@@ -65,12 +70,12 @@ export function InstallActionsPanel({
         />
         <MaintenanceAction
           danger
-          disabled={!snapshot.actions.uninstall}
+          disabled={!snapshot.actions.requestUninstall}
           busy={snapshot.operation === 'uninstall'}
           icon={<Trash2 size={22} />}
           title={t('actionUninstall')}
           detail={t('maintenanceUninstallDescription')}
-          onClick={() => void intents.uninstall()}
+          onClick={() => intents.requestUninstall()}
         />
       </div>
 

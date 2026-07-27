@@ -123,6 +123,7 @@ export default function Stream() {
                 <ExternalLink size={14} /> {t('streamOpenOverlay')}
               </Button>
               <Button
+                variant="primary"
                 disabled={!snapshot.service.canRestart}
                 onClick={() => void intents.restart()}
               >
@@ -134,7 +135,7 @@ export default function Stream() {
                       : ''
                   }
                 />
-                {t('streamRestart')}
+                {status?.running ? t('streamRestart') : t('streamStart')}
               </Button>
             </div>
           </div>
@@ -161,6 +162,9 @@ export default function Stream() {
                 <Copy size={16} /> {t('copy')}
               </Button>
             </div>
+            <p className="bpp-stream-section-hint m-0 mt-2 text-[12px] leading-relaxed">
+              {t('streamObsGuide')}
+            </p>
           </div>
 
           <div className="bpp-stream-section">
@@ -243,6 +247,7 @@ export default function Stream() {
                 className="bpp-input bpp-stream-crop-input fira-code"
               />
               <Button
+                variant="primary"
                 onClick={() => void intents.submitCropCode()}
                 disabled={!snapshot.crop.canEdit}
               >

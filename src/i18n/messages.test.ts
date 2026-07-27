@@ -32,7 +32,7 @@ describe('formatMessage', () => {
 
   it('interpolates named placeholders', () => {
     expect(formatMessage('en', 'updateModalBody', { version: '4.1.0' })).toBe(
-      'BazaarPlusPlus 4.1.0 is available.'
+      'BazaarPlusPlus Installer 4.1.0 is available.'
     );
     expect(formatMessage('zh', 'streamWindowOffset', { count: 3 })).toBe(
       '向前补 3 条记录'

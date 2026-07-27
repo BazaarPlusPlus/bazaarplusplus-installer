@@ -175,7 +175,7 @@ describe('install workflow concurrency and directory selection', () => {
     expect(await workflow.intents.refresh()).toBe(false);
     expect(await workflow.intents.chooseDirectory()).toBe(false);
     expect(workflow.intents.requestInstall()).toBe(false);
-    expect(await workflow.intents.uninstall()).toBe(false);
+    expect(workflow.intents.requestUninstall()).toBe(false);
     expect(await workflow.intents.launch()).toBe(false);
 
     slow.resolve(installState());
@@ -428,11 +428,15 @@ describe('install workflow mutation outcomes', () => {
     });
     await workflow.start();
 
-    expect(await workflow.intents.uninstall()).toBe(false);
+    expect(workflow.intents.requestUninstall()).toBe(true);
+    expect(await workflow.intents.confirm()).toBe(false);
     expect(workflow.getSnapshot()).toMatchObject({
       phase: 'ready',
       data: ready,
-      actionProblem: { diagnostic: 'uninstall failed' },
+      confirmation: {
+        phase: 'failed',
+        problem: { diagnostic: 'uninstall failed' }
+      },
       reconciliationProblem: { diagnostic: 'reconcile failed' }
     });
   });
@@ -468,7 +472,7 @@ describe('install workflow mutation outcomes', () => {
     expect(commands.resetBepinex).not.toHaveBeenCalled();
   });
 
-  it('uninstalls without confirmation and launches without install-state reconciliation', async () => {
+  it('uninstalls through confirmation and launches without install-state reconciliation', async () => {
     const loadInstallState = vi.fn().mockResolvedValue(installedState());
     const { workflow, commands } = setup({
       loadInstallState,
@@ -477,7 +481,14 @@ describe('install workflow mutation outcomes', () => {
     });
     await workflow.start();
 
-    expect(await workflow.intents.uninstall()).toBe(true);
+    expect(workflow.intents.requestUninstall()).toBe(true);
+    expect(workflow.getSnapshot().confirmation).toMatchObject({
+      phase: 'confirming',
+      target: { kind: 'uninstall', gamePath: '/Applications/The Bazaar' }
+    });
+    expect(commands.uninstallMod).not.toHaveBeenCalled();
+
+    expect(await workflow.intents.confirm()).toBe(true);
     expect(workflow.getSnapshot().notice?.code).toBe('uninstall_done');
     expect(workflow.getSnapshot().confirmation).toBeNull();
     expect(commands.uninstallMod).toHaveBeenCalledTimes(1);
@@ -495,7 +506,8 @@ describe('install workflow notices, lifecycle, and availability', () => {
     });
     await workflow.start();
 
-    expect(await workflow.intents.uninstall()).toBe(true);
+    expect(workflow.intents.requestUninstall()).toBe(true);
+    expect(await workflow.intents.confirm()).toBe(true);
     const first = workflow.getSnapshot().notice;
     expect(first).toMatchObject({ code: 'uninstall_done' });
     expect(first?.id).toEqual(expect.any(Number));
@@ -503,7 +515,8 @@ describe('install workflow notices, lifecycle, and availability', () => {
     workflow.intents.acknowledgeNotice(first!.id);
     expect(workflow.getSnapshot().notice).toBeNull();
 
-    expect(await workflow.intents.uninstall()).toBe(true);
+    expect(workflow.intents.requestUninstall()).toBe(true);
+    expect(await workflow.intents.confirm()).toBe(true);
     const second = workflow.getSnapshot().notice;
     expect(second?.id).not.toBe(first?.id);
   });

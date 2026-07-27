@@ -8,8 +8,11 @@ import {
   Video
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
+import { Button } from '../components/ui/Button';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
+import { EmptyState } from '../components/ui/EmptyState';
 import { LoadingPanel } from '../components/ui/LoadingPanel';
+import { PageShell } from '../components/ui/PageShell';
 import { ProblemBanner } from '../components/ui/ProblemBanner';
 import type { HistoryBattleRow } from '../types/backend';
 import { useRunDetailPage } from '../features/history/useRunDetailPage';
@@ -58,31 +61,34 @@ export default function RunDetail() {
       runDetailProblemFromError
     );
 
-  return (
-    <div className="bpp-page h-full overflow-hidden pb-8">
-      <div className="flex items-center justify-between gap-4">
-        <button
-          type="button"
-          onClick={() => navigate('/history')}
-          className="bpp-button w-fit"
-        >
-          <ArrowLeft size={16} />
-          {t('runDetailBack')}
-        </button>
-        <button
-          type="button"
-          onClick={() => void page.refresh()}
-          disabled={page.busy}
-          className="bpp-button"
-        >
-          <RefreshCw
-            size={14}
-            className={page.refreshing ? 'animate-spin' : ''}
-          />
-          {t('refresh')}
-        </button>
-      </div>
+  const pageTitle = detail?.run.hero ?? t('runDetailLoading');
 
+  return (
+    <PageShell
+      eyebrow={t('runDetailEyebrow')}
+      title={pageTitle}
+      className="h-full overflow-hidden pb-8"
+      action={
+        <div className="flex items-center gap-2">
+          <Button type="button" onClick={() => navigate('/history')}>
+            <ArrowLeft size={16} />
+            {t('runDetailBack')}
+          </Button>
+          <Button
+            type="button"
+            onClick={() => void page.refresh()}
+            disabled={page.busy}
+            busy={page.refreshing}
+          >
+            <RefreshCw
+              size={14}
+              className={page.refreshing ? 'animate-spin' : ''}
+            />
+            {t('refresh')}
+          </Button>
+        </div>
+      }
+    >
       {page.state.phase === 'initial-loading' ? (
         <LoadingPanel label={t('runDetailLoading')} className="h-64" />
       ) : page.state.phase === 'not-found' ? (
@@ -217,8 +223,26 @@ export default function RunDetail() {
                 </div>
 
                 {detail.battles.length === 0 ? (
-                  <div className="bpp-run-detail-empty px-6 py-8 text-sm">
-                    {t('noLocalBattles')}
+                  <div className="px-6 py-6">
+                    <EmptyState
+                      icon={<Video size={24} />}
+                      heading={t('noLocalBattles')}
+                      description={t('noLocalBattlesDescription')}
+                      primaryAction={
+                        <Button
+                          type="button"
+                          onClick={() => void page.refresh()}
+                          disabled={page.busy}
+                          busy={page.busy}
+                        >
+                          <RefreshCw
+                            size={16}
+                            className={page.refreshing ? 'animate-spin' : ''}
+                          />
+                          {t('refresh')}
+                        </Button>
+                      }
+                    />
                   </div>
                 ) : (
                   detail.battles.map((battle) => (
@@ -288,7 +312,7 @@ export default function RunDetail() {
           </ConfirmDialog>
         )}
       </ModalSource>
-    </div>
+    </PageShell>
   );
 }
 
@@ -389,7 +413,7 @@ function BattleRow({
                   }
                   title={t('openVideoLocation')}
                   aria-label={t('openVideoLocation')}
-                  className="bpp-battle-video-action flex items-center justify-center size-8 disabled:opacity-50 transition-colors"
+                  className="bpp-battle-video-action flex items-center justify-center size-9 disabled:opacity-50 transition-colors"
                 >
                   {videoAvailability.running ? (
                     <Loader2 size={14} className="animate-spin" />
@@ -406,7 +430,7 @@ function BattleRow({
                   }
                   title={t('deleteVideo')}
                   aria-label={t('deleteVideo')}
-                  className="bpp-battle-delete-action flex items-center justify-center size-8 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 disabled:opacity-50 transition-all"
+                  className="bpp-battle-delete-action flex items-center justify-center size-9 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100 focus-visible:pointer-events-auto disabled:opacity-50 transition-all"
                 >
                   {deleteAvailability.running ? (
                     <Loader2 size={14} className="animate-spin" />
@@ -424,7 +448,7 @@ function BattleRow({
             <span
               title={t('noVideo')}
               aria-label={t('noVideo')}
-              className="bpp-battle-no-video flex items-center justify-center size-8"
+              className="bpp-battle-no-video flex items-center justify-center size-9"
             >
               <FileQuestion size={14} />
             </span>

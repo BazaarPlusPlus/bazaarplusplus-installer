@@ -1,18 +1,25 @@
-import { ExternalLink } from 'lucide-react';
+import { CloudDownload, ExternalLink } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { PageHeader } from '../components/ui/PageHeader';
 import { ProblemBanner } from '../components/ui/ProblemBanner';
 import { useAppBootstrap } from '../features/about/AppBootstrapProvider';
+import { useUpdater } from '../features/about/UpdaterProvider';
 import type {
   AppBootstrapSnapshot,
   AppBootstrapUnavailableField
 } from '../features/about/appBootstrap';
 import { presentAboutProblem } from '../features/about/aboutProblems';
+import type { UpdaterSnapshot } from '../features/about/updater';
 import { formatProblemDiagnostic } from '../features/shared/problems';
 import { useI18n } from '../i18n/LocaleProvider';
 import type { MessageKey } from '../i18n/messages';
 import type { AppBootstrap, AppCredit } from '../types/backend';
 import fableVerifiedBadge from '../../static/about/fable-5-verified.webp';
+
+export type AboutCheckUpdateProps = {
+  phase: UpdaterSnapshot['phase'];
+  onCheckUpdate: () => void;
+};
 
 // Credits are split into ordered groups by their `group` field so contributors
 // stay separate from the external data/inspiration sources we acknowledge.
@@ -38,16 +45,28 @@ function groupCredits(
 
 export default function About() {
   const { resource, retry } = useAppBootstrap();
+  const updater = useUpdater();
 
-  return <AboutView resource={resource} onRetry={retry} />;
+  return (
+    <AboutView
+      resource={resource}
+      onRetry={retry}
+      checkUpdate={{
+        phase: updater.phase,
+        onCheckUpdate: updater.checkNow
+      }}
+    />
+  );
 }
 
 export function AboutView({
   resource,
-  onRetry
+  onRetry,
+  checkUpdate
 }: {
   resource: AppBootstrapSnapshot;
   onRetry: () => void;
+  checkUpdate?: AboutCheckUpdateProps;
 }) {
   const { t } = useI18n();
   const bootstrap = resource.data;
@@ -60,25 +79,52 @@ export function AboutView({
         <AboutBootstrapFeedback resource={resource} onRetry={onRetry} />
 
         {bootstrap ? (
-          <AboutBootstrapContent bootstrap={bootstrap} resource={resource} />
+          <AboutBootstrapContent
+            bootstrap={bootstrap}
+            resource={resource}
+            checkUpdate={checkUpdate}
+          />
         ) : null}
       </div>
     </div>
   );
 }
 
+export function AboutCheckUpdateButton({
+  phase,
+  onCheckUpdate
+}: AboutCheckUpdateProps) {
+  const { t } = useI18n();
+  const checking = phase === 'checking';
+
+  return (
+    <Button
+      type="button"
+      onClick={onCheckUpdate}
+      disabled={checking}
+      busy={checking}
+      busyLabel={t('headerCheckingUpdate')}
+    >
+      <CloudDownload size={16} />
+      {checking ? t('headerCheckingUpdate') : t('headerCheckUpdate')}
+    </Button>
+  );
+}
+
 function AboutBootstrapContent({
   bootstrap,
-  resource
+  resource,
+  checkUpdate
 }: {
   bootstrap: AppBootstrap;
   resource: AppBootstrapSnapshot;
+  checkUpdate?: AboutCheckUpdateProps;
 }) {
   const { t } = useI18n();
 
   return (
     <>
-      <section className="bpp-panel relative overflow-hidden p-5">
+      <section className="bpp-panel bpp-card-pad relative overflow-hidden">
         <div className="bpp-about-brand-watermark">B++</div>
         <div className="flex items-center gap-5">
           <div className="min-w-0 flex-1">
@@ -110,6 +156,11 @@ function AboutBootstrapContent({
                 {bootstrap.bundled_bpp_version ?? t('aboutUnavailableValue')}
               </span>
             </div>
+            {checkUpdate ? (
+              <div className="mt-4">
+                <AboutCheckUpdateButton {...checkUpdate} />
+              </div>
+            ) : null}
             <div className="mt-3">
               <BootstrapProvenance resource={resource} />
             </div>
@@ -131,7 +182,7 @@ function AboutBootstrapContent({
         </div>
       </section>
 
-      <section className="bpp-panel p-5">
+      <section className="bpp-panel bpp-card-pad">
         <h3 className="bpp-section-label">{t('aboutCredits')}</h3>
         <div className="flex flex-col gap-5">
           {groupCredits(bootstrap.credits).map((group) => (
@@ -154,7 +205,7 @@ function AboutBootstrapContent({
         </div>
       </section>
 
-      <details className="bpp-panel group p-5">
+      <details className="bpp-panel bpp-card-pad group">
         <summary className="bpp-about-license-summary">
           {t('aboutLicenses')}
           <span className="bpp-about-license-symbol">+</span>

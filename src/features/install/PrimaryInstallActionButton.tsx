@@ -1,4 +1,5 @@
 import { DownloadCloud, Folder, Loader2, Play, RefreshCw } from 'lucide-react';
+import { Button } from '../../components/ui/Button';
 import { useI18n } from '../../i18n/LocaleProvider';
 import type {
   InstallPageSnapshot,
@@ -7,10 +8,14 @@ import type {
 
 export function PrimaryInstallActionButton({
   snapshot,
-  intents
+  intents,
+  descriptionId,
+  descriptionText
 }: {
   snapshot: Extract<InstallPageSnapshot, { phase: 'ready' }>;
   intents: InstallWorkflowIntents;
+  descriptionId?: string;
+  descriptionText?: string;
 }) {
   const { t } = useI18n();
   const primary = snapshot.primaryAction;
@@ -33,6 +38,7 @@ export function PrimaryInstallActionButton({
         ? RefreshCw
         : DownloadCloud;
   const busy = primary.running;
+  const explainDisabled = primary.disabled && !busy;
 
   const onClick = () => {
     if (isChoose) {
@@ -47,12 +53,17 @@ export function PrimaryInstallActionButton({
   };
 
   return (
-    <button
+    <Button
       type="button"
+      variant="primary"
+      size="large"
       disabled={primary.disabled}
-      aria-busy={busy || undefined}
+      busy={busy}
+      aria-describedby={
+        explainDisabled && descriptionId ? descriptionId : undefined
+      }
+      title={explainDisabled ? descriptionText : undefined}
       onClick={onClick}
-      className="bpp-install-primary-button w-full"
     >
       <span className="bpp-install-primary-content flex min-w-0 items-center justify-center gap-3.5">
         {busy ? (
@@ -64,6 +75,6 @@ export function PrimaryInstallActionButton({
           {label}
         </span>
       </span>
-    </button>
+    </Button>
   );
 }

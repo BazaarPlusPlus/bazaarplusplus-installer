@@ -54,12 +54,19 @@ export function InstallStatusPanel({
               <span className="bpp-mod-name">BazaarPlusPlus</span>
               <span className="ml-2">{heroState}</span>
             </p>
-            <p className="bpp-install-hero-description">{heroDescription}</p>
+            <p id="install-hero-description" className="bpp-install-hero-description">
+              {heroDescription}
+            </p>
           </div>
         </div>
         <div className="bpp-install-hero-divider" aria-hidden="true" />
         <div className="bpp-install-primary-slot">
-          <PrimaryInstallActionButton snapshot={snapshot} intents={intents} />
+          <PrimaryInstallActionButton
+            snapshot={snapshot}
+            intents={intents}
+            descriptionId="install-hero-description"
+            descriptionText={heroDescription}
+          />
         </div>
       </section>
 

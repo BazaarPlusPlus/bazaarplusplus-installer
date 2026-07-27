@@ -37,6 +37,7 @@
   --bpp-radius-emphasis: 10px;
   --bpp-radius-popover: 6px;
   --bpp-space-section: 24px;
+  --bpp-space-card: 18px 20px;
 
   --bpp-body-font:
     -apple-system, BlinkMacSystemFont, 'Noto Sans SC', 'Segoe UI',
@@ -973,11 +974,59 @@ body {
 .bpp-ui-button-default {
   min-height: 36px;
 }
+.bpp-ui-button-large {
+  min-height: 52px;
+  width: 100%;
+  padding-inline: 20px;
+  border: 0;
+  color: var(--bpp-text-1);
+  background: transparent;
+  box-shadow: none;
+  font-size: 18px;
+  font-weight: 600;
+}
+.bpp-ui-button-large.bpp-ui-button-primary {
+  position: relative;
+  overflow: hidden;
+  background: transparent;
+  box-shadow: none;
+}
+.bpp-ui-button-large.bpp-ui-button-primary::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    105deg,
+    rgba(255, 190, 90, 0.08),
+    rgba(255, 184, 73, 0.025) 42%,
+    transparent 72%
+  );
+  opacity: 0;
+  transition: opacity 180ms ease;
+}
+.bpp-ui-button-large.bpp-ui-button-primary:hover:not(:disabled) {
+  filter: none;
+  background: rgba(255, 174, 49, 0.035);
+}
+.bpp-ui-button-large.bpp-ui-button-primary:hover:not(:disabled)::before {
+  opacity: 1;
+}
+.bpp-ui-button-large.bpp-ui-button-primary:focus-visible {
+  outline: none;
+}
+.bpp-ui-button-large.bpp-ui-button-primary:disabled {
+  opacity: 1;
+  filter: none;
+}
 .bpp-ui-button-icon {
   width: 36px;
   min-width: 36px;
   min-height: 36px;
   padding: 0;
+}
+.bpp-card-pad {
+  padding: var(--bpp-space-card);
 }
 .bpp-busy-label-sizer {
   display: grid;
@@ -1202,18 +1251,29 @@ body {
   user-select: text;
 }
 
-/* Global feedback stays above the working surface, not inside its layout. */
+/* Global feedback enters the top layer via Popover API so modals cannot cover it. */
 .bpp-toast-viewport {
   position: fixed;
-  z-index: 80;
+  inset: unset;
   top: 86px;
   right: 24px;
+  bottom: auto;
+  left: auto;
+  margin: 0;
   display: flex;
   width: min(320px, calc(100vw - 48px));
   flex-direction: column;
   align-items: flex-end;
   gap: 8px;
+  border: 0;
+  padding: 0;
+  overflow: visible;
+  background: transparent;
+  color: inherit;
   pointer-events: none;
+}
+.bpp-toast-viewport:popover-open {
+  display: flex;
 }
 .bpp-toast {
   position: relative;
@@ -1281,8 +1341,8 @@ body {
   gap: 7px;
 }
 .bpp-toast-action {
-  min-height: 24px;
-  padding: 0 8px;
+  min-height: 32px;
+  padding: 4px 10px;
   border: 1px solid color-mix(in srgb, var(--bpp-accent) 32%, transparent);
   border-radius: var(--bpp-radius-control);
   color: var(--bpp-accent-hover);
@@ -1300,8 +1360,8 @@ body {
 }
 .bpp-toast-close {
   display: grid;
-  width: 24px;
-  height: 24px;
+  width: 32px;
+  height: 32px;
   margin: -4px -4px 0 0;
   place-items: center;
   border: 0;
@@ -1379,7 +1439,7 @@ body {
   align-items: center;
   gap: 16px;
   overflow: hidden;
-  padding: 14px 18px;
+  padding: var(--bpp-space-card);
   border: 1px solid var(--bpp-line);
   border-radius: var(--bpp-radius-panel);
   background: var(--bpp-surface-1);
@@ -2093,7 +2153,7 @@ body {
     box-shadow 180ms ease,
     opacity 180ms ease;
 }
-.bpp-install-primary-slot:has(.bpp-install-primary-button:hover:not(:disabled)) {
+.bpp-install-primary-slot:has(.bpp-ui-button-large:hover:not(:disabled)) {
   transform: translateY(-1px);
   border-color:
     rgba(255, 181, 73, 0.92) rgba(244, 146, 31, 0.78)
@@ -2108,79 +2168,36 @@ body {
     0 0 24px rgba(237, 139, 24, 0.2),
     0 11px 26px rgba(0, 0, 0, 0.3);
 }
-.bpp-install-primary-slot:has(.bpp-install-primary-button:hover:not(:disabled))::before {
+.bpp-install-primary-slot:has(.bpp-ui-button-large:hover:not(:disabled))::before {
   opacity: 1;
 }
-.bpp-install-primary-slot:has(.bpp-install-primary-button:hover:not(:disabled))::after {
+.bpp-install-primary-slot:has(.bpp-ui-button-large:hover:not(:disabled))::after {
   opacity: 1;
   box-shadow:
     inset 18px 0 34px rgba(255, 160, 30, 0.075),
     inset 0 0 20px rgba(255, 166, 35, 0.065);
 }
-.bpp-install-primary-slot:has(.bpp-install-primary-button:focus-visible) {
+.bpp-install-primary-slot:has(.bpp-ui-button-large:focus-visible) {
   outline: 2px solid color-mix(in srgb, var(--bpp-accent-hover) 70%, white);
   outline-offset: 3px;
 }
-.bpp-install-primary-slot:has(.bpp-install-primary-button:disabled) {
+.bpp-install-primary-slot:has(.bpp-ui-button-large:disabled) {
   opacity: 0.5;
   filter: saturate(0.65);
 }
-.bpp-install-primary-button {
+.bpp-install-primary-slot .bpp-ui-button-large {
   position: relative;
   z-index: 2;
-  display: flex;
-  min-height: 52px;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  padding: 0 20px;
-  border: 0;
-  border-radius: var(--bpp-radius-control);
-  color: var(--bpp-text-1);
-  background: transparent;
-  box-shadow: none;
-  transition: background 180ms ease;
-}
-.bpp-install-primary-button::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background: linear-gradient(
-    105deg,
-    rgba(255, 190, 90, 0.08),
-    rgba(255, 184, 73, 0.025) 42%,
-    transparent 72%
-  );
-  opacity: 0;
-  transition: opacity 180ms ease;
-}
-.bpp-install-primary-button::after {
-  content: none;
-}
-.bpp-install-primary-button:hover:not(:disabled) {
-  filter: none;
-  background: rgba(255, 174, 49, 0.035);
-}
-.bpp-install-primary-button:hover:not(:disabled)::before {
-  opacity: 1;
-}
-.bpp-install-primary-button:focus-visible {
-  outline: none;
-}
-.bpp-install-primary-button:disabled {
-  opacity: 1;
-  filter: none;
 }
 .bpp-install-primary-content {
   position: relative;
   z-index: 3;
   transition: transform 180ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
-.bpp-install-primary-button:hover:not(:disabled) .bpp-install-primary-content {
+.bpp-install-primary-slot .bpp-ui-button-large:hover:not(:disabled) .bpp-install-primary-content {
   transform: translateY(-0.5px);
 }
-.bpp-install-primary-button .bpp-primary-action-icon {
+.bpp-install-primary-slot .bpp-ui-button-large .bpp-primary-action-icon {
   color: #f3a52d;
   filter: drop-shadow(0 0 2px rgba(255, 163, 32, 0.18));
   transition:
@@ -2188,12 +2205,12 @@ body {
     filter 180ms ease,
     transform 180ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
-.bpp-install-primary-button:hover:not(:disabled) .bpp-primary-action-icon {
+.bpp-install-primary-slot .bpp-ui-button-large:hover:not(:disabled) .bpp-primary-action-icon {
   color: #ffb84f;
   filter: drop-shadow(0 0 6px rgba(255, 170, 42, 0.4));
   transform: scale(1.04);
 }
-.bpp-install-primary-button .bpp-primary-action-label {
+.bpp-install-primary-slot .bpp-ui-button-large .bpp-primary-action-label {
   text-shadow:
     0 1px 1px rgba(32, 15, 2, 0.72),
     0 0 8px rgba(255, 178, 53, 0.16);
@@ -2201,7 +2218,7 @@ body {
     color 180ms ease,
     text-shadow 180ms ease;
 }
-.bpp-install-primary-button:hover:not(:disabled) .bpp-primary-action-label {
+.bpp-install-primary-slot .bpp-ui-button-large:hover:not(:disabled) .bpp-primary-action-label {
   color: #fff3df;
   text-shadow:
     0 1px 1px rgba(32, 15, 2, 0.72),
@@ -2218,7 +2235,7 @@ body {
   min-height: 120px;
   min-width: 0;
   flex-direction: column;
-  padding: 18px 20px;
+  padding: var(--bpp-space-card);
   overflow: hidden;
   border: 1px solid var(--bpp-line);
   border-radius: var(--bpp-radius-panel);
@@ -2341,7 +2358,7 @@ body {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  padding: 20px;
+  padding: var(--bpp-space-card);
 }
 .bpp-stream-service-row,
 .bpp-stream-service-status,
@@ -2540,6 +2557,16 @@ body {
   border-radius: var(--bpp-radius-control);
   color: var(--bpp-danger);
   background: color-mix(in srgb, var(--bpp-danger) 8%, transparent);
+}
+.bpp-confirm-close {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  flex: none;
+  place-items: center;
+  border: 0;
+  border-radius: var(--bpp-radius-control);
+  background: transparent;
 }
 .bpp-confirm-tone-icon.is-gold,
 .bpp-confirm-title.is-gold,
@@ -3020,13 +3047,7 @@ body {
   letter-spacing: 0.035em;
 }
 .bpp-install-confirm-close {
-  display: grid;
-  width: 40px;
-  height: 40px;
-  flex: none;
-  place-items: center;
   border: 1px solid var(--bpp-line);
-  border-radius: var(--bpp-radius-control);
   background: color-mix(in srgb, var(--bpp-surface-inset) 42%, transparent);
   box-shadow: inset 0 1px color-mix(in srgb, var(--bpp-text-1) 4%, transparent);
 }

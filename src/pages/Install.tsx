@@ -8,6 +8,7 @@ import { InstallConfirmModal } from '../features/install/InstallConfirmModal';
 import { InstallStatusPanel } from '../features/install/InstallStatusPanel';
 import { ResetBepinexConfirmModal } from '../features/install/ResetBepinexConfirmModal';
 import { ResetDataConfirmModal } from '../features/install/ResetDataConfirmModal';
+import { UninstallConfirmModal } from '../features/install/UninstallConfirmModal';
 import { useInstallPage } from '../features/install/useInstallPage';
 import { useI18n } from '../i18n/LocaleProvider';
 import { InstallProblemBanner } from '../features/install/InstallProblemBanner';
@@ -144,7 +145,8 @@ export default function Install() {
         id="route:install-reset"
         open={
           confirmation?.target.kind === 'reset-data' ||
-          confirmation?.target.kind === 'reset-bepinex'
+          confirmation?.target.kind === 'reset-bepinex' ||
+          confirmation?.target.kind === 'uninstall'
         }
         priority={confirmationRunning ? 'critical' : 'confirmation'}
         dismissalPolicy={confirmationRunning ? 'blocked' : 'dismissible'}
@@ -169,6 +171,16 @@ export default function Install() {
             targetPath={confirmation.target.gamePath}
             problem={confirmationFailed}
             onAcknowledgedChange={setResetBepinexAcknowledged}
+            onClose={() => intents.dismissConfirmation()}
+            onConfirm={() => void intents.confirm()}
+          />
+        )}
+
+        {confirmation?.target.kind === 'uninstall' && (
+          <UninstallConfirmModal
+            busy={confirmationRunning}
+            targetPath={confirmation.target.gamePath}
+            problem={confirmationFailed}
             onClose={() => intents.dismissConfirmation()}
             onConfirm={() => void intents.confirm()}
           />

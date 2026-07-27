@@ -115,7 +115,7 @@ export default function History() {
                 secondaryAction={
                   <Link
                     to="/"
-                    className="bpp-button bpp-ui-button bpp-ui-button-default bpp-link-button"
+                    className="bpp-button bpp-ui-button bpp-ui-button-ghost bpp-link-button"
                   >
                     {t('historyEmptyInstall')}
                   </Link>
@@ -127,6 +127,7 @@ export default function History() {
                   key={run.run_id}
                   run={run}
                   previewUrl={page.previewUrl(run)}
+                  previewProblem={page.previewProblem}
                 />
               ))
             )}
@@ -159,21 +160,26 @@ function SummaryCard({
 
 function RunRow({
   run,
-  previewUrl
+  previewUrl,
+  previewProblem
 }: {
   run: HistoryRunRow;
   previewUrl: string | null;
+  previewProblem: HistoryPageProblem | null;
 }) {
   const { locale, t } = useI18n();
   const result = formatRunResultLabel(run.result);
   const detailPath = `/history/${encodeURIComponent(run.run_id)}`;
+  const fallbackLabel = previewProblem
+    ? t('historyPreviewServiceOffline')
+    : t('historyPreviewFallback');
 
   return (
     <Link to={detailPath} className="bpp-history-run-card group">
       <RunPreview
         key={previewUrl ?? 'preview-unavailable'}
         previewUrl={previewUrl}
-        fallbackLabel={t('historyPreviewFallback')}
+        fallbackLabel={fallbackLabel}
       />
 
       <div className="bpp-history-run-data">
