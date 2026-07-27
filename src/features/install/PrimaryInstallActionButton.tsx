@@ -7,10 +7,14 @@ import type {
 
 export function PrimaryInstallActionButton({
   snapshot,
-  intents
+  intents,
+  descriptionId,
+  descriptionText
 }: {
   snapshot: Extract<InstallPageSnapshot, { phase: 'ready' }>;
   intents: InstallWorkflowIntents;
+  descriptionId?: string;
+  descriptionText?: string;
 }) {
   const { t } = useI18n();
   const primary = snapshot.primaryAction;
@@ -33,6 +37,7 @@ export function PrimaryInstallActionButton({
         ? RefreshCw
         : DownloadCloud;
   const busy = primary.running;
+  const explainDisabled = primary.disabled && !busy;
 
   const onClick = () => {
     if (isChoose) {
@@ -51,6 +56,10 @@ export function PrimaryInstallActionButton({
       type="button"
       disabled={primary.disabled}
       aria-busy={busy || undefined}
+      aria-describedby={
+        explainDisabled && descriptionId ? descriptionId : undefined
+      }
+      title={explainDisabled ? descriptionText : undefined}
       onClick={onClick}
       className="bpp-install-primary-button w-full"
     >
