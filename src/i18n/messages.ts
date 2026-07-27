@@ -64,6 +64,15 @@ const zh = {
   historyTitle: '战绩',
   streamTitle: '直播',
   aboutTitle: '关于',
+  installEyebrow: '安装',
+  historyEyebrow: '战绩',
+  streamEyebrow: '直播',
+  aboutEyebrow: '关于',
+
+  // Window controls (Windows custom chrome)
+  windowControls: '窗口控制',
+  minimizeWindow: '最小化窗口',
+  closeWindow: '关闭窗口',
 
   // Install page
   installActionsHeading: '安装操作',
@@ -473,6 +482,14 @@ const en: Record<MessageKey, string> = {
   historyTitle: 'History',
   streamTitle: 'Stream',
   aboutTitle: 'About',
+  installEyebrow: 'Install',
+  historyEyebrow: 'History',
+  streamEyebrow: 'Stream',
+  aboutEyebrow: 'About',
+
+  windowControls: 'Window controls',
+  minimizeWindow: 'Minimize window',
+  closeWindow: 'Close window',
 
   installActionsHeading: 'Actions',
   currentStatusHeading: 'Current Status',
