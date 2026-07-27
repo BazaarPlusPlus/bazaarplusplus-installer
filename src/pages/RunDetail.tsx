@@ -8,7 +8,9 @@ import {
   Video
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
+import { Button } from '../components/ui/Button';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
+import { EmptyState } from '../components/ui/EmptyState';
 import { LoadingPanel } from '../components/ui/LoadingPanel';
 import { ProblemBanner } from '../components/ui/ProblemBanner';
 import type { HistoryBattleRow } from '../types/backend';
@@ -217,8 +219,26 @@ export default function RunDetail() {
                 </div>
 
                 {detail.battles.length === 0 ? (
-                  <div className="bpp-run-detail-empty px-6 py-8 text-sm">
-                    {t('noLocalBattles')}
+                  <div className="px-6 py-6">
+                    <EmptyState
+                      icon={<Video size={24} />}
+                      heading={t('noLocalBattles')}
+                      description={t('noLocalBattlesDescription')}
+                      primaryAction={
+                        <Button
+                          type="button"
+                          onClick={() => void page.refresh()}
+                          disabled={page.busy}
+                          busy={page.busy}
+                        >
+                          <RefreshCw
+                            size={16}
+                            className={page.refreshing ? 'animate-spin' : ''}
+                          />
+                          {t('refresh')}
+                        </Button>
+                      }
+                    />
                   </div>
                 ) : (
                   detail.battles.map((battle) => (
