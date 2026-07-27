@@ -22,6 +22,12 @@ const zh = {
   headerCheckingUpdate: '检查中',
   supportProject: '支持项目',
 
+  // Window controls (Windows custom chrome)
+  windowControls: '窗口控制',
+  minimizeWindow: '最小化窗口',
+  closeWindow: '关闭窗口',
+  hideToTrayWhileStreaming: '隐藏到托盘（直播服务仍在运行）',
+
   // Header social links
   socialXiaohongshu: '小红书',
   socialXiaohongshuTitle: '来小红书找我',
@@ -449,6 +455,11 @@ const en: Record<MessageKey, string> = {
   headerCheckUpdate: 'Check Updates',
   headerCheckingUpdate: 'Checking',
   supportProject: 'Support',
+
+  windowControls: 'Window controls',
+  minimizeWindow: 'Minimize window',
+  closeWindow: 'Close window',
+  hideToTrayWhileStreaming: 'Hide to tray (stream service keeps running)',
 
   socialXiaohongshu: 'Xiaohongshu',
   socialXiaohongshuTitle: 'Find me on Xiaohongshu',

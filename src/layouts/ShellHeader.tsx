@@ -17,6 +17,7 @@ import {
 } from 'react';
 import { hasTauriRuntime } from '../api/runtime';
 import type { AppBootstrapController } from '../features/about/useAppBootstrap';
+import { useShellStreamServiceRunning } from '../features/stream/useShellStreamServiceRunning';
 import { useI18n } from '../i18n/LocaleProvider';
 import douyinPng from '../../static/support/douyin.png';
 import xiaohongshuSvg from '../../static/support/xiaohongshu.svg';
@@ -173,7 +174,12 @@ function isWindowsTauriRuntime() {
 }
 
 function WindowsWindowControls() {
+  const { t } = useI18n();
+  const streamRunning = useShellStreamServiceRunning();
   const [isWindowsRuntime] = useState(isWindowsTauriRuntime);
+  const closeLabel = streamRunning
+    ? t('hideToTrayWhileStreaming')
+    : t('closeWindow');
 
   if (!isWindowsRuntime) return null;
 
@@ -193,13 +199,13 @@ function WindowsWindowControls() {
   };
 
   return (
-    <div className="bpp-window-controls" aria-label="Window controls">
+    <div className="bpp-window-controls" aria-label={t('windowControls')}>
       <button
         type="button"
         onClick={minimize}
         className="bpp-button bpp-window-control-button size-9 shrink-0"
-        title="Minimize window"
-        aria-label="Minimize window"
+        title={t('minimizeWindow')}
+        aria-label={t('minimizeWindow')}
       >
         <Minus size={17} strokeWidth={1.8} aria-hidden="true" />
       </button>
@@ -207,8 +213,8 @@ function WindowsWindowControls() {
         type="button"
         onClick={close}
         className="bpp-button bpp-window-control-button bpp-window-close-button size-9 shrink-0"
-        title="Close window"
-        aria-label="Close window"
+        title={closeLabel}
+        aria-label={closeLabel}
       >
         <X size={16} strokeWidth={1.8} aria-hidden="true" />
       </button>
