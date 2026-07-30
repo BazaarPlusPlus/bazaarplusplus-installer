@@ -5,13 +5,14 @@ export function PageHeader({
   title,
   action
 }: {
-  eyebrow: string;
+  /** Only when it adds a dimension the title lacks (e.g. a category). */
+  eyebrow?: string;
   title: string;
   action?: ReactNode;
 }) {
   return (
     <div className="bpp-page-header">
-      <p className="bpp-page-eyebrow">{eyebrow}</p>
+      {eyebrow && <p className="bpp-page-eyebrow">{eyebrow}</p>}
       {action ? (
         <div className="flex items-center justify-between">
           <Title>{title}</Title>
