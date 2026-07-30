@@ -430,7 +430,7 @@ function BattleRow({
                   }
                   title={t('deleteVideo')}
                   aria-label={t('deleteVideo')}
-                  className="bpp-battle-delete-action flex items-center justify-center size-9 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100 focus-visible:pointer-events-auto disabled:opacity-50 transition-all"
+                  className="bpp-battle-delete-action flex items-center justify-center size-9 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100 focus-visible:pointer-events-auto disabled:opacity-50 transition-opacity"
                 >
                   {deleteAvailability.running ? (
                     <Loader2 size={14} className="animate-spin" />

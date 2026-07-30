@@ -79,7 +79,7 @@ export default function Stream() {
   useStreamNoticeToast(presentation.notice);
 
   return (
-    <PageShell eyebrow={t('streamEyebrow')} title={t('streamTitle')}>
+    <PageShell title={t('streamTitle')}>
       <div className="bpp-stream-stack">
         <section className="bpp-panel bpp-stream-panel">
           <div className="bpp-stream-service-row">

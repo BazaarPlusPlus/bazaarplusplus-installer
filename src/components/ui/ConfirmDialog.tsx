@@ -77,7 +77,7 @@ const TONE = {
       'bpp-confirm-ack is-gold bpp-install-confirm-ack flex items-start gap-3 p-3 group',
     ackText: 'bpp-confirm-ack-text is-gold text-[13px] leading-relaxed',
     confirm:
-      'bpp-confirm-submit is-gold bpp-install-confirm-submit px-5 py-2 text-sm cinzel font-bold tracking-wider transition-all hover:brightness-110 active:brightness-95 disabled:opacity-50 disabled:hover:brightness-100'
+      'bpp-confirm-submit is-gold bpp-install-confirm-submit px-5 py-2 text-sm cinzel font-bold tracking-wider transition-[filter] hover:brightness-110 active:brightness-95 disabled:opacity-50 disabled:hover:brightness-100'
   },
   danger: {
     Icon: AlertTriangle as LucideIcon,
@@ -91,7 +91,7 @@ const TONE = {
     ackBox: 'bpp-confirm-ack is-danger flex items-start gap-3 p-3 group',
     ackText: 'bpp-confirm-ack-text is-danger text-[13px] leading-relaxed',
     confirm:
-      'bpp-confirm-submit is-danger px-5 py-2 text-sm cinzel font-bold tracking-wider transition-all hover:brightness-110 active:brightness-95 disabled:opacity-50 disabled:hover:brightness-100'
+      'bpp-confirm-submit is-danger px-5 py-2 text-sm cinzel font-bold tracking-wider transition-[filter] hover:brightness-110 active:brightness-95 disabled:opacity-50 disabled:hover:brightness-100'
   }
 } as const;
 

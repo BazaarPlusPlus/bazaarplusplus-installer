@@ -8,7 +8,7 @@ export function PageShell({
   className,
   children
 }: {
-  eyebrow: string;
+  eyebrow?: string;
   title: string;
   action?: ReactNode;
   className?: string;

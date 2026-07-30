@@ -70,10 +70,6 @@ const zh = {
   historyTitle: '战绩',
   streamTitle: '直播',
   aboutTitle: '关于',
-  installEyebrow: '安装',
-  historyEyebrow: '战绩',
-  streamEyebrow: '直播',
-  aboutEyebrow: '关于',
 
   // Install page
   installActionsHeading: '安装操作',
@@ -503,10 +499,6 @@ const en: Record<MessageKey, string> = {
   historyTitle: 'History',
   streamTitle: 'Stream',
   aboutTitle: 'About',
-  installEyebrow: 'Install',
-  historyEyebrow: 'History',
-  streamEyebrow: 'Stream',
-  aboutEyebrow: 'About',
 
   installActionsHeading: 'Actions',
   currentStatusHeading: 'Current Status',

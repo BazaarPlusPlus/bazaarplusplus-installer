@@ -3282,15 +3282,6 @@ body {
     0 0 20px color-mix(in srgb, var(--bpp-accent-hover) 36%, transparent),
     0 8px 20px rgba(0, 0, 0, 0.26);
 }
-.bpp-status-dot {
-  display: inline-block;
-  width: 9px;
-  height: 9px;
-  flex: none;
-  border-radius: 50%;
-  background: currentColor;
-  box-shadow: 0 0 4px currentColor;
-}
 
 @media (max-width: 1080px) {
   .bpp-header {

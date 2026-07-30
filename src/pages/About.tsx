@@ -73,7 +73,7 @@ export function AboutView({
 
   return (
     <div className="bpp-page pb-8">
-      <PageHeader eyebrow={t('aboutEyebrow')} title={t('aboutTitle')} />
+      <PageHeader title={t('aboutTitle')} />
 
       <div className="flex min-h-0 w-full flex-1 flex-col gap-4">
         <AboutBootstrapFeedback resource={resource} onRetry={onRetry} />
