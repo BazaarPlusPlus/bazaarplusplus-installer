@@ -21,13 +21,13 @@
   },
   "bundle": {
     "targets": ["nsis"],
-    "icon": ["icons/icon.ico"],
+    "icon": ["icons/app-icon.ico"],
     "resources": {
       "resources/BepInExSource/windows/BepInEx.zip": "BepInExSource/BepInEx.zip"
     },
     "windows": {
       "nsis": {
-        "installerIcon": "icons/installer.ico"
+        "installerIcon": "icons/app-icon.ico"
       }
     }
   }

@@ -6,6 +6,9 @@ use tauri::{
     Manager,
 };
 
+#[cfg(target_os = "macos")]
+const MACOS_TRAY_ICON: &[u8] = include_bytes!("../icons/tray-macos-template.png");
+
 pub fn build_tray(app: &tauri::AppHandle) -> tauri::Result<()> {
     let labels = tray_menu_labels(TrayLocale::Zh);
     let show_window = MenuItemBuilder::with_id("show_window", labels.show_window).build(app)?;
@@ -53,6 +56,13 @@ pub fn build_tray(app: &tauri::AppHandle) -> tauri::Result<()> {
             }
         });
 
+    #[cfg(target_os = "macos")]
+    {
+        let icon = tauri::image::Image::from_bytes(MACOS_TRAY_ICON)?;
+        tray = tray.icon(icon).icon_as_template(true);
+    }
+
+    #[cfg(not(target_os = "macos"))]
     if let Some(icon) = app.default_window_icon().cloned() {
         tray = tray.icon(icon);
     }
