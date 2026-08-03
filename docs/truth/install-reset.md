@@ -1,7 +1,7 @@
 ---
 status: truth
 topic: install-reset
-last-verified: c56cac3a94fea48f6711c45a5139cab3bc7322d8
+last-verified: 42d843efd0c202bf18e0810119d866982c205dcb
 ---
 
 # Install And Reset
@@ -22,9 +22,9 @@ last-verified: c56cac3a94fea48f6711c45a5139cab3bc7322d8
 - Prefix/trampoline ordering, fresh/missing/changed/current payload states, current-install no-op, launch-mode-only repair, first-error truncation, and refresh-after-success are tested through the operation's effect recorder in `src-tauri/src/services/install/operation.rs:169-293`; no command or service caller observes the planned effect vector.
 - Every public Install command returns `SemanticProblem` in `src-tauri/src/commands/install.rs:15-99`. The service boundary classifies detection, generic actions, game-running resets, and partial reset failures into stable codes and parameters in `src-tauri/src/services/install/mod.rs:200-235`; the frontend maps those codes to bilingual recovery copy and keeps diagnostics separate in `src/features/install/installProblems.ts:23-135`.
 - Install pre-clean removes only BPP-owned files the incoming payload no longer ships in `prepare_install_target` and `remove_stale_bpp_files` in `src-tauri/src/services/bepinex/payload.rs:380-416`; extraction skips byte-identical existing files and overwrites the rest in `src-tauri/src/services/bepinex/zip_archive.rs:39-79`. Third-party files are never pre-deleted, but a colliding path with different content is still overwritten by extraction.
-- Ownership is defined by `BPP_PRIVATE_RELATIVE_PATHS` and `BPP_BUNDLED_DEPENDENCY_RELATIVE_PATHS` in `src-tauri/src/services/bepinex/payload.rs:10-35`; `test_ownership_lists_match_release_contract` pins those lists to a release-contract filename set in `src-tauri/src/services/bepinex/payload.rs:751-801`, and `scripts/prebuild-check.mjs` validates each platform zip through `validatePayloadZip` in `scripts/prebuild-check.mjs:132-156`, which requires the staged `SourceForBuild` inputs, exact zip/staging agreement, and rejects stray OS artifacts (`.DS_Store` and the like) in both the tree and the zips in `scripts/payload-zip.mjs:30-98` and `scripts/payload-zip.mjs:422-457`.
+- Ownership is defined by `BPP_PRIVATE_RELATIVE_PATHS` and `BPP_BUNDLED_DEPENDENCY_RELATIVE_PATHS` in `src-tauri/src/services/bepinex/payload.rs:10-35`; `test_ownership_lists_match_release_contract` pins those lists to a release-contract filename set in `src-tauri/src/services/bepinex/payload.rs:751-801`, and `scripts/prebuild-check.mjs` validates each platform zip through `validatePayloadZip` in `scripts/prebuild-check.mjs:132-156`, which requires the staged `SourceForBuild` inputs, exact zip/staging agreement, and rejects stray OS artifacts (`.DS_Store` and the like) in both the tree and the zips in `scripts/payload-zip.mjs:67-123`, `scripts/payload-zip.mjs:304-389`, and `scripts/payload-zip.mjs:468-531`.
 - Uninstall is gated on `has_third_party_plugins` and `has_third_party_patchers` in `src-tauri/src/services/bepinex/mod.rs:195-252` and `src-tauri/src/services/bepinex/payload.rs:326-352`: when another mod's plugin (in `BepInEx/plugins`) or patcher (any file under `BepInEx/patchers`) is present, only private BPP files are removed and shared dependencies, trampoline, launch options, and BepInEx bootstrap stay; when BPP is the last mod, the full payload, trampoline, launch-mode marker, Steam launch options, and BepInEx bootstrap are removed through `remove_bootstrap_files` in `src-tauri/src/services/bepinex/payload.rs:313-324`, which lets `is_bepinex_installed` return false in `src-tauri/src/services/detect/game.rs:3-21`.
-- Uninstall never touches the `BazaarPlusPlusV4/` data directory; only the explicit Reset flow removes it via `cleanup_bpp_data_directory` in `src-tauri/src/services/bepinex/payload.rs:450-452`.
+- Uninstall never touches the `BazaarPlusPlusV5/` data directory; only the explicit Reset flow removes it via `cleanup_bpp_data_directory` in `src-tauri/src/services/bepinex/payload.rs:450-452`.
 
 ## Reset Local Data
 

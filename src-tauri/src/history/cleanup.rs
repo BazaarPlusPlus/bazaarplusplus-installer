@@ -1261,7 +1261,7 @@ mod tests {
     fn create_fixture() -> CleanupFixture {
         let temp_dir = TempDir::new().unwrap();
         let game_path = temp_dir.path().to_path_buf();
-        let data_dir = game_path.join("BazaarPlusPlusV4");
+        let data_dir = game_path.join(crate::config::BAZAAR_DATA_DIRECTORY);
         let screenshots_dir = data_dir.join("Screenshots");
         let database_path = data_dir.join("bazaarplusplus.db");
         fs::create_dir_all(&screenshots_dir).unwrap();
@@ -1586,7 +1586,9 @@ mod tests {
     fn plan_on_missing_database_is_empty() {
         let temp_dir = TempDir::new().unwrap();
         let game_path = temp_dir.path().to_path_buf();
-        let database_path = game_path.join("BazaarPlusPlusV4").join("bazaarplusplus.db");
+        let database_path = game_path
+            .join(crate::config::BAZAAR_DATA_DIRECTORY)
+            .join("bazaarplusplus.db");
 
         let plan = plan_screenshot_cleanup(&database_path, &game_path, None, test_today()).unwrap();
 
@@ -1599,7 +1601,7 @@ mod tests {
     fn plan_on_missing_screenshot_table_is_empty() {
         let temp_dir = TempDir::new().unwrap();
         let game_path = temp_dir.path().to_path_buf();
-        let data_dir = game_path.join("BazaarPlusPlusV4");
+        let data_dir = game_path.join(crate::config::BAZAAR_DATA_DIRECTORY);
         let database_path = data_dir.join("bazaarplusplus.db");
         fs::create_dir_all(&data_dir).unwrap();
         drop(Connection::open(&database_path).unwrap());
@@ -1885,7 +1887,7 @@ mod tests {
     fn run_plan_handles_battles_table_without_replay_dirty() {
         let temp_dir = TempDir::new().unwrap();
         let game_path = temp_dir.path().to_path_buf();
-        let data_dir = game_path.join("BazaarPlusPlusV4");
+        let data_dir = game_path.join(crate::config::BAZAAR_DATA_DIRECTORY);
         let database_path = data_dir.join("bazaarplusplus.db");
         fs::create_dir_all(&data_dir).unwrap();
         let conn = rusqlite::Connection::open(&database_path).unwrap();
@@ -1983,7 +1985,7 @@ mod tests {
     #[test]
     fn execute_run_cleanup_cascades_rows_deletes_files_and_spares_ghosts() {
         let fixture = create_fixture();
-        let data_dir = fixture.game_path.join("BazaarPlusPlusV4");
+        let data_dir = fixture.game_path.join(crate::config::BAZAAR_DATA_DIRECTORY);
         let videos_dir = data_dir.join("CombatReplayVideos");
         let replays_dir = data_dir.join("CombatReplays");
         fs::create_dir_all(videos_dir.join("2026-06-10")).unwrap();
@@ -2110,7 +2112,7 @@ mod tests {
     fn execute_run_cleanup_fails_before_file_deletion_when_battles_lacks_run_cascade() {
         let temp_dir = TempDir::new().unwrap();
         let game_path = temp_dir.path().to_path_buf();
-        let data_dir = game_path.join("BazaarPlusPlusV4");
+        let data_dir = game_path.join(crate::config::BAZAAR_DATA_DIRECTORY);
         let database_path = data_dir.join("bazaarplusplus.db");
         let videos_dir = data_dir.join("CombatReplayVideos");
         let replays_dir = data_dir.join("CombatReplays");

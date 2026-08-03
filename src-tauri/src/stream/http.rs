@@ -256,7 +256,11 @@ async fn record_strip_image(
         })
         .await
     } else {
-        run_strip_image_task(move || load_or_create_strip_cache(&record_id, &path, crop)).await
+        let cache_directory = overlay_cache_directory();
+        run_strip_image_task(move || {
+            load_or_create_strip_cache(&cache_directory, &record_id, &path, crop)
+        })
+        .await
     };
     let strip_bytes = match strip_result {
         Ok(bytes) => bytes,
@@ -335,6 +339,7 @@ fn sanitized_cache_name(value: &str) -> String {
 }
 
 fn crop_cache_path(
+    cache_directory: &FsPath,
     record_id: &str,
     source_path: &FsPath,
     crop: OverlayCropSettings,
@@ -362,15 +367,16 @@ fn crop_cache_path(
         (crop.height * 10_000.0).round() as i64
     );
 
-    Ok(overlay_cache_directory().join(cache_name))
+    Ok(cache_directory.join(cache_name))
 }
 
 fn load_or_create_strip_cache(
+    cache_directory: &FsPath,
     record_id: &str,
     source_path: &FsPath,
     crop: OverlayCropSettings,
 ) -> Result<Vec<u8>, String> {
-    let cache_path = crop_cache_path(record_id, source_path, crop)?;
+    let cache_path = crop_cache_path(cache_directory, record_id, source_path, crop)?;
     if cache_path.exists() {
         return std::fs::read(&cache_path).map_err(|err| {
             format!(
@@ -619,13 +625,15 @@ mod tests {
     fn strip_cache_hit_does_not_decode_source_image() {
         let temp_dir = tempfile::tempdir().unwrap();
         let source_path = temp_dir.path().join("source.png");
+        let cache_directory = temp_dir.path().join("cache");
         let crop = OverlayCropSettings::default();
         std::fs::write(&source_path, b"not an image").unwrap();
-        let cache_path = crop_cache_path("shot-1", &source_path, crop).unwrap();
+        let cache_path = crop_cache_path(&cache_directory, "shot-1", &source_path, crop).unwrap();
         std::fs::create_dir_all(cache_path.parent().unwrap()).unwrap();
         std::fs::write(&cache_path, b"cached strip").unwrap();
 
-        let bytes = load_or_create_strip_cache("shot-1", &source_path, crop).unwrap();
+        let bytes =
+            load_or_create_strip_cache(&cache_directory, "shot-1", &source_path, crop).unwrap();
 
         assert_eq!(bytes, b"cached strip");
     }

@@ -58,12 +58,14 @@ pub struct OverlayCropSettingsPayload {
 #[derive(Clone, Debug)]
 pub struct OverlaySettingsStore {
     path: PathBuf,
+    legacy_path: Option<PathBuf>,
 }
 
 impl Default for OverlaySettingsStore {
     fn default() -> Self {
         Self {
             path: default_settings_path(),
+            legacy_path: Some(legacy_settings_path()),
         }
     }
 }
@@ -71,20 +73,39 @@ impl Default for OverlaySettingsStore {
 impl OverlaySettingsStore {
     #[cfg_attr(not(test), allow(dead_code))]
     pub fn new(path: PathBuf) -> Self {
-        Self { path }
+        Self {
+            path,
+            legacy_path: None,
+        }
+    }
+
+    #[cfg(test)]
+    fn with_legacy_path(path: PathBuf, legacy_path: PathBuf) -> Self {
+        Self {
+            path,
+            legacy_path: Some(legacy_path),
+        }
     }
 
     pub fn load(&self) -> Result<OverlaySettings, String> {
-        if !self.path.exists() {
+        let read_path = if self.path.exists() {
+            &self.path
+        } else if let Some(legacy_path) = self
+            .legacy_path
+            .as_ref()
+            .filter(|legacy_path| legacy_path.exists())
+        {
+            legacy_path
+        } else {
             return Ok(OverlaySettings::default());
-        }
+        };
 
-        let raw = match std::fs::read_to_string(&self.path) {
+        let raw = match std::fs::read_to_string(read_path) {
             Ok(raw) => raw,
             Err(err) => {
                 crate::services::debug_error!(
                     "Failed to read overlay crop settings from {}: {err}",
-                    self.path.display()
+                    read_path.display()
                 );
                 return Ok(OverlaySettings::default());
             }
@@ -94,7 +115,7 @@ impl OverlaySettingsStore {
             Err(err) => {
                 crate::services::debug_error!(
                     "Failed to parse overlay crop settings from {}: {err}",
-                    self.path.display()
+                    read_path.display()
                 );
                 return Ok(OverlaySettings::default());
             }
@@ -112,7 +133,7 @@ impl OverlaySettingsStore {
             Err(err) => {
                 crate::services::debug_error!(
                     "Invalid overlay crop settings in {}: {err}",
-                    self.path.display()
+                    read_path.display()
                 );
                 return Ok(OverlaySettings::default());
             }
@@ -196,6 +217,10 @@ fn default_settings_path() -> PathBuf {
     crate::services::paths::overlay_settings_path()
 }
 
+fn legacy_settings_path() -> PathBuf {
+    crate::services::paths::legacy_overlay_settings_path()
+}
+
 pub fn validate_crop_settings(crop: OverlayCropSettings) -> Result<OverlayCropSettings, String> {
     fn valid_ratio(value: f64) -> bool {
         value.is_finite() && value > 0.0 && value < 1.0
@@ -274,6 +299,22 @@ mod tests {
         }
     }
 
+    fn write_settings_document(
+        path: &std::path::Path,
+        crop: OverlayCropSettings,
+        display_mode: StreamOverlayDisplayMode,
+    ) -> String {
+        let raw = serde_json::json!({
+            "v": 4,
+            "crop": crop,
+            "display_mode": display_mode,
+        })
+        .to_string();
+        std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+        std::fs::write(path, &raw).unwrap();
+        raw
+    }
+
     #[test]
     fn crop_code_round_trip_preserves_values() {
         let crop = OverlayCropSettings {
@@ -297,6 +338,76 @@ mod tests {
 
         assert_eq!(loaded.crop, OverlayCropSettings::default());
         assert_eq!(loaded.display_mode, StreamOverlayDisplayMode::Current);
+    }
+
+    #[test]
+    fn store_loads_legacy_settings_then_saves_only_to_the_new_path() {
+        let dir = tempfile::tempdir().unwrap();
+        let new_path = dir.path().join("new/overlay.json");
+        let legacy_path = dir.path().join("legacy/overlay.json");
+        let legacy_crop = sample_crop();
+        let legacy_raw = write_settings_document(
+            &legacy_path,
+            legacy_crop,
+            StreamOverlayDisplayMode::Herohalf,
+        );
+        let store = OverlaySettingsStore::with_legacy_path(new_path.clone(), legacy_path.clone());
+
+        let loaded = store.load().unwrap();
+        assert_eq!(loaded.crop, legacy_crop);
+        assert_eq!(loaded.display_mode, StreamOverlayDisplayMode::Herohalf);
+
+        let new_crop = OverlayCropSettings {
+            left: 0.25,
+            top: 0.2,
+            width: 0.5,
+            height: 0.3,
+        };
+        store.save(new_crop).unwrap();
+
+        assert_eq!(std::fs::read_to_string(&legacy_path).unwrap(), legacy_raw);
+        let saved = OverlaySettingsStore::new(new_path).load().unwrap();
+        assert_eq!(saved.crop, new_crop);
+        assert_eq!(saved.display_mode, StreamOverlayDisplayMode::Herohalf);
+    }
+
+    #[test]
+    fn store_prefers_new_settings_when_both_paths_exist() {
+        let dir = tempfile::tempdir().unwrap();
+        let new_path = dir.path().join("new/overlay.json");
+        let legacy_path = dir.path().join("legacy/overlay.json");
+        let new_crop = sample_crop();
+        let legacy_crop = OverlayCropSettings {
+            left: 0.2,
+            top: 0.25,
+            width: 0.5,
+            height: 0.25,
+        };
+        write_settings_document(&new_path, new_crop, StreamOverlayDisplayMode::Hero);
+        write_settings_document(
+            &legacy_path,
+            legacy_crop,
+            StreamOverlayDisplayMode::Herohalf,
+        );
+        let store = OverlaySettingsStore::with_legacy_path(new_path, legacy_path);
+
+        let loaded = store.load().unwrap();
+
+        assert_eq!(loaded.crop, new_crop);
+        assert_eq!(loaded.display_mode, StreamOverlayDisplayMode::Hero);
+    }
+
+    #[test]
+    fn store_returns_default_when_new_and_legacy_settings_are_missing() {
+        let dir = tempfile::tempdir().unwrap();
+        let store = OverlaySettingsStore::with_legacy_path(
+            dir.path().join("new/overlay.json"),
+            dir.path().join("legacy/overlay.json"),
+        );
+
+        let loaded = store.load().unwrap();
+
+        assert_eq!(loaded, super::OverlaySettings::default());
     }
 
     #[test]
