@@ -613,7 +613,7 @@ mod tests {
 
         std::fs::create_dir_all(&plugins_dir).unwrap();
         std::fs::create_dir_all(&data_dir).unwrap();
-        std::fs::write(plugins_dir.join("BazaarPlusPlus.version"), b"4.0.0").unwrap();
+        std::fs::write(plugins_dir.join("BazaarPlusPlus.version"), b"4.7.0.prod").unwrap();
         std::fs::write(data_dir.join("stale.dll"), b"dll").unwrap();
 
         prepare_install_target(tmp.path(), &std::collections::HashSet::new()).unwrap();

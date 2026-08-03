@@ -2,9 +2,10 @@ use std::path::{Path, PathBuf};
 
 use crate::config::{
     BAZAAR_DATA_DIRECTORY, COMBAT_REPLAYS_DIRECTORY, COMBAT_REPLAY_VIDEOS_DIRECTORY,
-    DATABASE_FILE_NAME, SCREENSHOTS_DIRECTORY,
+    DATABASE_FILE_NAME, INSTALLER_STATE_DIRECTORY, SCREENSHOTS_DIRECTORY,
 };
 
+const LEGACY_OVERLAY_SETTINGS_DIRECTORY: &str = "BazaarPlusPlusV4";
 const OVERLAY_CACHE_DIRECTORY: &str = "stream-overlay-cache";
 const OVERLAY_SETTINGS_FILE_NAME: &str = "stream-overlay-crop.json";
 
@@ -33,14 +34,24 @@ pub fn overlay_cache_dir() -> PathBuf {
         .or_else(dirs::config_dir)
         .or_else(dirs::data_local_dir)
         .unwrap_or_else(std::env::temp_dir);
-    base.join(BAZAAR_DATA_DIRECTORY)
+    base.join(INSTALLER_STATE_DIRECTORY)
         .join(OVERLAY_CACHE_DIRECTORY)
 }
 
-pub fn overlay_settings_path() -> PathBuf {
-    let base = dirs::config_dir()
+fn overlay_settings_base_dir() -> PathBuf {
+    dirs::config_dir()
         .or_else(dirs::data_local_dir)
-        .unwrap_or_else(std::env::temp_dir);
-    base.join(BAZAAR_DATA_DIRECTORY)
+        .unwrap_or_else(std::env::temp_dir)
+}
+
+pub fn overlay_settings_path() -> PathBuf {
+    overlay_settings_base_dir()
+        .join(INSTALLER_STATE_DIRECTORY)
+        .join(OVERLAY_SETTINGS_FILE_NAME)
+}
+
+pub fn legacy_overlay_settings_path() -> PathBuf {
+    overlay_settings_base_dir()
+        .join(LEGACY_OVERLAY_SETTINGS_DIRECTORY)
         .join(OVERLAY_SETTINGS_FILE_NAME)
 }
