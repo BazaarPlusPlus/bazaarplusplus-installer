@@ -1,7 +1,7 @@
 ---
 status: truth
 topic: context
-last-verified: c56cac3a94fea48f6711c45a5139cab3bc7322d8
+last-verified: 42d843efd0c202bf18e0810119d866982c205dcb
 ---
 
 # BazaarPlusPlus Installer Context
@@ -26,7 +26,7 @@ Current behavior truth lives under `docs/truth/` (topic-sliced, code-cited, hash
 - **Launch-mode marker** — the `.bpp-launch-mode` file next to the game directory persisting the chosen mode (`src-tauri/src/services/bepinex/trampoline.rs:23-71`).
 - **InstallState** — the frontend/backend contract for the install page: paths, game/mod state, compat state, action gates, and semantic warning codes plus parameters (`src-tauri/src/services/install/types.rs:5-20`, `src-tauri/src/services/install/types.rs:73-85`).
 - **Selected game installation** — the one session-scoped The Bazaar installation shared by Install, History, and Stream. Valid explicit paths update it; resolution then uses explicit, selected, startup-detected, and fallback priority. It is held only in managed memory and is recreated empty on app restart (`src-tauri/src/services/selected_game_installation.rs:14-115`, `src-tauri/src/lib.rs:40-43`).
-- **Reset (local data)** — the only flow that deletes the mod's `BazaarPlusPlusV4/` data directory; explicit, confirmed, refused while the game runs, and performed under exclusive stream-runtime maintenance (`src-tauri/src/services/bepinex/mod.rs:20-62`, `src-tauri/src/stream/runtime.rs:100-108`). Uninstall never touches it.
+- **Reset (local data)** — the only flow that deletes the mod's `BazaarPlusPlusV5/` data directory; explicit, confirmed, refused while the game runs, and performed under exclusive stream-runtime maintenance (`src-tauri/src/services/bepinex/mod.rs:20-62`, `src-tauri/src/stream/runtime.rs:100-108`). Uninstall never touches it.
 - **History** — the facade around the Selected game installation's mod-owned SQLite database, including reads, detail, reveal, video deletion, and storage cleanup (`src-tauri/src/services/history.rs:48-288`); the database is created and primarily written by the mod.
 - **Semantic problem** — a command failure contract made of a stable code, string parameters, and an optional troubleshooting diagnostic (`src-tauri/src/problem.rs:3-42`). History publishes unavailable/read/action codes, including cleanup preview/execute operation parameters; Install publishes detection/action/game-running/partial-failure codes; Stream publishes service/window/crop capability codes at the native boundary and adds polling/clipboard/opener codes in its frontend workflow (`src-tauri/src/services/history.rs:74-188`, `src-tauri/src/services/history.rs:258-274`, `src-tauri/src/services/install/mod.rs:200-235`, `src-tauri/src/commands/stream.rs:12-110`, `src/features/stream/streamProblems.ts:7-105`). Presenters localize these codes without using the diagnostic as user copy, while the native adapter preserves the structured payload (`src/api/problems.ts:3-49`, `src/api/nativeCommands.ts:5-15`).
 - **Confirmed operation** — the shared frontend lifecycle for a target-bearing confirmed action: confirming, non-dismissible running, retained failure with retry/safe exit, and success-only closure. It refuses conflicting requests and repeated submission in `src/features/shared/confirmedOperation.ts:3-105`; install, uninstall, cleanup, reset, and video deletion supply their actual targets and semantic problems.

@@ -36,6 +36,8 @@ Install workflow deep-module citation refresh: `2026-07-27` on `e0fa9a649114ddca
 
 UX copy/layout citation refresh: `2026-07-27` on `c56cac3a94fea48f6711c45a5139cab3bc7322d8` — `CONTEXT.md`, all seven truth topics, and the manual-validation plan were re-verified after the eight UX PRs (#55–#62): localized eyebrows and window controls, maintenance danger signals with a confirmed uninstall, state-contradiction copy fixes, close-to-tray discoverability, the About check-update entry, accessibility hit targets, visual-system consolidation, and the terminology sweep. Dangling pre-squash `last-verified` stamps on frontend, install-reset, and verification were replaced with the master commit.
 
+V5 data-root repoint citation refresh: `2026-08-04` on `42d843efd0c202bf18e0810119d866982c205dcb` — `CONTEXT.md` and the Install/Reset truth topic were checked against the version-independent installer state directory, legacy overlay-settings read fallback, and `BazaarPlusPlusV5/` data and Reset paths.
+
 ## Current Manifest
 
 | Path | Topic | Status | Last verified |
@@ -44,11 +46,11 @@ UX copy/layout citation refresh: `2026-07-27` on `c56cac3a94fea48f6711c45a5139ca
 | `CLAUDE.md` | agent instructions | operational | 2026-06-11 |
 | `README.md` | project entrypoint | current-entrypoint | 2026-07-11 |
 | `.trae/rules/git-commit-message.md` | ignored local rule | ignored-operational | n/a |
-| `docs/INDEX.md` | documentation manifest | manifest | 2026-07-27|
-| `CONTEXT.md` | entry map + glossary | truth | `c56cac3a94fea48f6711c45a5139cab3bc7322d8` |
+| `docs/INDEX.md` | documentation manifest | manifest | 2026-08-04 |
+| `CONTEXT.md` | entry map + glossary | truth | `42d843efd0c202bf18e0810119d866982c205dcb` |
 | `docs/truth/architecture.md` | architecture | truth | `c56cac3a94fea48f6711c45a5139cab3bc7322d8` |
 | `docs/truth/frontend.md` | frontend | truth | `c56cac3a94fea48f6711c45a5139cab3bc7322d8` |
-| `docs/truth/install-reset.md` | install-reset | truth | `c56cac3a94fea48f6711c45a5139cab3bc7322d8` |
+| `docs/truth/install-reset.md` | install-reset | truth | `42d843efd0c202bf18e0810119d866982c205dcb` |
 | `docs/truth/launch-modes.md` | launch-modes | truth | `c56cac3a94fea48f6711c45a5139cab3bc7322d8` |
 | `docs/truth/history-stream.md` | history-stream | truth | `c56cac3a94fea48f6711c45a5139cab3bc7322d8` |
 | `docs/truth/updater-release.md` | updater-release | truth | `c56cac3a94fea48f6711c45a5139cab3bc7322d8` |
