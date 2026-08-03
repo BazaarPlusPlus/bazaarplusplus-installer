@@ -12,6 +12,7 @@ pub struct SemanticProblem {
 pub enum SemanticProblemCode {
     HistoryUnavailable,
     HistoryReadFailed,
+    HistoryDatabaseUnsupportedSchema,
     HistoryActionFailed,
     InstallDetectionFailed,
     InstallActionFailed,
@@ -68,6 +69,18 @@ mod tests {
             .unwrap(),
             serde_json::json!({
                 "code": "history_unavailable",
+                "params": {},
+                "diagnostic": null
+            })
+        );
+
+        assert_eq!(
+            serde_json::to_value(SemanticProblem::new(
+                SemanticProblemCode::HistoryDatabaseUnsupportedSchema
+            ))
+            .unwrap(),
+            serde_json::json!({
+                "code": "history_database_unsupported_schema",
                 "params": {},
                 "diagnostic": null
             })

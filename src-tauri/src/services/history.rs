@@ -83,22 +83,16 @@ impl History {
     }
 
     fn list_runs_for_page(&self, limit: usize) -> Result<HistoryRunList, SemanticProblem> {
-        self.list_runs(limit).map_err(|diagnostic| {
-            SemanticProblem::new(SemanticProblemCode::HistoryReadFailed)
-                .with_param("operation", "list_runs")
-                .with_diagnostic(diagnostic)
-        })
+        self.list_runs(limit)
+            .map_err(|diagnostic| history_read_problem("list_runs", diagnostic))
     }
 
     fn run_detail_for_page(
         &self,
         run_id: &str,
     ) -> Result<Option<HistoryRunDetail>, SemanticProblem> {
-        get_history_run_detail(&self.paths.database_path, run_id).map_err(|diagnostic| {
-            SemanticProblem::new(SemanticProblemCode::HistoryReadFailed)
-                .with_param("operation", "get_run_detail")
-                .with_diagnostic(diagnostic)
-        })
+        get_history_run_detail(&self.paths.database_path, run_id)
+            .map_err(|diagnostic| history_read_problem("get_run_detail", diagnostic))
     }
 
     fn run_detail(&self, run_id: &str) -> Result<HistoryRunDetail, String> {
@@ -366,6 +360,19 @@ fn history_action_problem(operation: &str, diagnostic: String) -> SemanticProble
         .with_diagnostic(diagnostic)
 }
 
+fn history_read_problem(operation: &str, diagnostic: String) -> SemanticProblem {
+    if let Some((found, expected)) = crate::history::unsupported_schema_versions(&diagnostic) {
+        return SemanticProblem::new(SemanticProblemCode::HistoryDatabaseUnsupportedSchema)
+            .with_param("found", found.to_string())
+            .with_param("expected", expected.to_string())
+            .with_diagnostic(diagnostic);
+    }
+
+    SemanticProblem::new(SemanticProblemCode::HistoryReadFailed)
+        .with_param("operation", operation)
+        .with_diagnostic(diagnostic)
+}
+
 fn require_video_file_exists(path: &Path) -> Result<(), String> {
     path.try_exists()
         .map_err(|err| format!("Failed to inspect video file at {}: {err}", path.display()))?
@@ -461,6 +468,7 @@ mod tests {
         conn.execute_batch(
             "
             pragma foreign_keys = on;
+            pragma user_version = 1;
             create table runs (
                 run_id text primary key,
                 started_at_utc text not null,
@@ -476,13 +484,27 @@ mod tests {
                 losses integer null,
                 final_player_rank text null,
                 final_player_rating integer null,
-                final_player_rating_delta integer null
+                final_player_rating_delta integer null,
+                build_channel text null,
+                player_account_id text null,
+                bundle_screenshot_requested integer not null default 0,
+                mod_version text null
+            );
+            create table run_events (
+                run_id text not null,
+                seq integer not null,
+                ts_utc text not null,
+                kind text not null,
+                payload_json text not null,
+                primary key (run_id, seq),
+                foreign key (run_id) references runs(run_id) on delete cascade
             );
             create table battles (
                 battle_id text primary key,
                 source text not null,
                 run_id text null,
                 recorded_at_utc text not null,
+                combat_kind text not null default 'PVP',
                 day integer null,
                 hour integer null,
                 player_name text null,
@@ -492,14 +514,22 @@ mod tests {
                 opponent_rank text null,
                 opponent_rating integer null,
                 result text null,
-                replay_dirty integer not null default 0,
                 deleted_at_utc text null,
                 foreign key (run_id) references runs(run_id) on delete cascade
+            );
+            create table battle_snapshots (
+                battle_id text primary key,
+                player_hand_json text not null,
+                player_skills_json text not null,
+                opponent_hand_json text not null,
+                opponent_skills_json text not null,
+                foreign key (battle_id) references battles(battle_id) on delete cascade
             );
             create table run_screenshots (
                 screenshot_id text primary key,
                 run_id text null,
                 hero_name text null,
+                battle_id text null,
                 capture_source text not null,
                 is_primary integer not null default 0,
                 image_relative_path text not null,
@@ -507,16 +537,60 @@ mod tests {
                 captured_at_local text not null,
                 player_rank text null,
                 player_rating integer null,
-                victories_at_capture integer null
+                victories_at_capture integer null,
+                build_channel text null
             );
             create table combat_replay_videos (
                 video_id text primary key,
                 battle_id text not null,
+                source text not null default 'GAME_CAPTURE',
                 video_relative_path text not null,
+                width integer not null default 1920,
+                height integer not null default 1080,
+                fps integer not null default 60,
+                codec text not null default 'h264',
                 started_at_utc text not null,
                 duration_ms integer null,
                 file_size_bytes integer null,
                 status text not null
+            );
+            create table bundle_seal_jobs (
+                run_id text primary key,
+                state text not null default 'waiting',
+                player_account_id text null,
+                screenshot_requested integer not null,
+                screenshot_state text not null default 'waiting',
+                input_deadline_at_utc text not null,
+                bundle_id text null unique,
+                created_at_ms integer null,
+                attempts integer not null default 0,
+                last_attempt_at_utc text null,
+                last_error_code text null,
+                last_error_detail text null,
+                foreign key (run_id) references runs(run_id) on delete cascade,
+                check (state in ('waiting', 'sealing', 'terminal_failure')),
+                check (screenshot_state in ('not_requested', 'waiting', 'available', 'unavailable', 'timed_out'))
+            );
+            create table bundle_outbox (
+                bundle_id text primary key,
+                run_id text not null,
+                file_name text not null unique,
+                content_sha256_hex text not null,
+                content_digest text not null,
+                total_bytes integer not null,
+                has_screenshot integer not null,
+                sealed_at_utc text not null,
+                status text not null default 'pending',
+                attempts integer not null default 0,
+                last_attempt_at_utc text null,
+                next_attempt_at_utc text null,
+                failed_at_utc text null,
+                last_error_code text null,
+                last_error_detail text null,
+                server_request_id text null,
+                server_outcome text null,
+                uploaded_at_utc text null,
+                check (status in ('pending', 'uploaded', 'permanent_failure'))
             );
             ",
         )
@@ -565,6 +639,50 @@ mod tests {
             Some("list_runs")
         );
         assert!(read_failed.diagnostic.is_some());
+    }
+
+    #[test]
+    fn history_pages_map_unsupported_schema_to_a_specific_problem() {
+        let temp = tempfile::tempdir().unwrap();
+        let game_path = temp.path().join("The Bazaar");
+        let history = History::from_resolved_game_path_for_page(Some(game_path)).unwrap();
+        std::fs::create_dir_all(history.paths.database_path.parent().unwrap()).unwrap();
+        rusqlite::Connection::open(&history.paths.database_path).unwrap();
+
+        for problem in [
+            history.list_runs_for_page(50).unwrap_err(),
+            history.run_detail_for_page("run-1").unwrap_err(),
+        ] {
+            assert_eq!(
+                problem.code,
+                SemanticProblemCode::HistoryDatabaseUnsupportedSchema
+            );
+            assert_eq!(problem.params.get("found").map(String::as_str), Some("0"));
+            assert_eq!(
+                problem.params.get("expected").map(String::as_str),
+                Some("1")
+            );
+            assert!(problem.diagnostic.is_some());
+        }
+    }
+
+    #[test]
+    fn cleanup_keeps_unsupported_schema_on_the_existing_action_problem_surface() {
+        let temp = tempfile::tempdir().unwrap();
+        let game_path = temp.path().join("The Bazaar");
+        let history = History::from_resolved_game_path_for_page(Some(game_path)).unwrap();
+        std::fs::create_dir_all(history.paths.database_path.parent().unwrap()).unwrap();
+        rusqlite::Connection::open(&history.paths.database_path).unwrap();
+
+        let problem = history
+            .preview_cleanup_for_page(StorageCleanupScope::RunData, StorageCleanupPreset::All)
+            .unwrap_err();
+
+        assert_eq!(problem.code, SemanticProblemCode::HistoryActionFailed);
+        assert!(problem
+            .diagnostic
+            .as_deref()
+            .is_some_and(|value| value.contains("found=0") && value.contains("expected=1")));
     }
 
     #[test]
@@ -696,14 +814,14 @@ mod tests {
                 hero, game_mode, ended_at_utc, victories, losses
             ) values (
                 'run-1', '2026-01-01T09:00:00Z', '2026-01-01T10:00:00Z',
-                'completed', 1, 'Vanessa', 'Ranked', '2026-01-01T10:00:00Z', 10, 2
+                'completed', 1, 'Vanessa', 'Normal', '2026-01-01T10:00:00Z', 10, 2
             );
             insert into battles (
                 battle_id, source, run_id, recorded_at_utc, player_name,
-                opponent_hero, opponent_name, result, replay_dirty
+                opponent_hero, opponent_name, result
             ) values (
                 'battle-1', 'LOCAL', 'run-1', '2026-01-01T09:30:00Z', 'Player',
-                'Dooley', 'Opponent', 'win', 0
+                'Dooley', 'Opponent', 'win'
             );
             insert into run_screenshots (
                 screenshot_id, run_id, capture_source, is_primary,

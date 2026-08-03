@@ -87,8 +87,9 @@ mod tests {
     use crate::services::paths;
 
     fn create_run_screenshots_table(conn: &rusqlite::Connection) {
-        conn.execute(
-            "create table run_screenshots (
+        conn.execute_batch(
+            "pragma user_version = 1;
+             create table run_screenshots (
                 screenshot_id text primary key,
                 run_id text,
                 battle_id text,
@@ -102,11 +103,27 @@ mod tests {
                 player_rating integer,
                 player_position integer,
                 victories_at_capture integer,
-                hero_name text
-            )",
-            [],
+                hero_name text,
+                build_channel text
+            );",
         )
         .unwrap();
+    }
+
+    #[test]
+    fn repository_rejects_unsupported_database_schema() {
+        let temp_dir = tempfile::tempdir().unwrap();
+        let game_path = temp_dir.path().join("TheBazaar");
+        let data_dir = paths::bpp_data_dir(&game_path);
+        std::fs::create_dir_all(&data_dir).unwrap();
+        rusqlite::Connection::open(paths::database_path(&game_path)).unwrap();
+
+        let error = OverlayRecordRepository::new(Some(game_path))
+            .load_record_at_offset(None, 0)
+            .unwrap_err();
+
+        assert!(error.contains("found=0"), "{error}");
+        assert!(error.contains("expected=1"), "{error}");
     }
 
     #[test]

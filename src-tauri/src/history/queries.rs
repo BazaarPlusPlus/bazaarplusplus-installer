@@ -5,6 +5,8 @@ use rusqlite::{params, params_from_iter, Connection, OpenFlags, OptionalExtensio
 use crate::history::dto::{HistoryBattleRow, HistorySummary};
 use crate::history::mapper::{map_battle_row, BattleFields, BattleVideoFields};
 
+const UNSUPPORTED_SCHEMA_ERROR_PREFIX: &str = "Unsupported mod database schema: found=";
+
 pub struct RunRow {
     pub run_id: String,
     pub hero: String,
@@ -31,6 +33,7 @@ pub fn open_connection(database_path: &Path) -> Result<Connection, String> {
         .map_err(|err| err.to_string())?;
     conn.busy_timeout(Duration::from_secs(2))
         .map_err(|err| err.to_string())?;
+    validate_supported_schema(&conn)?;
     Ok(conn)
 }
 
@@ -39,13 +42,37 @@ pub fn open_write_connection(database_path: &Path) -> Result<Connection, String>
         .map_err(|err| err.to_string())?;
     conn.busy_timeout(Duration::from_secs(2))
         .map_err(|err| err.to_string())?;
+    validate_supported_schema(&conn)?;
     Ok(conn)
+}
+
+fn validate_supported_schema(conn: &Connection) -> Result<(), String> {
+    let found = conn
+        .query_row("PRAGMA user_version", [], |row| row.get::<_, i64>(0))
+        .map_err(|err| err.to_string())?;
+    let expected = crate::config::SUPPORTED_MOD_DB_USER_VERSION;
+    if found == expected {
+        return Ok(());
+    }
+
+    Err(format!(
+        "{UNSUPPORTED_SCHEMA_ERROR_PREFIX}{found}, expected={expected}."
+    ))
+}
+
+pub(crate) fn unsupported_schema_versions(diagnostic: &str) -> Option<(i64, i64)> {
+    let versions = diagnostic.strip_prefix(UNSUPPORTED_SCHEMA_ERROR_PREFIX)?;
+    let (found, expected) = versions.split_once(", expected=")?;
+    Some((
+        found.parse().ok()?,
+        expected.strip_suffix('.')?.parse().ok()?,
+    ))
 }
 
 /// Write connection for cleanup operations. Unlike `open_write_connection`,
 /// this enables per-connection foreign-key enforcement so the mod schema's
-/// ON DELETE CASCADE chains (runs -> run_events/battles/run_sync_state,
-/// run_screenshots -> bazaardb_snapshot_uploads) fire on our deletes.
+/// ON DELETE CASCADE chains (runs -> run_events/battles/bundle_seal_jobs,
+/// battles -> battle_snapshots) fire on our deletes.
 pub fn open_cleanup_connection(database_path: &Path) -> Result<Connection, String> {
     let conn = open_write_connection(database_path)?;
     conn.execute_batch("PRAGMA foreign_keys = ON;")
@@ -412,7 +439,7 @@ pub fn load_run_id_for_battle(
 
 #[cfg(test)]
 mod tests {
-    use super::open_connection;
+    use super::{open_connection, open_write_connection};
 
     #[test]
     fn open_connection_does_not_create_missing_database() {
@@ -424,13 +451,44 @@ mod tests {
     }
 
     #[test]
+    fn connections_reject_unsupported_mod_database_schema_versions() {
+        let temp_dir = tempfile::tempdir().unwrap();
+        let database_path = temp_dir.path().join("bazaarplusplus.db");
+        rusqlite::Connection::open(&database_path).unwrap();
+
+        for error in [
+            open_connection(&database_path).unwrap_err(),
+            open_write_connection(&database_path).unwrap_err(),
+        ] {
+            assert!(error.contains("found=0"), "{error}");
+            assert!(error.contains("expected=1"), "{error}");
+        }
+    }
+
+    #[test]
+    fn connection_rejects_a_newer_mod_database_schema_version() {
+        let temp_dir = tempfile::tempdir().unwrap();
+        let database_path = temp_dir.path().join("bazaarplusplus.db");
+        rusqlite::Connection::open(&database_path)
+            .unwrap()
+            .execute_batch("pragma user_version = 2;")
+            .unwrap();
+
+        let error = open_connection(&database_path).unwrap_err();
+
+        assert!(error.contains("found=2"), "{error}");
+        assert!(error.contains("expected=1"), "{error}");
+    }
+
+    #[test]
     fn cleanup_connection_enables_foreign_key_cascade() {
         let temp_dir = tempfile::tempdir().unwrap();
         let database_path = temp_dir.path().join("bazaarplusplus.db");
         {
             let conn = rusqlite::Connection::open(&database_path).unwrap();
             conn.execute_batch(
-                "create table parents (id text primary key);
+                "pragma user_version = 1;
+                 create table parents (id text primary key);
                  create table children (
                      id text primary key,
                      parent_id text not null,

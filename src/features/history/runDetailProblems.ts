@@ -9,6 +9,7 @@ import {
 export type RunDetailProblemCode =
   | 'history_unavailable'
   | 'history_read_failed'
+  | 'history_database_unsupported_schema'
   | 'history_action_failed'
   | 'run_detail_unexpected';
 
@@ -19,6 +20,7 @@ export function runDetailProblemFromError(error: unknown): RunDetailProblem {
   switch (problem.code) {
     case 'history_unavailable':
     case 'history_read_failed':
+    case 'history_database_unsupported_schema':
     case 'history_action_failed':
     case 'run_detail_unexpected':
       return problem as RunDetailProblem;
@@ -38,6 +40,8 @@ export function runDetailProblemMessageKey(
       return 'runDetailProblemUnavailable';
     case 'history_read_failed':
       return 'runDetailProblemReadFailed';
+    case 'history_database_unsupported_schema':
+      return 'historyProblemUnsupportedSchema';
     case 'history_action_failed':
       switch (problem.params.operation) {
         case 'reveal_screenshot':

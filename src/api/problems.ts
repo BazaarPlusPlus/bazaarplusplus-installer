@@ -3,6 +3,7 @@ import type { SemanticProblem } from '../types/backend';
 const semanticProblemCodes: Record<SemanticProblem['code'], true> = {
   history_unavailable: true,
   history_read_failed: true,
+  history_database_unsupported_schema: true,
   history_action_failed: true,
   install_detection_failed: true,
   install_action_failed: true,

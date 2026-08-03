@@ -232,6 +232,8 @@ const zh = {
     '未找到可用的本地战绩数据库。请先在安装页选择正确的游戏目录。',
   historyProblemReadFailed:
     '读取本地战绩失败。请关闭可能占用数据库的程序后重试。',
+  historyProblemUnsupportedSchema:
+    '战绩数据库版本不受支持（当前 {found}，支持 {expected}）。请更新 BazaarPlusPlus Mod 或安装器。',
   historyProblemPreviewUnavailable:
     '战绩已载入，但缩略图服务当前不可用。可前往直播页启动本地服务。',
   historyProblemUnexpected: '加载本地战绩时发生意外错误。请重试。',
@@ -673,6 +675,8 @@ const en: Record<MessageKey, string> = {
     'No local History database is available. Select the correct game directory on the Install page.',
   historyProblemReadFailed:
     'Local History could not be read. Close apps that may be using the database, then retry.',
+  historyProblemUnsupportedSchema:
+    'The History database schema is unsupported (found {found}, expected {expected}). Update the BazaarPlusPlus mod or installer.',
   historyProblemPreviewUnavailable:
     'Runs are loaded, but thumbnails are unavailable. Start the local service from the Stream page.',
   historyProblemUnexpected:
