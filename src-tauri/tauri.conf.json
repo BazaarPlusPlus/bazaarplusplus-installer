@@ -7,7 +7,7 @@
     "beforeDevCommand": "npm run dev",
     "devUrl": "http://localhost:14207",
     "beforeBuildCommand": "npm run build",
-    "beforeBundleCommand": "node scripts/before-bundle-cleanup.mjs",
+    "beforeBundleCommand": "node scripts/before-bundle-cleanup.mjs && node scripts/compile-macos-icon.mjs",
     "frontendDist": "../build"
   },
   "app": {
