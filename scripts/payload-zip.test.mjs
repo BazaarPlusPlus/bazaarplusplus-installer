@@ -5,10 +5,12 @@ import path from 'node:path';
 import { expect, test } from 'vitest';
 
 import {
+  V5_MIN_MOD_VERSION,
   buildZipBuffer,
   listPayloadFiles,
   preparePayloadZip,
   readZipEntries,
+  validatePayloadZip,
   validateZipEntrySet,
   writeDeterministicZip
 } from './payload-zip.mjs';
@@ -26,6 +28,17 @@ function fixtureRoot(platform = 'macos') {
   return { rootDir, sourceDir, platform };
 }
 
+function writeStagedModVersion(fixture, version) {
+  const versionPath = path.join(
+    fixture.sourceDir,
+    'BepInEx',
+    'plugins',
+    'BazaarPlusPlus.version'
+  );
+  fs.mkdirSync(path.dirname(versionPath), { recursive: true });
+  fs.writeFileSync(versionPath, version);
+}
+
 test.each([
   ['macos', 'run_bepinex.sh', 0o755],
   ['windows', 'doorstop_config.ini', 0o644]
@@ -33,11 +46,9 @@ test.each([
   'preparePayloadZip creates a deterministic %s archive and preserves file mode',
   (platform, fileName, mode) => {
     const fixture = fixtureRoot(platform);
-    const nested = path.join(fixture.sourceDir, 'BepInEx', 'plugins');
-    fs.mkdirSync(nested, { recursive: true });
     fs.writeFileSync(path.join(fixture.sourceDir, fileName), 'launcher');
     fs.chmodSync(path.join(fixture.sourceDir, fileName), mode);
-    fs.writeFileSync(path.join(nested, 'BazaarPlusPlus.version'), '9.9.9');
+    writeStagedModVersion(fixture, `${V5_MIN_MOD_VERSION}.prod`);
 
     try {
       const first = preparePayloadZip({
@@ -86,6 +97,76 @@ test('preparePayloadZip reports every missing external staging input at once', (
     ).toThrow(
       /SourceForBuild[\s\S]*BazaarPlusPlus\.dll[\s\S]*BazaarPlusPlus\.version/
     );
+  } finally {
+    fs.rmSync(fixture.rootDir, { recursive: true, force: true });
+  }
+});
+
+test.each(['4.5.0.prod', '4.6.0.prod'])(
+  'preparePayloadZip rejects pre-V5 staging version %s',
+  (version) => {
+    const fixture = fixtureRoot('windows');
+    writeStagedModVersion(fixture, version);
+
+    try {
+      expect(() =>
+        preparePayloadZip({
+          ...fixture,
+          requiredStagingPaths: ['BepInEx/plugins/BazaarPlusPlus.version']
+        })
+      ).toThrow(/4\.7\.0[\s\S]*\.\/run\.sh publish/);
+    } finally {
+      fs.rmSync(fixture.rootDir, { recursive: true, force: true });
+    }
+  }
+);
+
+test('preparePayloadZip rejects an unparseable staging version', () => {
+  const fixture = fixtureRoot('windows');
+  writeStagedModVersion(fixture, 'not-a-version');
+
+  try {
+    expect(() =>
+      preparePayloadZip({
+        ...fixture,
+        requiredStagingPaths: ['BepInEx/plugins/BazaarPlusPlus.version']
+      })
+    ).toThrow(/cannot parse[\s\S]*\.\/run\.sh publish/i);
+  } finally {
+    fs.rmSync(fixture.rootDir, { recursive: true, force: true });
+  }
+});
+
+test.each(['4.7.0.prod', '4.7.1.prod', '5.0.0.prod'])(
+  'preparePayloadZip accepts V5-compatible staging version %s',
+  (version) => {
+    const fixture = fixtureRoot('windows');
+    writeStagedModVersion(fixture, version);
+
+    try {
+      expect(() =>
+        preparePayloadZip({
+          ...fixture,
+          requiredStagingPaths: ['BepInEx/plugins/BazaarPlusPlus.version']
+        })
+      ).not.toThrow();
+    } finally {
+      fs.rmSync(fixture.rootDir, { recursive: true, force: true });
+    }
+  }
+);
+
+test('validatePayloadZip rejects a stale staging version before checking for the ZIP', () => {
+  const fixture = fixtureRoot('windows');
+  writeStagedModVersion(fixture, '4.6.0.prod');
+
+  try {
+    expect(() =>
+      validatePayloadZip({
+        ...fixture,
+        requiredStagingPaths: ['BepInEx/plugins/BazaarPlusPlus.version']
+      })
+    ).toThrow(/4\.7\.0[\s\S]*\.\/run\.sh publish/);
   } finally {
     fs.rmSync(fixture.rootDir, { recursive: true, force: true });
   }
@@ -179,7 +260,7 @@ test('BazaarPlusPlus.version is a required release invariant', () => {
           'BepInEx/plugins/BazaarPlusPlus.version'
         ]
       })
-    ).toThrow(/BazaarPlusPlus\.version/);
+    ).toThrow(/BazaarPlusPlus\.version[\s\S]*\.\/run\.sh publish/);
   } finally {
     fs.rmSync(fixture.rootDir, { recursive: true, force: true });
   }
@@ -189,6 +270,7 @@ test('macOS release preparation rejects a launcher without executable permission
   const fixture = fixtureRoot('macos');
   fs.writeFileSync(path.join(fixture.sourceDir, 'run_bepinex.sh'), 'launcher');
   fs.chmodSync(path.join(fixture.sourceDir, 'run_bepinex.sh'), 0o644);
+  writeStagedModVersion(fixture, `${V5_MIN_MOD_VERSION}.prod`);
   try {
     expect(() =>
       preparePayloadZip({
