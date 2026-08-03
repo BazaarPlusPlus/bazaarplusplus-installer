@@ -38,6 +38,8 @@ UX copy/layout citation refresh: `2026-07-27` on `c56cac3a94fea48f6711c45a5139ca
 
 V5 data-root repoint citation refresh: `2026-08-04` on `42d843efd0c202bf18e0810119d866982c205dcb` — `CONTEXT.md` and the Install/Reset truth topic were checked against the version-independent installer state directory, legacy overlay-settings read fallback, and `BazaarPlusPlusV5/` data and Reset paths.
 
+V5 cleanup and schema-guard citation refresh: `2026-08-04` on `e27e462c12191a38fe2a542072d7b804d56ae305` — the History/Stream truth topic was checked against the V5 upload-protection predicate, mod database schema guard, BundleOutbox ownership boundary, and cleanup cascade contract.
+
 ## Current Manifest
 
 | Path | Topic | Status | Last verified |
@@ -52,7 +54,7 @@ V5 data-root repoint citation refresh: `2026-08-04` on `42d843efd0c202bf18e08101
 | `docs/truth/frontend.md` | frontend | truth | `c56cac3a94fea48f6711c45a5139cab3bc7322d8` |
 | `docs/truth/install-reset.md` | install-reset | truth | `42d843efd0c202bf18e0810119d866982c205dcb` |
 | `docs/truth/launch-modes.md` | launch-modes | truth | `c56cac3a94fea48f6711c45a5139cab3bc7322d8` |
-| `docs/truth/history-stream.md` | history-stream | truth | `c56cac3a94fea48f6711c45a5139cab3bc7322d8` |
+| `docs/truth/history-stream.md` | history-stream | truth | `e27e462c12191a38fe2a542072d7b804d56ae305` |
 | `docs/truth/updater-release.md` | updater-release | truth | `c56cac3a94fea48f6711c45a5139cab3bc7322d8` |
 | `docs/truth/verification.md` | verification | truth | `c56cac3a94fea48f6711c45a5139cab3bc7322d8` |
 | `docs/plans/manual-validation.md` | manual-validation | active-plan | `c56cac3a94fea48f6711c45a5139cab3bc7322d8` |
@@ -70,6 +72,7 @@ V5 data-root repoint citation refresh: `2026-08-04` on `42d843efd0c202bf18e08101
 | `docs/adr/008-command-names-artifact.md` | command-names-artifact | superseded-by-010 | n/a |
 | `docs/adr/009-agent-skills-doc-layout.md` | agent-skills-doc-layout | decision | n/a |
 | `docs/adr/010-tauri-specta-command-bindings.md` | tauri-specta-command-bindings | decision | n/a |
+| `docs/adr/011-v5-data-root-and-v4-orphan-policy.md` | v5-data-root-v4-orphan-policy | decision | n/a |
 | `docs/archive/README.md` | old documentation index | superseded | archived 2026-06-11 |
 | `docs/archive/architecture.md` | old architecture doc | superseded | archived 2026-06-11 |
 | `docs/archive/updater-release-plan.md` | old updater release doc | superseded | archived 2026-06-11 |
