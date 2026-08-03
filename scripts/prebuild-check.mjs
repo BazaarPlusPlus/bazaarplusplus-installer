@@ -12,6 +12,7 @@ import {
   resolveBuildPlatform
 } from './release-platforms.mjs';
 import { validatePayloadZip } from './payload-zip.mjs';
+import { verifyNativeRecorderInput } from './native-recorder-input.mjs';
 
 export function resolveTargetPlatforms(platformEnv) {
   if (!platformEnv) {
@@ -132,6 +133,9 @@ export function runPrebuildCheck(
   const platforms = resolveTargetPlatforms(platformEnv);
 
   for (const platform of platforms) {
+    if (platform === 'macos') {
+      verifyNativeRecorderInput({ rootDir });
+    }
     const result = validatePayloadZip({ rootDir, platform });
     if (platform === 'macos') {
       const sourcePath = sourceMacosLauncherPath(rootDir);

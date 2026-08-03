@@ -142,6 +142,28 @@ test.each(['4.5.0.prod', '4.6.0.prod'])(
   }
 );
 
+test.each(['ffmpeg', 'ffmpeg-LICENSE.txt', 'libBppMacAudio.dylib'])(
+  'macOS release preparation rejects retired runtime dependency %s',
+  (fileName) => {
+    const fixture = fixtureRoot('macos');
+    const plugins = path.join(fixture.sourceDir, 'BepInEx', 'plugins');
+    fs.mkdirSync(plugins, { recursive: true });
+    fs.writeFileSync(path.join(plugins, fileName), 'retired');
+    writeStagedModVersion(fixture, `${V5_MIN_MOD_VERSION}.prod`);
+
+    try {
+      expect(() =>
+        preparePayloadZip({
+          ...fixture,
+          requiredStagingPaths: []
+        })
+      ).toThrow(/retired runtime dependencies/);
+    } finally {
+      fs.rmSync(fixture.rootDir, { recursive: true, force: true });
+    }
+  }
+);
+
 test('preparePayloadZip rejects an unparseable staging version', () => {
   const fixture = fixtureRoot('windows');
   writeStagedModVersion(fixture, 'not-a-version');
@@ -192,7 +214,6 @@ test('validatePayloadZip rejects a stale staging version before checking for the
     fs.rmSync(fixture.rootDir, { recursive: true, force: true });
   }
 });
-
 test('listPayloadFiles rejects OS artifacts before creating a release archive', () => {
   const fixture = fixtureRoot('windows');
   fs.writeFileSync(path.join(fixture.sourceDir, 'Thumbs.db'), 'junk');
@@ -300,6 +321,30 @@ test('macOS release preparation rejects a launcher without executable permission
         requiredStagingPaths: ['run_bepinex.sh']
       })
     ).toThrow(/must be executable/);
+  } finally {
+    fs.rmSync(fixture.rootDir, { recursive: true, force: true });
+  }
+});
+
+test('macOS release preparation rejects a native recorder helper without executable permission', () => {
+  const fixture = fixtureRoot('macos');
+  const helper = path.join(
+    fixture.sourceDir,
+    'BepInEx/plugins/BppReplayRecorder.app/Contents/MacOS/BppReplayRecorder'
+  );
+  fs.mkdirSync(path.dirname(helper), { recursive: true });
+  fs.writeFileSync(helper, 'helper');
+  fs.chmodSync(helper, 0o644);
+  writeStagedModVersion(fixture, `${V5_MIN_MOD_VERSION}.prod`);
+  try {
+    expect(() =>
+      preparePayloadZip({
+        ...fixture,
+        requiredStagingPaths: [
+          'BepInEx/plugins/BppReplayRecorder.app/Contents/MacOS/BppReplayRecorder'
+        ]
+      })
+    ).toThrow(/must be executable:[\s\S]*BppReplayRecorder/);
   } finally {
     fs.rmSync(fixture.rootDir, { recursive: true, force: true });
   }

@@ -16,8 +16,9 @@ export const REQUIRED_RELEASE_INPUTS = Object.freeze({
     'BepInEx/plugins/BazaarPlusPlus.Storage.dll',
     'BepInEx/plugins/BazaarPlusPlus.Localization.dll',
     'BepInEx/plugins/BazaarPlusPlus.version',
-    'BepInEx/plugins/ffmpeg',
-    'BepInEx/plugins/ffmpeg-LICENSE.txt'
+    'BepInEx/plugins/BppReplayRecorder.app/Contents/Info.plist',
+    'BepInEx/plugins/BppReplayRecorder.app/Contents/MacOS/BppReplayRecorder',
+    'BepInEx/plugins/BppReplayRecorder.app/Contents/_CodeSignature/CodeResources'
   ]),
   windows: Object.freeze([
     'BepInEx/plugins/BazaarPlusPlus.dll',
@@ -28,6 +29,15 @@ export const REQUIRED_RELEASE_INPUTS = Object.freeze({
     'BepInEx/plugins/ffmpeg.exe',
     'BepInEx/plugins/ffmpeg-LICENSE.txt'
   ])
+});
+
+const FORBIDDEN_RELEASE_INPUTS = Object.freeze({
+  macos: Object.freeze([
+    'BepInEx/plugins/ffmpeg',
+    'BepInEx/plugins/ffmpeg-LICENSE.txt',
+    'BepInEx/plugins/libBppMacAudio.dylib'
+  ]),
+  windows: Object.freeze([])
 });
 
 const osArtifactNames = new Set(['.DS_Store', 'Thumbs.db', 'desktop.ini']);
@@ -182,11 +192,25 @@ function assertStagedModWritesV5DataRoot(sourceDir) {
   );
 }
 
+function assertForbiddenStagingInputs(platform, sourceDir) {
+  const present = (FORBIDDEN_RELEASE_INPUTS[platform] ?? []).filter(
+    (relativePath) =>
+      fs.statSync(path.join(sourceDir, relativePath), {
+        throwIfNoEntry: false
+      }) != null
+  );
+  if (present.length === 0) return;
+
+  throw new Error(
+    `${platform} release staging contains retired runtime dependencies: ${present.join(', ')}`
+  );
+}
+
 function assertMacosExecutableModes(platform, files) {
   if (platform !== 'macos') return;
   for (const requiredExecutable of [
     'run_bepinex.sh',
-    'BepInEx/plugins/ffmpeg'
+    'BepInEx/plugins/BppReplayRecorder.app/Contents/MacOS/BppReplayRecorder'
   ]) {
     const file = files.find((entry) => entry.path === requiredExecutable);
     if (file && (file.mode & 0o111) === 0) {
@@ -422,6 +446,7 @@ export function preparePayloadZip({
   const { sourceDir, zipPath, manifestPath } = platformPaths(rootDir, platform);
   assertRequiredStagingInputs(sourceDir, requiredStagingPaths);
   assertStagedModWritesV5DataRoot(sourceDir);
+  assertForbiddenStagingInputs(platform, sourceDir);
   return writeDeterministicZip({
     sourceDir,
     outputPath: zipPath,
@@ -438,6 +463,7 @@ export function writeDeterministicZip({
   platform,
   hostPlatform = process.platform
 }) {
+  if (platform) assertForbiddenStagingInputs(platform, sourceDir);
   const files = listPayloadFiles(sourceDir, { platform, hostPlatform });
   if (platform) assertMacosExecutableModes(platform, files);
   const entries = files.map((file) => ({
@@ -502,6 +528,7 @@ export function validatePayloadZip({
   const { sourceDir, zipPath, manifestPath } = platformPaths(rootDir, platform);
   assertRequiredStagingInputs(sourceDir, requiredStagingPaths);
   assertStagedModWritesV5DataRoot(sourceDir);
+  assertForbiddenStagingInputs(platform, sourceDir);
   if (!fs.statSync(zipPath, { throwIfNoEntry: false })?.isFile()) {
     throw new Error(`Missing ${platform} release payload ZIP: ${zipPath}`);
   }
