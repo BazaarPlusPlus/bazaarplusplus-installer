@@ -54,6 +54,7 @@ UX copy/layout citation refresh: `2026-07-27` on `c56cac3a94fea48f6711c45a5139ca
 | `docs/truth/updater-release.md` | updater-release | truth | `c56cac3a94fea48f6711c45a5139cab3bc7322d8` |
 | `docs/truth/verification.md` | verification | truth | `c56cac3a94fea48f6711c45a5139cab3bc7322d8` |
 | `docs/plans/manual-validation.md` | manual-validation | active-plan | `c56cac3a94fea48f6711c45a5139cab3bc7322d8` |
+| `docs/plans/2026-08-04-v5-data-contract-sync.md` | v5-data-contract-sync | active-plan | `c562d9a104486e3a99cfa70d6ab569e1be8b54f7` |
 | `docs/agents/issue-tracker.md` | agent skills: issue tracker | operational | 2026-07-11 |
 | `docs/agents/triage-labels.md` | agent skills: triage labels | operational | 2026-07-11 |
 | `docs/agents/domain.md` | agent skills: domain doc rules | operational | 2026-07-11 |

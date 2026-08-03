@@ -6,6 +6,9 @@ import zlib from 'node:zlib';
 import { fileURLToPath } from 'node:url';
 import { resolveBuildPlatform } from './release-platforms.mjs';
 
+// This is the first mod version guaranteed to write the BazaarPlusPlusV5 data root.
+export const V5_MIN_MOD_VERSION = '4.7.0';
+
 export const REQUIRED_RELEASE_INPUTS = Object.freeze({
   macos: Object.freeze([
     'BepInEx/plugins/BazaarPlusPlus.dll',
@@ -109,8 +112,50 @@ function assertRequiredStagingInputs(sourceDir, requiredStagingPaths) {
   const details = missing
     .map((relativePath) => `- ${path.join(sourceDir, relativePath)}`)
     .join('\n');
+  const publishGuidance = missing.includes(
+    'BepInEx/plugins/BazaarPlusPlus.version'
+  )
+    ? '\nRun ./run.sh publish in the mod repository first to re-stage both macOS and Windows SourceForBuild payloads.'
+    : '';
   throw new Error(
-    `Missing release staging inputs under SourceForBuild; provide every external/private file before preparing resources:\n${details}`
+    `Missing release staging inputs under SourceForBuild; provide every external/private file before preparing resources:\n${details}${publishGuidance}`
+  );
+}
+
+function parseProdModVersion(content) {
+  const match = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)\.prod$/.exec(
+    content.trim()
+  );
+  return match?.slice(1).map(Number) ?? null;
+}
+
+function compareVersionParts(left, right) {
+  for (let index = 0; index < left.length; index += 1) {
+    if (left[index] !== right[index]) return left[index] - right[index];
+  }
+  return 0;
+}
+
+function assertStagedModWritesV5DataRoot(sourceDir) {
+  const versionPath = path.join(
+    sourceDir,
+    'BepInEx',
+    'plugins',
+    'BazaarPlusPlus.version'
+  );
+  const content = fs.readFileSync(versionPath, 'utf8');
+  const stagedVersion = parseProdModVersion(content);
+  if (!stagedVersion) {
+    throw new Error(
+      `Cannot parse staged BazaarPlusPlus mod version '${content.trim()}' at ${versionPath}; expected {semver}.prod. Run ./run.sh publish in the mod repository first to re-stage both macOS and Windows SourceForBuild payloads.`
+    );
+  }
+
+  const minimumVersion = V5_MIN_MOD_VERSION.split('.').map(Number);
+  if (compareVersionParts(stagedVersion, minimumVersion) >= 0) return;
+
+  throw new Error(
+    `Staged BazaarPlusPlus mod version must be ${V5_MIN_MOD_VERSION}.prod or newer to write the BazaarPlusPlusV5 data root (found '${content.trim()}' at ${versionPath}). Run ./run.sh publish in the mod repository first to re-stage both macOS and Windows SourceForBuild payloads.`
   );
 }
 
@@ -352,6 +397,7 @@ export function preparePayloadZip({
     throw new Error(`Unsupported payload platform: ${platform}`);
   const { sourceDir, zipPath, manifestPath } = platformPaths(rootDir, platform);
   assertRequiredStagingInputs(sourceDir, requiredStagingPaths);
+  assertStagedModWritesV5DataRoot(sourceDir);
   return writeDeterministicZip({
     sourceDir,
     outputPath: zipPath,
@@ -428,6 +474,7 @@ export function validatePayloadZip({
     throw new Error(`Unsupported payload platform: ${platform}`);
   const { sourceDir, zipPath, manifestPath } = platformPaths(rootDir, platform);
   assertRequiredStagingInputs(sourceDir, requiredStagingPaths);
+  assertStagedModWritesV5DataRoot(sourceDir);
   if (!fs.statSync(zipPath, { throwIfNoEntry: false })?.isFile()) {
     throw new Error(`Missing ${platform} release payload ZIP: ${zipPath}`);
   }
