@@ -1,5 +1,6 @@
 pub const BAZAAR_DATA_DIRECTORY: &str = "BazaarPlusPlusV5";
 pub const INSTALLER_STATE_DIRECTORY: &str = "BazaarPlusPlusInstaller";
+pub const SUPPORTED_MOD_DB_USER_VERSION: i64 = 1;
 pub const COMBAT_REPLAYS_DIRECTORY: &str = "CombatReplays";
 pub const COMBAT_REPLAY_VIDEOS_DIRECTORY: &str = "CombatReplayVideos";
 pub const DATABASE_FILE_NAME: &str = "bazaarplusplus.db";

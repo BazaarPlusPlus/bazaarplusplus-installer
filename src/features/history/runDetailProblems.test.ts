@@ -8,6 +8,9 @@ const problems = [
   createUiProblem('history_read_failed', {
     params: { operation: 'get_run_detail' }
   }),
+  createUiProblem('history_database_unsupported_schema', {
+    params: { found: '2', expected: '1' }
+  }),
   createUiProblem('history_action_failed', {
     params: { operation: 'reveal_screenshot' }
   }),

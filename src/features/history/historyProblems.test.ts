@@ -9,6 +9,7 @@ import {
 const codes: HistoryPageProblemCode[] = [
   'history_unavailable',
   'history_read_failed',
+  'history_database_unsupported_schema',
   'history_preview_unavailable',
   'history_unexpected'
 ];

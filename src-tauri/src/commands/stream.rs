@@ -129,6 +129,15 @@ mod tests {
         assert_eq!(window.code, SemanticProblemCode::StreamWindowFailed);
         assert_eq!(window.params.get("offset").map(String::as_str), Some("3"));
 
+        let unsupported_schema = stream_window_problem(
+            0,
+            "Unsupported mod database schema: found=2, expected=1.".to_string(),
+        );
+        assert_eq!(
+            unsupported_schema.code,
+            SemanticProblemCode::StreamWindowFailed
+        );
+
         let crop = stream_crop_problem("apply_code", "invalid code".to_string());
         assert_eq!(crop.code, SemanticProblemCode::StreamCropFailed);
         assert_eq!(
