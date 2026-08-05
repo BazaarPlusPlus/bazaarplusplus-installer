@@ -7,12 +7,13 @@ const rootDir = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
   '..'
 );
+const appIconName = 'AppIcon';
 const iconSource = path.join(
   rootDir,
   'src-tauri',
   'icons',
   'source',
-  'macos-app-icon.icon'
+  `${appIconName}.icon`
 );
 const outputDir = path.join(rootDir, 'src-tauri', 'icons', 'macos-generated');
 
@@ -104,7 +105,7 @@ export function compileMacOSIcon({ allowFlatFallback = false } = {}) {
     [
       iconSource,
       '--app-icon',
-      'AppIcon',
+      appIconName,
       '--compile',
       outputDir,
       '--output-partial-info-plist',

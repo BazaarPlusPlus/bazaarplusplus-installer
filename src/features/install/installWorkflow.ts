@@ -413,7 +413,9 @@ class DefaultInstallWorkflow implements InstallWorkflow {
             this.showNotice('reset_data_nothing_to_delete');
             return { ok: true };
           }
-          const result = await this.ports.commands.resetBppData(target.gamePath);
+          const result = await this.ports.commands.resetBppData(
+            target.gamePath
+          );
           if (!this.isCurrentLifecycle(lifecycle)) return { ok: true };
           this.applyReadyData(result.state);
           this.showNotice(
@@ -430,7 +432,9 @@ class DefaultInstallWorkflow implements InstallWorkflow {
             this.showNotice('reset_bepinex_nothing_to_delete');
             return { ok: true };
           }
-          const result = await this.ports.commands.resetBepinex(target.gamePath);
+          const result = await this.ports.commands.resetBepinex(
+            target.gamePath
+          );
           if (!this.isCurrentLifecycle(lifecycle)) return { ok: true };
           this.applyReadyData(result.state);
           this.showNotice(
@@ -555,7 +559,9 @@ class DefaultInstallWorkflow implements InstallWorkflow {
   }
 
   private readyData(): InstallState | null {
-    return this.state.resource.kind === 'ready' ? this.state.resource.data : null;
+    return this.state.resource.kind === 'ready'
+      ? this.state.resource.data
+      : null;
   }
 
   private hasActiveConfirmation() {

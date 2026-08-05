@@ -198,9 +198,11 @@ const zh = {
   updateNotesLabel: '更新内容',
   updateDownloading: '正在下载…',
   updateInstalling: '正在安装…',
-  updateInstallingBody: '下载已完成，正在安装 BazaarPlusPlus Installer {version}。',
+  updateInstallingBody:
+    '下载已完成，正在安装 BazaarPlusPlus Installer {version}。',
   updateReady: '更新完成，重启后生效',
-  updateReadyBody: 'BazaarPlusPlus Installer {version} 已安装完成。重启应用后即可使用。',
+  updateReadyBody:
+    'BazaarPlusPlus Installer {version} 已安装完成。重启应用后即可使用。',
   updateRestartNow: '立即重启',
   updateRestarting: '正在重启…',
   updateError: '自动更新失败',
@@ -240,8 +242,7 @@ const zh = {
   historyOpenInstall: '前往安装页',
   historyOpenStream: '前往直播页',
   historyPreviewFallback: '缩略图不可用；刷新页面可重试。',
-  historyPreviewServiceOffline:
-    '缩略图服务未启动，请前往直播页启动',
+  historyPreviewServiceOffline: '缩略图服务未启动，请前往直播页启动',
   runResultVictory: '胜利',
   runResultDefeat: '失败',
   runResultAbandoned: '放弃',
@@ -275,8 +276,7 @@ const zh = {
   statFinalRank: '最终段位',
   statFinalRating: '段位分',
   noLocalBattles: '暂无本地战斗记录',
-  noLocalBattlesDescription:
-    '对局完成后战斗记录会自动出现在这里；也可刷新重试',
+  noLocalBattlesDescription: '对局完成后战斗记录会自动出现在这里；也可刷新重试',
   battleColDay: '天数',
   battleColResult: '结果',
   battleColOpponentHero: '对手英雄',

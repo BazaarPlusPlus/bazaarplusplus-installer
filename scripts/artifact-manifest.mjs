@@ -84,6 +84,14 @@ function exactlyOne(candidates, description, platform) {
   return candidates[0];
 }
 
+function assertFileNameContainsVersion(filePath, version) {
+  if (!path.basename(filePath).includes(version)) {
+    throw new Error(
+      `Artifact version mismatch: ${filePath} does not contain ${version}`
+    );
+  }
+}
+
 function matchesInstallerGlob(fileName, glob) {
   if (!glob.startsWith('*'))
     throw new Error(`Unsupported installer glob: ${glob}`);
@@ -140,13 +148,7 @@ export function createArtifactManifest({
 }) {
   const definition = platformDefinition(platform);
   const discovered = discoverArtifacts(rootDir, definition);
-  for (const filePath of Object.values(discovered)) {
-    if (!path.basename(filePath).includes(version)) {
-      throw new Error(
-        `Artifact version mismatch: ${filePath} does not contain ${version}`
-      );
-    }
-  }
+  assertFileNameContainsVersion(discovered.installer, version);
   const signatureContent = fs.readFileSync(discovered.signature, 'utf8').trim();
   if (!signatureContent) throw new Error('Updater signature is empty');
 
@@ -244,13 +246,7 @@ export function validateArtifactManifest({
   ) {
     throw new Error('Signature content does not match artifact manifest');
   }
-  for (const filePath of [installer, updater, signature]) {
-    if (!path.basename(filePath).includes(version)) {
-      throw new Error(
-        `Artifact filename does not contain manifest version: ${filePath}`
-      );
-    }
-  }
+  assertFileNameContainsVersion(installer, version);
   return { manifest, installer, updater, signature };
 }
 

@@ -5,7 +5,7 @@
     "icon": ["icons/app-icon.icns"],
     "macOS": {
       "files": {
-        "Resources/AppIcon.icon": "icons/source/macos-app-icon.icon",
+        "Resources/AppIcon.icon": "icons/source/AppIcon.icon",
         "Resources/Assets.car": "icons/macos-generated/Assets.car",
         "Resources/AppIcon.icns": "icons/macos-generated/AppIcon.icns"
       },

@@ -216,9 +216,9 @@ describe('install workflow concurrency and directory selection', () => {
         version_matches: true
       }
     });
-    (commands.chooseGameDirectory as ReturnType<typeof vi.fn>).mockResolvedValue(
-      { game_path: '/Games/The Bazaar' }
-    );
+    (
+      commands.chooseGameDirectory as ReturnType<typeof vi.fn>
+    ).mockResolvedValue({ game_path: '/Games/The Bazaar' });
     (commands.loadInstallState as ReturnType<typeof vi.fn>).mockResolvedValue(
       next
     );
@@ -444,7 +444,10 @@ describe('install workflow mutation outcomes', () => {
   it('distinguishes removed and nothing-to-delete reset notices', async () => {
     const { workflow, commands } = setup({
       loadInstallState: vi.fn().mockResolvedValue(
-        installedState({ has_resettable_data: false, has_bepinex_files: false })
+        installedState({
+          has_resettable_data: false,
+          has_bepinex_files: false
+        })
       ),
       resetBppData: vi.fn().mockResolvedValue({
         state: installedState({ has_resettable_data: false }),

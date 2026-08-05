@@ -1,7 +1,7 @@
 ---
 status: truth
 topic: updater-release
-last-verified: c56cac3a94fea48f6711c45a5139cab3bc7322d8
+last-verified: 0a7c66560afcf50da13a701b582e39d4308f1fc0
 ---
 
 # Updater And Release
@@ -33,7 +33,7 @@ last-verified: c56cac3a94fea48f6711c45a5139cab3bc7322d8
 ## Build And Artifact Manifest
 
 - Production runs version synchronization, resource preparation, and the authoritative release-platform verify gate before Tauri packaging in `build.sh:450-457` and `build.sh:721-736`. macOS nested Mach-O resources and the trampoline are signed before the final bundle, and the signed ZIP checksum manifest is refreshed, in `build.sh:407-448` and `build.sh:627-653`.
-- After stale bundle cleanup and a successful bundle, artifact discovery requires exactly one installer and one updater signature, derives the paired updater, and refuses version-mismatched names in `scripts/artifact-manifest.mjs:60-121` and `scripts/artifact-manifest.mjs:134-171`.
+- After stale bundle cleanup and a successful bundle, artifact discovery requires exactly one installer and one updater signature, derives the paired updater, and refuses an installer filename that does not contain the release version. The paired macOS updater keeps Tauri's standard unversioned `.app.tar.gz` name in `scripts/artifact-manifest.mjs:60-129` and `scripts/artifact-manifest.mjs:142-171`.
 - The gitignored manifest records version, build/release platform, commit, dirty state, build timestamp, and exact relative paths, sizes, and SHA-256 values; the signature also records its trimmed content in `scripts/artifact-manifest.mjs:134-171`.
 - Upload validates current version/platform/commit/cleanliness and rechecks every path, size, hash, signature, and filename before returning exact files in `scripts/artifact-manifest.mjs:174-255`. `build.sh` consumes only those returned paths, with no directory-scan fallback, in `build.sh:474-519`.
 

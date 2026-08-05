@@ -72,10 +72,7 @@ export default function Install() {
   }, [dismissToast, showToast, snapshot.actionProblem, t]);
 
   return (
-    <PageShell
-      title={t('installTitle')}
-      className="bpp-install-page"
-    >
+    <PageShell title={t('installTitle')} className="bpp-install-page">
       {snapshot.phase === 'initial-loading' ? (
         <LoadingPanel label={t('installDetecting')} className="h-64" />
       ) : snapshot.phase === 'blocking-failure' ? (
@@ -123,21 +120,22 @@ export default function Install() {
         priority={confirmationRunning ? 'critical' : 'confirmation'}
         dismissalPolicy={confirmationRunning ? 'blocked' : 'dismissible'}
       >
-        {confirmation?.target.kind === 'install' && snapshot.phase === 'ready' && (
-          <InstallConfirmModal
-            busy={confirmationRunning}
-            installAcknowledged={installAcknowledged}
-            onAcknowledgedChange={setInstallAcknowledged}
-            compat={snapshot.data.compat}
-            compatOptIn={confirmation.target.compatOptIn}
-            onCompatOptInChange={(value) =>
-              intents.setPendingCompatOptIn(value)
-            }
-            problem={confirmationFailed}
-            onClose={() => intents.dismissConfirmation()}
-            onConfirm={() => void intents.confirm()}
-          />
-        )}
+        {confirmation?.target.kind === 'install' &&
+          snapshot.phase === 'ready' && (
+            <InstallConfirmModal
+              busy={confirmationRunning}
+              installAcknowledged={installAcknowledged}
+              onAcknowledgedChange={setInstallAcknowledged}
+              compat={snapshot.data.compat}
+              compatOptIn={confirmation.target.compatOptIn}
+              onCompatOptInChange={(value) =>
+                intents.setPendingCompatOptIn(value)
+              }
+              problem={confirmationFailed}
+              onClose={() => intents.dismissConfirmation()}
+              onConfirm={() => void intents.confirm()}
+            />
+          )}
       </ModalSource>
 
       <ModalSource

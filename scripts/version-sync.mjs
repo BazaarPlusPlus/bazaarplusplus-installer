@@ -111,9 +111,14 @@ function replaceRequired(text, pattern, replacement, description) {
 
 function updateTauriVersion(rootDir, version) {
   const filePath = tauriConfigPath(rootDir);
-  const tauriConfig = readJson(filePath);
-  tauriConfig.version = version;
-  writeJson(filePath, tauriConfig);
+  const tauriConfig = readText(filePath);
+  const updatedTauriConfig = replaceRequired(
+    tauriConfig,
+    /^(\s*"version"\s*:\s*")([^"]+)(",?\s*)$/m,
+    `$1${version}$3`,
+    'Tauri config version'
+  );
+  writeText(filePath, updatedTauriConfig);
 }
 
 function updateCargoVersion(rootDir, version) {

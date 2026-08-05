@@ -148,3 +148,25 @@ test('synchronizeVersions updates package lock, tauri, cargo, and cargo lock to 
   expect(packageLock.version).toBe('3.4.5');
   expect(packageLock.packages[''].version).toBe('3.4.5');
 });
+
+test('synchronizeVersions preserves Tauri config formatting', () => {
+  const rootDir = createFixture({
+    packageVersion: '3.4.5',
+    tauriVersion: '1.0.0'
+  });
+  const tauriConfigPath = path.join(rootDir, 'src-tauri', 'tauri.conf.json');
+  fs.writeFileSync(
+    tauriConfigPath,
+    `{
+  "version": "1.0.0",
+  "plugins": { "updater": { "endpoints": ["https://example.com"] } }
+}\n`
+  );
+
+  synchronizeVersions(rootDir);
+
+  expect(fs.readFileSync(tauriConfigPath, 'utf8')).toBe(`{
+  "version": "3.4.5",
+  "plugins": { "updater": { "endpoints": ["https://example.com"] } }
+}\n`);
+});

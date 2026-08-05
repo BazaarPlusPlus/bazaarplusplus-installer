@@ -54,7 +54,10 @@ export function InstallStatusPanel({
               <span className="bpp-mod-name">BazaarPlusPlus</span>
               <span className="ml-2">{heroState}</span>
             </p>
-            <p id="install-hero-description" className="bpp-install-hero-description">
+            <p
+              id="install-hero-description"
+              className="bpp-install-hero-description"
+            >
               {heroDescription}
             </p>
           </div>
