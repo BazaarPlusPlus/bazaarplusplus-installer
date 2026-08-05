@@ -1,25 +1,15 @@
-import { CloudDownload, ExternalLink } from 'lucide-react';
+import { ExternalLink } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { PageHeader } from '../components/ui/PageHeader';
 import { ProblemBanner } from '../components/ui/ProblemBanner';
 import { useAppBootstrap } from '../features/about/AppBootstrapProvider';
-import { useUpdater } from '../features/about/UpdaterProvider';
-import type {
-  AppBootstrapSnapshot,
-  AppBootstrapUnavailableField
-} from '../features/about/appBootstrap';
+import type { AppBootstrapSnapshot } from '../features/about/appBootstrap';
 import { presentAboutProblem } from '../features/about/aboutProblems';
-import type { UpdaterSnapshot } from '../features/about/updater';
 import { formatProblemDiagnostic } from '../features/shared/problems';
 import { useI18n } from '../i18n/LocaleProvider';
 import type { MessageKey } from '../i18n/messages';
 import type { AppBootstrap, AppCredit } from '../types/backend';
 import fableVerifiedBadge from '../../static/about/fable-5-verified.webp';
-
-export type AboutCheckUpdateProps = {
-  phase: UpdaterSnapshot['phase'];
-  onCheckUpdate: () => void;
-};
 
 // Credits are split into ordered groups by their `group` field so contributors
 // stay separate from the external data/inspiration sources we acknowledge.
@@ -45,28 +35,16 @@ function groupCredits(
 
 export default function About() {
   const { resource, retry } = useAppBootstrap();
-  const updater = useUpdater();
 
-  return (
-    <AboutView
-      resource={resource}
-      onRetry={retry}
-      checkUpdate={{
-        phase: updater.phase,
-        onCheckUpdate: updater.checkNow
-      }}
-    />
-  );
+  return <AboutView resource={resource} onRetry={retry} />;
 }
 
 export function AboutView({
   resource,
-  onRetry,
-  checkUpdate
+  onRetry
 }: {
   resource: AppBootstrapSnapshot;
   onRetry: () => void;
-  checkUpdate?: AboutCheckUpdateProps;
 }) {
   const { t } = useI18n();
   const bootstrap = resource.data;
@@ -78,48 +56,13 @@ export function AboutView({
       <div className="flex min-h-0 w-full flex-1 flex-col gap-4">
         <AboutBootstrapFeedback resource={resource} onRetry={onRetry} />
 
-        {bootstrap ? (
-          <AboutBootstrapContent
-            bootstrap={bootstrap}
-            resource={resource}
-            checkUpdate={checkUpdate}
-          />
-        ) : null}
+        {bootstrap ? <AboutBootstrapContent bootstrap={bootstrap} /> : null}
       </div>
     </div>
   );
 }
 
-export function AboutCheckUpdateButton({
-  phase,
-  onCheckUpdate
-}: AboutCheckUpdateProps) {
-  const { t } = useI18n();
-  const checking = phase === 'checking';
-
-  return (
-    <Button
-      type="button"
-      onClick={onCheckUpdate}
-      disabled={checking}
-      busy={checking}
-      busyLabel={t('headerCheckingUpdate')}
-    >
-      <CloudDownload size={16} />
-      {checking ? t('headerCheckingUpdate') : t('headerCheckUpdate')}
-    </Button>
-  );
-}
-
-function AboutBootstrapContent({
-  bootstrap,
-  resource,
-  checkUpdate
-}: {
-  bootstrap: AppBootstrap;
-  resource: AppBootstrapSnapshot;
-  checkUpdate?: AboutCheckUpdateProps;
-}) {
+function AboutBootstrapContent({ bootstrap }: { bootstrap: AppBootstrap }) {
   const { t } = useI18n();
 
   return (
@@ -155,14 +98,6 @@ function AboutBootstrapContent({
               >
                 {bootstrap.bundled_bpp_version ?? t('aboutUnavailableValue')}
               </span>
-            </div>
-            {checkUpdate ? (
-              <div className="mt-4">
-                <AboutCheckUpdateButton {...checkUpdate} />
-              </div>
-            ) : null}
-            <div className="mt-3">
-              <BootstrapProvenance resource={resource} />
             </div>
           </div>
           <a
@@ -296,39 +231,6 @@ function AboutBootstrapFeedback({
       actions={retryAction}
     />
   );
-}
-
-function BootstrapProvenance({ resource }: { resource: AppBootstrapSnapshot }) {
-  const { t } = useI18n();
-  const source =
-    resource.source === 'native'
-      ? t('aboutDataSourceNative')
-      : t('aboutDataSourceFallback');
-  const unavailable = resource.unavailableFields
-    .map((field) => t(bootstrapFieldLabel(field)))
-    .join(', ');
-
-  return (
-    <div className="bpp-about-provenance">
-      <p className="m-0">
-        {t('aboutDataSourceLabel')}:{' '}
-        <span className="selectable">{source}</span>
-      </p>
-      {unavailable && (
-        <p className="m-0">
-          {t('aboutUnavailableFieldsLabel')}:{' '}
-          <span className="selectable">{unavailable}</span>
-        </p>
-      )}
-    </div>
-  );
-}
-
-function bootstrapFieldLabel(field: AppBootstrapUnavailableField): MessageKey {
-  switch (field) {
-    case 'bundled_bpp_version':
-      return 'aboutBppLabel';
-  }
 }
 
 function ListItem({

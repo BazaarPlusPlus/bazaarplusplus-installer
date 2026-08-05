@@ -551,13 +551,6 @@ body {
   margin-left: 8px;
   color: var(--bpp-accent);
 }
-.bpp-about-provenance {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  color: var(--bpp-text-3);
-  font-size: 10px;
-}
 .bpp-about-list-item {
   display: flex;
   align-items: center;

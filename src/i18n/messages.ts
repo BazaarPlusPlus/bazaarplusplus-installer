@@ -397,10 +397,6 @@ const zh = {
   aboutFallbackPreview: '当前为浏览器预览，显示随应用打包的备用数据。',
   aboutProblemBootstrapFailed:
     '无法获取本机应用信息。已保留可用的备用数据，请重试。',
-  aboutDataSourceLabel: '数据来源',
-  aboutDataSourceNative: '本机运行时',
-  aboutDataSourceFallback: '应用内置备用数据',
-  aboutUnavailableFieldsLabel: '不可用字段',
   aboutUnavailableValue: '不可用',
   aboutRetrying: '正在重试',
   aboutBlockingFailure: '无法获取应用信息，且没有可用的备用数据。请重试。',
@@ -853,10 +849,6 @@ const en: Record<MessageKey, string> = {
     'Browser Preview is showing fallback data packaged with the app.',
   aboutProblemBootstrapFailed:
     'Native app information could not be loaded. Usable fallback data remains available; please retry.',
-  aboutDataSourceLabel: 'Data source',
-  aboutDataSourceNative: 'Native runtime',
-  aboutDataSourceFallback: 'Fallback data packaged with the app',
-  aboutUnavailableFieldsLabel: 'Unavailable fields',
   aboutUnavailableValue: 'Unavailable',
   aboutRetrying: 'Retrying',
   aboutBlockingFailure:

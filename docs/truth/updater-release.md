@@ -1,7 +1,7 @@
 ---
 status: truth
 topic: updater-release
-last-verified: 0a7c66560afcf50da13a701b582e39d4308f1fc0
+last-verified: eb337f8dcf15153e89ce2ca71af30c27cd6090ef
 ---
 
 # Updater And Release
@@ -14,8 +14,8 @@ last-verified: 0a7c66560afcf50da13a701b582e39d4308f1fc0
 - The updater implementation keeps the `Update` handle alive across user interactions because `downloadAndInstall` must run on the same handle returned by `check()` in `src/features/about/updater.ts:9-17`.
 - `runCheck` returns `preview` outside Tauri runtime, `available` with version/notes/handle when a plugin update exists, or `current` when none exists in `src/features/about/updater.ts:45-59`.
 - The discriminated snapshot encodes checking, available, downloading, installing, ready-to-restart, restarting, and failed states without contradictory progress/problem fields in `src/features/about/updater.ts:61-120`. The machine guards duplicate work/dismissal, consumes handles once, refreshes a handle on retry, separates download from install failure at the Finished event, and preserves known version/notes across restart failure in `src/features/about/updater.ts:132-335`.
-- Known updater failures are stable semantic problems rather than native error copy. Check/download/install/restart codes carry operation and optional version parameters plus diagnostic detail; bilingual presenters supply recovery text in `src/features/about/updaterProblems.ts:9-63`, `src/i18n/messages.ts:217-222`, and `src/i18n/messages.ts:661-668`.
-- One phase presentation supplies updater metadata and the modal contract. Update decisions remain system priority behind confirmations, while download/install/restart work upgrades the same modal source to critical blocked policy in `src/features/about/updaterPresentation.ts:22-118` and `src/layouts/GlobalShell.tsx:148-157`. Manual update checking is exposed on the Install page in `src/features/install/InstallActionsPanel.tsx:63-70` and on the About page via `useUpdater().checkNow` in `src/pages/About.tsx:48-57` and `src/pages/About.tsx:93-112`. Modal body/recovery copy brands the app as `BazaarPlusPlus Installer {version}` in `src/i18n/messages.ts:199-222` and `src/i18n/messages.ts:640-668`.
+- Known updater failures are stable semantic problems rather than native error copy. Check/download/install/restart codes carry operation and optional version parameters plus diagnostic detail; bilingual presenters supply recovery text in `src/features/about/updaterProblems.ts:9-63`, `src/i18n/messages.ts:215-220`, and `src/i18n/messages.ts:651-658`.
+- One phase presentation supplies updater metadata and the modal contract. Update decisions remain system priority behind confirmations, while download/install/restart work upgrades the same modal source to critical blocked policy in `src/features/about/updaterPresentation.ts:22-118` and `src/layouts/GlobalShell.tsx:148-157`. Manual update checking is exposed on the Install page in `src/features/install/InstallActionsPanel.tsx:63-70`. Modal body/recovery copy brands the app as `BazaarPlusPlus Installer {version}` in `src/i18n/messages.ts:193-220` and `src/i18n/messages.ts:628-658`.
 
 ## Reproducible Release Inputs
 
