@@ -83,6 +83,27 @@ test.each([
   }
 );
 
+test('Windows hosts normalize payload modes from the release contract', () => {
+  const fixture = fixtureRoot('macos');
+  fs.writeFileSync(path.join(fixture.sourceDir, 'run_bepinex.sh'), 'launcher');
+  fs.writeFileSync(path.join(fixture.sourceDir, 'readme.txt'), 'docs');
+
+  try {
+    const modes = Object.fromEntries(
+      listPayloadFiles(fixture.sourceDir, {
+        platform: 'macos',
+        hostPlatform: 'win32'
+      }).map((entry) => [entry.path, entry.mode])
+    );
+    expect(modes).toEqual({
+      'readme.txt': 0o644,
+      'run_bepinex.sh': 0o755
+    });
+  } finally {
+    fs.rmSync(fixture.rootDir, { recursive: true, force: true });
+  }
+});
+
 test('preparePayloadZip reports every missing external staging input at once', () => {
   const fixture = fixtureRoot('windows');
   try {
@@ -275,6 +296,7 @@ test('macOS release preparation rejects a launcher without executable permission
     expect(() =>
       preparePayloadZip({
         ...fixture,
+        hostPlatform: 'darwin',
         requiredStagingPaths: ['run_bepinex.sh']
       })
     ).toThrow(/must be executable/);

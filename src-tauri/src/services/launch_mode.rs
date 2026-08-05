@@ -15,6 +15,7 @@
 //! `bepinex::is_trampolined`) stays at the edges and is passed in as data.
 
 /// macOS 27 and later require the trampoline launch path.
+#[cfg(any(target_os = "macos", test, doc))]
 pub(crate) const TRAMPOLINE_FORCED_MAJOR: u32 = 27;
 
 /// Which launch mechanism an install applies. Persisted ONLY through
@@ -28,6 +29,7 @@ pub(crate) enum LaunchMode {
 
 impl LaunchMode {
     /// Marker-file wire string. Stable on-disk contract.
+    #[cfg(any(target_os = "macos", test, doc))]
     pub(crate) fn as_marker(self) -> &'static str {
         match self {
             LaunchMode::Trampoline => "trampoline",
@@ -36,6 +38,7 @@ impl LaunchMode {
     }
 
     /// Unknown or corrupt content is equivalent to a missing marker.
+    #[cfg(any(target_os = "macos", test, doc))]
     pub(crate) fn from_marker(value: &str) -> Option<Self> {
         match value {
             "trampoline" => Some(LaunchMode::Trampoline),
@@ -59,6 +62,7 @@ pub(crate) enum LaunchModeGate {
 impl LaunchModeGate {
     /// Derive the gate from platform facts. An unknown macOS version preserves
     /// the safe opt-in default.
+    #[cfg(any(target_os = "macos", test, doc))]
     pub(crate) fn from_platform(on_macos: bool, macos_major: Option<u32>) -> Self {
         if !on_macos {
             return Self::Unsupported;

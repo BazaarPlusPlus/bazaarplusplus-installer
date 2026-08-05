@@ -15,6 +15,14 @@ rust-version = "1.97"
 name = "bppinstaller_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
+[[bin]]
+name = "bppinstaller"
+path = "src/main.rs"
+# `main` only delegates to the library. Disabling its empty test harness also
+# avoids linking the Windows application resources into the same target twice.
+test = false
+bench = false
+
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
 

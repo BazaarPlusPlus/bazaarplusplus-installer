@@ -23,6 +23,7 @@ use crate::services::launch_mode::LaunchMode;
 /// Game-dir sibling (OUTSIDE the `.app`) recording the chosen launch mode, so the
 /// installer still knows the desired mode after a Steam "Verify integrity" / game
 /// update reverts the bundle. Removed on uninstall.
+#[cfg(target_os = "macos")]
 pub(crate) const MARKER_FILE: &str = ".bpp-launch-mode";
 
 // ---------------------------------------------------------------------------
