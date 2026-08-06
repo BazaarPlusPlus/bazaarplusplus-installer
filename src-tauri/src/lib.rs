@@ -18,6 +18,8 @@ mod windows_window;
 unsafe extern "C" {}
 
 use tauri::{Manager, WindowEvent};
+#[cfg(not(any(target_os = "android", target_os = "ios")))]
+use tauri_plugin_window_state::StateFlags;
 
 use services::startup::InstallerContextState;
 use tray::{build_tray, TrayMenuState};
@@ -30,13 +32,19 @@ pub fn run() {
 
     #[cfg(not(any(target_os = "android", target_os = "ios")))]
     {
-        // single-instance must be registered first; window-state restores the
-        // remembered window size/position on launch and saves it on close.
+        // single-instance must be registered first; window-state restores only
+        // geometry and maximization, never visibility or frame configuration.
         builder = builder
             .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
                 crate::main_window::restore(app);
             }))
-            .plugin(tauri_plugin_window_state::Builder::default().build());
+            .plugin(
+                tauri_plugin_window_state::Builder::default()
+                    .with_state_flags(
+                        StateFlags::SIZE | StateFlags::POSITION | StateFlags::MAXIMIZED,
+                    )
+                    .build(),
+            );
     }
 
     let app = builder
