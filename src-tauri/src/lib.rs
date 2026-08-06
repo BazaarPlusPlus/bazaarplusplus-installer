@@ -61,14 +61,13 @@ pub fn run() {
                 window.set_decorations(false)?;
                 window.show()?;
 
-                // Showing the window can refresh its Win32 frame. Compact Tao's
-                // wide resize insets after the window has its final native frame.
+                // Showing the window can refresh its Win32 frame, so apply the
+                // border and corner style after it has its final native frame.
                 let border_window = window.clone();
                 window.run_on_main_thread(move || {
-                    if let Err(error) =
-                        crate::windows_window::configure_native_frame(&border_window)
+                    if let Err(error) = crate::windows_window::apply_dwm_frame_style(&border_window)
                     {
-                        eprintln!("failed to configure the Windows native frame: {error}");
+                        eprintln!("failed to apply the Windows DWM frame style: {error}");
                     }
                 })?;
 
