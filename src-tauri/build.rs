@@ -28,8 +28,9 @@ fn expose_windows_resources_to_test_harnesses() {
 /// Compile the macOS launch trampoline stub (arm64) from its committed C source so
 /// the bundled resource declared in `tauri.macos.conf.json` exists before
 /// `tauri_build` validates resource paths. The generated binary is gitignored and
-/// is only replaced when missing or older than its source. No-op when not
-/// targeting macOS.
+/// is replaced when it is missing, older than its source, or built against a
+/// deployment target other than the supported baseline. No-op when not targeting
+/// macOS.
 fn compile_macos_trampoline_stub() {
     if std::env::var("CARGO_CFG_TARGET_OS").as_deref() != Ok("macos") {
         return;
