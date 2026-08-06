@@ -1,7 +1,7 @@
 ---
 status: truth
 topic: history-stream
-last-verified: 63a514c6439bea14a35e4048d7e5e699b9aac135
+last-verified: 015f9ed537b2748f9025a19628cfafaa773225f9
 ---
 
 # History And Stream
@@ -17,6 +17,7 @@ last-verified: 63a514c6439bea14a35e4048d7e5e699b9aac135
 - `open_write_connection` additionally rejects a database SQLite has silently downgraded to read-only, so an unwritable file fails at open rather than partway through a cleanup transaction, in `src-tauri/src/history/queries.rs:51-102`.
 - History summary counts runs, completed runs, wins, latest run timestamp, and completed combat replay videos in `src-tauri/src/history/queries.rs:99-135`.
 - The run list orders by end/last-seen/start timestamp descending, with run id as tie-breaker, in `src-tauri/src/history/queries.rs:137-155`.
+- History maps the legacy `Hero8` and canonical `TheDragons` values to the display name `The Dragons` for both run heroes and battle opponents, while preserving absent opponent heroes and other hero names in `src-tauri/src/history/hero.rs` and `src-tauri/src/history/mapper.rs`.
 - Primary screenshots prefer explicit primary rows and fall back to latest `end_of_run_auto` screenshots in `src-tauri/src/history/screenshots.rs:27-86` and `src-tauri/src/history/screenshots.rs:88-136`.
 
 ## History UI
