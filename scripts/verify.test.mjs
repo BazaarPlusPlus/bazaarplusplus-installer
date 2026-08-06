@@ -49,6 +49,7 @@ test('verification preserves the failing command status and stops', () => {
   const status = runVerification({
     rootDir: process.cwd(),
     mode: 'source',
+    platform: 'linux',
     log() {},
     run(command, args) {
       observed.push([command, ...args].join(' '));
@@ -61,4 +62,26 @@ test('verification preserves the failing command status and stops', () => {
   expect(observed.some((command) => command.includes('build:frontend'))).toBe(
     false
   );
+});
+
+test('Windows verification runs npm command shims through ComSpec', () => {
+  const observed = [];
+  const status = runVerification({
+    rootDir: process.cwd(),
+    mode: 'source',
+    platform: 'win32',
+    commandShell: 'C:\\Windows\\System32\\cmd.exe',
+    log() {},
+    run(command, args) {
+      observed.push({ command, args });
+      return { status: 0 };
+    }
+  });
+
+  expect(status).toBe(0);
+  expect(observed[0]).toEqual({
+    command: 'C:\\Windows\\System32\\cmd.exe',
+    args: ['/d', '/s', '/c', 'npm.cmd', 'run', 'generate:bindings:test']
+  });
+  expect(observed.find(({ command }) => command === 'cargo')).toBeDefined();
 });

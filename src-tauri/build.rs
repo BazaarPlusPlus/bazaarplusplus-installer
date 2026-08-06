@@ -5,7 +5,24 @@ use std::process::Command;
 
 fn main() {
     compile_macos_trampoline_stub();
-    tauri_build::build()
+    tauri_build::build();
+    expose_windows_resources_to_test_harnesses();
+}
+
+/// `tauri-build` links `resource.lib` (including the Common Controls v6
+/// manifest) into application binaries only. The library test harness links
+/// Tauri's Windows dialog code too, so it needs the same manifest before the
+/// Windows loader can resolve `TaskDialogIndirect`.
+fn expose_windows_resources_to_test_harnesses() {
+    if std::env::var("CARGO_CFG_TARGET_OS").as_deref() != Ok("windows") {
+        return;
+    }
+
+    let output_dir = std::env::var_os("OUT_DIR").expect("Cargo must provide OUT_DIR");
+    println!(
+        "cargo:rustc-link-search=native={}",
+        Path::new(&output_dir).display()
+    );
 }
 
 /// Compile the macOS launch trampoline stub (arm64) from its committed C source so

@@ -53,11 +53,6 @@ pub(crate) fn ensure_launcher_executable(script_path: &Path) -> Result<(), Strin
     })
 }
 
-#[cfg(not(target_os = "macos"))]
-fn ensure_launcher_executable(_script_path: &Path) -> Result<(), String> {
-    Ok(())
-}
-
 pub fn find_localconfig_paths(steam_path: &Path) -> Vec<PathBuf> {
     let Ok(entries) = std::fs::read_dir(steam_path.join("userdata")) else {
         return Vec::new();

@@ -8,6 +8,14 @@ mod tray;
 #[cfg(target_os = "windows")]
 mod windows_window;
 
+// The unit-test harness links the same Tauri dialog code as the application,
+// but tauri-build only attaches its Common Controls v6 resource to binaries.
+// Without this test-only link, Windows fails before running any test because
+// comctl32!TaskDialogIndirect is unavailable from the legacy activation context.
+#[cfg(all(test, target_os = "windows"))]
+#[link(name = "resource", kind = "static")]
+unsafe extern "C" {}
+
 use tauri::{Manager, WindowEvent};
 
 use services::startup::InstallerContextState;

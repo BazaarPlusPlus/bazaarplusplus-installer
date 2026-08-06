@@ -31,6 +31,10 @@ export const REQUIRED_RELEASE_INPUTS = Object.freeze({
 });
 
 const osArtifactNames = new Set(['.DS_Store', 'Thumbs.db', 'desktop.ini']);
+const macosExecutablePaths = new Set([
+  'run_bepinex.sh',
+  'BepInEx/plugins/ffmpeg'
+]);
 const fixedDosDate = (1 << 5) | 1;
 const fixedDosTime = 0;
 
@@ -64,7 +68,17 @@ function platformPaths(rootDir, platform) {
   };
 }
 
-export function listPayloadFiles(sourceDir) {
+function payloadFileMode({ hostPlatform, platform, relativePath, sourceMode }) {
+  if (hostPlatform !== 'win32') return sourceMode & 0o777;
+  return platform === 'macos' && macosExecutablePaths.has(relativePath)
+    ? 0o755
+    : 0o644;
+}
+
+export function listPayloadFiles(
+  sourceDir,
+  { platform, hostPlatform = process.platform } = {}
+) {
   const files = [];
   const walk = (directory) => {
     for (const dirent of fs
@@ -89,10 +103,19 @@ export function listPayloadFiles(sourceDir) {
         throw new Error(`Unsupported release staging entry: ${absolutePath}`);
       }
       const stat = fs.statSync(absolutePath);
+      const relativePath = path
+        .relative(sourceDir, absolutePath)
+        .split(path.sep)
+        .join('/');
       files.push({
-        path: path.relative(sourceDir, absolutePath).split(path.sep).join('/'),
+        path: relativePath,
         absolutePath,
-        mode: stat.mode & 0o777
+        mode: payloadFileMode({
+          hostPlatform,
+          platform,
+          relativePath,
+          sourceMode: stat.mode
+        })
       });
     }
   };
@@ -391,6 +414,7 @@ export function validateZipEntrySet(entries, expectedPaths) {
 export function preparePayloadZip({
   rootDir,
   platform,
+  hostPlatform = process.platform,
   requiredStagingPaths = REQUIRED_RELEASE_INPUTS[platform]
 }) {
   if (!requiredStagingPaths)
@@ -402,7 +426,8 @@ export function preparePayloadZip({
     sourceDir,
     outputPath: zipPath,
     manifestPath,
-    platform
+    platform,
+    hostPlatform
   });
 }
 
@@ -410,9 +435,10 @@ export function writeDeterministicZip({
   sourceDir,
   outputPath,
   manifestPath,
-  platform
+  platform,
+  hostPlatform = process.platform
 }) {
-  const files = listPayloadFiles(sourceDir);
+  const files = listPayloadFiles(sourceDir, { platform, hostPlatform });
   if (platform) assertMacosExecutableModes(platform, files);
   const entries = files.map((file) => ({
     name: file.path,
@@ -468,6 +494,7 @@ export function writeDeterministicZip({
 export function validatePayloadZip({
   rootDir,
   platform,
+  hostPlatform = process.platform,
   requiredStagingPaths = REQUIRED_RELEASE_INPUTS[platform]
 }) {
   if (!requiredStagingPaths)
@@ -495,7 +522,7 @@ export function validatePayloadZip({
       `${platform} payload ZIP checksum does not match its manifest`
     );
   }
-  const files = listPayloadFiles(sourceDir);
+  const files = listPayloadFiles(sourceDir, { platform, hostPlatform });
   assertMacosExecutableModes(platform, files);
   const entries = readZipEntries(zipBuffer);
   const mapping = validateZipEntrySet(
