@@ -39,7 +39,9 @@ fn compile_macos_trampoline_stub() {
         Err(err) => panic!("cannot inspect trampoline output {output}: {err}"),
     };
 
-    if !build_support::should_compile_trampoline(source_modified, output_modified) {
+    if !build_support::should_compile_trampoline(source_modified, output_modified)
+        && has_required_macos_deployment_target(output)
+    {
         return;
     }
 
@@ -48,11 +50,48 @@ fn compile_macos_trampoline_stub() {
             .unwrap_or_else(|err| panic!("cannot create {}: {err}", parent.display()));
     }
 
+    let deployment_target_arg = format!(
+        "-mmacosx-version-min={}",
+        build_support::MACOS_TRAMPOLINE_DEPLOYMENT_TARGET
+    );
     let status = Command::new("clang")
-        .args(["-arch", "arm64", "-O2", "-o", output, source])
+        .args([
+            "-arch",
+            "arm64",
+            deployment_target_arg.as_str(),
+            "-O2",
+            "-o",
+            output,
+            source,
+        ])
         .status()
         .unwrap_or_else(|err| panic!("failed to run clang for trampoline stub: {err}"));
     if !status.success() {
         panic!("clang failed to compile the macOS trampoline stub ({source})");
     }
+
+    if !has_required_macos_deployment_target(output) {
+        panic!(
+            "macOS trampoline stub has no {} deployment target: {output}",
+            build_support::MACOS_TRAMPOLINE_DEPLOYMENT_TARGET
+        );
+    }
+}
+
+fn has_required_macos_deployment_target(output: &str) -> bool {
+    let otool_output = Command::new("otool")
+        .args(["-l", output])
+        .output()
+        .unwrap_or_else(|err| panic!("failed to run otool for trampoline stub: {err}"));
+    if !otool_output.status.success() {
+        panic!(
+            "otool failed to inspect the macOS trampoline stub ({output}): {}",
+            String::from_utf8_lossy(&otool_output.stderr).trim()
+        );
+    }
+
+    build_support::has_macos_trampoline_deployment_target(
+        &String::from_utf8_lossy(&otool_output.stdout),
+        build_support::MACOS_TRAMPOLINE_DEPLOYMENT_TARGET,
+    )
 }
