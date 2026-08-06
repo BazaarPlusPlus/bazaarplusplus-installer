@@ -1,7 +1,7 @@
 ---
 status: truth
 topic: history-stream
-last-verified: f811cd1ebfc17c239e365b525ebec5ae0cb48855
+last-verified: 63a514c6439bea14a35e4048d7e5e699b9aac135
 ---
 
 # History And Stream
@@ -62,4 +62,5 @@ last-verified: f811cd1ebfc17c239e365b525ebec5ae0cb48855
 ## HTTP Surface
 
 - The local HTTP router exposes `/overlay`, `/settings`, stream record APIs, crop-config APIs, record images, and static overlay/settings assets in `src-tauri/src/stream/http.rs:29-40` and `src-tauri/src/stream/http.rs:75-109`.
+- Stream records expose a canonical `hero_id` separately from the display `title`; the mapper normalizes the legacy `Hero8` and canonical `TheDragons` database values to `hero_id: "TheDragons"` and `title: "The Dragons"`, while preserving other trimmed hero ids in `src-tauri/src/history/hero.rs` and `src-tauri/src/stream/records/mapper.rs`. The overlay chooses badge styling and assets from `hero_id`, with a direct `Hero8` fallback alias in `src-tauri/resources/stream/overlay.js`.
 - CORS is narrowed to Tauri origins and the local Vite dev origins `http://localhost:14207` and `http://127.0.0.1:14207` in `src-tauri/src/stream/http.rs:111-122`.
