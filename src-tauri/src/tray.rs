@@ -198,11 +198,7 @@ fn quit_app(app: &tauri::AppHandle) {
 }
 
 fn show_main_window(app: &tauri::AppHandle) {
-    if let Some(window) = app.get_webview_window("main") {
-        let _ = window.show();
-        let _ = window.unminimize();
-        let _ = window.set_focus();
-    }
+    crate::main_window::restore(app);
 }
 
 fn copy_text_to_clipboard(text: &str) -> Result<(), String> {

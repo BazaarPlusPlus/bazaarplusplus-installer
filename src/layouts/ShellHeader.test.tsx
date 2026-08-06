@@ -1,9 +1,39 @@
+// @vitest-environment jsdom
+
+import { act } from 'react';
+import { createRoot } from 'react-dom/client';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import type { AppBootstrapController } from '../features/about/useAppBootstrap';
 import { UpdaterProvider } from '../features/about/UpdaterProvider';
 import { LocaleProvider } from '../i18n/LocaleProvider';
 import { ShellHeader } from './ShellHeader';
+
+const tauriWindow = vi.hoisted(() => {
+  const state: { resizeHandler?: () => void } = {};
+  const unlisten = vi.fn();
+  return {
+    state,
+    api: {
+      minimize: vi.fn(async () => undefined),
+      toggleMaximize: vi.fn(async () => undefined),
+      close: vi.fn(async () => undefined),
+      isMaximized: vi.fn(async () => false),
+      onResized: vi.fn(async (handler: () => void) => {
+        state.resizeHandler = handler;
+        return unlisten;
+      })
+    }
+  };
+});
+
+vi.mock('@tauri-apps/api/window', () => ({
+  getCurrentWindow: () => tauriWindow.api
+}));
+
+vi.mock('../features/shared/streamSessionApi', () => ({
+  getStreamStatus: vi.fn(async () => ({ running: false }))
+}));
 
 const bootstrap: AppBootstrapController['bootstrap'] = {
   app_version: '4.4.0',
@@ -132,5 +162,76 @@ describe('ShellHeader', () => {
     expect(bilibiliOpen).toContain('aria-expanded="true"');
     expect(supportOpen).toContain('id="shell-support-menu"');
     expect(supportOpen).toContain('aria-expanded="true"');
+  });
+
+  it('renders Windows controls and switches maximize copy after resize', async () => {
+    const userAgent = Object.getOwnPropertyDescriptor(navigator, 'userAgent');
+    Object.defineProperty(navigator, 'userAgent', {
+      configurable: true,
+      value: 'Windows'
+    });
+    Object.defineProperty(window, '__TAURI_INTERNALS__', {
+      configurable: true,
+      value: {}
+    });
+    tauriWindow.api.isMaximized.mockResolvedValue(false);
+    tauriWindow.state.resizeHandler = undefined;
+
+    const container = document.createElement('div');
+    document.body.append(container);
+    const root = createRoot(container);
+
+    await act(async () => {
+      root.render(
+        <LocaleProvider>
+          <UpdaterProvider>
+            <ShellHeader
+              app={app}
+              showBilibili={false}
+              onToggleBilibili={() => undefined}
+              showSupport={false}
+              onToggleSupport={() => undefined}
+              onOpenPayment={() => undefined}
+              onCloseBilibili={() => undefined}
+              onCloseSupport={() => undefined}
+            />
+          </UpdaterProvider>
+        </LocaleProvider>
+      );
+    });
+
+    expect(
+      container.querySelectorAll('.bpp-window-control-button')
+    ).toHaveLength(3);
+    const maximize = container.querySelector('button[aria-label="最大化窗口"]');
+    expect(maximize).not.toBeNull();
+    expect(maximize?.getAttribute('title')).toBe('最大化窗口');
+    expect(
+      container.querySelector('button[aria-label="最小化窗口"]')
+    ).not.toBeNull();
+    expect(
+      container.querySelector('button[aria-label="关闭窗口"]')
+    ).not.toBeNull();
+
+    await act(async () => {
+      maximize?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    });
+    expect(tauriWindow.api.toggleMaximize).toHaveBeenCalledOnce();
+
+    tauriWindow.api.isMaximized.mockResolvedValue(true);
+    await act(async () => {
+      tauriWindow.state.resizeHandler?.();
+    });
+    const restore = container.querySelector('button[aria-label="还原窗口"]');
+    expect(restore).not.toBeNull();
+    expect(restore?.getAttribute('title')).toBe('还原窗口');
+
+    await act(async () => root.unmount());
+    container.remove();
+    delete (window as Window & { __TAURI_INTERNALS__?: unknown })
+      .__TAURI_INTERNALS__;
+    if (userAgent) {
+      Object.defineProperty(navigator, 'userAgent', userAgent);
+    }
   });
 });

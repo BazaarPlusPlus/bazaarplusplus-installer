@@ -53,9 +53,9 @@ History database handoff citation refresh: `2026-08-06` on `f811cd1ebfc17c239e36
 | `README.md` | project entrypoint | current-entrypoint | 2026-07-11 |
 | `.trae/rules/git-commit-message.md` | ignored local rule | ignored-operational | n/a |
 | `docs/INDEX.md` | documentation manifest | manifest | 2026-08-06 |
-| `CONTEXT.md` | entry map + glossary | truth | `f811cd1ebfc17c239e365b525ebec5ae0cb48855` |
-| `docs/truth/architecture.md` | architecture | truth | `c56cac3a94fea48f6711c45a5139cab3bc7322d8` |
-| `docs/truth/frontend.md` | frontend | truth | `eb337f8dcf15153e89ce2ca71af30c27cd6090ef` |
+| `CONTEXT.md` | entry map + glossary | truth | `aa9f9cbc10b9342a0029ddbad46799835cb11785` |
+| `docs/truth/architecture.md` | architecture | truth | `aa9f9cbc10b9342a0029ddbad46799835cb11785` |
+| `docs/truth/frontend.md` | frontend | truth | `aa9f9cbc10b9342a0029ddbad46799835cb11785` |
 | `docs/truth/install-reset.md` | install-reset | truth | `42d843efd0c202bf18e0810119d866982c205dcb` |
 | `docs/truth/launch-modes.md` | launch-modes | truth | `c56cac3a94fea48f6711c45a5139cab3bc7322d8` |
 | `docs/truth/history-stream.md` | history-stream | truth | `f811cd1ebfc17c239e365b525ebec5ae0cb48855` |

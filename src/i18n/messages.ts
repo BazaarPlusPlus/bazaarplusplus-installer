@@ -25,6 +25,8 @@ const zh = {
   // Window controls (Windows custom chrome)
   windowControls: '窗口控制',
   minimizeWindow: '最小化窗口',
+  maximizeWindow: '最大化窗口',
+  restoreWindow: '还原窗口',
   closeWindow: '关闭窗口',
   hideToTrayWhileStreaming: '隐藏到托盘（直播服务仍在运行）',
 
@@ -464,6 +466,8 @@ const en: Record<MessageKey, string> = {
 
   windowControls: 'Window controls',
   minimizeWindow: 'Minimize window',
+  maximizeWindow: 'Maximize window',
+  restoreWindow: 'Restore window',
   closeWindow: 'Close window',
   hideToTrayWhileStreaming: 'Hide to tray (stream service keeps running)',
 

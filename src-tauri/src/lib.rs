@@ -1,6 +1,7 @@
 mod commands;
 mod config;
 mod history;
+mod main_window;
 mod problem;
 mod services;
 mod stream;
@@ -17,6 +18,8 @@ mod windows_window;
 unsafe extern "C" {}
 
 use tauri::{Manager, WindowEvent};
+#[cfg(not(any(target_os = "android", target_os = "ios")))]
+use tauri_plugin_window_state::StateFlags;
 
 use services::startup::InstallerContextState;
 use tray::{build_tray, TrayMenuState};
@@ -29,19 +32,22 @@ pub fn run() {
 
     #[cfg(not(any(target_os = "android", target_os = "ios")))]
     {
-        // single-instance must be registered first; window-state restores the
-        // remembered window size/position on launch and saves it on close.
+        // single-instance must be registered first; window-state restores only
+        // geometry and maximization, never visibility or frame configuration.
         builder = builder
             .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
-                if let Some(window) = app.get_webview_window("main") {
-                    let _ = window.show();
-                    let _ = window.set_focus();
-                }
+                crate::main_window::restore(app);
             }))
-            .plugin(tauri_plugin_window_state::Builder::default().build());
+            .plugin(
+                tauri_plugin_window_state::Builder::default()
+                    .with_state_flags(
+                        StateFlags::SIZE | StateFlags::POSITION | StateFlags::MAXIMIZED,
+                    )
+                    .build(),
+            );
     }
 
-    builder
+    let app = builder
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_dialog::init())
@@ -61,14 +67,13 @@ pub fn run() {
                 window.set_decorations(false)?;
                 window.show()?;
 
-                // Showing the window can refresh its Win32 frame. Compact Tao's
-                // wide resize insets after the window has its final native frame.
+                // Showing the window can refresh its Win32 frame, so apply the
+                // border and corner style after it has its final native frame.
                 let border_window = window.clone();
                 window.run_on_main_thread(move || {
-                    if let Err(error) =
-                        crate::windows_window::configure_native_frame(&border_window)
+                    if let Err(error) = crate::windows_window::apply_dwm_frame_style(&border_window)
                     {
-                        eprintln!("failed to configure the Windows native frame: {error}");
+                        eprintln!("failed to apply the Windows DWM frame style: {error}");
                     }
                 })?;
 
@@ -116,6 +121,13 @@ pub fn run() {
             }
         })
         .invoke_handler(command_builder.invoke_handler())
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .build(tauri::generate_context!())
+        .expect("error while building tauri application");
+
+    app.run(|_app_handle, _event| {
+        #[cfg(target_os = "macos")]
+        if matches!(_event, tauri::RunEvent::Reopen { .. }) {
+            crate::main_window::restore(_app_handle);
+        }
+    });
 }

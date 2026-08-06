@@ -1,15 +1,18 @@
 import {
   Coffee,
+  Copy,
   Heart,
   Languages,
   Minus,
   MonitorPlay,
   QrCode,
+  Square,
   Users,
   X
 } from 'lucide-react';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import {
+  useEffect,
   useState,
   type CSSProperties,
   type ReactNode,
@@ -177,9 +180,54 @@ function WindowsWindowControls() {
   const { t } = useI18n();
   const streamRunning = useShellStreamServiceRunning();
   const [isWindowsRuntime] = useState(isWindowsTauriRuntime);
+  const [isMaximized, setIsMaximized] = useState(false);
   const closeLabel = streamRunning
     ? t('hideToTrayWhileStreaming')
     : t('closeWindow');
+  const maximizeLabel = isMaximized ? t('restoreWindow') : t('maximizeWindow');
+
+  useEffect(() => {
+    if (!isWindowsRuntime) return;
+
+    let active = true;
+    let unlisten: (() => void) | undefined;
+    const window = getCurrentWindow();
+    const updateMaximized = async () => {
+      try {
+        const maximized = await window.isMaximized();
+        if (active) setIsMaximized(maximized);
+      } catch (error) {
+        console.error(
+          'Failed to read the Windows window maximized state.',
+          error
+        );
+      }
+    };
+
+    void updateMaximized();
+    void window
+      .onResized(() => {
+        void updateMaximized();
+      })
+      .then((stopListening) => {
+        if (active) {
+          unlisten = stopListening;
+        } else {
+          stopListening();
+        }
+      })
+      .catch((error) => {
+        console.error(
+          'Failed to listen for Windows window resize events.',
+          error
+        );
+      });
+
+    return () => {
+      active = false;
+      unlisten?.();
+    };
+  }, [isWindowsRuntime]);
 
   if (!isWindowsRuntime) return null;
 
@@ -188,6 +236,13 @@ function WindowsWindowControls() {
       .minimize()
       .catch((error) => {
         console.error('Failed to minimize the Windows window.', error);
+      });
+  };
+  const toggleMaximize = () => {
+    void getCurrentWindow()
+      .toggleMaximize()
+      .catch((error) => {
+        console.error('Failed to toggle the Windows window size.', error);
       });
   };
   const close = () => {
@@ -208,6 +263,19 @@ function WindowsWindowControls() {
         aria-label={t('minimizeWindow')}
       >
         <Minus size={17} strokeWidth={1.8} aria-hidden="true" />
+      </button>
+      <button
+        type="button"
+        onClick={toggleMaximize}
+        className="bpp-button bpp-window-control-button size-9 shrink-0"
+        title={maximizeLabel}
+        aria-label={maximizeLabel}
+      >
+        {isMaximized ? (
+          <Copy size={15} strokeWidth={1.8} aria-hidden="true" />
+        ) : (
+          <Square size={15} strokeWidth={1.8} aria-hidden="true" />
+        )}
       </button>
       <button
         type="button"
