@@ -1,7 +1,7 @@
 ---
 status: truth
 topic: context
-last-verified: f811cd1ebfc17c239e365b525ebec5ae0cb48855
+last-verified: aa9f9cbc10b9342a0029ddbad46799835cb11785
 ---
 
 # BazaarPlusPlus Installer Context
@@ -12,10 +12,11 @@ Current behavior truth lives under `docs/truth/` (topic-sliced, code-cited, hash
 
 ## System Map
 
-- The app is a Tauri 2 desktop app with a React/Vite frontend and Rust backend. The package entry declares the app version and scripts in `package.json:2-36`; the Tauri app config sets the product name, frontend dev URL, build hooks, fixed default window, and updater endpoint in `src-tauri/tauri.conf.json:3-40`, while Windows supplies a fixed frameless override in `src-tauri/tauri.windows.conf.json:3-20`.
-- The native runtime registers single-instance, window-state, updater, process, dialog, opener, tray, selected-installation, installer-context, and stream-runtime state in `src-tauri/src/lib.rs:19-46`.
-- Startup warms installer context on a blocking task while setup asks the stream runtime to ensure the HTTP service in `src-tauri/src/lib.rs:80-92`. Install detection calls the same `OnceLock` initializer, so the first completed command response cannot observe a bootstrap seed in `src-tauri/src/services/startup.rs:23-34` and `src-tauri/src/services/detect/mod.rs:27-39`.
-- When the stream service is running, closing the main window hides it instead of quitting so OBS can keep using the local HTTP overlay in `src-tauri/src/lib.rs:94-109`.
+- The app is a Tauri 2 desktop app with a React/Vite frontend and Rust backend. The package entry declares the app version and scripts in `package.json:2-36`; the Tauri app config sets the product name, frontend dev URL, build hooks, resizable 1020 x 680 default window with a 900 x 600 minimum, and updater endpoint in `src-tauri/tauri.conf.json:3-38`, while Windows supplies a resizable 972 x 612 frameless override with the same minimum in `src-tauri/tauri.windows.conf.json:3-18`.
+- The native runtime registers single-instance, size/position/maximized-only window-state, updater, process, dialog, opener, tray, selected-installation, installer-context, and stream-runtime state before building the app in `src-tauri/src/lib.rs:28-125`.
+- Main-window restoration has one best-effort show, unminimize, and focus boundary shared by tray activation, a second application instance, and every macOS Dock reopen event (`src-tauri/src/main_window.rs:1-18`, `src-tauri/src/tray.rs:37-57`, `src-tauri/src/tray.rs:200-202`, `src-tauri/src/lib.rs:37-47`, `src-tauri/src/lib.rs:127-132`).
+- Startup warms installer context on a blocking task while setup asks the stream runtime to ensure the HTTP service in `src-tauri/src/lib.rs:93-105`. Install detection calls the same `OnceLock` initializer, so the first completed command response cannot observe a bootstrap seed in `src-tauri/src/services/startup.rs:23-34` and `src-tauri/src/services/detect/mod.rs:27-39`.
+- When the stream service is running, closing the main window hides it instead of quitting so OBS can keep using the local HTTP overlay in `src-tauri/src/lib.rs:107-121`.
 
 ## Glossary
 

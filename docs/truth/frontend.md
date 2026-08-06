@@ -1,7 +1,7 @@
 ---
 status: truth
 topic: frontend
-last-verified: eb337f8dcf15153e89ce2ca71af30c27cd6090ef
+last-verified: aa9f9cbc10b9342a0029ddbad46799835cb11785
 ---
 
 # Frontend
@@ -9,9 +9,10 @@ last-verified: eb337f8dcf15153e89ce2ca71af30c27cd6090ef
 ## Shell
 
 - `GlobalShell` wraps the app in bootstrap, updater, toast, and modal-coordinator providers before rendering the shell header, navigation rail, and route outlet in `src/layouts/GlobalShell.tsx:21-33` and `src/layouts/GlobalShell.tsx:105-159`.
-- Header actions are split into community and application groups with a visual divider in `src/layouts/ShellHeader.tsx:108-166`. GitHub, X, Xiaohongshu, and Douyin share one icon-control treatment, while Bilibili and Support remain labelled controls in `src/layouts/ShellHeader.tsx:319-410`, `src/layouts/ShellHeader.tsx:411-440`, and `src/layouts/ShellHeader.tsx:532-543`.
-- Bilibili and Support are controlled disclosures: Escape closes the open menu and restores its trigger, while outside pointer-down closes it in `src/layouts/GlobalShell.tsx:80-103`; their triggers expose expanded/control/menu relationships and their entries are menu items in `src/layouts/ShellHeader.tsx:411-509` and `src/layouts/ShellHeader.tsx:531-612`.
-- Windows window controls live in `src/layouts/ShellHeader.tsx:176-222`. While the stream service is running, close tooltip/aria switch to hide-to-tray copy via the shell-only poller in `src/features/stream/useShellStreamServiceRunning.ts:7-37`.
+- Header actions are split into community and application groups with a visual divider in `src/layouts/ShellHeader.tsx:108-166`. GitHub, X, Xiaohongshu, and Douyin share one icon-control treatment, while Bilibili and Support remain labelled controls in `src/layouts/ShellHeader.tsx:371-478`, `src/layouts/ShellHeader.tsx:479-580`, and `src/layouts/ShellHeader.tsx:582-682`.
+- Bilibili and Support are controlled disclosures: Escape closes the open menu and restores its trigger, while outside pointer-down closes it in `src/layouts/GlobalShell.tsx:80-103`; their triggers expose expanded/control/menu relationships and their entries are menu items in `src/layouts/ShellHeader.tsx:479-576` and `src/layouts/ShellHeader.tsx:599-679`.
+- Windows custom chrome exposes minimize, maximize/restore, and close controls in `src/layouts/ShellHeader.tsx:171-291`. The maximize control initializes from native `isMaximized`, refreshes its localized tooltip/aria label and icon after window resize events, and invokes native toggle-maximize; while the stream service is running, close tooltip/aria switch to hide-to-tray copy via the shell-only poller in `src/features/stream/useShellStreamServiceRunning.ts:7-37`.
+- At 920px and below, Header community actions are hidden while application/window controls remain available; the navigation rail and main padding also compact in `src/styles/index.css:3307-3327`. Product pages keep a shared large-window width cap through `.bpp-page` in `src/styles/index.css:782-790`, and the main content region owns low-height vertical scrolling in `src/styles/index.css:706-719`.
 - Payment and update dialogs register as global modal sources in `src/layouts/GlobalShell.tsx:139-157`. Payment is informational; the updater presentation contract supplies the update modal's open state, priority, dismissal policy, and action, while manual update checking is exposed as an Install maintenance action in `src/pages/Install.tsx:108-113` and `src/features/install/InstallActionsPanel.tsx:63-70`.
 
 ## Native-Feel Rules

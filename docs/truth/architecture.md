@@ -1,7 +1,7 @@
 ---
 status: truth
 topic: architecture
-last-verified: c56cac3a94fea48f6711c45a5139cab3bc7322d8
+last-verified: aa9f9cbc10b9342a0029ddbad46799835cb11785
 ---
 
 # Architecture
@@ -10,14 +10,16 @@ last-verified: c56cac3a94fea48f6711c45a5139cab3bc7322d8
 
 - `package.json` defines the desktop app package as `bppinstaller` and exposes the development, build, test, type-check, verification, and Tauri scripts in `package.json:2-36`; its `version` field is the single version source (see version sync below).
 - The frontend is built by Vite from `src/`; the Tauri config invokes `npm run dev` for development and `npm run build` before bundle creation in `src-tauri/tauri.conf.json:6-11`. That build script generates bindings, runs the prebuild source/resource checks and TypeScript check, then builds the frontend in `package.json:19-24`.
-- The main desktop shell is Rust/Tauri. It registers native plugins and shared state in `src-tauri/src/lib.rs:19-46`, then uses the canonical Specta builder's invoke handler and runs the generated Tauri context in `src-tauri/src/lib.rs:110-112`.
-- The default main window is fixed at 1020 x 680 and cannot resize or maximize in `src-tauri/tauri.conf.json:14-26`. Windows overrides it with a fixed 972 x 612 frameless window that starts hidden in `src-tauri/tauri.windows.conf.json:3-20`; setup shows it and configures the native frame in `src-tauri/src/lib.rs:47-78`.
+- The main desktop shell is Rust/Tauri. It registers native plugins and shared state in `src-tauri/src/lib.rs:28-60`, attaches the canonical Specta builder's invoke handler, builds the generated Tauri context, and runs the app with a platform event callback in `src-tauri/src/lib.rs:107-132`.
+- The default main window is resizable and maximizable at 1020 x 680 with a 900 x 600 minimum in `src-tauri/tauri.conf.json:14-24`. Windows overrides it with a resizable 972 x 612 frameless window with the same minimum that starts hidden in `src-tauri/tauri.windows.conf.json:3-18`; setup shows it and applies only DWM border/corner styling while Tao/Tauri retains the native resize frame in `src-tauri/src/lib.rs:61-90` and `src-tauri/src/windows_window.rs:1-56`.
 
 ## Native Runtime
 
-- Tauri startup builds the tray, warms `InstallerContextState`, and asks `StreamRuntime` to ensure the stream service in `src-tauri/src/lib.rs:80-92`. Install detection waits on the same `OnceLock` initializer in `src-tauri/src/services/startup.rs:23-34` and `src-tauri/src/services/detect/mod.rs:27-39`, so no frontend event/refetch race is required.
-- Close behavior is service-aware: while the stream runtime reports `running`, the main window close request is prevented and the window is hidden in `src-tauri/src/lib.rs:94-109`.
-- The default capability grants updater check/download/install, process restart, `steam://*` opening, and dialog permissions in `src-tauri/capabilities/default.json:6-25`.
+- Tauri startup builds the tray, warms `InstallerContextState`, and asks `StreamRuntime` to ensure the stream service in `src-tauri/src/lib.rs:93-105`. Install detection waits on the same `OnceLock` initializer in `src-tauri/src/services/startup.rs:23-34` and `src-tauri/src/services/detect/mod.rs:27-39`, so no frontend event/refetch race is required.
+- Main-window restoration is the single `main_window::restore` operation: it attempts show, unminimize, and focus independently, logging a failed step while continuing (`src-tauri/src/main_window.rs:1-18`). Tray clicks/menu actions and single-instance activation call it directly, while every macOS `RunEvent::Reopen` calls it without a visible-window condition (`src-tauri/src/tray.rs:37-57`, `src-tauri/src/tray.rs:200-202`, `src-tauri/src/lib.rs:37-47`, `src-tauri/src/lib.rs:127-132`).
+- Window-state persistence is restricted to size, position, and maximized state; visibility, fullscreen, and decorations are neither saved nor restored in `src-tauri/src/lib.rs:33-48`.
+- Close behavior is service-aware: while the stream runtime reports `running`, the main window close request is prevented and the window is hidden in `src-tauri/src/lib.rs:107-121`.
+- The default capability grants window minimize/toggle-maximize/close/show/drag, updater check/download/install, process restart, `steam://*` opening, and dialog permissions in `src-tauri/capabilities/default.json:6-26`.
 
 ## Feature Boundaries
 
