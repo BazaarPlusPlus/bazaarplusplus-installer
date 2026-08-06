@@ -1,6 +1,7 @@
 mod commands;
 mod config;
 mod history;
+mod main_window;
 mod problem;
 mod services;
 mod stream;
@@ -33,15 +34,12 @@ pub fn run() {
         // remembered window size/position on launch and saves it on close.
         builder = builder
             .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
-                if let Some(window) = app.get_webview_window("main") {
-                    let _ = window.show();
-                    let _ = window.set_focus();
-                }
+                crate::main_window::restore(app);
             }))
             .plugin(tauri_plugin_window_state::Builder::default().build());
     }
 
-    builder
+    let app = builder
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_dialog::init())
@@ -115,6 +113,13 @@ pub fn run() {
             }
         })
         .invoke_handler(command_builder.invoke_handler())
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .build(tauri::generate_context!())
+        .expect("error while building tauri application");
+
+    app.run(|_app_handle, _event| {
+        #[cfg(target_os = "macos")]
+        if matches!(_event, tauri::RunEvent::Reopen { .. }) {
+            crate::main_window::restore(_app_handle);
+        }
+    });
 }
