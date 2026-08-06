@@ -1,7 +1,7 @@
 ---
 status: truth
 topic: history-stream
-last-verified: f811cd1ebfc17c239e365b525ebec5ae0cb48855
+last-verified: 015f9ed537b2748f9025a19628cfafaa773225f9
 ---
 
 # History And Stream
@@ -17,6 +17,7 @@ last-verified: f811cd1ebfc17c239e365b525ebec5ae0cb48855
 - `open_write_connection` additionally rejects a database SQLite has silently downgraded to read-only, so an unwritable file fails at open rather than partway through a cleanup transaction, in `src-tauri/src/history/queries.rs:51-102`.
 - History summary counts runs, completed runs, wins, latest run timestamp, and completed combat replay videos in `src-tauri/src/history/queries.rs:99-135`.
 - The run list orders by end/last-seen/start timestamp descending, with run id as tie-breaker, in `src-tauri/src/history/queries.rs:137-155`.
+- History maps the legacy `Hero8` and canonical `TheDragons` values to the display name `The Dragons` for both run heroes and battle opponents, while preserving absent opponent heroes and other hero names in `src-tauri/src/history/hero.rs` and `src-tauri/src/history/mapper.rs`.
 - Primary screenshots prefer explicit primary rows and fall back to latest `end_of_run_auto` screenshots in `src-tauri/src/history/screenshots.rs:27-86` and `src-tauri/src/history/screenshots.rs:88-136`.
 
 ## History UI
@@ -62,4 +63,5 @@ last-verified: f811cd1ebfc17c239e365b525ebec5ae0cb48855
 ## HTTP Surface
 
 - The local HTTP router exposes `/overlay`, `/settings`, stream record APIs, crop-config APIs, record images, and static overlay/settings assets in `src-tauri/src/stream/http.rs:29-40` and `src-tauri/src/stream/http.rs:75-109`.
+- Stream records expose a canonical `hero_id` separately from the display `title`; the mapper normalizes the legacy `Hero8` and canonical `TheDragons` database values to `hero_id: "TheDragons"` and `title: "The Dragons"`, while preserving other trimmed hero ids in `src-tauri/src/history/hero.rs` and `src-tauri/src/stream/records/mapper.rs`. The overlay chooses badge styling and assets from `hero_id`, with a direct `Hero8` fallback alias in `src-tauri/resources/stream/overlay.js`.
 - CORS is narrowed to Tauri origins and the local Vite dev origins `http://localhost:14207` and `http://127.0.0.1:14207` in `src-tauri/src/stream/http.rs:111-122`.

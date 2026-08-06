@@ -2,6 +2,7 @@ use std::path::{Path, PathBuf};
 
 use serde::Serialize;
 
+use crate::history::hero::{canonical_hero_id, hero_display_name};
 use crate::history::mapper::strip_url_for_screenshot;
 use crate::history::screenshots::OverlaySnapshotRow;
 
@@ -10,6 +11,7 @@ use super::image::resolve_overlay_image_path;
 #[derive(Clone, Debug, Serialize)]
 pub struct OverlayRecord {
     pub id: String,
+    pub hero_id: String,
     pub title: String,
     pub subtitle: String,
     pub captured_at: String,
@@ -31,10 +33,13 @@ pub(super) fn to_overlay_record(
     let strip_url = image_path
         .as_ref()
         .map(|_| strip_url_for_screenshot(&row.id));
+    let hero_id = canonical_hero_id(&row.hero);
+    let title = hero_display_name(&hero_id).to_string();
 
     OverlayRecord {
         id: row.id,
-        title: row.hero.clone(),
+        hero_id,
+        title,
         subtitle: build_subtitle(&row.game_mode, row.wins, row.battle_count),
         captured_at: row.captured_at,
         captured_at_utc: row.captured_at_utc,

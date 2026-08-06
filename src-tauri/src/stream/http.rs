@@ -532,9 +532,9 @@ async fn badge_asset(Path((category, file_name)): Path<(String, String)>) -> Res
 mod tests {
     use super::{
         crop_cache_path, crop_dynamic_image, is_allowed_cors_origin, load_or_create_strip_cache,
-        overlay_asset_path, BADGE_ROUTE, CROP_CONFIG_ROUTE, LATEST_RECORD_ROUTE, OVERLAY_CSS_ROUTE,
-        OVERLAY_JS_ROUTE, OVERLAY_ROUTE, RECORD_IMAGE_ROUTE, RECORD_LIST_ROUTE, SETTINGS_CSS_ROUTE,
-        SETTINGS_JS_ROUTE, SETTINGS_ROUTE, STRIP_IMAGE_ROUTE,
+        overlay_asset_path, BADGES_DIR, BADGE_ROUTE, CROP_CONFIG_ROUTE, LATEST_RECORD_ROUTE,
+        OVERLAY_CSS_ROUTE, OVERLAY_JS_ROUTE, OVERLAY_ROUTE, RECORD_IMAGE_ROUTE, RECORD_LIST_ROUTE,
+        SETTINGS_CSS_ROUTE, SETTINGS_JS_ROUTE, SETTINGS_ROUTE, STRIP_IMAGE_ROUTE,
     };
     use crate::stream::overlay_settings::OverlayCropSettings;
     use axum::http::HeaderValue;
@@ -545,6 +545,25 @@ mod tests {
         let path = overlay_asset_path("overlay.js");
 
         assert!(path.ends_with("resources/stream/overlay.js"));
+    }
+
+    #[test]
+    fn embedded_badge_assets_are_complete_for_every_hero() {
+        for hero_key in [
+            "van", "pyg", "doo", "mak", "jul", "kar", "ste", "dra", "unk",
+        ] {
+            for path in [
+                format!("heroes/hero-{hero_key}.svg"),
+                format!("herohalf/herohalf-{hero_key}.svg"),
+            ] {
+                assert!(BADGES_DIR.get_file(&path).is_some(), "missing {path}");
+            }
+
+            for battle_count in 0..=20 {
+                let path = format!("info/info-{hero_key}-{battle_count}.svg");
+                assert!(BADGES_DIR.get_file(&path).is_some(), "missing {path}");
+            }
+        }
     }
 
     #[test]
