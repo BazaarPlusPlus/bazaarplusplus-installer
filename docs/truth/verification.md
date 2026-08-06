@@ -1,7 +1,7 @@
 ---
 status: truth
 topic: verification
-last-verified: eb337f8dcf15153e89ce2ca71af30c27cd6090ef
+last-verified: 456b6f83dca7677477373d0d6ae33520e275595f
 ---
 
 # Verification
@@ -10,8 +10,9 @@ Use the smallest command that verifies the changed behavior; use the authoritati
 
 ## Authoritative Gates
 
-- `npm run verify` is the release-resource gate. `npm run verify -- --source-only` is the source-only gate for clean checkouts without private payloads, and `--release-platform <macos|windows>` narrows release payload validation to one platform in `scripts/verify.mjs:121-145`.
-- The gate sequentially generates bindings while running the full Rust tests once, checks binding drift and formatting, type-checks TypeScript, runs Vitest, checks Rust formatting and the locked Cargo graph, runs strict Clippy and rustdoc, applies the selected prebuild guard, and builds the production frontend in `scripts/verify.mjs:16-89`. It stops on the first failure and returns that command's status in `scripts/verify.mjs:92-118`.
+- `npm run verify` is the release-resource gate. `npm run verify -- --source-only` is the source-only gate for clean checkouts without private payloads, and `--release-platform <macos|windows>` narrows release payload validation to one platform in `scripts/verify.mjs:124-147`.
+- The gate sequentially generates bindings while running the full Rust tests once, checks binding drift and formatting, type-checks TypeScript, runs Vitest, checks Rust formatting and the locked Cargo graph, runs strict Clippy and rustdoc, applies the selected prebuild guard, and builds the production frontend in `scripts/verify.mjs:16-89`. It stops on the first failure and returns that command's status in `scripts/verify.mjs:92-122`.
+- On Windows the gate routes its `npm` steps through `ComSpec` as `cmd /d /s /c npm.cmd ...`, leaving non-npm steps untouched, in `scripts/verify.mjs:97-107`.
 
 ## Common Commands
 
@@ -24,12 +25,15 @@ Use the smallest command that verifies the changed behavior; use the authoritati
 
 - Standalone generation runs one locked filtered Cargo test; the verification/test variant runs the full locked Rust suite in that same binding-export invocation in `scripts/generate-bindings.mjs:91-125`.
 - Generation normalizes and validates a temporary result before atomically replacing `src/types/generated` in `scripts/generate-bindings.mjs:20-89`; the prebuild guard then fails on any generated-directory git drift without regenerating it in `scripts/prebuild-check.mjs:100-125`.
-- Generator tests verify atomic replacement, missing/empty artifact failures, and preservation of the prior artifact when its backup rename fails in `scripts/generate-bindings.test.mjs:11-100`; orchestration tests verify one binding step and original failure-code propagation in `scripts/verify.test.mjs:5-64`.
+- Generator tests verify atomic replacement, missing/empty artifact failures, and preservation of the prior artifact when its backup rename fails in `scripts/generate-bindings.test.mjs:11-100`; orchestration tests verify one binding step, original failure-code propagation, and the Windows `ComSpec` npm shim in `scripts/verify.test.mjs:5-87`.
 
-## Build Incrementality
+## macOS Trampoline Build
 
-- The macOS build script watches both trampoline source and output, but invokes arm64 `clang -O2` only when the output is absent or older than the source in `src-tauri/build.rs:16-57`.
-- The missing, source-newer, and output-fresh decisions are covered through the pure timestamp seam in `src-tauri/tests/trampoline_build_support.rs:6-36`.
+- The macOS build script is the only place that compiles the trampoline stub; `build.sh` only signs the already-built binary at `src-tauri/resources/Trampoline/macos/bpp_launcher` in `build.sh:35` and `build.sh:637`.
+- Compilation passes `-mmacosx-version-min` from `build_support::MACOS_TRAMPOLINE_DEPLOYMENT_TARGET` (`12.0`) alongside `-arch arm64 -O2`, so the stub cannot inherit the build host SDK baseline and raise the game's own minimum macOS version in `src-tauri/build.rs:71-89` and `src-tauri/build_support.rs:3`.
+- The script watches both trampoline source and output, and skips compilation only when the output is newer than the source *and* already carries the required deployment target, so a stale stub left by an earlier build is rebuilt rather than reused in `src-tauri/build.rs:60-64`.
+- Every freshly compiled stub is re-inspected and the build fails when the baseline is wrong in `src-tauri/build.rs:91-115`. The `otool -l` reading accepts the modern `LC_BUILD_VERSION` form (`platform 1` plus `minos`) and the legacy `LC_VERSION_MIN_MACOSX` form in `src-tauri/build_support.rs:15-50`.
+- The missing, source-newer, and output-fresh decisions are covered through the pure timestamp seam, and the accepted, rejected, and legacy load-command readings through the pure parsing seam, in `src-tauri/tests/trampoline_build_support.rs:6-86`.
 
 ## Architecture Behavior Tests
 
@@ -46,7 +50,7 @@ Use the smallest command that verifies the changed behavior; use the authoritati
 - Install workflow tests cover authoritative initial load and blocking-failure retry, preserved refresh failure, single-flight rejection, atomic directory selection plus cancel no-op, install/reset/uninstall confirmation target retention with compat locking and exact retry, success-state adoption without an extra read, failure reconciliation and separate reconciliation problems, reset removed/nothing-to-delete notices, confirmed uninstall plus direct launch behavior, notice acknowledgement without timers, disposal invalidation, primary-action branches, and both command adapters in `src/features/install/installWorkflow.test.ts:107-653`. Bilingual semantic warnings/problems and partial-failure recovery parameters remain covered in `src/features/install/installProblems.test.ts:10-89`; native-adapter preservation is covered in `src/api/commandClient.dispatch.test.ts:57-76`. Rust tests pin Install semantic serialization and service-boundary classification in `src-tauri/src/problem.rs:46-99` and `src-tauri/src/services/install/mod.rs:282-366`.
 - Modal-coordinator tests cover strict priority, equal-priority FIFO, queued-source unregistration, non-preempting update/support dialogs, active confirmation upgrades, critical preemption, and connected/fallback focus restoration in `src/features/shared/modalCoordinator.test.ts:17-110`. The shell/route integration case covers a routed confirmation upgrading to blocked critical work, route-source unmount, and ordered handoff to update then payment in `src/features/shared/modalCoordinator.integration.test.ts:4-40`; controlled disclosure semantics are rendered in `src/layouts/ShellHeader.test.tsx:123-135`.
 - Updater state tests cover manual/silent checks, mutually consistent phases, determinate/indeterminate progress, download-versus-install classification, fresh-handle retry, blocked dismissal, restart failure retention, and recovery in `src/features/about/updater.test.ts:58-353`. Presentation tests cover shared header/modal derivation and confirmation collision in `src/features/about/updaterPresentation.test.ts:15-111`; bilingual semantic presentation and optional diagnostics are covered in `src/features/about/updaterProblems.test.ts:10-53`, while modal markup tests cover progress ARIA and manual restart recovery in `src/layouts/ShellUpdateModal.test.tsx:33-89`.
-- About bootstrap tests cover initial loading, native success, packaged fallback, retry success, repeated failure, no-data blocking failure, and Preview provenance in `src/features/about/appBootstrap.test.ts:34-168`. The same semantic problem is presented in Chinese and English without exposing diagnostics as user copy in `src/features/about/aboutProblems.test.ts:8-35`; rendered markup tests cover live-region feedback, native retry/disclosure controls, selectable versions, explicit unavailable values, and the Credits heading hierarchy in `src/pages/About.test.tsx:34-103`.
+- About bootstrap tests cover initial loading, native success, packaged fallback, retry success, repeated failure, no-data blocking failure, and Preview provenance in `src/features/about/appBootstrap.test.ts:34-168`. The same semantic problem is presented in Chinese and English without exposing diagnostics as user copy in `src/features/about/aboutProblems.test.ts:8-35`; rendered markup tests cover live-region feedback, native retry/disclosure controls, selectable versions, explicit unavailable values, and the Credits heading hierarchy in `src/pages/About.test.tsx:34-104`.
 
 ## Version And Platform Guards
 
