@@ -186,4 +186,33 @@ mod tests {
         assert_eq!(latest.rank.as_deref(), Some("Diamond"));
         assert_eq!(latest.rating, Some(500));
     }
+
+    #[test]
+    fn repository_canonicalizes_the_dragons_legacy_hero_name() {
+        let temp_dir = tempfile::tempdir().unwrap();
+        let game_path = temp_dir.path().join("TheBazaar");
+        let data_dir = paths::bpp_data_dir(&game_path);
+        std::fs::create_dir_all(&data_dir).unwrap();
+
+        let database_path = paths::database_path(&game_path);
+        let conn = rusqlite::Connection::open(&database_path).unwrap();
+        create_run_screenshots_table(&conn);
+        conn.execute(
+            "insert into run_screenshots (
+                screenshot_id, run_id, capture_source, image_relative_path, captured_at_local,
+                captured_at_utc, hero_name
+             ) values (
+                'snap-dra', 'run-dra', 'end_of_run_auto', 'dragons.png',
+                '2026-08-06T20:30:05+00:00', '2026-08-06T20:30:05+00:00', 'Hero8'
+             )",
+            [],
+        )
+        .unwrap();
+
+        let repository = OverlayRecordRepository::new(Some(game_path));
+        let latest = repository.load_record_at_offset(None, 0).unwrap().unwrap();
+
+        assert_eq!(latest.hero_id, "TheDragons");
+        assert_eq!(latest.title, "The Dragons");
+    }
 }
