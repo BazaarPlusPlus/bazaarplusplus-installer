@@ -10,7 +10,7 @@ import type { HistoryRunRow } from '../../types/backend';
 import { getStreamStatus } from '../shared/streamSessionApi';
 import { isReadyPageState } from '../shared/pageState';
 import { optionalStripPreviewUrl } from './stripPreview';
-import { listHistoryRuns } from './historyApi';
+import { endGameProcess, listHistoryRuns } from './historyApi';
 import { historyProblemFromError } from './historyProblems';
 import {
   initialHistoryPageState,
@@ -20,6 +20,8 @@ import {
   loadHistoryPreviewCapability,
   type HistoryPreviewState
 } from './historyPreview';
+
+export type EndGameProcessOutcome = 'terminated' | 'already-exited' | 'failed';
 
 export function useHistoryPage() {
   const [state, dispatch] = useReducer(
@@ -67,6 +69,24 @@ export function useHistoryPage() {
     refresh();
   }, [refresh]);
 
+  const [endingGameProcess, setEndingGameProcess] = useState(false);
+
+  // Reloads on every outcome: a process that was already gone leaves the same
+  // stale error on screen as one this just ended.
+  const endLeftoverGameProcess =
+    useCallback(async (): Promise<EndGameProcessOutcome> => {
+      setEndingGameProcess(true);
+      try {
+        const terminated = await endGameProcess();
+        return terminated ? 'terminated' : 'already-exited';
+      } catch {
+        return 'failed';
+      } finally {
+        setEndingGameProcess(false);
+        refresh();
+      }
+    }, [refresh]);
+
   const previewUrl = useCallback(
     (run: HistoryRunRow) =>
       optionalStripPreviewUrl(preview.baseUrl, run.strip_url),
@@ -97,6 +117,8 @@ export function useHistoryPage() {
       state.phase === 'initial-loading' ||
       (isReadyPageState(state) && state.refresh.phase === 'refreshing'),
     previewUrl,
-    refresh
+    refresh,
+    endLeftoverGameProcess,
+    endingGameProcess
   };
 }

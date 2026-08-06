@@ -8,6 +8,11 @@ export async function listHistoryRuns(limit = 50) {
   return commandClient.listHistoryRuns(limit);
 }
 
+/** Resolves to whether a leftover game process was actually terminated. */
+export async function endGameProcess() {
+  return commandClient.endGameProcess();
+}
+
 export async function loadHistoryRunDetail(runId: string) {
   return commandClient.getHistoryRunDetail(runId);
 }

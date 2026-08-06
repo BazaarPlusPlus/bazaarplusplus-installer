@@ -21,9 +21,14 @@ import {
   presentHistoryProblem,
   type HistoryPageProblem
 } from '../features/history/historyProblems';
-import { useHistoryPage } from '../features/history/useHistoryPage';
+import {
+  useHistoryPage,
+  type EndGameProcessOutcome
+} from '../features/history/useHistoryPage';
 import { formatProblemDiagnostic } from '../features/shared/problems';
+import { useToast } from '../components/ui/Toast';
 import { useI18n } from '../i18n/LocaleProvider';
+import type { MessageKey } from '../i18n/messages';
 import type { HistoryRunRow } from '../types/backend';
 
 export default function History() {
@@ -52,6 +57,8 @@ export default function History() {
         <HistoryProblemBanner
           problem={page.state.problem}
           onRetry={page.refresh}
+          onEndGameProcess={page.endLeftoverGameProcess}
+          endingGameProcess={page.endingGameProcess}
         />
       ) : (
         <div className="flex min-h-0 w-full flex-1 flex-col gap-4">
@@ -83,6 +90,8 @@ export default function History() {
             <HistoryProblemBanner
               problem={page.state.refresh.problem}
               onRetry={page.refresh}
+              onEndGameProcess={page.endLeftoverGameProcess}
+              endingGameProcess={page.endingGameProcess}
             />
           )}
 
@@ -268,15 +277,29 @@ function RunPreview({
 
 function HistoryProblemBanner({
   problem,
-  onRetry
+  onRetry,
+  onEndGameProcess,
+  endingGameProcess
 }: {
   problem: HistoryPageProblem;
   onRetry: () => void;
+  onEndGameProcess: () => Promise<EndGameProcessOutcome>;
+  endingGameProcess: boolean;
 }) {
   const { t } = useI18n();
+  const { showToast } = useToast();
   const diagnostic = problem.diagnostic
     ? formatProblemDiagnostic(problem)
     : null;
+
+  const endGameProcess = async () => {
+    const outcome = await onEndGameProcess();
+    showToast({
+      tone: outcome === 'failed' ? 'error' : 'success',
+      message: t(endGameProcessMessageKey(outcome))
+    });
+  };
+
   return (
     <ProblemBanner
       message={presentHistoryProblem(problem, t)}
@@ -289,6 +312,16 @@ function HistoryProblemBanner({
               {t('historyOpenInstall')}
             </Link>
           )}
+          {problem.code === 'history_read_blocked_by_game' && (
+            <button
+              type="button"
+              onClick={() => void endGameProcess()}
+              disabled={endingGameProcess}
+              className="underline underline-offset-2 disabled:opacity-60"
+            >
+              {t('historyEndGameProcess')}
+            </button>
+          )}
           <button
             type="button"
             onClick={onRetry}
@@ -300,6 +333,17 @@ function HistoryProblemBanner({
       }
     />
   );
+}
+
+function endGameProcessMessageKey(outcome: EndGameProcessOutcome): MessageKey {
+  switch (outcome) {
+    case 'terminated':
+      return 'historyEndGameProcessDone';
+    case 'already-exited':
+      return 'historyEndGameProcessNotFound';
+    case 'failed':
+      return 'historyEndGameProcessFailed';
+  }
 }
 
 function HistoryPreviewProblemBanner({

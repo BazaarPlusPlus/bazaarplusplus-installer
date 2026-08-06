@@ -22,6 +22,7 @@ export function createPreviewCommands(native: CommandAdapter): CommandAdapter {
     resetBepinex: (...args) => native.resetBepinex(...args),
     uninstallMod: (...args) => native.uninstallMod(...args),
     launchGame: async () => ({ ok: true }),
+    endGameProcess: async () => false,
     getStreamStatus: async () => idleStreamStatus,
     ensureStreamSession: async () => idleStreamStatus,
     restartStreamSession: async () => idleStreamStatus,

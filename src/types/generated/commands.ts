@@ -13,6 +13,15 @@ export const commands = {
 	resetBepinex: (gamePath: string) => __TAURI_INVOKE<ResetBepinexResult>("reset_bepinex", { gamePath }),
 	uninstallMod: (gamePath: string) => __TAURI_INVOKE<InstallState>("uninstall_mod", { gamePath }),
 	launchGame: () => __TAURI_INVOKE<FileActionResult>("launch_game"),
+	/**
+	 *  End a game process that outlived its window. Both History and Install stall
+	 *  on that state — one cannot read the mod database, the other refuses to touch
+	 *  installed files — so the recovery lives outside either page.
+	 * 
+	 *  Returns whether a process was actually terminated: finding none means the
+	 *  state the caller was recovering from is already gone.
+	 */
+	endGameProcess: () => __TAURI_INVOKE<boolean>("end_game_process"),
 	getStreamStatus: () => __TAURI_INVOKE<StreamServiceStatus>("get_stream_status"),
 	ensureStreamSession: (gamePath: string | null) => __TAURI_INVOKE<StreamServiceStatus>("ensure_stream_session", { gamePath }),
 	restartStreamSession: (gamePath: string | null) => __TAURI_INVOKE<StreamServiceStatus>("restart_stream_session", { gamePath }),
@@ -258,7 +267,7 @@ export type SemanticProblem = {
 	diagnostic: string | null,
 };
 
-export type SemanticProblemCode = "history_unavailable" | "history_read_failed" | "history_database_unsupported_schema" | "history_action_failed" | "install_detection_failed" | "install_action_failed" | "install_game_running" | "install_partial_failure" | "stream_service_failed" | "stream_window_failed" | "stream_crop_failed";
+export type SemanticProblemCode = "history_unavailable" | "history_read_failed" | "history_read_blocked_by_game" | "history_database_unsupported_schema" | "history_action_failed" | "install_detection_failed" | "install_action_failed" | "install_game_running" | "install_partial_failure" | "stream_service_failed" | "stream_window_failed" | "stream_crop_failed";
 
 export type StorageCleanupExecution = { scope: "screenshots"; result: ScreenshotCleanupResult } | { scope: "run_data"; result: RunDataCleanupResult };
 

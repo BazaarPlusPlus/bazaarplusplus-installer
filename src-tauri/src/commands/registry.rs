@@ -16,6 +16,7 @@ pub fn builder() -> Builder<tauri::Wry> {
             crate::commands::install::reset_bepinex,
             crate::commands::install::uninstall_mod,
             crate::commands::install::launch_game,
+            crate::commands::game::end_game_process,
             crate::commands::stream::get_stream_status,
             crate::commands::stream::ensure_stream_session,
             crate::commands::stream::restart_stream_session,

@@ -9,6 +9,7 @@ import {
 export type HistoryPageProblemCode =
   | 'history_unavailable'
   | 'history_read_failed'
+  | 'history_read_blocked_by_game'
   | 'history_database_unsupported_schema'
   | 'history_preview_unavailable'
   | 'history_unexpected';
@@ -20,6 +21,7 @@ export function historyProblemFromError(error: unknown): HistoryPageProblem {
   switch (problem.code) {
     case 'history_unavailable':
     case 'history_read_failed':
+    case 'history_read_blocked_by_game':
     case 'history_database_unsupported_schema':
     case 'history_unexpected':
       return {
@@ -43,6 +45,8 @@ export function historyProblemMessageKey(
       return 'historyProblemUnavailable';
     case 'history_read_failed':
       return 'historyProblemReadFailed';
+    case 'history_read_blocked_by_game':
+      return 'historyProblemBlockedByGame';
     case 'history_database_unsupported_schema':
       return 'historyProblemUnsupportedSchema';
     case 'history_preview_unavailable':

@@ -28,28 +28,105 @@ pub struct VideoRef {
     pub relative_path: String,
 }
 
+/// Backoff before each retry of a transient open. The mod writes this database
+/// from the running game, so a read can land mid-checkpoint and fail once
+/// before succeeding.
+const OPEN_RETRY_BACKOFF: [Duration; 2] = [Duration::from_millis(50), Duration::from_millis(150)];
+
+/// Read connection for every history query.
+///
+/// Opened read-write on purpose. A read-only connection cannot create a missing
+/// `-shm` or recover a dirty WAL, and both are exactly what a game process that
+/// exited uncleanly leaves behind — so the read-only flag turns a recoverable
+/// database into an unreadable one. Write access is not a requirement of this
+/// path: when the file is write-protected SQLite opens it read-only by itself.
 pub fn open_connection(database_path: &Path) -> Result<Connection, String> {
-    let conn = Connection::open_with_flags(database_path, OpenFlags::SQLITE_OPEN_READ_ONLY)
-        .map_err(|err| err.to_string())?;
-    conn.busy_timeout(Duration::from_secs(2))
-        .map_err(|err| err.to_string())?;
-    validate_supported_schema(&conn)?;
-    Ok(conn)
+    open_with_retry(database_path, Writability::Optional)
 }
 
+/// Write connection for delete and cleanup paths. Because SQLite silently
+/// downgrades a write-protected database to read-only, an unwritable file would
+/// otherwise open cleanly here and only fail partway through a cleanup
+/// transaction; the writability check moves that failure to the open.
 pub fn open_write_connection(database_path: &Path) -> Result<Connection, String> {
-    let conn = Connection::open_with_flags(database_path, OpenFlags::SQLITE_OPEN_READ_WRITE)
-        .map_err(|err| err.to_string())?;
-    conn.busy_timeout(Duration::from_secs(2))
-        .map_err(|err| err.to_string())?;
-    validate_supported_schema(&conn)?;
-    Ok(conn)
+    open_with_retry(database_path, Writability::Required)
 }
 
-fn validate_supported_schema(conn: &Connection) -> Result<(), String> {
-    let found = conn
-        .query_row("PRAGMA user_version", [], |row| row.get::<_, i64>(0))
-        .map_err(|err| err.to_string())?;
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum Writability {
+    Optional,
+    Required,
+}
+
+fn open_with_retry(database_path: &Path, writability: Writability) -> Result<Connection, String> {
+    let mut attempt = 0usize;
+    loop {
+        match open_probed(database_path, writability) {
+            Ok((conn, user_version)) => {
+                // A schema mismatch is a stable fact about the file, so it leaves
+                // the retry loop immediately with its own diagnostic.
+                validate_supported_schema(user_version)?;
+                return Ok(conn);
+            }
+            Err(err) => {
+                let Some(backoff) = OPEN_RETRY_BACKOFF.get(attempt).copied() else {
+                    return Err(describe_error(&err));
+                };
+                if !is_transient_error(&err) {
+                    return Err(describe_error(&err));
+                }
+                std::thread::sleep(backoff);
+                attempt += 1;
+            }
+        }
+    }
+}
+
+fn open_probed(
+    database_path: &Path,
+    writability: Writability,
+) -> Result<(Connection, i64), rusqlite::Error> {
+    let conn = Connection::open_with_flags(database_path, OpenFlags::SQLITE_OPEN_READ_WRITE)?;
+    conn.busy_timeout(Duration::from_secs(2))?;
+    // Opening is lazy: the first statement is what actually touches the database
+    // file, the WAL and the shared-memory index, so this probe is what proves the
+    // connection can read. It doubles as the schema check's only query.
+    let user_version = conn.query_row("PRAGMA user_version", [], |row| row.get::<_, i64>(0))?;
+    if writability == Writability::Required && conn.is_readonly(rusqlite::MAIN_DB)? {
+        return Err(rusqlite::Error::SqliteFailure(
+            rusqlite::ffi::Error::new(rusqlite::ffi::SQLITE_READONLY),
+            Some("The mod database is not writable.".to_string()),
+        ));
+    }
+    Ok((conn, user_version))
+}
+
+fn is_transient_error(error: &rusqlite::Error) -> bool {
+    use rusqlite::ffi::ErrorCode;
+
+    matches!(
+        error,
+        rusqlite::Error::SqliteFailure(inner, _)
+            if matches!(
+                inner.code,
+                ErrorCode::DatabaseBusy | ErrorCode::DatabaseLocked | ErrorCode::SystemIoFailure
+            )
+    )
+}
+
+/// Diagnostics carry the SQLite extended code: the bare message collapses a
+/// whole family of causes into "disk I/O error", which is not enough to tell a
+/// locked shared-memory index from a failed WAL recovery when triaging a report.
+fn describe_error(error: &rusqlite::Error) -> String {
+    match error {
+        rusqlite::Error::SqliteFailure(inner, _) => {
+            format!("{error} (sqlite extended_code={})", inner.extended_code)
+        }
+        other => other.to_string(),
+    }
+}
+
+fn validate_supported_schema(found: i64) -> Result<(), String> {
     let expected = crate::config::SUPPORTED_MOD_DB_USER_VERSION;
     if found == expected {
         return Ok(());
@@ -463,6 +540,55 @@ mod tests {
             assert!(error.contains("found=0"), "{error}");
             assert!(error.contains("expected=1"), "{error}");
         }
+    }
+
+    #[test]
+    fn read_connection_still_opens_a_write_protected_database() {
+        let temp_dir = tempfile::tempdir().unwrap();
+        let database_path = temp_dir.path().join("bazaarplusplus.db");
+        rusqlite::Connection::open(&database_path)
+            .unwrap()
+            .execute_batch("pragma user_version = 1;")
+            .unwrap();
+        write_protect(&database_path);
+
+        // SQLite downgrades the read-write open to read-only, which is what keeps
+        // history readable when the game lives in a directory we cannot write.
+        assert!(open_connection(&database_path).is_ok());
+    }
+
+    #[test]
+    fn write_connection_refuses_a_write_protected_database_at_open() {
+        let temp_dir = tempfile::tempdir().unwrap();
+        let database_path = temp_dir.path().join("bazaarplusplus.db");
+        rusqlite::Connection::open(&database_path)
+            .unwrap()
+            .execute_batch("pragma user_version = 1; create table runs (run_id text primary key);")
+            .unwrap();
+        write_protect(&database_path);
+
+        let error = open_write_connection(&database_path).unwrap_err();
+
+        assert!(error.contains("not writable"), "{error}");
+    }
+
+    #[test]
+    fn open_failure_diagnostics_carry_the_sqlite_extended_code() {
+        let temp_dir = tempfile::tempdir().unwrap();
+        let database_path = temp_dir.path().join("bazaarplusplus.db");
+        std::fs::write(&database_path, b"this is not a sqlite database").unwrap();
+
+        let error = open_connection(&database_path).unwrap_err();
+
+        // 26 is SQLITE_NOTADB; without the code the message alone reads as a
+        // generic failure and cannot be triaged from a user report.
+        assert!(error.contains("extended_code=26"), "{error}");
+    }
+
+    fn write_protect(path: &std::path::Path) {
+        let mut permissions = std::fs::metadata(path).unwrap().permissions();
+        permissions.set_readonly(true);
+        std::fs::set_permissions(path, permissions).unwrap();
     }
 
     #[test]

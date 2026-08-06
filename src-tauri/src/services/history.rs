@@ -368,6 +368,16 @@ fn history_read_problem(operation: &str, diagnostic: String) -> SemanticProblem 
             .with_diagnostic(diagnostic);
     }
 
+    // The game keeps this database open, and a game process that outlived its
+    // window is the one cause the user can act on. Naming it turns an opaque
+    // SQLite failure into a fixable one, so it wins over the generic read code
+    // whenever the process is still there.
+    if crate::services::game_process::is_bazaar_running_best_effort() {
+        return SemanticProblem::new(SemanticProblemCode::HistoryReadBlockedByGame)
+            .with_param("operation", operation)
+            .with_diagnostic(diagnostic);
+    }
+
     SemanticProblem::new(SemanticProblemCode::HistoryReadFailed)
         .with_param("operation", operation)
         .with_diagnostic(diagnostic)

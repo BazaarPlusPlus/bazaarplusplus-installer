@@ -8,6 +8,9 @@ const problems = [
   createUiProblem('history_read_failed', {
     params: { operation: 'get_run_detail' }
   }),
+  createUiProblem('history_read_blocked_by_game', {
+    params: { operation: 'get_run_detail' }
+  }),
   createUiProblem('history_database_unsupported_schema', {
     params: { found: '2', expected: '1' }
   }),

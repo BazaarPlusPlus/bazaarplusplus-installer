@@ -234,6 +234,13 @@ const zh = {
     '未找到可用的本地战绩数据库。请先在安装页选择正确的游戏目录。',
   historyProblemReadFailed:
     '读取本地战绩失败。请关闭可能占用数据库的程序后重试。',
+  historyProblemBlockedByGame:
+    'The Bazaar 仍在后台运行，正占用战绩数据库。关闭游戏窗口后进程有时不会退出；结束该进程即可读取战绩。',
+  historyEndGameProcess: '结束游戏进程',
+  historyEndGameProcessDone: '已结束游戏进程，正在重新读取战绩。',
+  historyEndGameProcessNotFound: '游戏进程已经退出，正在重新读取战绩。',
+  historyEndGameProcessFailed:
+    '结束游戏进程失败。请在任务管理器中结束 TheBazaar.exe 后重试。',
   historyProblemUnsupportedSchema:
     '战绩数据库版本不受支持（当前 {found}，支持 {expected}）。请更新 BazaarPlusPlus Mod 或安装器。',
   historyProblemPreviewUnavailable:
@@ -671,6 +678,14 @@ const en: Record<MessageKey, string> = {
     'No local History database is available. Select the correct game directory on the Install page.',
   historyProblemReadFailed:
     'Local History could not be read. Close apps that may be using the database, then retry.',
+  historyProblemBlockedByGame:
+    'The Bazaar is still running in the background and holding the History database. Closing the game window does not always end its process; end it to read History.',
+  historyEndGameProcess: 'End Game Process',
+  historyEndGameProcessDone: 'Game process ended. Reloading History.',
+  historyEndGameProcessNotFound:
+    'The game process had already exited. Reloading History.',
+  historyEndGameProcessFailed:
+    'The game process could not be ended. End TheBazaar.exe from Task Manager, then retry.',
   historyProblemUnsupportedSchema:
     'The History database schema is unsupported (found {found}, expected {expected}). Update the BazaarPlusPlus mod or installer.',
   historyProblemPreviewUnavailable:
