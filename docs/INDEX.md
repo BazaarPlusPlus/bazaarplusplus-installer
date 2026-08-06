@@ -42,6 +42,8 @@ V5 cleanup and schema-guard citation refresh: `2026-08-04` on `e27e462c12191a38f
 
 macOS trampoline deployment-target citation refresh: `2026-08-06` on `456b6f83dca7677477373d0d6ae33520e275595f` — the verification truth topic was rechecked against the pinned `-mmacosx-version-min` trampoline build (#75, issue #74): the former "Build Incrementality" section became "macOS Trampoline Build" and now records the deployment-target baseline, the stale-stub rebuild condition, the post-compile `otool -l` guard, and the parsing seam. Every other citation in that topic whose file changed since `eb337f8` was rechecked as well; `verify.mjs` gate line ranges were corrected, the Windows `ComSpec` npm shim from #76 was recorded, and the `About.test.tsx` range was corrected. The frontend and updater-release manifest rows were reconciled with the `last-verified` stamps already in those files; their claims were not re-verified here.
 
+History database handoff citation refresh: `2026-08-06` on `f811cd1ebfc17c239e365b525ebec5ae0cb48855` — the History/Stream truth topic's data-access and UI sections were rechecked against the read-write connection contract, the lazy-open probe doubling as the schema guard, the transient-open retry, extended-code diagnostics, the `history_read_blocked_by_game` code, and the End Game Process action. The `CONTEXT.md` semantic-problem glossary entry was updated for the new code and its stamp moved with it; the rest of that file's citations were not re-verified here, and neither were the History/Stream storage-cleanup and Stream sections.
+
 ## Current Manifest
 
 | Path | Topic | Status | Last verified |
@@ -51,12 +53,12 @@ macOS trampoline deployment-target citation refresh: `2026-08-06` on `456b6f83dc
 | `README.md` | project entrypoint | current-entrypoint | 2026-07-11 |
 | `.trae/rules/git-commit-message.md` | ignored local rule | ignored-operational | n/a |
 | `docs/INDEX.md` | documentation manifest | manifest | 2026-08-06 |
-| `CONTEXT.md` | entry map + glossary | truth | `42d843efd0c202bf18e0810119d866982c205dcb` |
+| `CONTEXT.md` | entry map + glossary | truth | `f811cd1ebfc17c239e365b525ebec5ae0cb48855` |
 | `docs/truth/architecture.md` | architecture | truth | `c56cac3a94fea48f6711c45a5139cab3bc7322d8` |
 | `docs/truth/frontend.md` | frontend | truth | `eb337f8dcf15153e89ce2ca71af30c27cd6090ef` |
 | `docs/truth/install-reset.md` | install-reset | truth | `42d843efd0c202bf18e0810119d866982c205dcb` |
 | `docs/truth/launch-modes.md` | launch-modes | truth | `c56cac3a94fea48f6711c45a5139cab3bc7322d8` |
-| `docs/truth/history-stream.md` | history-stream | truth | `e27e462c12191a38fe2a542072d7b804d56ae305` |
+| `docs/truth/history-stream.md` | history-stream | truth | `f811cd1ebfc17c239e365b525ebec5ae0cb48855` |
 | `docs/truth/updater-release.md` | updater-release | truth | `eb337f8dcf15153e89ce2ca71af30c27cd6090ef` |
 | `docs/truth/verification.md` | verification | truth | `456b6f83dca7677477373d0d6ae33520e275595f` |
 | `docs/plans/manual-validation.md` | manual-validation | active-plan | `c56cac3a94fea48f6711c45a5139cab3bc7322d8` |
