@@ -14,6 +14,7 @@
     "dev": "npm run generate:bindings && vite dev",
     "version:sync": "node scripts/version-sync.mjs",
     "prepare:resources": "node scripts/payload-zip.mjs",
+    "verify:native-recorder-input": "node scripts/native-recorder-input.mjs",
     "prepare:ci-resources": "node scripts/ci-resource-fixture.mjs",
     "check:bindings": "node scripts/prebuild-check.mjs --bindings-only",
     "prebuild-check": "npm run generate:bindings && npm run prebuild-check:after-bindings",

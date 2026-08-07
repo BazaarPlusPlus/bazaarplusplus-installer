@@ -30,8 +30,16 @@
     },
     { "name": "Codex", "role": "CO-CREATOR", "group": "team" },
     { "name": "Claude Code", "role": "CO-CREATOR", "group": "team" },
-    { "name": "BazaarDB", "role": "GAMEDATA SOURCE", "group": "acknowledgement" },
-    { "name": "BazaarHelper", "role": "INSPIRATION", "group": "acknowledgement" },
+    {
+      "name": "BazaarDB",
+      "role": "GAMEDATA SOURCE",
+      "group": "acknowledgement"
+    },
+    {
+      "name": "BazaarHelper",
+      "role": "INSPIRATION",
+      "group": "acknowledgement"
+    },
     {
       "name": "BazaarPlannerMod",
       "role": "INSPIRATION",
@@ -40,7 +48,6 @@
   ],
   "licenses": [
     { "name": "BepInEx", "license": "LGPL-2.1", "category": "runtime" },
-    { "name": "FFmpeg", "license": "GPL", "category": "runtime" },
     { "name": "React", "license": "MIT", "category": "frontend" },
     { "name": "Tauri", "license": "MIT", "category": "backend" },
     { "name": "Tailwind CSS", "license": "MIT", "category": "frontend" }

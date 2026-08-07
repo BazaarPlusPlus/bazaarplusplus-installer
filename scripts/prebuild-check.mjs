@@ -12,6 +12,7 @@ import {
   resolveBuildPlatform
 } from './release-platforms.mjs';
 import { validatePayloadZip } from './payload-zip.mjs';
+import { verifyNativeRecorderInput } from './native-recorder-input.mjs';
 
 export function resolveTargetPlatforms(platformEnv) {
   if (!platformEnv) {
@@ -130,6 +131,7 @@ export function runPrebuildCheck(
   if (!releaseResources) return;
 
   const platforms = resolveTargetPlatforms(platformEnv);
+  verifyNativeRecorderInput({ rootDir });
 
   for (const platform of platforms) {
     const result = validatePayloadZip({ rootDir, platform });

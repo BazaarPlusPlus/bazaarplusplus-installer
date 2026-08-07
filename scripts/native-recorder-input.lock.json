@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 2,
+  "sourceRepository": "BazaarPlusPlus/bazaarplusplus-mod",
+  "sourceCommit": "e7c06abaa0633d8cd0eb9f2849ea2e2df7b16723",
+  "files": {
+    "src-tauri/resources/SourceForBuild/macos/BepInEx/plugins/libBppMacAudio.dylib": "ff216ae7322a12b937a06ee2016e49def6be3438f07230241b36b2480f1ddde8",
+    "src-tauri/resources/SourceForBuild/macos/TheBazaar.app/Contents/Plugins/GfxPluginBppReplayVideoToolbox.bundle/Contents/Info.plist": "39447564e34055078259dd199bd70a32b51f7cefb5d1e43946d4824cd737f80f",
+    "src-tauri/resources/SourceForBuild/macos/TheBazaar.app/Contents/Plugins/GfxPluginBppReplayVideoToolbox.bundle/Contents/MacOS/GfxPluginBppReplayVideoToolbox": "4a0762c60ab34fa94b82e8184fa892d0361a2451759db7e085bf13a180368f2e",
+    "src-tauri/resources/SourceForBuild/macos/TheBazaar.app/Contents/Plugins/GfxPluginBppReplayVideoToolbox.bundle/Contents/_CodeSignature/CodeResources": "6686de10a28a2fe11b36cbb86dcbacc827cfc4ea116b4dabf1845e5aee629e9b",
+    "src-tauri/resources/SourceForBuild/windows/TheBazaar_Data/Plugins/x86_64/GfxPluginBppReplayMediaFoundation.dll": "fa135fd768aa774494718bd56e19ee68945c71a22b1b66b3bbad2e0d1fdbf4c7"
+  }
+}

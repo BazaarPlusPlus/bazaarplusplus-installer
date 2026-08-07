@@ -1,7 +1,7 @@
 ---
 status: truth
 topic: updater-release
-last-verified: eb337f8dcf15153e89ce2ca71af30c27cd6090ef
+last-verified: bd216d53340953d9ebf6a1cb41d35837bcd92dfe
 ---
 
 # Updater And Release
@@ -25,15 +25,18 @@ last-verified: eb337f8dcf15153e89ce2ca71af30c27cd6090ef
 
 ## Payload Contract
 
-- Real release staging lives under `src-tauri/resources/SourceForBuild/<platform>`. The required private DLL, version marker, ffmpeg binary, and license inputs are explicit in `scripts/payload-zip.mjs:9-28`; preparation reports every missing required path together in `scripts/payload-zip.mjs:100-115`.
+- Real release staging lives under `src-tauri/resources/SourceForBuild/<platform>`. Windows requires the managed payload, version marker, and Media Foundation recorder DLL. macOS requires the managed payload, version marker, CoreAudio capture library, and VideoToolbox render-plugin bundle. Both payloads explicitly reject retired FFmpeg files; macOS also rejects the retired recorder helper.
+- The checked-in native recorder inputs are produced by `BazaarPlusPlus/bazaarplusplus-mod`. `scripts/native-recorder-input.lock.json` pins the full mod commit and SHA-256 of every native macOS and Windows artifact. The dedicated verifier and every release-platform prebuild reject missing files or source/hash drift.
 - `npm run prepare:resources -- --platform <macos|windows>` sorts entries, fixes ZIP timestamps, preserves Unix modes, rejects symlinks and OS artifacts, writes the ignored ZIP, and writes a per-entry size/mode/SHA-256 plus whole-ZIP checksum manifest in `scripts/payload-zip.mjs:64-98`, `scripts/payload-zip.mjs:132-197`, and `scripts/payload-zip.mjs:346-420`.
 - Release validation requires `BazaarPlusPlus.version`, checks the staging and checksum manifest, performs an exact normalized file-set comparison, and rejects missing, stale-extra, absolute, drive, parent-traversal, backslash, duplicate, and OS-artifact entries while allowing directory entries and one common top-level prefix in `scripts/payload-zip.mjs:259-343` and `scripts/payload-zip.mjs:422-485`.
 - macOS validation additionally checks launcher contents and the arm64 trampoline in `scripts/prebuild-check.mjs:132-162`. Source CI uses only the marked fixture in `scripts/ci-resource-fixture.mjs:8-21`; it cannot satisfy the release payload or checksum contract.
 
 ## Build And Artifact Manifest
 
-- Production runs version synchronization, resource preparation, and the authoritative release-platform verify gate before Tauri packaging in `build.sh:450-457` and `build.sh:721-736`. macOS nested Mach-O resources and the trampoline are signed before the final bundle, and the signed ZIP checksum manifest is refreshed, in `build.sh:407-448` and `build.sh:627-653`.
-- After stale bundle cleanup and a successful bundle, artifact discovery requires exactly one installer and one updater signature, derives the paired updater, and refuses an installer filename that does not contain the release version. The paired macOS updater keeps Tauri's standard unversioned `.app.tar.gz` name in `scripts/artifact-manifest.mjs:60-129` and `scripts/artifact-manifest.mjs:142-171`.
+- Production runs version synchronization, pinned native-input verification, resource preparation, and the authoritative release-platform gate before Tauri packaging.
+- The installer is the only production signer for the macOS VideoToolbox plugin bundle. It rejects Developer ID-signed input, requires an ad-hoc input with `TeamIdentifier=not set`, signs the bundle inside-out, and verifies that its executable and bundle report the official `TeamIdentifier=9Z44S3N293`.
+- After inner native components are signed, the payload ZIP is rebuilt before the outer Tauri installer is packaged, signed, notarized, stapled, and assessed. The retired standalone recorder helper no longer has a separate notarization path.
+- After stale bundle cleanup and a successful bundle, artifact discovery requires exactly one installer and one updater signature, derives the paired updater, and refuses version-mismatched names in `scripts/artifact-manifest.mjs:60-121` and `scripts/artifact-manifest.mjs:134-171`.
 - The gitignored manifest records version, build/release platform, commit, dirty state, build timestamp, and exact relative paths, sizes, and SHA-256 values; the signature also records its trimmed content in `scripts/artifact-manifest.mjs:134-171`.
 - Upload validates current version/platform/commit/cleanliness and rechecks every path, size, hash, signature, and filename before returning exact files in `scripts/artifact-manifest.mjs:174-255`. `build.sh` consumes only those returned paths, with no directory-scan fallback, in `build.sh:474-519`.
 

@@ -15,6 +15,10 @@ const BPP_PRIVATE_RELATIVE_PATHS: &[&str] = &[
     "BepInEx/plugins/BazaarPlusPlus.Storage.dll",
     "BepInEx/plugins/BazaarPlusPlus.Localization.dll",
     "BepInEx/plugins/libBppMacAudio.dylib",
+    "TheBazaar.app/Contents/Plugins/GfxPluginBppReplayVideoToolbox.bundle",
+    "TheBazaar_Data/Plugins/x86_64/GfxPluginBppReplayMediaFoundation.dll",
+    // Cleanup tombstone retained for installs made before in-process native recording.
+    "BepInEx/plugins/BppReplayRecorder.app",
 ];
 
 const BPP_BUNDLED_DEPENDENCY_RELATIVE_PATHS: &[&str] = &[
@@ -130,12 +134,14 @@ pub(crate) fn payload_root_relative_paths() -> Vec<&'static str> {
     {
         paths.push("run_bepinex.sh");
         paths.push("libdoorstop.dylib");
+        paths.push("TheBazaar.app/Contents/Plugins/GfxPluginBppReplayVideoToolbox.bundle");
     }
 
     #[cfg(target_os = "windows")]
     {
         paths.push("doorstop_config.ini");
         paths.push("winhttp.dll");
+        paths.push("TheBazaar_Data/Plugins/x86_64/GfxPluginBppReplayMediaFoundation.dll");
     }
 
     paths
@@ -631,6 +637,35 @@ mod tests {
             b"dll",
         )
         .unwrap();
+        std::fs::create_dir_all(
+            tmp.path()
+                .join("BepInEx/plugins/BppReplayRecorder.app/Contents/MacOS"),
+        )
+        .unwrap();
+        std::fs::write(
+            tmp.path()
+                .join("BepInEx/plugins/BppReplayRecorder.app/Contents/MacOS/BppReplayRecorder"),
+            b"helper",
+        )
+        .unwrap();
+        std::fs::create_dir_all(tmp.path().join(
+            "TheBazaar.app/Contents/Plugins/GfxPluginBppReplayVideoToolbox.bundle/Contents/MacOS",
+        ))
+        .unwrap();
+        std::fs::write(
+            tmp.path().join(
+                "TheBazaar.app/Contents/Plugins/GfxPluginBppReplayVideoToolbox.bundle/Contents/MacOS/GfxPluginBppReplayVideoToolbox",
+            ),
+            b"plugin",
+        )
+        .unwrap();
+        std::fs::create_dir_all(tmp.path().join("TheBazaar_Data/Plugins/x86_64")).unwrap();
+        std::fs::write(
+            tmp.path()
+                .join("TheBazaar_Data/Plugins/x86_64/GfxPluginBppReplayMediaFoundation.dll"),
+            b"plugin",
+        )
+        .unwrap();
         std::fs::write(tmp.path().join("BepInEx/plugins/OtherMod.dll"), b"dll").unwrap();
 
         #[cfg(target_os = "macos")]
@@ -650,6 +685,18 @@ mod tests {
         assert!(!tmp
             .path()
             .join("BepInEx/plugins/BazaarPlusPlus.dll")
+            .exists());
+        assert!(!tmp
+            .path()
+            .join("BepInEx/plugins/BppReplayRecorder.app")
+            .exists());
+        assert!(!tmp
+            .path()
+            .join("TheBazaar.app/Contents/Plugins/GfxPluginBppReplayVideoToolbox.bundle")
+            .exists());
+        assert!(!tmp
+            .path()
+            .join("TheBazaar_Data/Plugins/x86_64/GfxPluginBppReplayMediaFoundation.dll")
             .exists());
         assert!(tmp.path().join("BepInEx/plugins/OtherMod.dll").exists());
         #[cfg(target_os = "macos")]
@@ -723,6 +770,12 @@ mod tests {
         std::fs::create_dir_all(&plugins_dir).unwrap();
         std::fs::write(plugins_dir.join("BazaarPlusPlus.dll"), b"dll").unwrap();
         std::fs::write(plugins_dir.join("Microsoft.Data.Sqlite.dll"), b"dll").unwrap();
+        std::fs::create_dir_all(plugins_dir.join("BppReplayRecorder.app/Contents/MacOS")).unwrap();
+        std::fs::write(
+            plugins_dir.join("BppReplayRecorder.app/Contents/MacOS/BppReplayRecorder"),
+            b"helper",
+        )
+        .unwrap();
 
         assert!(!super::has_third_party_plugins(tmp.path()));
 
@@ -758,6 +811,7 @@ mod tests {
             "BazaarPlusPlus.ModApi.dll",
             "BazaarPlusPlus.Storage.dll",
             "BazaarPlusPlus.version",
+            "BppReplayRecorder.app",
             "Microsoft.Data.Sqlite.dll",
             "SQLitePCLRaw.batteries_v2.dll",
             "SQLitePCLRaw.core.dll",
@@ -773,6 +827,8 @@ mod tests {
             "ffmpeg.exe",
             "libBppMacAudio.dylib",
             "libe_sqlite3.dylib",
+            "TheBazaar.app/Contents/Plugins/GfxPluginBppReplayVideoToolbox.bundle",
+            "TheBazaar_Data/Plugins/x86_64/GfxPluginBppReplayMediaFoundation.dll",
         ]
         .into_iter()
         .map(str::to_owned)
@@ -788,9 +844,7 @@ mod tests {
             }
             let plugins_relative = relative_path
                 .strip_prefix("BepInEx/plugins/")
-                .unwrap_or_else(|| {
-                    panic!("ownership entry outside BepInEx/plugins: {relative_path}")
-                });
+                .unwrap_or(relative_path);
             owned.insert(plugins_relative.to_string());
         }
 

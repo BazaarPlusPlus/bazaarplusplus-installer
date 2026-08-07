@@ -43,6 +43,7 @@ V5 cleanup and schema-guard citation refresh: `2026-08-04` on `e27e462c12191a38f
 macOS trampoline deployment-target citation refresh: `2026-08-06` on `456b6f83dca7677477373d0d6ae33520e275595f` — the verification truth topic was rechecked against the pinned `-mmacosx-version-min` trampoline build (#75, issue #74): the former "Build Incrementality" section became "macOS Trampoline Build" and now records the deployment-target baseline, the stale-stub rebuild condition, the post-compile `otool -l` guard, and the parsing seam. Every other citation in that topic whose file changed since `eb337f8` was rechecked as well; `verify.mjs` gate line ranges were corrected, the Windows `ComSpec` npm shim from #76 was recorded, and the `About.test.tsx` range was corrected. The frontend and updater-release manifest rows were reconciled with the `last-verified` stamps already in those files; their claims were not re-verified here.
 
 History database handoff citation refresh: `2026-08-06` on `f811cd1ebfc17c239e365b525ebec5ae0cb48855` — the History/Stream truth topic's data-access and UI sections were rechecked against the read-write connection contract, the lazy-open probe doubling as the schema guard, the transient-open retry, extended-code diagnostics, the `history_read_blocked_by_game` code, and the End Game Process action. The `CONTEXT.md` semantic-problem glossary entry was updated for the new code and its stamp moved with it; the rest of that file's citations were not re-verified here, and neither were the History/Stream storage-cleanup and Stream sections.
+Native desktop replay-recorder payload refresh: `2026-08-07` on `bd216d53340953d9ebf6a1cb41d35837bcd92dfe` — the updater-release truth topic was checked against the pinned macOS VideoToolbox/CoreAudio and Windows Media Foundation artifacts, FFmpeg-free payload contracts, and official macOS Team ID gate.
 
 ## Current Manifest
 
@@ -59,8 +60,8 @@ History database handoff citation refresh: `2026-08-06` on `f811cd1ebfc17c239e36
 | `docs/truth/install-reset.md` | install-reset | truth | `42d843efd0c202bf18e0810119d866982c205dcb` |
 | `docs/truth/launch-modes.md` | launch-modes | truth | `c56cac3a94fea48f6711c45a5139cab3bc7322d8` |
 | `docs/truth/history-stream.md` | history-stream | truth | `f811cd1ebfc17c239e365b525ebec5ae0cb48855` |
-| `docs/truth/updater-release.md` | updater-release | truth | `eb337f8dcf15153e89ce2ca71af30c27cd6090ef` |
-| `docs/truth/verification.md` | verification | truth | `456b6f83dca7677477373d0d6ae33520e275595f` |
+| `docs/truth/updater-release.md` | updater-release | truth | `bd216d53340953d9ebf6a1cb41d35837bcd92dfe` |
+| `docs/truth/verification.md` | verification | truth | `bd216d53340953d9ebf6a1cb41d35837bcd92dfe` |
 | `docs/plans/manual-validation.md` | manual-validation | active-plan | `c56cac3a94fea48f6711c45a5139cab3bc7322d8` |
 | `docs/plans/2026-08-04-v5-data-contract-sync.md` | v5-data-contract-sync | active-plan | `c562d9a104486e3a99cfa70d6ab569e1be8b54f7` |
 | `docs/agents/issue-tracker.md` | agent skills: issue tracker | operational | 2026-07-11 |
@@ -77,6 +78,7 @@ History database handoff citation refresh: `2026-08-06` on `f811cd1ebfc17c239e36
 | `docs/adr/009-agent-skills-doc-layout.md` | agent-skills-doc-layout | decision | n/a |
 | `docs/adr/010-tauri-specta-command-bindings.md` | tauri-specta-command-bindings | decision | n/a |
 | `docs/adr/011-v5-data-root-and-v4-orphan-policy.md` | v5-data-root-v4-orphan-policy | decision | n/a |
+| `docs/adr/012-native-replay-recorder-signing.md` | native-replay-recorder-signing | decision | n/a |
 | `docs/archive/README.md` | old documentation index | superseded | archived 2026-06-11 |
 | `docs/archive/architecture.md` | old architecture doc | superseded | archived 2026-06-11 |
 | `docs/archive/updater-release-plan.md` | old updater release doc | superseded | archived 2026-06-11 |

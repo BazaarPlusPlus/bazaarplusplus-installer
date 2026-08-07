@@ -258,7 +258,7 @@ test('dependency install fails clearly instead of updating an absent lockfile', 
   }
 });
 
-test('macOS resource signing applies Developer ID timestamp only to Mach-O files', () => {
+test('macOS resource signing applies Developer ID timestamp only to loose Mach-O files', () => {
   const output = runShell(`
     set -euo pipefail
     source ./build.sh
@@ -267,12 +267,14 @@ test('macOS resource signing applies Developer ID timestamp only to Mach-O files
     mkdir -p "$payload/BepInEx/plugins"
     touch "$payload/libdoorstop.dylib"
     touch "$payload/BepInEx/plugins/libe_sqlite3.dylib"
+    mkdir -p "$payload/TheBazaar.app/Contents/Plugins/GfxPluginBppReplayVideoToolbox.bundle/Contents/MacOS"
+    touch "$payload/TheBazaar.app/Contents/Plugins/GfxPluginBppReplayVideoToolbox.bundle/Contents/MacOS/GfxPluginBppReplayVideoToolbox"
     touch "$payload/readme.txt"
     APPLE_SIGNING_IDENTITY='Developer ID Application: Example Builder (TEAMID1234)'
     export APPLE_SIGNING_IDENTITY
     file() {
       case "$1" in
-        *.dylib) printf '%s: Mach-O 64-bit dynamically linked shared library\\n' "$1" ;;
+        *.dylib|*/GfxPluginBppReplayVideoToolbox) printf '%s: Mach-O 64-bit dynamically linked shared library\\n' "$1" ;;
         *) printf '%s: ASCII text\\n' "$1" ;;
       esac
     }
@@ -293,9 +295,86 @@ test('macOS resource signing applies Developer ID timestamp only to Mach-O files
   );
   expect(output).toContain('libdoorstop.dylib');
   expect(output).toContain('BepInEx/plugins/libe_sqlite3.dylib');
+  expect(output).not.toContain('GfxPluginBppReplayVideoToolbox');
   expect(output).not.toContain('readme.txt');
 });
 
+test('macOS replay recorder plugin is signed inside-out with the official team', () => {
+  const output = runShell(`
+    set -euo pipefail
+    source ./build.sh
+    payload="$(mktemp -d)"
+    trap 'rm -rf "$payload"' EXIT
+    bundle="$payload/TheBazaar.app/Contents/Plugins/GfxPluginBppReplayVideoToolbox.bundle"
+    mkdir -p "$bundle/Contents/MacOS"
+    touch "$bundle/Contents/MacOS/GfxPluginBppReplayVideoToolbox"
+    touch "$bundle/Contents/Info.plist"
+    APPLE_SIGNING_IDENTITY='Developer ID Application: YANG Xinyu (9Z44S3N293)'
+    export APPLE_SIGNING_IDENTITY
+    signed=false
+    file() {
+      case "$1" in
+        */GfxPluginBppReplayVideoToolbox) printf '%s: Mach-O 64-bit dynamically linked shared library arm64\\n' "$1" ;;
+        *) printf '%s: ASCII text\\n' "$1" ;;
+      esac
+    }
+    codesign() {
+      if [ "$1" = "-dvvv" ]; then
+        if [ "$signed" = true ]; then
+          printf '%s\\n' 'Signature size=1' 'TeamIdentifier=9Z44S3N293' >&2
+        else
+          printf '%s\\n' 'Signature=adhoc' 'TeamIdentifier=not set' >&2
+        fi
+        return 0
+      fi
+      printf 'codesign|%s\\n' "$*"
+      case "$*" in
+        *'--sign '*) signed=true ;;
+      esac
+    }
+    invoke_step() {
+      local label="$1"
+      shift
+      printf '%s|%s\\n' "$label" "$*"
+      "$@"
+    }
+    sign_macos_resource_plugin_bundles "$payload"
+  `);
+
+  const executableIndex = output.indexOf(
+    'Signing macOS resource binary TheBazaar.app/Contents/Plugins/GfxPluginBppReplayVideoToolbox.bundle/Contents/MacOS/GfxPluginBppReplayVideoToolbox'
+  );
+  const bundleIndex = output.indexOf(
+    'Signing macOS resource plugin bundle TheBazaar.app/Contents/Plugins/GfxPluginBppReplayVideoToolbox.bundle'
+  );
+  const verifyIndex = output.indexOf(
+    'Verifying macOS resource plugin bundle TheBazaar.app/Contents/Plugins/GfxPluginBppReplayVideoToolbox.bundle'
+  );
+  expect(executableIndex).toBeGreaterThanOrEqual(0);
+  expect(bundleIndex).toBeGreaterThan(executableIndex);
+  expect(verifyIndex).toBeGreaterThan(bundleIndex);
+  expect(output).toContain('codesign|--verify --deep --strict --verbose=2');
+});
+
+test('macOS release rejects a replay recorder plugin signed by a local Developer ID', () => {
+  const output = runShell(`
+    set -euo pipefail
+    source ./build.sh
+    bundle="$(mktemp -d)/GfxPluginBppReplayVideoToolbox.bundle"
+    mkdir -p "$bundle/Contents"
+    codesign() {
+      printf '%s\\n' 'Signature size=8995' 'TeamIdentifier=WRONGTEAM1' >&2
+    }
+    set +e
+    (assert_ad_hoc_replay_recorder_input "$bundle") 2>&1
+    printf 'exit:%s\\n' "$?"
+  `);
+
+  expect(output).toContain(
+    'Replay recorder plugin input must be ad-hoc signed with no TeamIdentifier'
+  );
+  expect(output).toContain('exit:1');
+});
 test('macOS loose resource signing applies Developer ID timestamp to trampoline stub', () => {
   const output = runShell(`
     set -euo pipefail
