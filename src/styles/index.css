@@ -1748,7 +1748,7 @@ body {
   z-index: 1;
   display: flex;
   width: 100%;
-  aspect-ratio: 2000 / 470;
+  aspect-ratio: 2004 / 428;
   align-items: center;
   justify-content: center;
   overflow: hidden;
@@ -1770,11 +1770,11 @@ body {
   pointer-events: none;
 }
 .bpp-history-run-preview::before {
-  opacity: 0.18;
+  opacity: 0.08;
   background: linear-gradient(
     90deg,
     color-mix(in srgb, var(--bpp-bg) 72%, transparent),
-    transparent 17% 83%,
+    transparent 7% 93%,
     color-mix(in srgb, var(--bpp-bg) 70%, transparent)
   );
 }
@@ -1793,7 +1793,7 @@ body {
   inset: 0;
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
 }
 .bpp-history-run-preview-empty {
   position: absolute;
@@ -1885,16 +1885,17 @@ body {
 }
 .bpp-history-run-metrics {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   border-top: 1px solid var(--bpp-line-subtle);
   padding-top: 6px;
 }
 .bpp-history-run-metric {
   display: flex;
   min-width: 0;
-  align-items: baseline;
+  flex-direction: column;
+  align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 2px;
   padding-inline: 10px;
   text-align: center;
 }
@@ -1911,8 +1912,11 @@ body {
   white-space: nowrap;
 }
 .bpp-history-run-metric-value {
+  overflow: hidden;
+  max-width: 100%;
   color: var(--bpp-text-1);
   font-size: 12px;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 .bpp-history-run-metric-value.is-gold {
@@ -1947,11 +1951,6 @@ body {
   }
   .bpp-history-run-date {
     display: none;
-  }
-  .bpp-history-run-metric {
-    flex-direction: column;
-    align-items: center;
-    gap: 2px;
   }
 }
 @media (max-width: 760px) {
