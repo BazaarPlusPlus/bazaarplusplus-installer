@@ -61,7 +61,15 @@ export default function RunDetail() {
       runDetailProblemFromError
     );
 
-  const pageTitle = detail?.run.hero ?? t('runDetailLoading');
+  // Only the loading phase may claim to be loading; every terminal phase
+  // without a run needs a heading that matches what the body actually says.
+  const pageTitle =
+    detail?.run.hero ??
+    (page.state.phase === 'initial-loading'
+      ? t('runDetailLoading')
+      : page.state.phase === 'not-found'
+        ? t('runDetailNotFound')
+        : t('runDetailUnavailable'));
 
   return (
     <PageShell

@@ -3,6 +3,7 @@ import type { CSSProperties, MouseEvent, ReactNode } from 'react';
 import { Download, History, Info, MonitorPlay } from 'lucide-react';
 import clsx from 'clsx';
 import { useI18n } from '../i18n/LocaleProvider';
+import { messages } from '../i18n/messages';
 
 export function ShellNavRail() {
   const { locale, t } = useI18n();
@@ -16,7 +17,7 @@ export function ShellNavRail() {
         : 0;
 
   return (
-    <nav className="bpp-nav" aria-label="Primary navigation">
+    <nav className="bpp-nav" aria-label={t('primaryNavigation')}>
       <div
         className="bpp-nav-active-slider"
         aria-hidden="true"
@@ -59,7 +60,7 @@ export function ShellNavRail() {
         {locale === 'zh' && (
           <>
             <br />
-            Born of Passion
+            {messages.en.kicker}
           </>
         )}
       </div>

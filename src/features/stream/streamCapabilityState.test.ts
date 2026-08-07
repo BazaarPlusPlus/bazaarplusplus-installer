@@ -96,7 +96,8 @@ function setup(commandOverrides: Partial<StreamCommandPort> = {}) {
     commands: commandPort,
     scheduler,
     clipboard: { writeText: vi.fn().mockResolvedValue(undefined) },
-    opener: { open: vi.fn().mockResolvedValue(undefined) }
+    opener: { open: vi.fn().mockResolvedValue(undefined) },
+    currentLocale: () => 'zh'
   });
   return { workflow, scheduler, commands: commandPort };
 }

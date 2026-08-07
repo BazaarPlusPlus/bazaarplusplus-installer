@@ -3,10 +3,11 @@
 import { act } from 'react';
 import { createRoot } from 'react-dom/client';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AppBootstrapController } from '../features/about/useAppBootstrap';
 import { UpdaterProvider } from '../features/about/UpdaterProvider';
 import { LocaleProvider } from '../i18n/LocaleProvider';
+import { LOCALE_STORAGE_KEY } from '../i18n/messages';
 import { ShellHeader } from './ShellHeader';
 
 const tauriWindow = vi.hoisted(() => {
@@ -91,6 +92,12 @@ function renderHeader({
 }
 
 describe('ShellHeader', () => {
+  // These assertions are written against the Chinese copy, and the locale now
+  // follows the host language when nothing is stored.
+  beforeEach(() => {
+    window.localStorage.setItem(LOCALE_STORAGE_KEY, 'zh');
+  });
+
   it('shows the brand logo and language icon without an update check', () => {
     const html = renderHeader();
 

@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useSyncExternalStore } from 'react';
+import { useEffect, useMemo, useRef, useSyncExternalStore } from 'react';
+import { useI18n } from '../../i18n/LocaleProvider';
 import { streamCommandPort, streamOpener } from './streamApi';
 import {
   createStreamWorkflow,
@@ -18,13 +19,20 @@ const browserClipboard: StreamClipboard = {
 };
 
 export function useStreamPage() {
+  // The workflow is created once, so the locale enters as a live read rather
+  // than a captured value.
+  const { locale } = useI18n();
+  const localeRef = useRef(locale);
+  localeRef.current = locale;
+
   const workflow = useMemo(
     () =>
       createStreamWorkflow({
         commands: streamCommandPort,
         scheduler: browserScheduler,
         clipboard: browserClipboard,
-        opener: streamOpener
+        opener: streamOpener,
+        currentLocale: () => localeRef.current
       }),
     []
   );

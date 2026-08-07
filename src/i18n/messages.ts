@@ -2,6 +2,16 @@
 // message keys; `en` is typed `Record<MessageKey, string>`, so TypeScript fails
 // the build whenever a translation is missing or stale. Interpolate runtime
 // values with `{name}` placeholders and pass them through `formatMessage`.
+//
+// Count-dependent English wording uses `{name|singular|plural}`, which selects
+// on the numeric value of the `name` parameter. Chinese has no plural form, so
+// zh copy simply omits the token.
+//
+// Product vocabulary, keep it consistent:
+//   BazaarPlusPlus 本体 = 插件 / plugin
+//   插件 + BepInEx 等一起写入游戏目录的文件 = 组件 / components
+//   本地 HTTP 服务 = 直播服务 / stream service
+//   直播画面上的那一层 = 叠加层 / overlay
 
 export type Locale = 'en' | 'zh';
 
@@ -21,6 +31,7 @@ const zh = {
   headerCheckUpdate: '检查更新',
   headerCheckingUpdate: '检查中',
   supportProject: '支持项目',
+  primaryNavigation: '主导航',
 
   // Window controls (Windows custom chrome)
   windowControls: '窗口控制',
@@ -74,19 +85,12 @@ const zh = {
   aboutTitle: '关于',
 
   // Install page
-  installActionsHeading: '安装操作',
-  currentStatusHeading: '当前状态',
-  gamePathHeading: '游戏目录',
   gamePathEmpty: '未选择 The Bazaar 游戏目录',
-  notSelected: '未选择',
-  chooseAgain: '重新选择',
-  recheck: '重新检测',
   installDetecting: '正在检测 The Bazaar 与 BazaarPlusPlus',
   installRefreshing: '正在重新检测安装状态',
   actionChooseDirectory: '选择游戏目录',
   actionInstall: '安装',
   actionReinstall: '重新安装',
-  actionRepair: '修复安装',
   actionResetData: '删除本地数据',
   actionNoResettableData: '暂无本地数据',
   actionResetBepinex: '删除 BepInEx 文件夹',
@@ -95,12 +99,7 @@ const zh = {
   installed: '已安装',
   notInstalled: '未安装',
   ready: '就绪',
-  missing: '缺失',
-  gameFilesOk: '游戏文件完整',
-  gameNotFound: '未找到游戏',
-  modReady: '插件就绪',
   modNeedsReinstall: '需要重新安装',
-  modNotInstalled: '尚未安装',
   installDone: '安装完成',
   resetDataConfirmTitle: '删除本地数据',
   resetDataTarget: '目标：{path} 内的 BazaarPlusPlusV5 文件夹',
@@ -147,7 +146,6 @@ const zh = {
   uninstallConfirmAction: '卸载',
   uninstallRunning: '正在卸载…',
   uninstallDone: '卸载完成',
-  selectGameDirFirst: '请先选择 The Bazaar 游戏目录。',
   installWarningGameMissing:
     '未找到有效的 The Bazaar 游戏目录，请选择游戏目录。',
   installWarningLaunchOptionsUnsupported:
@@ -219,8 +217,10 @@ const zh = {
   updaterProblemDownloadFailed: '更新下载失败。请检查网络连接后重试。',
   updaterProblemInstallFailed:
     '更新安装失败。请重试；如果问题持续，请重新打开应用后再次检查更新。',
-  updaterProblemRestartFailed:
+  updaterProblemRestartFailedMac:
     '自动重启失败，但 BazaarPlusPlus {version} 已安装完成。请退出 BazaarPlusPlus，再从“应用程序”中重新打开。',
+  updaterProblemRestartFailedWindows:
+    '自动重启失败，但 BazaarPlusPlus {version} 已安装完成。请退出 BazaarPlusPlus，再从开始菜单重新打开。',
 
   // History page
   historyLoading: '读取战绩中',
@@ -242,10 +242,12 @@ const zh = {
   historyEndGameProcess: '结束游戏进程',
   historyEndGameProcessDone: '已结束游戏进程，正在重新读取战绩。',
   historyEndGameProcessNotFound: '游戏进程已经退出，正在重新读取战绩。',
-  historyEndGameProcessFailed:
+  historyEndGameProcessFailedWindows:
     '结束游戏进程失败。请在任务管理器中结束 TheBazaar.exe 后重试。',
+  historyEndGameProcessFailedMac:
+    '结束游戏进程失败。请在“活动监视器”中结束 The Bazaar 后重试。',
   historyProblemUnsupportedSchema:
-    '战绩数据库版本不受支持（当前 {found}，支持 {expected}）。请更新 BazaarPlusPlus Mod 或安装器。',
+    '战绩数据库版本不受支持（当前 {found}，支持 {expected}）。请更新 BazaarPlusPlus 插件或安装器。',
   historyProblemPreviewUnavailable:
     '战绩已载入，但缩略图服务当前不可用。可前往直播页启动本地服务。',
   historyProblemUnexpected: '加载本地战绩时发生意外错误。请重试。',
@@ -267,6 +269,7 @@ const zh = {
   runDetailBack: '返回战绩列表',
   runDetailLoading: '读取详情中',
   runDetailNotFound: '没有找到这局战绩',
+  runDetailUnavailable: '战绩不可用',
   runDetailRefreshing: '正在刷新详情',
   runDetailProblemUnavailable:
     '未找到可用的本地战绩数据库。请先在安装页选择正确的游戏目录。',
@@ -310,9 +313,10 @@ const zh = {
   storageCleanupTitle: '存储清理',
   storageCleanupScreenshotsLabel: '对局结算截图',
   storageCleanupRunDataLabel: '对局数据',
-  storageCleanupPresetAll: '清理全部',
-  storageCleanupPresetOlderThan7Days: '清理 7 天前',
-  storageCleanupPresetBeforeThisMonth: '清理本月以前',
+  storageCleanupPresetAll: '全部',
+  storageCleanupPresetOlderThan7Days: '7 天前',
+  storageCleanupPresetBeforeThisMonth: '本月以前',
+  storageCleanupActionLabel: '清理{scope} · {preset}',
   storageCleanupConfirmTitle: '确认清理',
   storageCleanupTarget: '目标：{scope} · 范围：{preset}',
   storageCleanupScreenshotsConfirmBody:
@@ -336,13 +340,14 @@ const zh = {
   noVideo: '无视频',
 
   // Stream page
+  streamDisplayModeLabel: '显示样式',
   streamModeCurrent: '战斗场数',
   streamModeHero: '完整英雄',
   streamModeHeroHalf: '半高英雄',
-  streamOpenOverlay: '打开预览页',
+  streamOpenOverlay: '预览叠加层',
   streamStart: '启动服务',
   streamRestart: '重启服务',
-  streamObsPlaceholder: '服务启动后显示 OBS Browser Source 地址',
+  streamObsPlaceholder: '直播服务启动后显示 OBS Browser Source 地址',
   streamObsGuide:
     '将此地址添加为 OBS 的 Browser Source，即可在直播画面中显示叠加层',
   streamWindowSection: '展示窗口',
@@ -355,23 +360,23 @@ const zh = {
   streamCropCodePlaceholder: '输入裁切代码…',
   streamApplyCrop: '应用裁切代码',
   streamResetCrop: '恢复默认裁切',
-  streamOpenSettings: '打开校准页',
+  streamOpenSettings: '校准叠加层',
   streamObsUrlLabel: 'OBS 地址',
   streamInfoHost: '主机',
   streamInfoPort: '端口',
   streamInfoDb: '数据库',
   streamInfoWindow: '窗口',
-  streamStatusError: '叠加层错误',
-  streamStatusStarting: '正在启动叠加层',
-  streamStatusRunning: '叠加层运行中',
-  streamStatusIdle: '叠加层空闲',
-  streamStatusStale: '叠加层状态可能已过期',
-  streamStatusUnavailable: '叠加层状态不可用',
-  streamStarting: '正在启动本地服务',
-  streamIdleDetail: '服务尚未启动',
-  streamStaleRunningDetail: '上次检测为运行中，正在等待最新状态',
-  streamStaleIdleDetail: '上次检测为未运行，正在等待最新状态',
-  streamStatusUnavailableDetail: '尚未取得可信的服务状态',
+  streamStatusError: '直播服务错误',
+  streamStatusStarting: '正在启动直播服务',
+  streamStatusRunning: '直播服务运行中',
+  streamStatusIdle: '直播服务未启动',
+  streamStatusStale: '直播服务状态可能已过期',
+  streamStatusUnavailable: '直播服务状态不可用',
+  streamStarting: '正在启动本地直播服务',
+  streamIdleDetail: '直播服务尚未启动',
+  streamStaleRunningDetail: '上次检测为运行中，正在等待最新的直播服务状态',
+  streamStaleIdleDetail: '上次检测为未运行，正在等待最新的直播服务状态',
+  streamStatusUnavailableDetail: '尚未取得可信的直播服务状态',
   streamPortDetail: '端口 {port}',
   streamRetryStatus: '重新获取状态',
   streamRetryCrop: '重新加载配置',
@@ -380,11 +385,11 @@ const zh = {
   streamCropSaved: '裁切代码已保存',
   streamCropReset: '裁切设置已恢复默认',
   streamProblemServiceFailed:
-    '叠加层服务未能启动。请确认端口 17654 可用后重试。',
+    '直播服务未能启动。请确认端口 17654 可用后重试。',
   streamProblemRestartFailed:
-    '叠加层服务重启失败。请确认端口 17654 可用后重试。',
+    '直播服务重启失败。请确认端口 17654 可用后重试。',
   streamProblemPollFailed:
-    '暂时无法确认叠加层的最新状态；上次状态已标记为过期，请重新获取。',
+    '暂时无法确认直播服务的最新状态；上次状态已标记为过期，请重新获取。',
   streamProblemWindowFailed: '无法调整展示窗口，请重试。',
   streamProblemCropLoadFailed:
     '无法加载叠加层配置；其他直播控制仍可使用，请重新加载。',
@@ -413,19 +418,9 @@ const zh = {
   aboutBlockingFailure: '无法获取应用信息，且没有可用的备用数据。请重试。',
 
   // Refined dashboard copy
-  installOverviewInstalled: 'BazaarPlusPlus 已安装',
-  installOverviewUpdateRequired: 'BazaarPlusPlus 需要重新安装',
-  installOverviewNotInstalled: 'BazaarPlusPlus 尚未安装',
-  installOverviewHealthy: '所有插件运行正常，可以直接启动游戏',
   installOverviewHealthyShort: '所有组件运行正常',
   installOverviewUpdateDescription: '当前组件版本不一致，重新安装即可完成更新',
   installOverviewNotInstalledDescription: '选择游戏目录后即可安装插件',
-  installEnvironmentHeading: '安装环境',
-  versionInformationHeading: '版本信息',
-  gameVersionLabel: '游戏版本',
-  installedModVersionLabel: '已安装插件',
-  bundledModVersionLabel: '安装器内置',
-  maintenanceOperationsHeading: '维护操作',
   installationDirectoryHeading: '游戏目录',
   copyPath: '复制路径',
   pathCopied: '已复制',
@@ -439,11 +434,6 @@ const zh = {
   maintenanceResetBepinexDescription: '重置插件环境',
   checkUpdateDescription: '获取最新版本信息',
   maintenanceUninstallDescription: '移除所有组件',
-  actionInstallDescription: '安装插件至游戏目录',
-  actionReinstallDescription: '将覆盖当前版本并保留本地数据',
-  resetBepinexDescription: '删除 BepInEx 及其内容',
-  uninstallDescription: '移除插件文件并保留游戏本体',
-  launchGameDescription: '通过当前插件启动游戏',
   installModalSubtitle: '安装前确认与环境检查',
   historySummaryRunsDescription: '总对局场次',
   historySummaryVideosDescription: '已录制视频',
@@ -451,7 +441,6 @@ const zh = {
   historySummaryWinRateUnavailable: '胜率暂无数据',
   storageCleanupScreenshotsDescription: '保存对局结算时的截图文件',
   storageCleanupRunDataDescription: '保存对局产生的各类数据文件',
-  streamServiceSection: '直播服务运行状态',
   aboutTagline: 'The Bazaar 数据增强与分析工具'
 } as const;
 
@@ -465,6 +454,7 @@ const en: Record<MessageKey, string> = {
   headerCheckUpdate: 'Check Updates',
   headerCheckingUpdate: 'Checking',
   supportProject: 'Support',
+  primaryNavigation: 'Primary navigation',
 
   windowControls: 'Window controls',
   minimizeWindow: 'Minimize window',
@@ -511,19 +501,12 @@ const en: Record<MessageKey, string> = {
   streamTitle: 'Stream',
   aboutTitle: 'About',
 
-  installActionsHeading: 'Actions',
-  currentStatusHeading: 'Current Status',
-  gamePathHeading: 'Game Directory',
-  gamePathEmpty: 'No The Bazaar install directory selected',
-  notSelected: 'Not selected',
-  chooseAgain: 'Choose again',
-  recheck: 'Re-detect',
+  gamePathEmpty: 'No game directory selected for The Bazaar',
   installDetecting: 'Detecting The Bazaar and BazaarPlusPlus',
   installRefreshing: 'Re-detecting installation state',
   actionChooseDirectory: 'Choose Game Directory',
   actionInstall: 'Install',
   actionReinstall: 'Reinstall',
-  actionRepair: 'Repair Installation',
   actionResetData: 'Delete Local Data',
   actionNoResettableData: 'No Local Data',
   actionResetBepinex: 'Delete BepInEx Folder',
@@ -532,12 +515,7 @@ const en: Record<MessageKey, string> = {
   installed: 'Installed',
   notInstalled: 'Not Installed',
   ready: 'Ready',
-  missing: 'Missing',
-  gameFilesOk: 'Game files OK',
-  gameNotFound: 'Game not found',
-  modReady: 'Plugin ready',
   modNeedsReinstall: 'Reinstall required',
-  modNotInstalled: 'Not installed yet',
   installDone: 'Install complete',
   resetDataConfirmTitle: 'Delete Local Data',
   resetDataTarget: 'Target: the BazaarPlusPlusV5 folder inside {path}',
@@ -555,7 +533,7 @@ const en: Record<MessageKey, string> = {
   resetDataBlockedByGame:
     'The Bazaar is still running. Quit the game before deleting local data.',
   resetDataPartialFailure:
-    '{count} local data item(s) could not be deleted. Close the game and stream sources, then try again.',
+    '{count} local data {count|item|items} could not be deleted. Close the game and stream sources, then try again.',
   resetDataFailureDetails: 'Show undeleted items',
   resetDataFailureCopy: 'Copy Diagnostics',
   resetDataFailureCopied: 'Copied',
@@ -579,7 +557,7 @@ const en: Record<MessageKey, string> = {
   resetBepinexBlockedByGame:
     'The Bazaar is still running. Quit the game before deleting the BepInEx folder.',
   resetBepinexPartialFailure:
-    '{count} item(s) could not be deleted. Close the game, then try again.',
+    '{count} {count|item|items} could not be deleted. Close the game, then try again.',
   operationCannotBeCancelled:
     'This operation has started and cannot be canceled or dismissed until it finishes.',
   uninstallConfirmTitle: 'Uninstall BazaarPlusPlus',
@@ -591,7 +569,6 @@ const en: Record<MessageKey, string> = {
   uninstallConfirmAction: 'Uninstall',
   uninstallRunning: 'Uninstalling…',
   uninstallDone: 'Uninstall complete',
-  selectGameDirFirst: 'Select The Bazaar install directory first.',
   installWarningGameMissing:
     'No valid The Bazaar installation was found. Choose the game directory.',
   installWarningLaunchOptionsUnsupported:
@@ -671,8 +648,10 @@ const en: Record<MessageKey, string> = {
     'The update could not be downloaded. Check your network connection, then retry.',
   updaterProblemInstallFailed:
     'The update could not be installed. Retry; if the problem continues, reopen the app and check again.',
-  updaterProblemRestartFailed:
+  updaterProblemRestartFailedMac:
     'Automatic restart failed, but BazaarPlusPlus {version} is installed. Quit BazaarPlusPlus, then open it again from Applications.',
+  updaterProblemRestartFailedWindows:
+    'Automatic restart failed, but BazaarPlusPlus {version} is installed. Quit BazaarPlusPlus, then open it again from the Start menu.',
 
   historyLoading: 'Loading runs',
   noLocalRuns: 'No local runs yet',
@@ -694,10 +673,12 @@ const en: Record<MessageKey, string> = {
   historyEndGameProcessDone: 'Game process ended. Reloading History.',
   historyEndGameProcessNotFound:
     'The game process had already exited. Reloading History.',
-  historyEndGameProcessFailed:
+  historyEndGameProcessFailedWindows:
     'The game process could not be ended. End TheBazaar.exe from Task Manager, then retry.',
+  historyEndGameProcessFailedMac:
+    'The game process could not be ended. Quit The Bazaar from Activity Monitor, then retry.',
   historyProblemUnsupportedSchema:
-    'The History database schema is unsupported (found {found}, expected {expected}). Update the BazaarPlusPlus mod or installer.',
+    'The History database schema is unsupported (found {found}, expected {expected}). Update the BazaarPlusPlus plugin or installer.',
   historyProblemPreviewUnavailable:
     'Runs are loaded, but thumbnails are unavailable. Start the local service from the Stream page.',
   historyProblemUnexpected:
@@ -720,6 +701,7 @@ const en: Record<MessageKey, string> = {
   runDetailBack: 'Back to History',
   runDetailLoading: 'Loading details',
   runDetailNotFound: 'This run was not found',
+  runDetailUnavailable: 'Run unavailable',
   runDetailRefreshing: 'Refreshing details',
   runDetailProblemUnavailable:
     'No local History database is available. Select the correct game directory on the Install page.',
@@ -767,17 +749,18 @@ const en: Record<MessageKey, string> = {
   storageCleanupTitle: 'Storage Cleanup',
   storageCleanupScreenshotsLabel: 'End-of-run screenshots',
   storageCleanupRunDataLabel: 'Run data',
-  storageCleanupPresetAll: 'Clean All',
-  storageCleanupPresetOlderThan7Days: 'Clean Older Than 7 Days',
-  storageCleanupPresetBeforeThisMonth: 'Clean Before This Month',
+  storageCleanupPresetAll: 'All',
+  storageCleanupPresetOlderThan7Days: 'Older than 7 days',
+  storageCleanupPresetBeforeThisMonth: 'Before this month',
+  storageCleanupActionLabel: 'Clean {scope} · {preset}',
   storageCleanupConfirmTitle: 'Confirm Cleanup',
   storageCleanupTarget: 'Target: {scope} · Range: {preset}',
   storageCleanupScreenshotsConfirmBody:
-    'This will permanently delete {count} end-of-run screenshots (about {size}). This cannot be undone.',
+    'This will permanently delete {count} end-of-run {count|screenshot|screenshots} (about {size}). This cannot be undone.',
   storageCleanupRunDataConfirmBody:
-    'This will permanently delete {runs} runs, including {battles} battles, {videos} replay videos and related screenshots (about {size}). This cannot be undone.',
+    'This will permanently delete {runs} {runs|run|runs}, including {battles} {battles|battle|battles}, {videos} replay {videos|video|videos} and related screenshots (about {size}). This cannot be undone.',
   storageCleanupSkippedPending:
-    '{count} items are still pending upload and will be skipped.',
+    '{count} {count|item is|items are} still pending upload and will be skipped.',
   storageCleanupNothingToClean: 'Nothing matches the selected range.',
   storageCleanupConfirmAction: 'Clean Up',
   storageCleanupRunningScreenshots: 'Deleting end-of-run screenshots…',
@@ -790,24 +773,26 @@ const en: Record<MessageKey, string> = {
     'Cleanup did not finish. The target and range are preserved; review diagnostics, then retry or close safely.',
   storageCleanupProblemUnexpected:
     'Something unexpected happened while cleaning storage. Please retry.',
-  storageCleanupScreenshotsDone: 'Deleted {files} files, freed about {size}.',
+  storageCleanupScreenshotsDone:
+    'Deleted {files} {files|file|files}, freed about {size}.',
   storageCleanupRunDataDone:
-    'Deleted {runs} runs and {files} files, freed about {size}.',
+    'Deleted {runs} {runs|run|runs} and {files} {files|file|files}, freed about {size}.',
   noVideo: 'No Video',
 
+  streamDisplayModeLabel: 'Display style',
   streamModeCurrent: 'Battle Count',
   streamModeHero: 'Full Hero',
   streamModeHeroHalf: 'Half Hero',
-  streamOpenOverlay: 'Open Preview',
+  streamOpenOverlay: 'Preview Overlay',
   streamStart: 'Start Service',
   streamRestart: 'Restart Service',
   streamObsPlaceholder:
-    'The OBS Browser Source URL appears after the service starts',
+    'The OBS Browser Source URL appears after the stream service starts',
   streamObsGuide:
     'Add this URL as an OBS Browser Source to show the overlay on your stream',
   streamWindowSection: 'Display Window',
   streamWindowLatest: 'Showing the latest record',
-  streamWindowOffset: 'Back {count} record(s)',
+  streamWindowOffset: 'Back {count} {count|record|records}',
   streamMoreHistory: 'More History',
   streamLessHistory: 'Less History',
   streamOverlayConfig: 'Overlay Config',
@@ -815,25 +800,26 @@ const en: Record<MessageKey, string> = {
   streamCropCodePlaceholder: 'Enter crop code…',
   streamApplyCrop: 'Apply Crop Code',
   streamResetCrop: 'Reset Crop',
-  streamOpenSettings: 'Open Calibration',
+  streamOpenSettings: 'Calibrate Overlay',
   streamObsUrlLabel: 'OBS URL',
   streamInfoHost: 'Host',
   streamInfoPort: 'Port',
   streamInfoDb: 'DB',
   streamInfoWindow: 'Window',
-  streamStatusError: 'Overlay Error',
-  streamStatusStarting: 'Overlay Starting',
-  streamStatusRunning: 'Overlay Running',
-  streamStatusIdle: 'Overlay Idle',
-  streamStatusStale: 'Overlay Status May Be Stale',
-  streamStatusUnavailable: 'Overlay Status Unavailable',
-  streamStarting: 'Starting local service',
-  streamIdleDetail: 'Service not started',
+  streamStatusError: 'Stream Service Error',
+  streamStatusStarting: 'Stream Service Starting',
+  streamStatusRunning: 'Stream Service Running',
+  streamStatusIdle: 'Stream Service Stopped',
+  streamStatusStale: 'Stream Service Status May Be Stale',
+  streamStatusUnavailable: 'Stream Service Status Unavailable',
+  streamStarting: 'Starting the local stream service',
+  streamIdleDetail: 'The stream service is not running',
   streamStaleRunningDetail:
-    'Last seen running; waiting for an up-to-date service status',
+    'Last seen running; waiting for an up-to-date stream service status',
   streamStaleIdleDetail:
-    'Last seen stopped; waiting for an up-to-date service status',
-  streamStatusUnavailableDetail: 'No authoritative service status is available',
+    'Last seen stopped; waiting for an up-to-date stream service status',
+  streamStatusUnavailableDetail:
+    'No authoritative stream service status is available',
   streamPortDetail: 'Port {port}',
   streamRetryStatus: 'Refresh Status',
   streamRetryCrop: 'Reload Config',
@@ -842,11 +828,11 @@ const en: Record<MessageKey, string> = {
   streamCropSaved: 'Crop code saved',
   streamCropReset: 'Crop settings reset to default',
   streamProblemServiceFailed:
-    'The overlay service could not start. Make sure port 17654 is available, then retry.',
+    'The stream service could not start. Make sure port 17654 is available, then retry.',
   streamProblemRestartFailed:
-    'The overlay service could not restart. Make sure port 17654 is available, then retry.',
+    'The stream service could not restart. Make sure port 17654 is available, then retry.',
   streamProblemPollFailed:
-    'The latest overlay status could not be confirmed. The previous value is marked stale; refresh it.',
+    'The latest stream service status could not be confirmed. The previous value is marked stale; refresh it.',
   streamProblemWindowFailed: 'The display window could not be changed. Retry.',
   streamProblemCropLoadFailed:
     'Overlay configuration could not be loaded. Other stream controls remain available; reload it.',
@@ -862,7 +848,7 @@ const en: Record<MessageKey, string> = {
   dbMissing: 'DB Missing',
 
   aboutAppLabel: 'App',
-  aboutBppLabel: 'BPP',
+  aboutBppLabel: 'Plugin',
   aboutCredits: 'Credits',
   aboutContributors: 'Contributors',
   aboutAcknowledgements: 'Data & Inspiration',
@@ -880,22 +866,12 @@ const en: Record<MessageKey, string> = {
   aboutBlockingFailure:
     'App information could not be loaded and no usable fallback data is available. Please retry.',
 
-  installOverviewInstalled: 'BazaarPlusPlus is installed',
-  installOverviewUpdateRequired: 'BazaarPlusPlus needs reinstalling',
-  installOverviewNotInstalled: 'BazaarPlusPlus is not installed',
-  installOverviewHealthy: 'All plugins are healthy and ready to launch',
   installOverviewHealthyShort: 'All components are running normally',
   installOverviewUpdateDescription:
     'Component versions differ; reinstall to finish updating',
   installOverviewNotInstalledDescription:
     'Choose the game directory to install the plugin',
-  installEnvironmentHeading: 'Installation Environment',
-  versionInformationHeading: 'Version Information',
-  gameVersionLabel: 'Game',
-  installedModVersionLabel: 'Installed plugin',
-  bundledModVersionLabel: 'Bundled plugin',
-  maintenanceOperationsHeading: 'Maintenance',
-  installationDirectoryHeading: 'Install Directory',
+  installationDirectoryHeading: 'Game Directory',
   copyPath: 'Copy Path',
   pathCopied: 'Copied',
   selectDirectory: 'Choose Directory',
@@ -909,26 +885,22 @@ const en: Record<MessageKey, string> = {
   maintenanceResetBepinexDescription: 'Reset the plugin environment',
   checkUpdateDescription: 'Fetch the latest version information',
   maintenanceUninstallDescription: 'Remove all components',
-  actionInstallDescription: 'Install the plugin to the game directory',
-  actionReinstallDescription:
-    'Overwrite the current version and keep local data',
-  resetBepinexDescription: 'Delete BepInEx and its contents',
-  uninstallDescription: 'Remove plugin files and keep the base game',
-  launchGameDescription: 'Launch the game with the current plugin',
   installModalSubtitle: 'Pre-install confirmation and environment check',
   historySummaryRunsDescription: 'Total recorded runs',
   historySummaryVideosDescription: 'Recorded videos',
-  historySummaryWinRateDescription: 'Win rate across completed runs',
+  historySummaryWinRateDescription: 'Across completed runs',
   historySummaryWinRateUnavailable: 'No win-rate data yet',
   storageCleanupScreenshotsDescription: 'Screenshot files saved at run end',
   storageCleanupRunDataDescription: 'Data files generated by completed runs',
-  streamServiceSection: 'Stream service status',
   aboutTagline: 'Data enhancement and analysis for The Bazaar'
 };
 
 export const messages: Record<Locale, Record<MessageKey, string>> = { zh, en };
 
 export type TranslateParams = Record<string, string | number>;
+
+// `{name|singular|plural}` selects on the numeric value of `params[name]`.
+const PLURAL_TOKEN = /\{([a-zA-Z0-9_]+)\|([^|{}]*)\|([^|{}]*)\}/g;
 
 export function formatMessage(
   locale: Locale,
@@ -939,10 +911,23 @@ export function formatMessage(
   if (!params) {
     return text;
   }
+  text = text.replace(PLURAL_TOKEN, (match, name, one, other) => {
+    const value = params[name];
+    if (value === undefined) return match;
+    return Number(value) === 1 ? one : other;
+  });
   for (const [name, value] of Object.entries(params)) {
     text = text.replaceAll(`{${name}}`, String(value));
   }
   return text;
+}
+
+function normalizeLocale(value: string | undefined | null): Locale | null {
+  if (!value) return null;
+  const lower = value.toLowerCase();
+  if (lower.startsWith('zh')) return 'zh';
+  if (lower.startsWith('en')) return 'en';
+  return null;
 }
 
 export function resolveInitialLocale(): Locale {
@@ -950,5 +935,17 @@ export function resolveInitialLocale(): Locale {
     return defaultLocale;
   }
   const saved = window.localStorage.getItem(LOCALE_STORAGE_KEY);
-  return saved === 'en' || saved === 'zh' ? saved : defaultLocale;
+  if (saved === 'en' || saved === 'zh') {
+    return saved;
+  }
+  // No stored choice yet: follow the host language before falling back to zh.
+  const languages =
+    typeof navigator === 'undefined'
+      ? []
+      : [...(navigator.languages ?? []), navigator.language];
+  for (const language of languages) {
+    const resolved = normalizeLocale(language);
+    if (resolved) return resolved;
+  }
+  return defaultLocale;
 }

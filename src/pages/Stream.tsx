@@ -221,8 +221,12 @@ export default function Stream() {
               {t('streamOverlayConfig')}
             </span>
 
+            <span className="bpp-stream-metric-label">
+              {t('streamDisplayModeLabel')}
+            </span>
+
             <SegmentedControl
-              label={t('streamOverlayConfig')}
+              label={t('streamDisplayModeLabel')}
               name="displayMode"
               value={cropSettings.display_mode}
               disabled={!snapshot.crop.canEdit}

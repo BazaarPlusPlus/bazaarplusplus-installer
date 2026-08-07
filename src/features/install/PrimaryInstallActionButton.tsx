@@ -24,7 +24,7 @@ export function PrimaryInstallActionButton({
   const isChoose = mode === 'choose-directory';
   const isRepair = mode === 'repair';
   const label = isChoose
-    ? t('selectDirectory')
+    ? t('actionChooseDirectory')
     : isLaunch
       ? t('launchGame')
       : isRepair

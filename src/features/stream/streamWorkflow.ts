@@ -118,6 +118,10 @@ interface StreamWorkflowPorts {
   scheduler: StreamScheduler;
   clipboard: StreamClipboard;
   opener: StreamOpener;
+  // The calibration page is served from the stream service's own origin, so it
+  // cannot read the app's locale. Read it live, since the user can toggle
+  // language while the page is mounted.
+  currentLocale: () => string;
 }
 
 interface MutableState {
@@ -422,9 +426,10 @@ class DefaultStreamWorkflow implements StreamWorkflow {
   private openSettings() {
     const url = this.state.status?.settings_url;
     if (!url) return Promise.resolve(false);
+    const localized = withLocaleParam(url, this.ports.currentLocale());
     return this.runOneOff(
       'open_settings',
-      () => this.ports.opener.open(url),
+      () => this.ports.opener.open(localized),
       'stream_open_failed',
       { operation: 'open_settings' }
     );
@@ -757,6 +762,17 @@ function initialState(): MutableState {
     },
     notice: null
   };
+}
+
+function withLocaleParam(url: string, locale: string): string {
+  try {
+    const parsed = new URL(url);
+    parsed.searchParams.set('lang', locale);
+    return parsed.toString();
+  } catch {
+    // A URL the backend did not produce is still worth opening as-is.
+    return url;
+  }
 }
 
 export function createStreamWorkflow(

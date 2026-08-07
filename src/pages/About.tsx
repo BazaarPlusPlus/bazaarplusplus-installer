@@ -64,6 +64,12 @@ export function AboutView({
 
 function AboutBootstrapContent({ bootstrap }: { bootstrap: AppBootstrap }) {
   const { t } = useI18n();
+  // Both chips are version chips, so both read with the same `v` prefix. The
+  // bundled version comes from a file inside the payload zip, so it may or may
+  // not already carry one.
+  const bppVersionLabel = bootstrap.bundled_bpp_version
+    ? bootstrap.bundled_bpp_version.replace(/^v?/i, 'v')
+    : t('aboutUnavailableValue');
 
   return (
     <>
@@ -93,10 +99,10 @@ function AboutBootstrapContent({ bootstrap }: { bootstrap: AppBootstrap }) {
                 {t('aboutBppLabel')}
               </span>
               <span
-                aria-label={`${t('aboutBppLabel')} ${bootstrap.bundled_bpp_version ?? t('aboutUnavailableValue')}`}
+                aria-label={`${t('aboutBppLabel')} ${bppVersionLabel}`}
                 className="bpp-version-chip w-fit"
               >
-                {bootstrap.bundled_bpp_version ?? t('aboutUnavailableValue')}
+                {bppVersionLabel}
               </span>
             </div>
           </div>

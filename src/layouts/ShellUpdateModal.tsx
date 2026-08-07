@@ -29,16 +29,19 @@ export function ShellUpdateModal({
   updater,
   presentation
 }: ShellUpdateModalProps) {
-  const { t } = useI18n();
+  const { locale, t } = useI18n();
   const dismissible = presentation.dismissalPolicy === 'dismissible';
   const action = presentation.action;
   const actionHandler =
     action === 'install' || action === 'retry-install'
       ? updater.install
       : updater.restart;
-  const mainlandDownloadUrl = updater.version
-    ? getMainlandDownloadUrl(updater.version)
-    : null;
+  // The mainland mirror only helps users on that side of the network, and the
+  // zh locale is the closest signal the frontend has for them.
+  const mainlandDownloadUrl =
+    updater.version && locale === 'zh'
+      ? getMainlandDownloadUrl(updater.version)
+      : null;
 
   const openMainlandDownload = (event: React.MouseEvent<HTMLAnchorElement>) => {
     if (!hasTauriRuntime() || !mainlandDownloadUrl) return;
