@@ -20,6 +20,7 @@ import {
 } from 'react';
 import { hasTauriRuntime } from '../api/runtime';
 import type { AppBootstrapController } from '../features/about/useAppBootstrap';
+import { isWindowsPlatform } from '../features/shared/platform';
 import { useShellStreamServiceRunning } from '../features/stream/useShellStreamServiceRunning';
 import { useI18n } from '../i18n/LocaleProvider';
 import douyinPng from '../../static/support/douyin.png';
@@ -169,11 +170,7 @@ function ShellHeaderActions({
 }
 
 function isWindowsTauriRuntime() {
-  return (
-    hasTauriRuntime() &&
-    typeof navigator !== 'undefined' &&
-    navigator.userAgent.includes('Windows')
-  );
+  return hasTauriRuntime() && isWindowsPlatform();
 }
 
 function WindowsWindowControls() {

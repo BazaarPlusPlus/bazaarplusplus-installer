@@ -32,7 +32,7 @@
     { "name": "Claude Code", "role": "CO-CREATOR", "group": "team" },
     {
       "name": "BazaarDB",
-      "role": "GAMEDATA SOURCE",
+      "role": "GAME DATA SOURCE",
       "group": "acknowledgement"
     },
     {

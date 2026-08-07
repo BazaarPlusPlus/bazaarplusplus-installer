@@ -80,7 +80,11 @@ export function InstallStatusPanel({
         >
           <div className="bpp-install-directory-field">
             <p
-              className="selectable bpp-install-path"
+              className={
+                selectedPath
+                  ? 'selectable bpp-install-path'
+                  : 'bpp-install-path is-empty'
+              }
               title={selectedPath ?? undefined}
             >
               {selectedPath ?? t('gamePathEmpty')}
@@ -119,9 +123,7 @@ export function InstallStatusPanel({
               {import.meta.env.DEV ? t('developmentBuild') : t('stableBuild')}
             </span>
           </div>
-          <p className="bpp-install-version-meta">
-            v{appVersion} · BazaarPlusPlus Desktop
-          </p>
+          <p className="bpp-install-version-meta">BazaarPlusPlus Desktop</p>
         </InfoCard>
       </div>
 

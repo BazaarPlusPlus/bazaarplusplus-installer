@@ -25,6 +25,7 @@ import {
   useHistoryPage,
   type EndGameProcessOutcome
 } from '../features/history/useHistoryPage';
+import { isWindowsPlatform } from '../features/shared/platform';
 import { formatProblemDiagnostic } from '../features/shared/problems';
 import { useToast } from '../components/ui/Toast';
 import { useI18n } from '../i18n/LocaleProvider';
@@ -346,7 +347,10 @@ function endGameProcessMessageKey(outcome: EndGameProcessOutcome): MessageKey {
     case 'already-exited':
       return 'historyEndGameProcessNotFound';
     case 'failed':
-      return 'historyEndGameProcessFailed';
+      // The recovery step names a real OS surface, so it has to match the host.
+      return isWindowsPlatform()
+        ? 'historyEndGameProcessFailedWindows'
+        : 'historyEndGameProcessFailedMac';
   }
 }
 

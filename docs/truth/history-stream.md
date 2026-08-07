@@ -1,7 +1,7 @@
 ---
 status: truth
 topic: history-stream
-last-verified: 015f9ed537b2748f9025a19628cfafaa773225f9
+last-verified: c11d9039543f75ed93e6fc4e4f0fb73b6600bb2f
 ---
 
 # History And Stream
@@ -22,15 +22,15 @@ last-verified: 015f9ed537b2748f9025a19628cfafaa773225f9
 
 ## History UI
 
-- History independently starts list loading and status-only preview discovery; it never ensures or starts a Stream session in `src/features/history/useHistoryPage.ts:37-68`. Stopped/failed Stream status becomes a non-blocking preview problem and switches the row fallback label; image load failures fall back inside the row in `src/features/history/historyPreview.ts:14-45` and `src/pages/History.tsx:173-175,232-268`.
-- The History page state union makes initial loading, blocking failure, ready-empty, and ready-content exclusive, while refreshing and refresh failure retain successful data in `src/features/shared/pageState.ts:1-61`, `src/features/history/historyPageState.ts:10-42`, and `src/pages/History.tsx:50-136`.
-- The History page renders Runs, Videos, and Win Rate summary cards in `src/pages/History.tsx:59-79`.
-- A `history_read_blocked_by_game` banner offers an End Game Process action that terminates every `TheBazaar.exe` and reloads on any outcome, since an already-exited process leaves the same stale error on screen as one just ended (`src/pages/History.tsx:278-347`, `src/features/history/useHistoryPage.ts:72-89`, `src-tauri/src/commands/game.rs:1-13`, `src-tauri/src/services/process_snapshot.rs:56-101`).
-- History rows include optional preview images and link to `/history/:run_id` details in `src/pages/History.tsx:125-230`.
-- Run detail makes initial loading, not-found, blocking failure, and ready content exclusive; refresh failure retains the last successful detail and stale completions are ignored in `src/features/history/runDetailPageState.ts:5-90` and `src/pages/RunDetail.tsx:92-131`. Empty battle lists render EmptyState with a refresh action in `src/pages/RunDetail.tsx:225-246`.
-- Detail refresh, screenshot reveal, video reveal, and video deletion share one visible single-flight gate. Action failures stay scoped to the screenshot or affected battle and clear when that target retries in `src/features/history/runDetailPageState.ts:93-167`, `src/features/history/useRunDetailPage.ts:46-165`, `src/pages/RunDetail.tsx:159-181`, and `src/pages/RunDetail.tsx:401-466`.
-- Run detail formats dates, replay durations, and replay sizes through shared locale-aware helpers in `src/features/history/format.ts:4-61` and `src/features/history/format.ts:113-150`, with replay metadata rendered beside each video action in `src/pages/RunDetail.tsx:402-445`.
-- The History page renders the storage cleanup card after the summary cards only in a successful ready state in `src/pages/History.tsx:57-81`; the card offers separate end-of-run screenshot and run-data rows, then confirms the exact scope, preset, counts, and consequence. Execute failure keeps that target and localized semantic problem in place for retry or safe close; success alone closes and refreshes History in `src/features/history/StorageCleanupCard.tsx:87-199` and `src/features/history/useStorageCleanup.ts:23-78`.
+- History independently starts list loading and status-only preview discovery; it never ensures or starts a Stream session in `src/features/history/useHistoryPage.ts:37-68`. Stopped/failed Stream status becomes a non-blocking preview problem and switches the row fallback label; image load failures fall back inside the row in `src/features/history/historyPreview.ts:14-45` and `src/pages/History.tsx:174-176,232-268`.
+- The History page state union makes initial loading, blocking failure, ready-empty, and ready-content exclusive, while refreshing and refresh failure retain successful data in `src/features/shared/pageState.ts:1-61`, `src/features/history/historyPageState.ts:10-42`, and `src/pages/History.tsx:51-137`.
+- The History page renders Runs, Videos, and Win Rate summary cards in `src/pages/History.tsx:60-80`.
+- A `history_read_blocked_by_game` banner offers an End Game Process action that terminates every `TheBazaar.exe` and reloads on any outcome, since an already-exited process leaves the same stale error on screen as one just ended (`src/pages/History.tsx:279-348`, `src/features/history/useHistoryPage.ts:72-89`, `src-tauri/src/commands/game.rs:1-13`, `src-tauri/src/services/process_snapshot.rs:56-101`).
+- History rows include optional preview images and link to `/history/:run_id` details in `src/pages/History.tsx:126-231`.
+- Run detail makes initial loading, not-found, blocking failure, and ready content exclusive; refresh failure retains the last successful detail and stale completions are ignored in `src/features/history/runDetailPageState.ts:5-90` and `src/pages/RunDetail.tsx:100-139`. Empty battle lists render EmptyState with a refresh action in `src/pages/RunDetail.tsx:233-254`.
+- Detail refresh, screenshot reveal, video reveal, and video deletion share one visible single-flight gate. Action failures stay scoped to the screenshot or affected battle and clear when that target retries in `src/features/history/runDetailPageState.ts:93-167`, `src/features/history/useRunDetailPage.ts:46-165`, `src/pages/RunDetail.tsx:167-189`, and `src/pages/RunDetail.tsx:409-474`.
+- Run detail formats dates, replay durations, and replay sizes through shared locale-aware helpers in `src/features/history/format.ts:4-61` and `src/features/history/format.ts:113-150`, with replay metadata rendered beside each video action in `src/pages/RunDetail.tsx:410-453`.
+- The History page renders the storage cleanup card after the summary cards only in a successful ready state in `src/pages/History.tsx:58-82`; the card offers separate end-of-run screenshot and run-data rows, then confirms the exact scope, preset, counts, and consequence. Execute failure keeps that target and localized semantic problem in place for retry or safe close; success alone closes and refreshes History in `src/features/history/StorageCleanupCard.tsx:87-199` and `src/features/history/useStorageCleanup.ts:23-78`.
 
 ## Storage Cleanup
 
@@ -55,13 +55,14 @@ last-verified: 015f9ed537b2748f9025a19628cfafaa773225f9
 
 ## Stream UI Capabilities
 
-- The Stream snapshot keeps service, polling freshness, display window, crop settings, and clipboard/opener actions as independent capability states with their own phase, operation, problem, and action gates in `src/features/stream/streamWorkflow.ts:53-106` and `src/features/stream/streamWorkflow.ts:640-733`.
-- Service and crop initialization run independently; crop loading or failure does not block service/window controls, and crop plus one-off operations use separate single-flight gates in `src/features/stream/streamWorkflow.ts:185-268` and `src/features/stream/streamWorkflow.ts:509-590`.
-- Three consecutive status-poll failures preserve the last value but mark it stale, disable actions that require an authoritative running service, and expose a manual refresh; a successful poll restores freshness in `src/features/stream/streamWorkflow.ts:271-324` and `src/features/stream/streamWorkflow.ts:640-733`.
-- Workflow state stores semantic problems and notices rather than localized copy. Translation is a pure presentation step, and `useStreamPage` creates the workflow independently of locale so language switches do not dispose, restart, or re-ensure the session in `src/features/stream/streamProblems.ts:7-105`, `src/features/stream/streamPresentation.ts:20-80`, and `src/features/stream/useStreamPage.ts:20-42`.
+- The Stream snapshot keeps service, polling freshness, display window, crop settings, and clipboard/opener actions as independent capability states with their own phase, operation, problem, and action gates in `src/features/stream/streamWorkflow.ts:53-106` and `src/features/stream/streamWorkflow.ts:645-738`.
+- Service and crop initialization run independently; crop loading or failure does not block service/window controls, and crop plus one-off operations use separate single-flight gates in `src/features/stream/streamWorkflow.ts:189-272` and `src/features/stream/streamWorkflow.ts:514-595`.
+- Three consecutive status-poll failures preserve the last value but mark it stale, disable actions that require an authoritative running service, and expose a manual refresh; a successful poll restores freshness in `src/features/stream/streamWorkflow.ts:275-328` and `src/features/stream/streamWorkflow.ts:645-738`.
+- Workflow state stores semantic problems and notices rather than localized copy. Translation is a pure presentation step, and `useStreamPage` creates the workflow independently of locale so language switches do not dispose, restart, or re-ensure the session in `src/features/stream/streamProblems.ts:7-105`, `src/features/stream/streamPresentation.ts:20-80`, and `src/features/stream/useStreamPage.ts:27-50`.
 
 ## HTTP Surface
 
 - The local HTTP router exposes `/overlay`, `/settings`, stream record APIs, crop-config APIs, record images, and static overlay/settings assets in `src-tauri/src/stream/http.rs:29-40` and `src-tauri/src/stream/http.rs:75-109`.
 - Stream records expose a canonical `hero_id` separately from the display `title`; the mapper normalizes the legacy `Hero8` and canonical `TheDragons` database values to `hero_id: "TheDragons"` and `title: "The Dragons"`, while preserving other trimmed hero ids in `src-tauri/src/history/hero.rs` and `src-tauri/src/stream/records/mapper.rs`. The overlay chooses badge styling and assets from `hero_id`, with a direct `Hero8` fallback alias in `src-tauri/resources/stream/overlay.js`.
 - CORS is narrowed to Tauri origins and the local Vite dev origins `http://localhost:14207` and `http://127.0.0.1:14207` in `src-tauri/src/stream/http.rs:111-122`.
+- `/settings` is served from the stream service's own origin, so it cannot read the app's stored locale. It carries its own zh/en dictionary and resolves the locale from a `?lang` query parameter before falling back to the browser language in `src-tauri/resources/stream/settings.js:8-121`; the app appends the current locale when opening the page in `src/features/stream/streamWorkflow.ts:426-436` and `src/features/stream/streamWorkflow.ts:767-776`. Request failures carry the raw response body, so the page logs it and shows localized status copy instead in `src-tauri/resources/stream/settings.js:156-161`.

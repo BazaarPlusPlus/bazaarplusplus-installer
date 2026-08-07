@@ -244,18 +244,28 @@ function CleanupRow({
         </span>
       </div>
       <div className="bpp-history-cleanup-actions">
-        {PRESETS.map(({ preset, labelKey }) => (
-          <Button
-            key={preset}
-            type="button"
-            size="small"
-            disabled={busy}
-            onClick={() => void onSelect(scope, preset)}
-            className="bpp-history-cleanup-action"
-          >
-            {t(labelKey)}
-          </Button>
-        ))}
+        {PRESETS.map(({ preset, labelKey }) => {
+          // The visible label is the range alone so the three buttons read as
+          // one axis; the full action stays available to assistive tech.
+          const actionLabel = t('storageCleanupActionLabel', {
+            scope: label,
+            preset: t(labelKey)
+          });
+          return (
+            <Button
+              key={preset}
+              type="button"
+              size="small"
+              disabled={busy}
+              onClick={() => void onSelect(scope, preset)}
+              className="bpp-history-cleanup-action"
+              title={actionLabel}
+              aria-label={actionLabel}
+            >
+              {t(labelKey)}
+            </Button>
+          );
+        })}
       </div>
     </div>
   );

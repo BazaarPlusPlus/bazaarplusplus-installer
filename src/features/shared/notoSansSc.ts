@@ -1,12 +1,10 @@
+import { isWindowsPlatform } from './platform';
+
 const NOTO_SANS_SC_CSS_URL =
   'https://fonts.googleapis.cn/css2?family=Noto+Sans+SC:wght@400;500;600;700&display=swap';
 const CACHE_NAME = 'bpp-noto-sans-sc-css-v1';
 
 let scheduled = false;
-
-function isWindows() {
-  return navigator.userAgent.includes('Windows');
-}
 
 function installStyleSheet(css: string) {
   if (document.querySelector('style[data-bpp-noto-sans-sc]')) return;
@@ -52,7 +50,7 @@ async function loadPersistedStyleSheet() {
 
 async function loadNotoSansSc() {
   const root = document.documentElement;
-  const windows = isWindows();
+  const windows = isWindowsPlatform();
   root.dataset.bppPlatform = windows ? 'windows' : 'macos';
   if (!windows) return;
 

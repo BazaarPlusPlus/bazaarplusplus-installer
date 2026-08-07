@@ -103,7 +103,8 @@ function setup(
     commands,
     scheduler,
     clipboard,
-    opener
+    opener,
+    currentLocale: () => 'zh'
   });
   return { workflow, commands, scheduler, clipboard, opener };
 }
@@ -297,7 +298,8 @@ describe('stream workflow lifecycle and effects', () => {
         commands,
         scheduler: new FakeScheduler(),
         clipboard: { writeText: async () => undefined },
-        opener: { open: async () => undefined }
+        opener: { open: async () => undefined },
+        currentLocale: () => 'zh'
       });
       await workflow.start();
       expect(workflow.getSnapshot().service.phase).not.toBe('loading');

@@ -5,6 +5,121 @@ const DEFAULT_CROP = {
   height: 0.22
 };
 
+// This page is served by the local stream service on its own origin, so it
+// cannot read the app's stored locale. The app appends `?lang=` when it opens
+// the page; a direct visit falls back to the browser language.
+const MESSAGES = {
+  en: {
+    documentTitle: 'BazaarPlusPlus Overlay Calibration',
+    eyebrow: 'Stream Overlay',
+    heading: 'Crop Calibration',
+    headerNote:
+      'Adjust the crop directly on the source screenshot, then save or copy the code.',
+    previewEyebrow: 'Preview',
+    previewHeading: 'Adjust once, preview everywhere',
+    previewEmpty: 'Waiting for screenshots with end-of-run crops.',
+    sourceImage: 'Source image',
+    noSample: 'No sample selected',
+    imageAlt: 'Selected end-of-run record image',
+    controlsEyebrow: 'Controls',
+    controlsHeading: 'Crop ratios',
+    cropLeft: 'Left',
+    cropTop: 'Top',
+    cropWidth: 'Width',
+    cropHeight: 'Height',
+    saveButton: 'Save Crop',
+    copyButton: 'Copy Base64 Code',
+    settingsCode: 'Settings code',
+    statusLoading: 'Loading the selected stream record...',
+    statusLoaded:
+      'Loaded the selected stream record image. Adjust the crop on the source image, then save or copy the code.',
+    statusEmpty:
+      'No end-of-run record is available in the current stream window yet. Finish a run, then refresh this page.',
+    statusSaved: 'Crop saved. Overlay will use this code on the next refresh.',
+    statusCopied: 'Base64 settings code copied to clipboard.',
+    statusSaveFailed: 'Failed to save crop.',
+    statusCopyFailed: 'Failed to copy code.',
+    statusLoadFailed: 'Failed to load calibration data.',
+    unknownHero: 'Unknown hero',
+    battles: '{count} battles'
+  },
+  zh: {
+    documentTitle: 'BazaarPlusPlus 叠加层校准',
+    eyebrow: '直播叠加层',
+    heading: '裁切校准',
+    headerNote: '直接在源截图上调整裁切范围，然后保存或复制裁切代码。',
+    previewEyebrow: '预览',
+    previewHeading: '调整一次，处处生效',
+    previewEmpty: '正在等待带有结算裁切的截图。',
+    sourceImage: '源图像',
+    noSample: '未选择样本',
+    imageAlt: '当前选中的结算记录图像',
+    controlsEyebrow: '控制',
+    controlsHeading: '裁切比例',
+    cropLeft: '左',
+    cropTop: '上',
+    cropWidth: '宽',
+    cropHeight: '高',
+    saveButton: '保存裁切',
+    copyButton: '复制 Base64 代码',
+    settingsCode: '设置代码',
+    statusLoading: '正在读取当前展示的对局记录…',
+    statusLoaded:
+      '已载入当前展示的对局记录图像。在源图像上调整裁切范围，然后保存或复制裁切代码。',
+    statusEmpty:
+      '当前展示窗口内还没有结算记录。完成一局对局后刷新本页即可。',
+    statusSaved: '裁切已保存。叠加层将在下次刷新时使用该配置。',
+    statusCopied: 'Base64 设置代码已复制到剪贴板。',
+    statusSaveFailed: '保存裁切失败。',
+    statusCopyFailed: '复制裁切代码失败。',
+    statusLoadFailed: '加载校准数据失败。',
+    unknownHero: '未知英雄',
+    battles: '{count} 场战斗'
+  }
+};
+
+const locale = resolveLocale();
+const strings = MESSAGES[locale];
+
+function resolveLocale() {
+  const candidates = [];
+  try {
+    candidates.push(new URLSearchParams(window.location.search).get('lang'));
+  } catch {
+    // A malformed query string just falls through to the browser language.
+  }
+  candidates.push(...(navigator.languages || []), navigator.language);
+
+  for (const candidate of candidates) {
+    if (typeof candidate !== 'string' || !candidate) continue;
+    const lower = candidate.toLowerCase();
+    if (lower.startsWith('zh')) return 'zh';
+    if (lower.startsWith('en')) return 'en';
+  }
+  return 'en';
+}
+
+function t(key, params) {
+  const text = strings[key] ?? MESSAGES.en[key] ?? key;
+  if (!params) return text;
+  return Object.entries(params).reduce(
+    (result, [name, value]) => result.replaceAll(`{${name}}`, String(value)),
+    text
+  );
+}
+
+function applyStaticTranslations() {
+  document.documentElement.lang = locale === 'zh' ? 'zh-CN' : 'en';
+  document.title = t('documentTitle');
+
+  document.querySelectorAll('[data-i18n]').forEach((node) => {
+    node.textContent = t(node.dataset.i18n);
+  });
+  document.querySelectorAll('[data-i18n-alt]').forEach((node) => {
+    node.setAttribute('alt', t(node.dataset.i18nAlt));
+  });
+}
+
 const pageStatus = document.getElementById('page-status');
 const previewEmpty = document.getElementById('preview-empty');
 const previewWorkspace = document.getElementById('preview-workspace');
@@ -36,6 +151,13 @@ function setStatus(message) {
   if (pageStatus) {
     pageStatus.textContent = message;
   }
+}
+
+// Request failures carry the raw response body, which can be a whole HTML error
+// document. That belongs in the console, not in the page's status line.
+function reportFailure(error, messageKey) {
+  console.error('[calibration]', error);
+  setStatus(t(messageKey));
 }
 
 function readRequestedOffset() {
@@ -141,10 +263,10 @@ function renderPreview() {
   }
   if (selectedMeta) {
     selectedMeta.textContent = [
-      selectedRecord.title || 'Unknown hero',
+      selectedRecord.title || t('unknownHero'),
       typeof selectedRecord.wins === 'number' ? `${selectedRecord.wins}W` : null,
       typeof selectedRecord.battle_count === 'number'
-        ? `${selectedRecord.battle_count} battles`
+        ? t('battles', { count: selectedRecord.battle_count })
         : null
     ]
       .filter(Boolean)
@@ -196,7 +318,7 @@ async function saveCrop() {
   setCropVariables(payload.crop);
   updateCodeField(payload.crop);
   renderPreview();
-  setStatus('Crop saved. Overlay will use this code on the next refresh.');
+  setStatus(t('statusSaved'));
 }
 
 async function copyCode() {
@@ -206,7 +328,7 @@ async function copyCode() {
   }
 
   await navigator.clipboard.writeText(code);
-  setStatus('Base64 settings code copied to clipboard.');
+  setStatus(t('statusCopied'));
 }
 
 function bindInputHandlers() {
@@ -229,7 +351,7 @@ function bindInputHandlers() {
     try {
       await saveCrop();
     } catch (error) {
-      setStatus(error instanceof Error ? error.message : 'Failed to save crop.');
+      reportFailure(error, 'statusSaveFailed');
     }
   });
 
@@ -237,7 +359,7 @@ function bindInputHandlers() {
     try {
       await copyCode();
     } catch (error) {
-      setStatus(error instanceof Error ? error.message : 'Failed to copy code.');
+      reportFailure(error, 'statusCopyFailed');
     }
   });
 
@@ -245,6 +367,7 @@ function bindInputHandlers() {
 
 async function initialize() {
   try {
+    applyStaticTranslations();
     bindInputHandlers();
     const [settingsPayload, latestRecord] = await Promise.all([
       loadCropSettings(),
@@ -259,17 +382,9 @@ async function initialize() {
     selectedRecord = latestRecord;
     renderPreview();
 
-    setStatus(
-      selectedRecord
-        ? 'Loaded the selected stream record image. Adjust the crop on the source image, then save or copy the code.'
-        : 'No end-of-run record is available in the current stream window yet. Finish a run, then refresh this page.'
-    );
+    setStatus(t(selectedRecord ? 'statusLoaded' : 'statusEmpty'));
   } catch (error) {
-    setStatus(
-      error instanceof Error
-        ? error.message
-        : 'Failed to load calibration data.'
-    );
+    reportFailure(error, 'statusLoadFailed');
   }
 }
 
