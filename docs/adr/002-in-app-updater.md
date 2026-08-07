@@ -15,7 +15,7 @@ Use the Tauri updater as an in-app flow: keep the returned `Update` handle alive
 
 ## Rejected Alternatives
 
-- Send users to GitHub releases for install. The current shell update modal has install/retry/restart actions and no GitHub fallback in `src/layouts/ShellUpdateModal.tsx:120-158`.
+- Send users to GitHub releases for install. The current shell update modal has install/retry/restart actions and no GitHub fallback in `src/layouts/ShellUpdateModal.tsx:177-200`.
 - Discard the `Update` handle after `check()`. The code documents that `downloadAndInstall` must run on the same handle in `src/features/about/updater.ts:6-14`.
 - Hand-edit `latest.json`. The release scripts generate platform fragments and rebuild latest metadata from uploaded fragments in `build.sh:486-565`.
 

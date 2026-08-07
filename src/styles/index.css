@@ -2779,6 +2779,59 @@ body {
 .bpp-update-modal-copy {
   color: var(--bpp-text-2);
 }
+.bpp-update-modal-mainland {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid var(--bpp-line-subtle);
+  border-radius: var(--bpp-radius-control);
+  background: var(--bpp-surface-inset);
+}
+.bpp-update-modal-mainland-icon {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  flex: none;
+  border: 1px solid var(--bpp-line);
+  border-radius: var(--bpp-radius-control);
+  color: var(--bpp-accent-muted);
+  background: color-mix(in srgb, var(--bpp-accent) 7%, transparent);
+  place-items: center;
+}
+.bpp-update-modal-mainland-copy {
+  min-width: 0;
+  flex: 1;
+}
+.bpp-update-modal-mainland-title {
+  color: var(--bpp-text-1);
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 1.3;
+}
+.bpp-update-modal-mainland-description {
+  margin-top: 3px;
+  color: var(--bpp-text-3);
+  font-size: 11px;
+  line-height: 1.45;
+}
+.bpp-update-modal-mainland-link {
+  height: 30px;
+  flex: none;
+  padding: 0 10px;
+  border: 1px solid var(--bpp-line);
+  border-radius: var(--bpp-radius-control);
+  color: var(--bpp-text-2);
+  background: var(--bpp-surface-1);
+  font-size: 11px;
+  font-weight: 650;
+}
+.bpp-update-modal-mainland-link:hover,
+.bpp-update-modal-mainland-link:focus-visible {
+  border-color: var(--bpp-line-accent);
+  color: var(--bpp-text-1);
+  background: var(--bpp-surface-2);
+}
 .bpp-update-modal-later,
 .bpp-update-modal-action {
   border: 1px solid var(--bpp-line);

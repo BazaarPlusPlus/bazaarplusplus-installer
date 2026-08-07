@@ -1,6 +1,15 @@
-import { Download, LoaderCircle, RefreshCw } from 'lucide-react';
+import {
+  CloudDownload,
+  Download,
+  ExternalLink,
+  LoaderCircle,
+  RefreshCw
+} from 'lucide-react';
+import { openUrl } from '@tauri-apps/plugin-opener';
+import { hasTauriRuntime } from '../api/runtime';
 import { Dialog } from '../components/ui/Dialog';
 import { ProblemBanner } from '../components/ui/ProblemBanner';
+import { getMainlandDownloadUrl } from '../features/about/mainlandDownload';
 import type { UpdaterController } from '../features/about/useUpdater';
 import type { UpdaterUiContract } from '../features/about/updaterPresentation';
 import { presentUpdaterProblem } from '../features/about/updaterProblems';
@@ -27,9 +36,24 @@ export function ShellUpdateModal({
     action === 'install' || action === 'retry-install'
       ? updater.install
       : updater.restart;
+  const mainlandDownloadUrl = updater.version
+    ? getMainlandDownloadUrl(updater.version)
+    : null;
+
+  const openMainlandDownload = (event: React.MouseEvent<HTMLAnchorElement>) => {
+    if (!hasTauriRuntime() || !mainlandDownloadUrl) return;
+    event.preventDefault();
+    void openUrl(mainlandDownloadUrl).catch((error: unknown) => {
+      console.error('Failed to open the mainland installer download.', error);
+    });
+  };
 
   return (
-    <Dialog onClose={updater.dismiss} labelledBy="update-modal-title">
+    <Dialog
+      onClose={updater.dismiss}
+      labelledBy="update-modal-title"
+      focusContainerOnOpen
+    >
       <div className="bpp-modal-card w-[min(460px,calc(100vw-32px))]">
         <div className="bpp-update-modal-header px-6 py-5">
           <div className="flex items-start gap-4">
@@ -66,6 +90,34 @@ export function ShellUpdateModal({
               <p className="bpp-update-modal-copy m-0 text-sm leading-6">
                 {t('updateModalBody', { version: updater.version })}
               </p>
+              {mainlandDownloadUrl && (
+                <div className="bpp-update-modal-mainland mt-4">
+                  <span
+                    className="bpp-update-modal-mainland-icon"
+                    aria-hidden="true"
+                  >
+                    <CloudDownload size={16} />
+                  </span>
+                  <div className="bpp-update-modal-mainland-copy">
+                    <p className="bpp-update-modal-mainland-title m-0">
+                      {t('updateMainlandDownloadTitle')}
+                    </p>
+                    <p className="bpp-update-modal-mainland-description m-0">
+                      {t('updateMainlandDownloadHint')}
+                    </p>
+                  </div>
+                  <a
+                    href={mainlandDownloadUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={openMainlandDownload}
+                    className="bpp-update-modal-mainland-link inline-flex items-center gap-1.5 whitespace-nowrap transition-colors"
+                  >
+                    {t('updateMainlandDownload')}
+                    <ExternalLink size={12} aria-hidden="true" />
+                  </a>
+                </div>
+              )}
               {updater.notes && (
                 <div className="mt-4">
                   <p className="bpp-update-modal-kicker m-0 cinzel text-[10px] uppercase">

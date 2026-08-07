@@ -56,7 +56,7 @@ Native desktop replay-recorder payload refresh: `2026-08-07` on `bd216d53340953d
 | `docs/INDEX.md` | documentation manifest | manifest | 2026-08-06 |
 | `CONTEXT.md` | entry map + glossary | truth | `aa9f9cbc10b9342a0029ddbad46799835cb11785` |
 | `docs/truth/architecture.md` | architecture | truth | `aa9f9cbc10b9342a0029ddbad46799835cb11785` |
-| `docs/truth/frontend.md` | frontend | truth | `aa9f9cbc10b9342a0029ddbad46799835cb11785` |
+| `docs/truth/frontend.md` | frontend | truth | `9b06a891a878e2557e15e9a2bde57bf9d00e9400` |
 | `docs/truth/install-reset.md` | install-reset | truth | `42d843efd0c202bf18e0810119d866982c205dcb` |
 | `docs/truth/launch-modes.md` | launch-modes | truth | `c56cac3a94fea48f6711c45a5139cab3bc7322d8` |
 | `docs/truth/history-stream.md` | history-stream | truth | `f811cd1ebfc17c239e365b525ebec5ae0cb48855` |
