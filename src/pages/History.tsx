@@ -213,8 +213,13 @@ function RunRow({
 
         <div className="bpp-history-run-metrics">
           <Metric
-            label={t('runMetricProgress')}
-            value={`${run.victories ?? 0} / ${run.final_day ?? '-'}`}
+            label={t('runMetricWins')}
+            value={run.victories === null ? '-' : String(run.victories)}
+            fira
+          />
+          <Metric
+            label={t('runMetricDays')}
+            value={run.final_day === null ? '-' : String(run.final_day)}
             fira
           />
           <Metric
@@ -254,9 +259,8 @@ function RunPreview({
       aria-label={visibleUrl ? undefined : fallbackLabel}
     >
       {visibleUrl ? (
-        // Rounded server crop dimensions can differ slightly from 2000:470.
-        // Cover intentionally stays full-bleed; the outline no longer changes
-        // this image viewport or adds another layer of crop.
+        // Preserve the complete server-generated strip. Its rounded crop
+        // dimensions can vary by a few pixels between source resolutions.
         <img
           src={visibleUrl}
           alt=""
