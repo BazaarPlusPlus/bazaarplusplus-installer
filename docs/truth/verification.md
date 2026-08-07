@@ -1,7 +1,7 @@
 ---
 status: truth
 topic: verification
-last-verified: a4b4900c135fac5b737b7cfbf6c62972e54d09b9
+last-verified: bd216d53340953d9ebf6a1cb41d35837bcd92dfe
 ---
 
 # Verification
@@ -17,10 +17,10 @@ Use the smallest command that verifies the changed behavior; use the authoritati
 ## Common Commands
 
 - `npm run check` regenerates bindings and runs `tsc --noEmit`; `npm run test` generates bindings while running all Rust tests once, checks drift, then runs Vitest; and `npm run prebuild-check` generates bindings before the release prebuild guard in `package.json:12-35`.
-- `npm run verify:native-recorder-input` checks that the macOS helper input matches its pinned mod commit, Debug bundle id, and three artifact hashes; the macOS release prebuild invokes the same check in `package.json:16-18`, `scripts/native-recorder-input.mjs:39-99`, and `scripts/prebuild-check.mjs:133-139`.
+- `npm run verify:native-recorder-input` checks the macOS VideoToolbox bundle, CoreAudio library, and Windows Media Foundation DLL against their pinned mod commit and exact artifact hashes; every release-platform prebuild invokes the same check in `package.json:16-18`, `scripts/native-recorder-input.mjs:7-73`, and `scripts/prebuild-check.mjs:128-136`.
 - `npm run build` generates bindings once, then runs the release prebuild guard, TypeScript check, and Vite production build in `package.json:22-24`.
 - A direct Tauri build invokes that guarded `npm run build` hook in `src-tauri/tauri.conf.json:6-11`. The already-verified release path adds `src-tauri/tauri.release.conf.json`, which disables only the duplicate hook in `src-tauri/tauri.release.conf.json:1-5`, before building and bundling in `build.sh:607-653`.
-- `./build.sh --prod` runs version synchronization, pinned-input verification, deterministic resource preparation, and `npm run verify -- --release-platform <platform>` before Tauri packaging. On macOS it additionally proves the input is ad hoc, proves the signed helper uses official Team ID `9Z44S3N293`, and requires helper-specific notarization, stapling, validation, and Gatekeeper assessment before the outer installer bundle in `build.sh:381-445`, `build.sh:465-508`, `build.sh:575-585`, and `build.sh:758-779`.
+- `./build.sh --prod` runs version synchronization, pinned-input verification, deterministic resource preparation, and `npm run verify -- --release-platform <platform>` before Tauri packaging. On macOS it additionally proves the VideoToolbox bundle input is ad hoc, signs its nested executable and bundle inside-out, verifies official Team ID `9Z44S3N293`, and repacks the signed payload before the outer installer is bundled and notarized in `build.sh:377-405`, `build.sh:456-491`, and `build.sh:554-564`.
 
 ## Generated Binding Guard
 

@@ -1,7 +1,7 @@
 ---
 status: truth
 topic: updater-release
-last-verified: a4b4900c135fac5b737b7cfbf6c62972e54d09b9
+last-verified: bd216d53340953d9ebf6a1cb41d35837bcd92dfe
 ---
 
 # Updater And Release
@@ -25,17 +25,17 @@ last-verified: a4b4900c135fac5b737b7cfbf6c62972e54d09b9
 
 ## Payload Contract
 
-- Real release staging lives under `src-tauri/resources/SourceForBuild/<platform>`. Windows requires the private DLLs, version marker, FFmpeg binary, and license; macOS instead requires the native replay-recorder bundle and explicitly rejects the retired FFmpeg and CoreAudio-tap files in `scripts/payload-zip.mjs:9-39` and `scripts/payload-zip.mjs:124-143`.
-- The checked-in macOS helper input is an ad-hoc-signed Debug-identity artifact produced by `BazaarPlusPlus/bazaarplusplus-mod`. `scripts/native-recorder-input.lock.json` pins its full mod commit and the SHA-256 of `Info.plist`, the executable, and `CodeResources`; both the dedicated verifier and macOS release prebuild reject source/hash/bundle-id drift in `scripts/native-recorder-input.mjs:7-99` and `scripts/prebuild-check.mjs:133-139`.
+- Real release staging lives under `src-tauri/resources/SourceForBuild/<platform>`. Windows requires the managed payload, version marker, and Media Foundation recorder DLL. macOS requires the managed payload, version marker, CoreAudio capture library, and VideoToolbox render-plugin bundle. Both payloads explicitly reject retired FFmpeg files; macOS also rejects the retired recorder helper.
+- The checked-in native recorder inputs are produced by `BazaarPlusPlus/bazaarplusplus-mod`. `scripts/native-recorder-input.lock.json` pins the full mod commit and SHA-256 of every native macOS and Windows artifact. The dedicated verifier and every release-platform prebuild reject missing files or source/hash drift.
 - `npm run prepare:resources -- --platform <macos|windows>` sorts entries, fixes ZIP timestamps, preserves Unix modes, rejects symlinks and OS artifacts, writes the ignored ZIP, and writes a per-entry size/mode/SHA-256 plus whole-ZIP checksum manifest in `scripts/payload-zip.mjs:64-98`, `scripts/payload-zip.mjs:132-197`, and `scripts/payload-zip.mjs:346-420`.
 - Release validation requires `BazaarPlusPlus.version`, checks the staging and checksum manifest, performs an exact normalized file-set comparison, and rejects missing, stale-extra, absolute, drive, parent-traversal, backslash, duplicate, and OS-artifact entries while allowing directory entries and one common top-level prefix in `scripts/payload-zip.mjs:259-343` and `scripts/payload-zip.mjs:422-485`.
 - macOS validation additionally checks launcher contents and the arm64 trampoline in `scripts/prebuild-check.mjs:132-162`. Source CI uses only the marked fixture in `scripts/ci-resource-fixture.mjs:8-21`; it cannot satisfy the release payload or checksum contract.
 
 ## Build And Artifact Manifest
 
-- Production runs version synchronization, pinned-helper verification, resource preparation, and the authoritative release-platform gate before Tauri packaging in `build.sh:575-585` and `build.sh:816-865`.
-- The installer is the only production signer for `BppReplayRecorder.app`. It rejects any Developer ID-signed input, requires an ad-hoc signature with `TeamIdentifier=not set` and the Debug bundle id, rewrites the production bundle id, signs inside-out, and requires the resulting executable and app to report official `TeamIdentifier=9Z44S3N293` in `build.sh:43-46` and `build.sh:381-418` and `build.sh:465-508`.
-- Before the outer Tauri installer is bundled, the helper is submitted to Apple separately, stapled, validated, assessed with Gatekeeper, re-verified, and then repacked into the signed payload ZIP in `build.sh:420-445`, `build.sh:499-508`, `build.sh:538-572`, and `build.sh:758-779`.
+- Production runs version synchronization, pinned native-input verification, resource preparation, and the authoritative release-platform gate before Tauri packaging.
+- The installer is the only production signer for the macOS VideoToolbox plugin bundle. It rejects Developer ID-signed input, requires an ad-hoc input with `TeamIdentifier=not set`, signs the bundle inside-out, and verifies that its executable and bundle report the official `TeamIdentifier=9Z44S3N293`.
+- After inner native components are signed, the payload ZIP is rebuilt before the outer Tauri installer is packaged, signed, notarized, stapled, and assessed. The retired standalone recorder helper no longer has a separate notarization path.
 - After stale bundle cleanup and a successful bundle, artifact discovery requires exactly one installer and one updater signature, derives the paired updater, and refuses version-mismatched names in `scripts/artifact-manifest.mjs:60-121` and `scripts/artifact-manifest.mjs:134-171`.
 - The gitignored manifest records version, build/release platform, commit, dirty state, build timestamp, and exact relative paths, sizes, and SHA-256 values; the signature also records its trimmed content in `scripts/artifact-manifest.mjs:134-171`.
 - Upload validates current version/platform/commit/cleanliness and rechecks every path, size, hash, signature, and filename before returning exact files in `scripts/artifact-manifest.mjs:174-255`. `build.sh` consumes only those returned paths, with no directory-scan fallback, in `build.sh:474-519`.
