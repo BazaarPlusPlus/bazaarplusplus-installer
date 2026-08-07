@@ -7,7 +7,17 @@ topic: macos-launch-trampoline
 
 ## Context
 
-The macOS launch code documents that macOS 27 changed the Steam client so prefix executables before `%command%` no longer work for BepInEx injection in `src-tauri/src/services/macos_version.rs:1-10` and `src-tauri/src/services/bepinex/trampoline.rs:1-12`.
+After macOS updated to 27.0 and the Steam client self-updated to `macos-signed-2` (2026-06-09), The Bazaar stopped launching with BepInEx. The root cause was reproduced live against Steam's `logs/console_log.txt` and `logs/gameprocess_log.txt`:
+
+| LaunchOptions first token | Steam result |
+| --- | --- |
+| `TheBazaar.app` (empty options) | `Game process added` then `Completed` |
+| `run_bepinex.sh` **or** `/bin/sh` (prefix) | `Failed to spawn process`, `AppError_46 "OS Error 0"` |
+| `DYLD_…=… %command%` (env prefix) | `OS Error 260` |
+
+The macOS 27 Steam client no longer spawns a prefix executable before `%command%` — even `/bin/sh` fails. The failure is pre-plugin: the mod DLLs never load. BepInEx on macOS depended entirely on the prefix script that set `LaunchOptions` to `"…/run_bepinex.sh" %command%`, so that mechanism is dead on this client. Launching the `.app` directly is the only path that still works, which forces injection to move inside the `.app`.
+
+The same conclusion is recorded next to the code in `src-tauri/src/services/macos_version.rs` and `src-tauri/src/services/bepinex/trampoline.rs`.
 
 ## Decision
 
