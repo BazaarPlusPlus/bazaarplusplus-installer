@@ -3326,6 +3326,13 @@ body {
   }
 }
 
+@media (max-width: 640px) {
+  .bpp-header .bpp-brand-title,
+  .bpp-header .bpp-version-chip {
+    display: none;
+  }
+}
+
 /* ── Native-feel base: this is a desktop app, not a web page ─────────── */
 @layer base {
   /* Desktop apps use the arrow cursor everywhere; only text fields get a

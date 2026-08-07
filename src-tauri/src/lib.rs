@@ -65,6 +65,21 @@ pub fn run() {
                     .get_webview_window("main")
                     .ok_or_else(|| std::io::Error::other("main window is unavailable"))?;
                 window.set_decorations(false)?;
+                crate::main_window::enforce_minimum_size(&window)?;
+
+                // Programmatic window-state restoration and undecorated native
+                // resizing can bypass the configured logical minimum on Windows.
+                // Correct those native resize events before the WebView can be
+                // left with an unusably small layout.
+                let size_window = window.clone();
+                window.on_window_event(move |event| {
+                    if matches!(event, WindowEvent::Resized(_)) {
+                        if let Err(error) = crate::main_window::enforce_minimum_size(&size_window) {
+                            eprintln!("failed to enforce the Windows window minimum: {error}");
+                        }
+                    }
+                });
+
                 window.show()?;
 
                 // Showing the window can refresh its Win32 frame, so apply the
