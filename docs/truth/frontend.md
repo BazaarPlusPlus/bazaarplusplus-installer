@@ -1,7 +1,7 @@
 ---
 status: truth
 topic: frontend
-last-verified: aa9f9cbc10b9342a0029ddbad46799835cb11785
+last-verified: 9b06a891a878e2557e15e9a2bde57bf9d00e9400
 ---
 
 # Frontend
@@ -59,6 +59,6 @@ last-verified: aa9f9cbc10b9342a0029ddbad46799835cb11785
 ## Update Modal
 
 - The updater snapshot explicitly separates `checking`, `available`, `downloading`, `installing`, `ready-to-restart`, `restarting`, and `failed`; empty phases cannot retain update data, only downloading can retain progress, and failures retain a structured problem in `src/features/about/updater.ts:61-120`.
-- The updater presentation contract derives phase metadata plus modal title/action/priority/dismissal for every phase. Available, ready, and recovery decisions are system/dismissible; downloading, installing, and restarting are critical/blocked and have no fake cancel action in `src/features/about/updaterPresentation.ts:39-118` and `src/layouts/ShellUpdateModal.tsx:19-149`. The manual check entry point is the Install maintenance action in `src/features/install/InstallActionsPanel.tsx:63-70`.
-- Progress exposes an accessible label, minimum, known maximum/value, value text, and polite status announcement; unknown totals stay indeterminate rather than inventing a maximum in `src/layouts/ShellUpdateModal.tsx:155-207`.
-- Check, download, install, and restart failures use stable semantic codes with localized retry guidance and optional diagnostic disclosure. Restart failure preserves the installed version, explains reopening the app from Applications, and offers another restart attempt in `src/features/about/updaterProblems.ts:9-63`, `src/features/about/updater.ts:305-319`, and `src/layouts/ShellUpdateModal.tsx:112-147`.
+- The updater presentation contract derives phase metadata plus modal title/action/priority/dismissal for every phase. Available, ready, and recovery decisions are system/dismissible; downloading, installing, and restarting are critical/blocked and have no fake cancel action in `src/features/about/updaterPresentation.ts:39-118` and `src/layouts/ShellUpdateModal.tsx:28-204`. The available phase keeps automatic install as the primary action and adds a platform/version-specific mainland manual-download card in `src/features/about/mainlandDownload.ts:1-25` and `src/layouts/ShellUpdateModal.tsx:88-120`. The manual check entry point is the Install maintenance action in `src/features/install/InstallActionsPanel.tsx:63-70`.
+- Progress exposes an accessible label, minimum, known maximum/value, value text, and polite status announcement; unknown totals stay indeterminate rather than inventing a maximum in `src/layouts/ShellUpdateModal.tsx:207-259`.
+- Check, download, install, and restart failures use stable semantic codes with localized retry guidance and optional diagnostic disclosure. Restart failure preserves the installed version, explains reopening the app from Applications, and offers another restart attempt in `src/features/about/updaterProblems.ts:9-63`, `src/features/about/updater.ts:305-319`, and `src/layouts/ShellUpdateModal.tsx:164-200`.

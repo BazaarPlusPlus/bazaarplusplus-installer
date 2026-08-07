@@ -194,17 +194,18 @@ const zh = {
   updateHeaderAvailable: '发现更新',
   updateModalKicker: '应用更新',
   updateModalTitle: '发现新版本',
-  updateModalBody: 'BazaarPlusPlus Installer {version} 已可用。',
+  updateModalBody: 'BazaarPlusPlus {version} 已可用。',
+  updateMainlandDownloadTitle: '中国大陆下载',
+  updateMainlandDownloadHint: '自动更新较慢时，可通过大陆渠道手动下载。',
+  updateMainlandDownload: '打开下载页',
   updateModalLater: '稍后',
   updateInstall: '下载并安装',
   updateNotesLabel: '更新内容',
   updateDownloading: '正在下载…',
   updateInstalling: '正在安装…',
-  updateInstallingBody:
-    '下载已完成，正在安装 BazaarPlusPlus Installer {version}。',
+  updateInstallingBody: '下载已完成，正在安装 BazaarPlusPlus {version}。',
   updateReady: '更新完成，重启后生效',
-  updateReadyBody:
-    'BazaarPlusPlus Installer {version} 已安装完成。重启应用后即可使用。',
+  updateReadyBody: 'BazaarPlusPlus {version} 已安装完成。重启应用后即可使用。',
   updateRestartNow: '立即重启',
   updateRestarting: '正在重启…',
   updateError: '自动更新失败',
@@ -219,7 +220,7 @@ const zh = {
   updaterProblemInstallFailed:
     '更新安装失败。请重试；如果问题持续，请重新打开应用后再次检查更新。',
   updaterProblemRestartFailed:
-    '自动重启失败，但 BazaarPlusPlus Installer {version} 已安装完成。请退出 BazaarPlusPlus Installer，再从“应用程序”中重新打开。',
+    '自动重启失败，但 BazaarPlusPlus {version} 已安装完成。请退出 BazaarPlusPlus，再从“应用程序”中重新打开。',
 
   // History page
   historyLoading: '读取战绩中',
@@ -638,17 +639,21 @@ const en: Record<MessageKey, string> = {
   updateHeaderAvailable: 'Update available',
   updateModalKicker: 'App Update',
   updateModalTitle: 'Update Available',
-  updateModalBody: 'BazaarPlusPlus Installer {version} is available.',
+  updateModalBody: 'BazaarPlusPlus {version} is available.',
+  updateMainlandDownloadTitle: 'Mainland China download',
+  updateMainlandDownloadHint:
+    'If automatic updates are slow, use the mainland download channel.',
+  updateMainlandDownload: 'Open download',
   updateModalLater: 'Later',
   updateInstall: 'Download & Install',
   updateNotesLabel: "What's new",
   updateDownloading: 'Downloading…',
   updateInstalling: 'Installing…',
   updateInstallingBody:
-    'The download is complete. Installing BazaarPlusPlus Installer {version}.',
+    'The download is complete. Installing BazaarPlusPlus {version}.',
   updateReady: 'Update ready — restart to apply',
   updateReadyBody:
-    'BazaarPlusPlus Installer {version} is installed. Restart the app to use it.',
+    'BazaarPlusPlus {version} is installed. Restart the app to use it.',
   updateRestartNow: 'Restart Now',
   updateRestarting: 'Restarting…',
   updateError: 'Update failed',
@@ -666,7 +671,7 @@ const en: Record<MessageKey, string> = {
   updaterProblemInstallFailed:
     'The update could not be installed. Retry; if the problem continues, reopen the app and check again.',
   updaterProblemRestartFailed:
-    'Automatic restart failed, but BazaarPlusPlus Installer {version} is installed. Quit BazaarPlusPlus Installer, then open it again from Applications.',
+    'Automatic restart failed, but BazaarPlusPlus {version} is installed. Quit BazaarPlusPlus, then open it again from Applications.',
 
   historyLoading: 'Loading runs',
   noLocalRuns: 'No local runs yet',

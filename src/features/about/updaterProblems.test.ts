@@ -21,8 +21,8 @@ const expected: Record<UpdaterProblemOperation, Record<Locale, string>> = {
     en: 'The update could not be installed. Retry; if the problem continues, reopen the app and check again.'
   },
   restart: {
-    zh: '自动重启失败，但 BazaarPlusPlus Installer 5.1.0 已安装完成。请退出 BazaarPlusPlus Installer，再从“应用程序”中重新打开。',
-    en: 'Automatic restart failed, but BazaarPlusPlus Installer 5.1.0 is installed. Quit BazaarPlusPlus Installer, then open it again from Applications.'
+    zh: '自动重启失败，但 BazaarPlusPlus 5.1.0 已安装完成。请退出 BazaarPlusPlus，再从“应用程序”中重新打开。',
+    en: 'Automatic restart failed, but BazaarPlusPlus 5.1.0 is installed. Quit BazaarPlusPlus, then open it again from Applications.'
   }
 };
 
