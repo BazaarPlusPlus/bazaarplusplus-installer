@@ -142,7 +142,7 @@ test.each(['4.5.0.prod', '4.6.0.prod'])(
   }
 );
 
-test.each(['ffmpeg', 'ffmpeg-LICENSE.txt', 'libBppMacAudio.dylib'])(
+test.each(['ffmpeg', 'ffmpeg-LICENSE.txt', 'BppReplayRecorder.app'])(
   'macOS release preparation rejects retired runtime dependency %s',
   (fileName) => {
     const fixture = fixtureRoot('macos');
@@ -193,6 +193,24 @@ test.each(['4.7.0.prod', '4.7.1.prod', '5.0.0.prod'])(
           requiredStagingPaths: ['BepInEx/plugins/BazaarPlusPlus.version']
         })
       ).not.toThrow();
+    } finally {
+      fs.rmSync(fixture.rootDir, { recursive: true, force: true });
+    }
+  }
+);
+
+test.each(['ffmpeg.exe', 'ffmpeg-LICENSE.txt'])(
+  'Windows release preparation rejects retired runtime dependency %s',
+  (fileName) => {
+    const fixture = fixtureRoot('windows');
+    const plugins = path.join(fixture.sourceDir, 'BepInEx', 'plugins');
+    fs.mkdirSync(plugins, { recursive: true });
+    fs.writeFileSync(path.join(plugins, fileName), 'retired');
+    writeStagedModVersion(fixture, `${V5_MIN_MOD_VERSION}.prod`);
+    try {
+      expect(() =>
+        preparePayloadZip({ ...fixture, requiredStagingPaths: [] })
+      ).toThrow(/retired runtime dependencies/);
     } finally {
       fs.rmSync(fixture.rootDir, { recursive: true, force: true });
     }
@@ -308,47 +326,55 @@ test('BazaarPlusPlus.version is a required release invariant', () => {
   }
 });
 
-test('macOS release preparation rejects a launcher without executable permission', () => {
-  const fixture = fixtureRoot('macos');
-  fs.writeFileSync(path.join(fixture.sourceDir, 'run_bepinex.sh'), 'launcher');
-  fs.chmodSync(path.join(fixture.sourceDir, 'run_bepinex.sh'), 0o644);
-  writeStagedModVersion(fixture, `${V5_MIN_MOD_VERSION}.prod`);
-  try {
-    expect(() =>
-      preparePayloadZip({
-        ...fixture,
-        hostPlatform: 'darwin',
-        requiredStagingPaths: ['run_bepinex.sh']
-      })
-    ).toThrow(/must be executable/);
-  } finally {
-    fs.rmSync(fixture.rootDir, { recursive: true, force: true });
+test.skipIf(process.platform === 'win32')(
+  'macOS release preparation rejects a launcher without executable permission',
+  () => {
+    const fixture = fixtureRoot('macos');
+    fs.writeFileSync(
+      path.join(fixture.sourceDir, 'run_bepinex.sh'),
+      'launcher'
+    );
+    fs.chmodSync(path.join(fixture.sourceDir, 'run_bepinex.sh'), 0o644);
+    writeStagedModVersion(fixture, `${V5_MIN_MOD_VERSION}.prod`);
+    try {
+      expect(() =>
+        preparePayloadZip({
+          ...fixture,
+          requiredStagingPaths: ['run_bepinex.sh']
+        })
+      ).toThrow(/must be executable/);
+    } finally {
+      fs.rmSync(fixture.rootDir, { recursive: true, force: true });
+    }
   }
-});
+);
 
-test('macOS release preparation rejects a native recorder helper without executable permission', () => {
-  const fixture = fixtureRoot('macos');
-  const helper = path.join(
-    fixture.sourceDir,
-    'BepInEx/plugins/BppReplayRecorder.app/Contents/MacOS/BppReplayRecorder'
-  );
-  fs.mkdirSync(path.dirname(helper), { recursive: true });
-  fs.writeFileSync(helper, 'helper');
-  fs.chmodSync(helper, 0o644);
-  writeStagedModVersion(fixture, `${V5_MIN_MOD_VERSION}.prod`);
-  try {
-    expect(() =>
-      preparePayloadZip({
-        ...fixture,
-        requiredStagingPaths: [
-          'BepInEx/plugins/BppReplayRecorder.app/Contents/MacOS/BppReplayRecorder'
-        ]
-      })
-    ).toThrow(/must be executable:[\s\S]*BppReplayRecorder/);
-  } finally {
-    fs.rmSync(fixture.rootDir, { recursive: true, force: true });
+test.skipIf(process.platform === 'win32')(
+  'macOS release preparation rejects a native recorder plugin without executable permission',
+  () => {
+    const fixture = fixtureRoot('macos');
+    const helper = path.join(
+      fixture.sourceDir,
+      'TheBazaar.app/Contents/Plugins/GfxPluginBppReplayVideoToolbox.bundle/Contents/MacOS/GfxPluginBppReplayVideoToolbox'
+    );
+    fs.mkdirSync(path.dirname(helper), { recursive: true });
+    fs.writeFileSync(helper, 'helper');
+    fs.chmodSync(helper, 0o644);
+    writeStagedModVersion(fixture, `${V5_MIN_MOD_VERSION}.prod`);
+    try {
+      expect(() =>
+        preparePayloadZip({
+          ...fixture,
+          requiredStagingPaths: [
+            'TheBazaar.app/Contents/Plugins/GfxPluginBppReplayVideoToolbox.bundle/Contents/MacOS/GfxPluginBppReplayVideoToolbox'
+          ]
+        })
+      ).toThrow(/must be executable:[\s\S]*GfxPluginBppReplayVideoToolbox/);
+    } finally {
+      fs.rmSync(fixture.rootDir, { recursive: true, force: true });
+    }
   }
-});
+);
 
 test('ZIP parser exposes directory entries without treating them as payload files', () => {
   const buffer = buildZipBuffer([

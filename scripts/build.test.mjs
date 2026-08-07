@@ -267,14 +267,14 @@ test('macOS resource signing applies Developer ID timestamp only to loose Mach-O
     mkdir -p "$payload/BepInEx/plugins"
     touch "$payload/libdoorstop.dylib"
     touch "$payload/BepInEx/plugins/libe_sqlite3.dylib"
-    mkdir -p "$payload/BepInEx/plugins/BppReplayRecorder.app/Contents/MacOS"
-    touch "$payload/BepInEx/plugins/BppReplayRecorder.app/Contents/MacOS/BppReplayRecorder"
+    mkdir -p "$payload/TheBazaar.app/Contents/Plugins/GfxPluginBppReplayVideoToolbox.bundle/Contents/MacOS"
+    touch "$payload/TheBazaar.app/Contents/Plugins/GfxPluginBppReplayVideoToolbox.bundle/Contents/MacOS/GfxPluginBppReplayVideoToolbox"
     touch "$payload/readme.txt"
     APPLE_SIGNING_IDENTITY='Developer ID Application: Example Builder (TEAMID1234)'
     export APPLE_SIGNING_IDENTITY
     file() {
       case "$1" in
-        *.dylib|*/BppReplayRecorder) printf '%s: Mach-O 64-bit dynamically linked shared library\\n' "$1" ;;
+        *.dylib|*/GfxPluginBppReplayVideoToolbox) printf '%s: Mach-O 64-bit dynamically linked shared library\\n' "$1" ;;
         *) printf '%s: ASCII text\\n' "$1" ;;
       esac
     }
@@ -295,35 +295,28 @@ test('macOS resource signing applies Developer ID timestamp only to loose Mach-O
   );
   expect(output).toContain('libdoorstop.dylib');
   expect(output).toContain('BepInEx/plugins/libe_sqlite3.dylib');
-  expect(output).not.toContain('BppReplayRecorder');
+  expect(output).not.toContain('GfxPluginBppReplayVideoToolbox');
   expect(output).not.toContain('readme.txt');
 });
 
-test('macOS replay recorder release rewrites the Debug identity, signs with the official team, then notarizes', () => {
+test('macOS replay recorder plugin is signed inside-out with the official team', () => {
   const output = runShell(`
     set -euo pipefail
     source ./build.sh
     payload="$(mktemp -d)"
     trap 'rm -rf "$payload"' EXIT
-    app="$payload/BepInEx/plugins/BppReplayRecorder.app"
-    mkdir -p "$app/Contents/MacOS"
-    touch "$app/Contents/MacOS/BppReplayRecorder"
-    touch "$app/Contents/Info.plist"
+    bundle="$payload/TheBazaar.app/Contents/Plugins/GfxPluginBppReplayVideoToolbox.bundle"
+    mkdir -p "$bundle/Contents/MacOS"
+    touch "$bundle/Contents/MacOS/GfxPluginBppReplayVideoToolbox"
+    touch "$bundle/Contents/Info.plist"
     APPLE_SIGNING_IDENTITY='Developer ID Application: YANG Xinyu (9Z44S3N293)'
     export APPLE_SIGNING_IDENTITY
     signed=false
     file() {
       case "$1" in
-        */BppReplayRecorder) printf '%s: Mach-O 64-bit executable arm64\\n' "$1" ;;
+        */GfxPluginBppReplayVideoToolbox) printf '%s: Mach-O 64-bit dynamically linked shared library arm64\\n' "$1" ;;
         *) printf '%s: ASCII text\\n' "$1" ;;
       esac
-    }
-    plutil() {
-      if [ "$1" = "-extract" ]; then
-        printf '%s\\n' 'com.bazaarplusplus.replay-recorder.debug'
-      else
-        printf 'plutil|%s\\n' "$*"
-      fi
     }
     codesign() {
       if [ "$1" = "-dvvv" ]; then
@@ -339,113 +332,49 @@ test('macOS replay recorder release rewrites the Debug identity, signs with the 
         *'--sign '*) signed=true ;;
       esac
     }
-    notarize_and_staple_replay_recorder() {
-      printf 'notarize|%s\\n' "$1"
-    }
     invoke_step() {
       local label="$1"
       shift
       printf '%s|%s\\n' "$label" "$*"
       "$@"
     }
-    sign_macos_resource_app_bundles "$payload"
+    sign_macos_resource_plugin_bundles "$payload"
   `);
 
-  const identityIndex = output.indexOf(
-    'Setting production replay recorder bundle identity'
-  );
   const executableIndex = output.indexOf(
-    'Signing macOS resource binary BepInEx/plugins/BppReplayRecorder.app/Contents/MacOS/BppReplayRecorder'
+    'Signing macOS resource binary TheBazaar.app/Contents/Plugins/GfxPluginBppReplayVideoToolbox.bundle/Contents/MacOS/GfxPluginBppReplayVideoToolbox'
   );
   const bundleIndex = output.indexOf(
-    'Signing macOS resource app bundle BepInEx/plugins/BppReplayRecorder.app'
+    'Signing macOS resource plugin bundle TheBazaar.app/Contents/Plugins/GfxPluginBppReplayVideoToolbox.bundle'
   );
   const verifyIndex = output.indexOf(
-    'Verifying macOS resource app bundle BepInEx/plugins/BppReplayRecorder.app'
+    'Verifying macOS resource plugin bundle TheBazaar.app/Contents/Plugins/GfxPluginBppReplayVideoToolbox.bundle'
   );
-  const notarizeIndex = output.indexOf('notarize|');
-  expect(identityIndex).toBeGreaterThanOrEqual(0);
-  expect(executableIndex).toBeGreaterThan(identityIndex);
+  expect(executableIndex).toBeGreaterThanOrEqual(0);
   expect(bundleIndex).toBeGreaterThan(executableIndex);
   expect(verifyIndex).toBeGreaterThan(bundleIndex);
-  expect(notarizeIndex).toBeGreaterThan(verifyIndex);
-  expect(output).toContain(
-    'plutil|-replace CFBundleIdentifier -string com.bazaarplusplus.replay-recorder'
-  );
   expect(output).toContain('codesign|--verify --deep --strict --verbose=2');
 });
 
-test('macOS release rejects a replay recorder signed by a non-official team', () => {
+test('macOS release rejects a replay recorder plugin signed by a local Developer ID', () => {
   const output = runShell(`
     set -euo pipefail
     source ./build.sh
-    codesign() {
-      printf '%s\\n' 'Signature size=1' 'TeamIdentifier=WRONGTEAM1' >&2
-    }
-    set +e
-    (assert_official_codesign_team_id /tmp/BppReplayRecorder.app) 2>&1
-    printf 'exit:%s\\n' "$?"
-  `);
-
-  expect(output).toContain('TeamIdentifier=9Z44S3N293');
-  expect(output).toContain('Found TeamIdentifier=WRONGTEAM1');
-  expect(output).toContain('exit:1');
-});
-
-test('macOS release input rejects any locally Developer ID-signed replay recorder', () => {
-  const output = runShell(`
-    set -euo pipefail
-    source ./build.sh
-    app="$(mktemp -d)/BppReplayRecorder.app"
-    mkdir -p "$app/Contents"
-    touch "$app/Contents/Info.plist"
+    bundle="$(mktemp -d)/GfxPluginBppReplayVideoToolbox.bundle"
+    mkdir -p "$bundle/Contents"
     codesign() {
       printf '%s\\n' 'Signature size=8995' 'TeamIdentifier=WRONGTEAM1' >&2
     }
     set +e
-    (assert_ad_hoc_replay_recorder_input "$app") 2>&1
+    (assert_ad_hoc_replay_recorder_input "$bundle") 2>&1
     printf 'exit:%s\\n' "$?"
   `);
 
   expect(output).toContain(
-    'Replay recorder release input must be ad-hoc signed with no TeamIdentifier'
-  );
-  expect(output).toContain(
-    'Refusing to redistribute a locally Developer ID-signed helper'
+    'Replay recorder plugin input must be ad-hoc signed with no TeamIdentifier'
   );
   expect(output).toContain('exit:1');
 });
-
-test('macOS release notarizes, staples, validates, and assesses the helper separately', () => {
-  const output = runShell(`
-    set -euo pipefail
-    source ./build.sh
-    app="$(mktemp -d)/BppReplayRecorder.app"
-    mkdir -p "$app"
-    APPLE_API_KEY_PATH='/tmp/AuthKey_OFFICIAL.p8'
-    APPLE_API_KEY='OFFICIALKEY'
-    APPLE_API_ISSUER='official-issuer'
-    ditto() { printf 'ditto|%s\\n' "$*"; }
-    xcrun() { printf 'xcrun|%s\\n' "$*"; }
-    spctl() { printf 'spctl|%s\\n' "$*"; }
-    invoke_step() {
-      local label="$1"
-      shift
-      printf '%s|%s\\n' "$label" "$*"
-      "$@"
-    }
-    notarize_and_staple_replay_recorder "$app"
-  `);
-
-  expect(output).toContain('xcrun|notarytool submit');
-  expect(output).toContain(
-    '--key /tmp/AuthKey_OFFICIAL.p8 --key-id OFFICIALKEY --issuer official-issuer --wait'
-  );
-  expect(output).toContain('xcrun|stapler staple');
-  expect(output).toContain('xcrun|stapler validate');
-  expect(output).toContain('spctl|--assess --type execute --verbose=4');
-});
-
 test('macOS loose resource signing applies Developer ID timestamp to trampoline stub', () => {
   const output = runShell(`
     set -euo pipefail

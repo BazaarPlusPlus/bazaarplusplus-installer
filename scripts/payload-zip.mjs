@@ -16,9 +16,10 @@ export const REQUIRED_RELEASE_INPUTS = Object.freeze({
     'BepInEx/plugins/BazaarPlusPlus.Storage.dll',
     'BepInEx/plugins/BazaarPlusPlus.Localization.dll',
     'BepInEx/plugins/BazaarPlusPlus.version',
-    'BepInEx/plugins/BppReplayRecorder.app/Contents/Info.plist',
-    'BepInEx/plugins/BppReplayRecorder.app/Contents/MacOS/BppReplayRecorder',
-    'BepInEx/plugins/BppReplayRecorder.app/Contents/_CodeSignature/CodeResources'
+    'BepInEx/plugins/libBppMacAudio.dylib',
+    'TheBazaar.app/Contents/Plugins/GfxPluginBppReplayVideoToolbox.bundle/Contents/Info.plist',
+    'TheBazaar.app/Contents/Plugins/GfxPluginBppReplayVideoToolbox.bundle/Contents/MacOS/GfxPluginBppReplayVideoToolbox',
+    'TheBazaar.app/Contents/Plugins/GfxPluginBppReplayVideoToolbox.bundle/Contents/_CodeSignature/CodeResources'
   ]),
   windows: Object.freeze([
     'BepInEx/plugins/BazaarPlusPlus.dll',
@@ -26,8 +27,7 @@ export const REQUIRED_RELEASE_INPUTS = Object.freeze({
     'BepInEx/plugins/BazaarPlusPlus.Storage.dll',
     'BepInEx/plugins/BazaarPlusPlus.Localization.dll',
     'BepInEx/plugins/BazaarPlusPlus.version',
-    'BepInEx/plugins/ffmpeg.exe',
-    'BepInEx/plugins/ffmpeg-LICENSE.txt'
+    'TheBazaar_Data/Plugins/x86_64/GfxPluginBppReplayMediaFoundation.dll'
   ])
 });
 
@@ -35,15 +35,18 @@ const FORBIDDEN_RELEASE_INPUTS = Object.freeze({
   macos: Object.freeze([
     'BepInEx/plugins/ffmpeg',
     'BepInEx/plugins/ffmpeg-LICENSE.txt',
-    'BepInEx/plugins/libBppMacAudio.dylib'
+    'BepInEx/plugins/BppReplayRecorder.app'
   ]),
-  windows: Object.freeze([])
+  windows: Object.freeze([
+    'BepInEx/plugins/ffmpeg.exe',
+    'BepInEx/plugins/ffmpeg-LICENSE.txt'
+  ])
 });
 
 const osArtifactNames = new Set(['.DS_Store', 'Thumbs.db', 'desktop.ini']);
 const macosExecutablePaths = new Set([
   'run_bepinex.sh',
-  'BepInEx/plugins/ffmpeg'
+  'TheBazaar.app/Contents/Plugins/GfxPluginBppReplayVideoToolbox.bundle/Contents/MacOS/GfxPluginBppReplayVideoToolbox'
 ]);
 const fixedDosDate = (1 << 5) | 1;
 const fixedDosTime = 0;
@@ -207,10 +210,12 @@ function assertForbiddenStagingInputs(platform, sourceDir) {
 }
 
 function assertMacosExecutableModes(platform, files) {
-  if (platform !== 'macos') return;
+  // Windows does not expose Unix execute bits through stat/chmod. The same source is checked
+  // authoritatively on the macOS release host before packaging.
+  if (platform !== 'macos' || process.platform === 'win32') return;
   for (const requiredExecutable of [
     'run_bepinex.sh',
-    'BepInEx/plugins/BppReplayRecorder.app/Contents/MacOS/BppReplayRecorder'
+    'TheBazaar.app/Contents/Plugins/GfxPluginBppReplayVideoToolbox.bundle/Contents/MacOS/GfxPluginBppReplayVideoToolbox'
   ]) {
     const file = files.find((entry) => entry.path === requiredExecutable);
     if (file && (file.mode & 0o111) === 0) {

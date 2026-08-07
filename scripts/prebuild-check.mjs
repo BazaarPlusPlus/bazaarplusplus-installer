@@ -131,11 +131,9 @@ export function runPrebuildCheck(
   if (!releaseResources) return;
 
   const platforms = resolveTargetPlatforms(platformEnv);
+  verifyNativeRecorderInput({ rootDir });
 
   for (const platform of platforms) {
-    if (platform === 'macos') {
-      verifyNativeRecorderInput({ rootDir });
-    }
     const result = validatePayloadZip({ rootDir, platform });
     if (platform === 'macos') {
       const sourcePath = sourceMacosLauncherPath(rootDir);

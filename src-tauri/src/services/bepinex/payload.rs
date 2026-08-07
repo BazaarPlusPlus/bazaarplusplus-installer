@@ -14,9 +14,11 @@ const BPP_PRIVATE_RELATIVE_PATHS: &[&str] = &[
     "BepInEx/plugins/BazaarPlusPlus.ModApi.dll",
     "BepInEx/plugins/BazaarPlusPlus.Storage.dll",
     "BepInEx/plugins/BazaarPlusPlus.Localization.dll",
-    "BepInEx/plugins/BppReplayRecorder.app",
-    // Cleanup tombstone retained for installs made before native ScreenCaptureKit recording.
     "BepInEx/plugins/libBppMacAudio.dylib",
+    "TheBazaar.app/Contents/Plugins/GfxPluginBppReplayVideoToolbox.bundle",
+    "TheBazaar_Data/Plugins/x86_64/GfxPluginBppReplayMediaFoundation.dll",
+    // Cleanup tombstone retained for installs made before in-process native recording.
+    "BepInEx/plugins/BppReplayRecorder.app",
 ];
 
 const BPP_BUNDLED_DEPENDENCY_RELATIVE_PATHS: &[&str] = &[
@@ -132,12 +134,14 @@ pub(crate) fn payload_root_relative_paths() -> Vec<&'static str> {
     {
         paths.push("run_bepinex.sh");
         paths.push("libdoorstop.dylib");
+        paths.push("TheBazaar.app/Contents/Plugins/GfxPluginBppReplayVideoToolbox.bundle");
     }
 
     #[cfg(target_os = "windows")]
     {
         paths.push("doorstop_config.ini");
         paths.push("winhttp.dll");
+        paths.push("TheBazaar_Data/Plugins/x86_64/GfxPluginBppReplayMediaFoundation.dll");
     }
 
     paths
@@ -644,6 +648,24 @@ mod tests {
             b"helper",
         )
         .unwrap();
+        std::fs::create_dir_all(tmp.path().join(
+            "TheBazaar.app/Contents/Plugins/GfxPluginBppReplayVideoToolbox.bundle/Contents/MacOS",
+        ))
+        .unwrap();
+        std::fs::write(
+            tmp.path().join(
+                "TheBazaar.app/Contents/Plugins/GfxPluginBppReplayVideoToolbox.bundle/Contents/MacOS/GfxPluginBppReplayVideoToolbox",
+            ),
+            b"plugin",
+        )
+        .unwrap();
+        std::fs::create_dir_all(tmp.path().join("TheBazaar_Data/Plugins/x86_64")).unwrap();
+        std::fs::write(
+            tmp.path()
+                .join("TheBazaar_Data/Plugins/x86_64/GfxPluginBppReplayMediaFoundation.dll"),
+            b"plugin",
+        )
+        .unwrap();
         std::fs::write(tmp.path().join("BepInEx/plugins/OtherMod.dll"), b"dll").unwrap();
 
         #[cfg(target_os = "macos")]
@@ -667,6 +689,14 @@ mod tests {
         assert!(!tmp
             .path()
             .join("BepInEx/plugins/BppReplayRecorder.app")
+            .exists());
+        assert!(!tmp
+            .path()
+            .join("TheBazaar.app/Contents/Plugins/GfxPluginBppReplayVideoToolbox.bundle")
+            .exists());
+        assert!(!tmp
+            .path()
+            .join("TheBazaar_Data/Plugins/x86_64/GfxPluginBppReplayMediaFoundation.dll")
             .exists());
         assert!(tmp.path().join("BepInEx/plugins/OtherMod.dll").exists());
         #[cfg(target_os = "macos")]
@@ -797,6 +827,8 @@ mod tests {
             "ffmpeg.exe",
             "libBppMacAudio.dylib",
             "libe_sqlite3.dylib",
+            "TheBazaar.app/Contents/Plugins/GfxPluginBppReplayVideoToolbox.bundle",
+            "TheBazaar_Data/Plugins/x86_64/GfxPluginBppReplayMediaFoundation.dll",
         ]
         .into_iter()
         .map(str::to_owned)
@@ -812,9 +844,7 @@ mod tests {
             }
             let plugins_relative = relative_path
                 .strip_prefix("BepInEx/plugins/")
-                .unwrap_or_else(|| {
-                    panic!("ownership entry outside BepInEx/plugins: {relative_path}")
-                });
+                .unwrap_or(relative_path);
             owned.insert(plugins_relative.to_string());
         }
 

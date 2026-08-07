@@ -1,29 +1,27 @@
-# ADR-011: Installer Owns Native Replay Recorder Release Identity
+# ADR-011: Installer Owns Native Replay Recorder Release Artifacts
 
 ## Context
 
-The macOS replay recorder is a separate app whose designated identity owns Screen Recording permission. A locally available Developer ID can prove that the signing commands work, but distributing that signed binary would attribute the helper to the wrong publisher and a later signer change could cause macOS to treat it as a different TCC identity.
-
-The public BazaarPlusPlus 4.5.0 updater establishes the production publisher as `Developer ID Application: YANG Xinyu (9Z44S3N293)`. The managed `BazaarPlusPlus.dll` has no Apple code-signing role; TCC evaluates the helper app.
+Combat Replay records in-process on both desktop platforms. macOS uses a Unity Metal render plugin, VideoToolbox, AVFoundation, and a CoreAudio process tap. Windows uses a Unity D3D11 render plugin, Media Foundation, and WASAPI. The installer must ship the native code at Unity's preload locations and must not rely on an external encoder executable.
 
 ## Decision
 
-- `BazaarPlusPlus/bazaarplusplus-mod` owns the helper source and protocol. Its build emits only an ad-hoc-signed app using `com.bazaarplusplus.replay-recorder.debug`.
-- This repository pins the imported helper to a full mod commit and exact artifact hashes. Release verification rejects drift before packaging.
-- A production build accepts only a valid ad-hoc input with no Team ID. It rewrites the bundle identifier to `com.bazaarplusplus.replay-recorder`, signs nested code inside-out, and requires both the executable and app to report `TeamIdentifier=9Z44S3N293`.
-- The helper is notarized and stapled separately before it is placed in the signed payload ZIP. The outer installer is bundled and notarized afterwards with the same configured release identity.
-- No official private key or pre-signed official helper is stored in the mod repository. A helper signed with a developer's local identity is rejected rather than redistributed.
+- `BazaarPlusPlus/bazaarplusplus-mod` owns both native recorder implementations and their build scripts.
+- This repository pins the full mod commit and exact SHA-256 of the macOS bundle, macOS audio dylib, and Windows DLL.
+- macOS accepts only an ad-hoc-signed input bundle with no Team ID. The release build signs its Mach-O executable and bundle inside-out with `TeamIdentifier=9Z44S3N293`; the outer installer notarization then covers the signed payload.
+- Windows stages `GfxPluginBppReplayMediaFoundation.dll` under `TheBazaar_Data/Plugins/x86_64`.
+- macOS stages `GfxPluginBppReplayVideoToolbox.bundle` under `TheBazaar.app/Contents/Plugins` and `libBppMacAudio.dylib` under `BepInEx/plugins`.
+- Payload preparation rejects retired external encoder files on both platforms. Installer ownership retains their old names only as upgrade/uninstall tombstones.
 
 ## Rejected alternatives
 
-- Shipping the locally signed helper: it carries the wrong publisher identity and cannot be release acceptance.
-- Committing an officially signed helper to the mod repository: it reverses signing ownership and turns a source repository into a distributor of privileged release artifacts.
-- Reusing the production bundle identifier for Debug: it risks contaminating the stable release TCC grant with development builds.
-- Removing FFmpeg from every platform: Windows still depends on the FFmpeg/WASAPI recording backend.
+- Keeping a process-based fallback: it preserves the high-copy path and makes release behavior depend on an extra runtime executable.
+- Silently falling back to software encoding: it hides a performance regression; native recorder availability fails closed instead.
+- Storing officially signed native inputs in the mod repository: release signing remains the installer's responsibility.
+- Installing the render plugins under `BepInEx/plugins`: Unity must preload them before managed plugin startup.
 
 ## Consequences
 
-- Every helper change requires updating the installer lock with the merged mod commit and rebuilt ad-hoc artifact hashes.
-- Local development can validate capture behavior without access to release credentials, but cannot claim release signing or notarization acceptance.
-- A formal macOS release requires the official `9Z44S3N293` Developer ID and Apple notarization credentials; any other Team ID fails closed.
-- Windows packaging and recording remain unchanged, including `ffmpeg.exe`, its license, and WASAPI audio capture.
+- Every native recorder change requires rebuilding the affected artifact and updating the installer lock to the exact mod commit.
+- Release staging is larger by two small native plugins but no longer includes the external encoder archive or license payload.
+- Existing installations are cleaned during upgrade, while new payload ZIPs contain only the platform-native recorder path.

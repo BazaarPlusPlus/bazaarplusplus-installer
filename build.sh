@@ -41,9 +41,7 @@ APPLE_API_KEY_ID_PATH="$SIGNING_SECRETS_DIR/apple-api-key"
 APPLE_API_KEY_PATH_PATH="$SIGNING_SECRETS_DIR/apple-api-key-path"
 APPLE_SIGNING_IDENTITY_PATH="$SIGNING_SECRETS_DIR/apple-signing-identity"
 OFFICIAL_APPLE_TEAM_ID="9Z44S3N293"
-REPLAY_RECORDER_INPUT_BUNDLE_ID="com.bazaarplusplus.replay-recorder.debug"
-REPLAY_RECORDER_RELEASE_BUNDLE_ID="com.bazaarplusplus.replay-recorder"
-REPLAY_RECORDER_RELATIVE_APP="BepInEx/plugins/BppReplayRecorder.app"
+REPLAY_RECORDER_RELATIVE_BUNDLE="TheBazaar.app/Contents/Plugins/GfxPluginBppReplayVideoToolbox.bundle"
 
 assert_command() {
     local name="$1"
@@ -378,31 +376,6 @@ codesign_details() {
     codesign -dvvv "$code_path" 2>&1
 }
 
-assert_ad_hoc_replay_recorder_input() {
-    local app_bundle="$1"
-    local details=""
-    local bundle_id=""
-
-    if ! codesign --verify --deep --strict --verbose=2 "$app_bundle"; then
-        echo "Error: Replay recorder release input has an invalid ad-hoc signature: $app_bundle" >&2
-        exit 1
-    fi
-    details="$(codesign_details "$app_bundle")"
-    if ! grep -q '^Signature=adhoc$' <<<"$details" \
-        || ! grep -q '^TeamIdentifier=not set$' <<<"$details"; then
-        echo "Error: Replay recorder release input must be ad-hoc signed with no TeamIdentifier." >&2
-        echo "Refusing to redistribute a locally Developer ID-signed helper: $app_bundle" >&2
-        exit 1
-    fi
-
-    bundle_id="$(plutil -extract CFBundleIdentifier raw "$app_bundle/Contents/Info.plist")"
-    if [ "$bundle_id" != "$REPLAY_RECORDER_INPUT_BUNDLE_ID" ]; then
-        echo "Error: Replay recorder release input must use Debug bundle id $REPLAY_RECORDER_INPUT_BUNDLE_ID." >&2
-        echo "Found: $bundle_id" >&2
-        exit 1
-    fi
-}
-
 assert_official_codesign_team_id() {
     local code_path="$1"
     local details=""
@@ -417,31 +390,20 @@ assert_official_codesign_team_id() {
     fi
 }
 
-notarize_and_staple_replay_recorder() {
-    local app_bundle="$1"
-    local temp_dir=""
-    local archive_path=""
+assert_ad_hoc_replay_recorder_input() {
+    local plugin_bundle="$1"
+    local details=""
 
-    (
-        temp_dir="$(mktemp -d)"
-        trap 'rm -rf "$temp_dir"' EXIT
-        archive_path="$temp_dir/BppReplayRecorder.zip"
-
-        invoke_step "Archiving native replay recorder for notarization" \
-            ditto -c -k --keepParent "$app_bundle" "$archive_path"
-        invoke_step "Notarizing native replay recorder" \
-            xcrun notarytool submit "$archive_path" \
-            --key "$APPLE_API_KEY_PATH" \
-            --key-id "$APPLE_API_KEY" \
-            --issuer "$APPLE_API_ISSUER" \
-            --wait
-        invoke_step "Stapling native replay recorder notarization ticket" \
-            xcrun stapler staple "$app_bundle"
-        invoke_step "Validating native replay recorder notarization ticket" \
-            xcrun stapler validate "$app_bundle"
-        invoke_step "Assessing native replay recorder with Gatekeeper" \
-            spctl --assess --type execute --verbose=4 "$app_bundle"
-    )
+    if ! codesign --verify --deep --strict --verbose=2 "$plugin_bundle"; then
+        echo "Error: Replay recorder plugin input has an invalid ad-hoc signature: $plugin_bundle" >&2
+        exit 1
+    fi
+    details="$(codesign_details "$plugin_bundle")"
+    if ! grep -q '^Signature=adhoc$' <<<"$details" \
+        || ! grep -q '^TeamIdentifier=not set$' <<<"$details"; then
+        echo "Error: Replay recorder plugin input must be ad-hoc signed with no TeamIdentifier." >&2
+        exit 1
+    fi
 }
 
 # Pre-signs Mach-O binaries that live inside bundled resource zips. Tauri treats
@@ -459,7 +421,7 @@ sign_macos_resource_binaries() {
 
         relative_path="${binary_path#$payload_dir/}"
         sign_macos_resource_binary "$binary_path" "$relative_path"
-    done < <(find "$payload_dir" -type d -name '*.app' -prune -o -type f -print0)
+    done < <(find "$payload_dir" \( -type d -name '*.app' -o -type d -name '*.bundle' \) -prune -o -type f -print0)
 }
 
 # Signs nested app code from the inside out, then signs the bundle itself so
@@ -473,14 +435,6 @@ sign_macos_resource_app_bundles() {
 
     while IFS= read -r -d '' app_bundle; do
         app_relative_path="${app_bundle#$payload_dir/}"
-        if [ "$app_relative_path" = "$REPLAY_RECORDER_RELATIVE_APP" ]; then
-            assert_ad_hoc_replay_recorder_input "$app_bundle"
-            invoke_step "Setting production replay recorder bundle identity" \
-                plutil -replace CFBundleIdentifier \
-                -string "$REPLAY_RECORDER_RELEASE_BUNDLE_ID" \
-                "$app_bundle/Contents/Info.plist"
-        fi
-
         while IFS= read -r -d '' binary_path; do
             if ! is_macho_file "$binary_path"; then
                 continue
@@ -495,17 +449,42 @@ sign_macos_resource_app_bundles() {
             --sign "$APPLE_SIGNING_IDENTITY" "$app_bundle"
         invoke_step "Verifying macOS resource app bundle $app_relative_path" \
             codesign --verify --deep --strict --verbose=2 "$app_bundle"
-
-        if [ "$app_relative_path" = "$REPLAY_RECORDER_RELATIVE_APP" ]; then
-            assert_official_codesign_team_id \
-                "$app_bundle/Contents/MacOS/BppReplayRecorder"
-            assert_official_codesign_team_id "$app_bundle"
-            notarize_and_staple_replay_recorder "$app_bundle"
-            invoke_step "Re-verifying notarized native replay recorder" \
-                codesign --verify --deep --strict --verbose=2 "$app_bundle"
-            assert_official_codesign_team_id "$app_bundle"
-        fi
     done < <(find "$payload_dir" -type d -name '*.app' -prune -print0)
+}
+
+sign_macos_resource_plugin_bundles() {
+    local payload_dir="$1"
+    local plugin_bundle=""
+    local plugin_relative_path=""
+    local binary_path=""
+    local binary_relative_path=""
+
+    while IFS= read -r -d '' plugin_bundle; do
+        plugin_relative_path="${plugin_bundle#$payload_dir/}"
+        if [ "$plugin_relative_path" = "$REPLAY_RECORDER_RELATIVE_BUNDLE" ]; then
+            assert_ad_hoc_replay_recorder_input "$plugin_bundle"
+        fi
+
+        while IFS= read -r -d '' binary_path; do
+            if ! is_macho_file "$binary_path"; then
+                continue
+            fi
+            binary_relative_path="${binary_path#$payload_dir/}"
+            sign_macos_resource_binary "$binary_path" "$binary_relative_path"
+        done < <(find "$plugin_bundle/Contents" -type f -print0)
+
+        invoke_step "Signing macOS resource plugin bundle $plugin_relative_path" \
+            codesign --force --options runtime --timestamp \
+            --sign "$APPLE_SIGNING_IDENTITY" "$plugin_bundle"
+        invoke_step "Verifying macOS resource plugin bundle $plugin_relative_path" \
+            codesign --verify --deep --strict --verbose=2 "$plugin_bundle"
+
+        if [ "$plugin_relative_path" = "$REPLAY_RECORDER_RELATIVE_BUNDLE" ]; then
+            assert_official_codesign_team_id \
+                "$plugin_bundle/Contents/MacOS/GfxPluginBppReplayVideoToolbox"
+            assert_official_codesign_team_id "$plugin_bundle"
+        fi
+    done < <(find "$payload_dir" -type d -name '*.bundle' -prune -print0)
 }
 
 prepare_signed_macos_resource_binary() {
@@ -562,6 +541,7 @@ prepare_signed_macos_resource_zip() {
         ditto -x -k "$resource_zip" "$payload_dir"
     sign_macos_resource_binaries "$payload_dir"
     sign_macos_resource_app_bundles "$payload_dir"
+    sign_macos_resource_plugin_bundles "$payload_dir"
     invoke_step "Repacking signed macOS resource zip" \
         create_zip_from_directory "$payload_dir" "$signed_zip" "$signed_manifest"
     invoke_step "Replacing macOS resource zip and checksum manifest with signed copies" \
@@ -575,10 +555,8 @@ prepare_signed_macos_resource_zip() {
 run_release_prechecks() {
     local platform="$1"
     invoke_step "Synchronizing package versions" node scripts/version-sync.mjs
-    if [ "$platform" = "macos" ]; then
-        invoke_step "Verifying pinned native replay recorder input" \
-            npm run verify:native-recorder-input
-    fi
+    invoke_step "Verifying pinned native replay recorder inputs" \
+        npm run verify:native-recorder-input
     invoke_step "Preparing $platform release resources" \
         npm run prepare:resources -- --platform "$platform"
     invoke_step "Running authoritative release verification" \

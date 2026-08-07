@@ -4,19 +4,17 @@ import path from 'node:path';
 import process from 'node:process';
 import { fileURLToPath } from 'node:url';
 
-export const NATIVE_RECORDER_INPUT_PATH =
-  'src-tauri/resources/SourceForBuild/macos/BepInEx/plugins/BppReplayRecorder.app';
 export const NATIVE_RECORDER_LOCK_PATH =
   'scripts/native-recorder-input.lock.json';
-export const DEBUG_BUNDLE_IDENTIFIER =
-  'com.bazaarplusplus.replay-recorder.debug';
+export const NATIVE_RECORDER_INPUT_PATHS = Object.freeze([
+  'src-tauri/resources/SourceForBuild/macos/BepInEx/plugins/libBppMacAudio.dylib',
+  'src-tauri/resources/SourceForBuild/macos/TheBazaar.app/Contents/Plugins/GfxPluginBppReplayVideoToolbox.bundle/Contents/Info.plist',
+  'src-tauri/resources/SourceForBuild/macos/TheBazaar.app/Contents/Plugins/GfxPluginBppReplayVideoToolbox.bundle/Contents/MacOS/GfxPluginBppReplayVideoToolbox',
+  'src-tauri/resources/SourceForBuild/macos/TheBazaar.app/Contents/Plugins/GfxPluginBppReplayVideoToolbox.bundle/Contents/_CodeSignature/CodeResources',
+  'src-tauri/resources/SourceForBuild/windows/TheBazaar_Data/Plugins/x86_64/GfxPluginBppReplayMediaFoundation.dll'
+]);
 
 const expectedRepository = 'BazaarPlusPlus/bazaarplusplus-mod';
-const artifactFiles = [
-  'Contents/Info.plist',
-  'Contents/MacOS/BppReplayRecorder',
-  'Contents/_CodeSignature/CodeResources'
-];
 
 function sha256(filePath) {
   return crypto
@@ -25,23 +23,12 @@ function sha256(filePath) {
     .digest('hex');
 }
 
-function readBundleIdentifier(infoPlistPath) {
-  const plist = fs.readFileSync(infoPlistPath, 'utf8');
-  const match = plist.match(
-    /<key>CFBundleIdentifier<\/key>\s*<string>([^<]+)<\/string>/
-  );
-  if (!match) {
-    throw new Error(`Missing CFBundleIdentifier in ${infoPlistPath}`);
-  }
-  return match[1];
-}
-
 export function verifyNativeRecorderInput({
   rootDir,
   lockPath = path.join(rootDir, NATIVE_RECORDER_LOCK_PATH)
 }) {
   const lock = JSON.parse(fs.readFileSync(lockPath, 'utf8'));
-  if (lock.schemaVersion !== 1) {
+  if (lock.schemaVersion !== 2) {
     throw new Error(
       `Unsupported native recorder input lock schema: ${lock.schemaVersion}`
     );
@@ -56,30 +43,15 @@ export function verifyNativeRecorderInput({
       'Native recorder sourceCommit must be a full Git commit SHA'
     );
   }
-  if (lock.bundleIdentifier !== DEBUG_BUNDLE_IDENTIFIER) {
-    throw new Error(
-      `Native recorder input bundle identifier must be ${DEBUG_BUNDLE_IDENTIFIER}`
-    );
-  }
 
-  const appPath = path.join(rootDir, NATIVE_RECORDER_INPUT_PATH);
-  const actualBundleIdentifier = readBundleIdentifier(
-    path.join(appPath, 'Contents', 'Info.plist')
-  );
-  if (actualBundleIdentifier !== lock.bundleIdentifier) {
-    throw new Error(
-      `Native recorder input bundle identifier drifted: expected ${lock.bundleIdentifier}, got ${actualBundleIdentifier}`
-    );
-  }
-
-  for (const relativePath of artifactFiles) {
+  for (const relativePath of NATIVE_RECORDER_INPUT_PATHS) {
     const expectedHash = lock.files?.[relativePath];
     if (!/^[0-9a-f]{64}$/.test(expectedHash ?? '')) {
       throw new Error(
         `Missing locked SHA-256 for native recorder input ${relativePath}`
       );
     }
-    const filePath = path.join(appPath, relativePath);
+    const filePath = path.join(rootDir, relativePath);
     if (!fs.statSync(filePath, { throwIfNoEntry: false })?.isFile()) {
       throw new Error(`Missing native recorder input file: ${filePath}`);
     }
@@ -92,9 +64,9 @@ export function verifyNativeRecorderInput({
   }
 
   return {
-    appPath,
     sourceRepository: lock.sourceRepository,
-    sourceCommit: lock.sourceCommit
+    sourceCommit: lock.sourceCommit,
+    files: NATIVE_RECORDER_INPUT_PATHS
   };
 }
 
