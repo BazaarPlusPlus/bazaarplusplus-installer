@@ -24,4 +24,4 @@ Conform the repo to the skills' layout where it is mechanical, and keep the trut
 
 ## Consequences
 
-Agents read `CONTEXT.md` first, then the relevant `docs/truth/` topic, then ADRs in `docs/adr/` that touch the area. Decision 001 remains in force with its `docs/decisions/` path reading as `docs/adr/`. `docs/INDEX.md` stays the manifest.
+Agents read `CONTEXT.md` first, then the relevant `docs/truth/` topic, then ADRs in `docs/adr/` that touch the area. Decision 001 remains in force with its `docs/decisions/` path reading as `docs/adr/`. `docs/INDEX.md` was the manifest at the time of this decision; it was later removed, see [ADR-013](013-documentation-citation-protocol.md).

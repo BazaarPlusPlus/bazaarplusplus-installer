@@ -11,13 +11,13 @@ Resetting BazaarPlusPlus data is destructive but should not uninstall the mod. T
 
 ## Decision
 
-Expose `has_resettable_data` and action gates in install state, require a confirmation modal with acknowledgement before reset, and return a typed `ResetBppDataResult` with refreshed state and `removed_data`. The backend contract is in `src-tauri/src/services/install/types.rs:3-24`; the frontend confirmation path is in `src/pages/Install.tsx:41-50` and `src/features/install/ResetDataConfirmModal.tsx:71-105`.
+Expose `has_resettable_data` and action gates in install state, require a confirmation modal with acknowledgement before reset, and return a typed `ResetBppDataResult` with refreshed state and `removed_data`. The backend contract is in the `InstallState` and `ResetBppDataResult` types in `src-tauri/src/services/install/types.rs`; the frontend confirmation path is in the `Install` component in `src/pages/Install.tsx` and the `ResetDataConfirmModal` component in `src/features/install/ResetDataConfirmModal.tsx`.
 
 ## Rejected Alternatives
 
-- Keep reset always enabled. The current action gate disables reset unless `has_resettable_data` is true in `src-tauri/src/services/install/mod.rs:293-300`.
-- Let the frontend delete files directly. Rust reset stops the stream service first and runs deletion in a blocking task in `src-tauri/src/services/bepinex/mod.rs:25-37`.
-- Return only a generic success string. The typed result distinguishes removed data from no-op, and stable error prefixes let the frontend show blocked or partial-failure states in `src/features/install/useInstallPage.ts:179-209` and `src/features/install/useInstallPage.ts:282-300`.
+- Keep reset always enabled. The current action gate disables reset unless `has_resettable_data` is true, in the `can_reset_data` field assignment in the `install_state_from_snapshot` function in `src-tauri/src/services/install/mod.rs`.
+- Let the frontend delete files directly. Rust reset stops the stream service first and runs deletion in a blocking task in the `reset_bpp_data` function in `src-tauri/src/services/bepinex/mod.rs`.
+- Return only a generic success string. The typed result distinguishes removed data from no-op in the `reset-data` case of the `executeConfirmed` method in `src/features/install/installWorkflow.ts`, and stable error prefixes let the frontend show blocked or partial-failure states via `installProblemMessageKey` in `src/features/install/installProblems.ts`.
 
 ## Consequences
 

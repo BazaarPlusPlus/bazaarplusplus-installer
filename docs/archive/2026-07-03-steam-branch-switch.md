@@ -11,7 +11,7 @@ note: Historical forensics of two live tests. Approach A was FIRST mis-recorded 
 > **⚠️ Correction (2026-07-03).** The "Approach A refuted" block below reflects only the *first*
 > test (edit `BetaKey` + `validate`). A second test proved Approach A **works** with the corrected
 > recipe (edit `BetaKey` **+ set `StateFlags=6`**, plain start, **no** validate). The authoritative,
-> corrected record is [ADR 007](../decisions/007-steam-branch-switch.md). This archived doc is kept
+> corrected record is [ADR 007](../adr/007-steam-branch-switch.md). This archived doc is kept
 > for the forensic detail only.
 
 ## ⚠️ Validation result — 2026-07-03: Approach A is refuted

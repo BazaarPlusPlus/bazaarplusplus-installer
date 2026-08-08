@@ -61,6 +61,10 @@ mistakenly recorded as "infeasible" (this ADR's prior version). The failure was 
 `StateFlags` trigger** plus **running validate** (which reverted the edit). That conclusion is
 withdrawn. Full forensics of both tests: `docs/archive/2026-07-03-steam-branch-switch.md`.
 
+## Decision
+
+The external branch-switch mechanism (ACF `BetaKey` + `StateFlags` edit, no `steamcmd`, no UI automation) is validated as technically feasible and client-integrated. Whether to build it into the installer as a shipped feature was a separate, later product decision — see **Removal (2026-07-04)** below.
+
 ## Rejected alternatives
 
 - **steamcmd** (`+app_update -beta …`) — separate login/install context, bypasses the Steam client

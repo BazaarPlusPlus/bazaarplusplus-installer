@@ -1,4 +1,9 @@
-# ADR-012: Installer Owns Native Replay Recorder Release Artifacts
+---
+status: decision
+topic: native-replay-recorder-signing
+---
+
+# Installer Owns Native Replay Recorder Release Artifacts
 
 ## Context
 
