@@ -34,6 +34,7 @@
     "check:ts": "tsc --noEmit",
     "check:watch": "npm run generate:bindings && tsc --noEmit --watch",
     "verify": "node scripts/verify.mjs",
+    "docs:check": "node scripts/docs-check.mjs",
     "tauri": "tauri"
   },
   "license": "MIT",

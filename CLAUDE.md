@@ -3,7 +3,7 @@
 ## Verification
 
 - Match effort to the risk and scope of the change.
-- Docs-only or instruction-only changes do not require `npm run check` or a build.
+- Docs-only or instruction-only changes do not require `npm run check` or a build; run `npm run docs:check` instead.
 - React or TypeScript UI changes should usually run `npm run check`.
 - Changes under `scripts/` should run the smallest relevant vitest coverage when one exists (e.g. `npx vitest run scripts/<file>.test.mjs`, or `npm run test:unit`); otherwise run the touched script directly when practical.
 - Changes affecting versioning, bundled resources, Tauri config, or release packaging should run `npm run prebuild-check` before broader validation.
