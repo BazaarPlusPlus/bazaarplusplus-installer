@@ -15,7 +15,7 @@ The installer supports Steam installs and native Tempo Launcher installs. Steam 
 
 ## Decision
 
-Choose Steam flow only when Steam is detected and the game path is under `steamapps`; otherwise use Tempo native capture/replay. The resolver is in `src-tauri/src/services/install/mod.rs:177-191`, and launch dispatch is in `src-tauri/src/services/install/mod.rs:199-210`.
+Choose Steam flow only when Steam is detected and the game path is under `steamapps`; otherwise use Tempo native capture/replay. The resolver was `resolve_launch_flow`, and launch dispatch was `launch_game_auto`, both in `src-tauri/src/services/install/mod.rs`.
 
 ## Rejected Alternatives
 

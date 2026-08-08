@@ -11,7 +11,7 @@ The repository had multiple historical specs, plans, audits, and current-ish doc
 
 ## Decision
 
-Separate current claims from historical context by path. Current state lives in `docs/truth/`, active future work in `docs/plans/`, immutable choices in `docs/decisions/`, and frozen historical files in `docs/archive/`. `docs/INDEX.md` is the manifest and consolidation map.
+Separate current claims from historical context by path. Current state lives in `docs/truth/`, active future work in `docs/plans/`, immutable choices in `docs/adr/`, and frozen historical files in `docs/archive/`. `docs/INDEX.md` was the manifest and consolidation map at the time of this decision; it was later removed, see [ADR-013](013-documentation-citation-protocol.md).
 
 ## Rejected Alternatives
 
@@ -21,4 +21,4 @@ Separate current claims from historical context by path. Current state lives in 
 
 ## Consequences
 
-Agents should read `docs/INDEX.md` first, then the relevant `docs/truth/` topic. Historical files remain available for rationale but must be re-verified against code before reuse.
+Historical files remain available for rationale but must be re-verified against code before reuse.

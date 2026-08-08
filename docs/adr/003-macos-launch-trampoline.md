@@ -21,13 +21,13 @@ The same conclusion is recorded next to the code in `src-tauri/src/services/maco
 
 ## Decision
 
-Force the in-bundle Mach-O trampoline on macOS 27+, offer it as an opt-in compatibility mode on macOS <= 26, and leave non-macOS paths as no-ops. The version gate is in `src-tauri/src/services/macos_version.rs:51-80`; trampoline install/uninstall APIs are in `src-tauri/src/services/bepinex/trampoline.rs:497-525`.
+Force the in-bundle Mach-O trampoline on macOS 27+, offer it as an opt-in compatibility mode on macOS <= 26, and leave non-macOS paths as no-ops. The version gate is `LaunchModeGate::from_platform`, which compares the cached OS probe against `TRAMPOLINE_FORCED_MAJOR`, both in `src-tauri/src/services/launch_mode.rs`; trampoline install/uninstall are the `install_trampoline` and `uninstall_trampoline` functions in `src-tauri/src/services/bepinex/trampoline.rs`.
 
 ## Rejected Alternatives
 
-- Keep relying on the prefix launcher for macOS 27+. The code comments identify that path as dead on macOS 27+ in `src-tauri/src/services/macos_version.rs:3-10`.
-- Use trampoline mode without persisting desired launch mode. The implementation writes `.bpp-launch-mode` so future detection can distinguish desired mode from a bundle reverted by Steam verify or update in `src-tauri/src/services/bepinex/trampoline.rs:21-33`.
-- Apply trampoline without rollback. The implementation verifies codesign availability first and restores vanilla layout on failure in `src-tauri/src/services/bepinex/trampoline.rs:384-467`.
+- Keep relying on the prefix launcher for macOS 27+. The module doc comment in `src-tauri/src/services/macos_version.rs` identifies that path as dead on macOS 27+.
+- Use trampoline mode without persisting desired launch mode. The implementation writes the `MARKER_FILE` (`.bpp-launch-mode`) in `src-tauri/src/services/bepinex/trampoline.rs` so future detection can distinguish desired mode from a bundle reverted by Steam verify or update.
+- Apply trampoline without rollback. The `install_trampoline` function in `src-tauri/src/services/bepinex/trampoline.rs` verifies codesign availability first and restores vanilla layout on failure.
 
 ## Consequences
 
