@@ -42,9 +42,19 @@ pub async fn reset_bpp_data(
 }
 
 fn reset_bpp_data_blocking(game_path: &Path) -> Result<bool, String> {
+    reset_bpp_data_blocking_with(
+        game_path,
+        crate::services::game_process::is_bazaar_running_best_effort,
+    )
+}
+
+fn reset_bpp_data_blocking_with(
+    game_path: &Path,
+    is_game_running: impl FnOnce() -> bool,
+) -> Result<bool, String> {
     payload::ensure_valid_game_path(game_path)?;
 
-    if crate::services::game_process::is_bazaar_running_best_effort() {
+    if is_game_running() {
         return Err(RESET_BPP_DATA_ERR_GAME_RUNNING.to_string());
     }
 
@@ -100,9 +110,19 @@ pub async fn reset_bepinex_folder(game_path: String) -> Result<bool, String> {
 }
 
 fn reset_bepinex_folder_blocking(game_path: &Path) -> Result<bool, String> {
+    reset_bepinex_folder_blocking_with(
+        game_path,
+        crate::services::game_process::is_bazaar_running_best_effort,
+    )
+}
+
+fn reset_bepinex_folder_blocking_with(
+    game_path: &Path,
+    is_game_running: impl FnOnce() -> bool,
+) -> Result<bool, String> {
     payload::ensure_valid_game_path(game_path)?;
 
-    if crate::services::game_process::is_bazaar_running_best_effort() {
+    if is_game_running() {
         return Err(RESET_BEPINEX_ERR_GAME_RUNNING.to_string());
     }
 
@@ -284,7 +304,7 @@ mod tests {
         std::fs::create_dir_all(&data_dir).unwrap();
         std::fs::write(data_dir.join("stale.dll"), b"dll").unwrap();
 
-        let removed_data = reset_bpp_data_blocking(tmp.path()).unwrap();
+        let removed_data = reset_bpp_data_blocking_with(tmp.path(), || false).unwrap();
 
         assert!(removed_data);
         assert!(!data_dir.exists());
@@ -296,7 +316,7 @@ mod tests {
         let data_dir = tmp.path().join(crate::config::BAZAAR_DATA_DIRECTORY);
         assert!(!data_dir.exists());
 
-        let removed_data = reset_bpp_data_blocking(tmp.path()).unwrap();
+        let removed_data = reset_bpp_data_blocking_with(tmp.path(), || false).unwrap();
 
         assert!(!removed_data);
         assert!(!data_dir.exists());
@@ -308,8 +328,8 @@ mod tests {
         let data_dir = tmp.path().join(crate::config::BAZAAR_DATA_DIRECTORY);
         std::fs::create_dir_all(&data_dir).unwrap();
 
-        let removed_data = reset_bpp_data_blocking(tmp.path()).unwrap();
-        let removed_data_again = reset_bpp_data_blocking(tmp.path()).unwrap();
+        let removed_data = reset_bpp_data_blocking_with(tmp.path(), || false).unwrap();
+        let removed_data_again = reset_bpp_data_blocking_with(tmp.path(), || false).unwrap();
 
         assert!(removed_data);
         assert!(!removed_data_again);
@@ -325,7 +345,7 @@ mod tests {
         // A third-party mod under BepInEx is deliberately wiped too (blunt reset).
         std::fs::write(bepinex.join("plugins/OtherMod.dll"), b"foreign").unwrap();
 
-        let removed = reset_bepinex_folder_blocking(tmp.path()).unwrap();
+        let removed = reset_bepinex_folder_blocking_with(tmp.path(), || false).unwrap();
 
         assert!(removed);
         assert!(!bepinex.exists());
@@ -340,7 +360,7 @@ mod tests {
         std::fs::write(tmp.path().join("winhttp.dll"), b"doorstop").unwrap();
         std::fs::write(tmp.path().join("run_bepinex.sh"), b"#!/bin/sh\n").unwrap();
 
-        let removed = reset_bepinex_folder_blocking(tmp.path()).unwrap();
+        let removed = reset_bepinex_folder_blocking_with(tmp.path(), || false).unwrap();
 
         assert!(removed);
         assert!(!tmp.path().join("BepInEx").exists());
@@ -353,9 +373,23 @@ mod tests {
         let tmp = make_valid_game_dir();
         assert!(!tmp.path().join("BepInEx").exists());
 
-        let removed = reset_bepinex_folder_blocking(tmp.path()).unwrap();
+        let removed = reset_bepinex_folder_blocking_with(tmp.path(), || false).unwrap();
 
         assert!(!removed);
+    }
+
+    #[test]
+    fn reset_helpers_use_the_injected_game_state() {
+        let tmp = make_valid_game_dir();
+
+        assert_eq!(
+            reset_bpp_data_blocking_with(tmp.path(), || true),
+            Err(RESET_BPP_DATA_ERR_GAME_RUNNING.to_string())
+        );
+        assert_eq!(
+            reset_bepinex_folder_blocking_with(tmp.path(), || true),
+            Err(RESET_BEPINEX_ERR_GAME_RUNNING.to_string())
+        );
     }
 
     #[test]

@@ -6,6 +6,7 @@ import { test, expect } from 'vitest';
 import {
   assertMacosLauncherScriptIsSafe,
   assertMacosTrampolineStub,
+  assertMacosTrampolineStubWith,
   macosTrampolineStubPath
 } from './prebuild-check.mjs';
 
@@ -56,5 +57,7 @@ test('trampoline stub check rejects a non-Mach-O stub', () => {
   const stubPath = macosTrampolineStubPath(root);
   mkdirSync(path.dirname(stubPath), { recursive: true });
   writeFileSync(stubPath, 'not a mach-o binary');
-  expect(() => assertMacosTrampolineStub(root)).toThrow('not arm64 Mach-O');
+  expect(() => assertMacosTrampolineStubWith(root, () => 'ASCII text')).toThrow(
+    'not arm64 Mach-O'
+  );
 });

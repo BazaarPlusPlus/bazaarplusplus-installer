@@ -82,6 +82,12 @@ export function macosTrampolineStubPath(rootDir) {
 }
 
 export function assertMacosTrampolineStub(rootDir) {
+  return assertMacosTrampolineStubWith(rootDir, (stubPath) =>
+    execFileSync('file', [stubPath], { encoding: 'utf8' })
+  );
+}
+
+export function assertMacosTrampolineStubWith(rootDir, describeStub) {
   const stubPath = macosTrampolineStubPath(rootDir);
   if (!fs.existsSync(stubPath)) {
     throw new Error(
@@ -90,7 +96,7 @@ export function assertMacosTrampolineStub(rootDir) {
     );
   }
 
-  const description = execFileSync('file', [stubPath], { encoding: 'utf8' });
+  const description = describeStub(stubPath);
   if (!/Mach-O 64-bit executable arm64/.test(description)) {
     throw new Error(
       `macOS trampoline stub is not arm64 Mach-O (${stubPath}): ${description.trim()}`

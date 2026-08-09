@@ -51,6 +51,7 @@ struct HistoryStorage {
 
 struct History {
     paths: HistoryStorage,
+    is_game_running: fn() -> bool,
 }
 
 impl History {
@@ -65,9 +66,22 @@ impl History {
     }
 
     fn from_resolved_game_path(game_path: Option<PathBuf>) -> Result<Self, String> {
+        Self::from_resolved_game_path_with(
+            game_path,
+            crate::services::game_process::is_bazaar_running_best_effort,
+        )
+    }
+
+    fn from_resolved_game_path_with(
+        game_path: Option<PathBuf>,
+        is_game_running: fn() -> bool,
+    ) -> Result<Self, String> {
         game_path
             .map(history_paths_for_game_path)
-            .map(|paths| Self { paths })
+            .map(|paths| Self {
+                paths,
+                is_game_running,
+            })
             .ok_or_else(|| HISTORY_UNAVAILABLE.to_string())
     }
 
@@ -78,21 +92,32 @@ impl History {
             .map_err(|_| SemanticProblem::new(SemanticProblemCode::HistoryUnavailable))
     }
 
+    #[cfg(test)]
+    fn from_resolved_game_path_for_page_with(
+        game_path: Option<PathBuf>,
+        is_game_running: fn() -> bool,
+    ) -> Result<Self, SemanticProblem> {
+        Self::from_resolved_game_path_with(game_path, is_game_running)
+            .map_err(|_| SemanticProblem::new(SemanticProblemCode::HistoryUnavailable))
+    }
+
     fn list_runs(&self, limit: usize) -> Result<HistoryRunList, String> {
         list_history_runs(&self.paths.database_path, limit.clamp(1, 200))
     }
 
     fn list_runs_for_page(&self, limit: usize) -> Result<HistoryRunList, SemanticProblem> {
-        self.list_runs(limit)
-            .map_err(|diagnostic| history_read_problem("list_runs", diagnostic))
+        self.list_runs(limit).map_err(|diagnostic| {
+            history_read_problem_with("list_runs", diagnostic, self.is_game_running)
+        })
     }
 
     fn run_detail_for_page(
         &self,
         run_id: &str,
     ) -> Result<Option<HistoryRunDetail>, SemanticProblem> {
-        get_history_run_detail(&self.paths.database_path, run_id)
-            .map_err(|diagnostic| history_read_problem("get_run_detail", diagnostic))
+        get_history_run_detail(&self.paths.database_path, run_id).map_err(|diagnostic| {
+            history_read_problem_with("get_run_detail", diagnostic, self.is_game_running)
+        })
     }
 
     fn run_detail(&self, run_id: &str) -> Result<HistoryRunDetail, String> {
@@ -360,7 +385,11 @@ fn history_action_problem(operation: &str, diagnostic: String) -> SemanticProble
         .with_diagnostic(diagnostic)
 }
 
-fn history_read_problem(operation: &str, diagnostic: String) -> SemanticProblem {
+fn history_read_problem_with(
+    operation: &str,
+    diagnostic: String,
+    is_game_running: impl FnOnce() -> bool,
+) -> SemanticProblem {
     if let Some((found, expected)) = crate::history::unsupported_schema_versions(&diagnostic) {
         return SemanticProblem::new(SemanticProblemCode::HistoryDatabaseUnsupportedSchema)
             .with_param("found", found.to_string())
@@ -372,7 +401,7 @@ fn history_read_problem(operation: &str, diagnostic: String) -> SemanticProblem 
     // window is the one cause the user can act on. Naming it turns an opaque
     // SQLite failure into a fixable one, so it wins over the generic read code
     // whenever the process is still there.
-    if crate::services::game_process::is_bazaar_running_best_effort() {
+    if is_game_running() {
         return SemanticProblem::new(SemanticProblemCode::HistoryReadBlockedByGame)
             .with_param("operation", operation)
             .with_diagnostic(diagnostic);
@@ -454,9 +483,9 @@ fn reveal_in_file_browser(path: &Path) -> Result<(), String> {
 #[cfg(test)]
 mod tests {
     use super::{
-        history_paths_for_game_path, require_video_file_exists, FileRevealer, History,
-        StorageCleanupExecution, StorageCleanupPreset, StorageCleanupPreview, StorageCleanupScope,
-        HISTORY_UNAVAILABLE,
+        history_paths_for_game_path, history_read_problem_with, require_video_file_exists,
+        FileRevealer, History, StorageCleanupExecution, StorageCleanupPreset,
+        StorageCleanupPreview, StorageCleanupScope, HISTORY_UNAVAILABLE,
     };
     use crate::problem::SemanticProblemCode;
     use crate::services::paths;
@@ -638,7 +667,9 @@ mod tests {
 
         let temp = tempfile::tempdir().unwrap();
         let game_path = temp.path().join("The Bazaar");
-        let history = History::from_resolved_game_path_for_page(Some(game_path.clone())).unwrap();
+        let history =
+            History::from_resolved_game_path_for_page_with(Some(game_path.clone()), || false)
+                .unwrap();
         std::fs::create_dir_all(history.paths.database_path.parent().unwrap()).unwrap();
         std::fs::write(&history.paths.database_path, b"not sqlite").unwrap();
 
@@ -649,6 +680,18 @@ mod tests {
             Some("list_runs")
         );
         assert!(read_failed.diagnostic.is_some());
+    }
+
+    #[test]
+    fn history_read_problem_uses_the_injected_game_state() {
+        let problem = history_read_problem_with("list_runs", "database busy".to_string(), || true);
+
+        assert_eq!(problem.code, SemanticProblemCode::HistoryReadBlockedByGame);
+        assert_eq!(
+            problem.params.get("operation").map(String::as_str),
+            Some("list_runs")
+        );
+        assert_eq!(problem.diagnostic.as_deref(), Some("database busy"));
     }
 
     #[test]
@@ -704,7 +747,9 @@ mod tests {
 
         let temp = tempfile::tempdir().unwrap();
         let game_path = temp.path().join("The Bazaar");
-        let history = History::from_resolved_game_path_for_page(Some(game_path.clone())).unwrap();
+        let history =
+            History::from_resolved_game_path_for_page_with(Some(game_path.clone()), || false)
+                .unwrap();
         assert_eq!(history.run_detail_for_page("missing").unwrap(), None);
 
         std::fs::create_dir_all(history.paths.database_path.parent().unwrap()).unwrap();
