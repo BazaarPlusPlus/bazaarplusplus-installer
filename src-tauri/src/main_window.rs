@@ -8,6 +8,13 @@ const MAIN_WINDOW_MIN_WIDTH: f64 = 900.0;
 const MAIN_WINDOW_MIN_HEIGHT: f64 = 600.0;
 
 #[cfg(any(target_os = "windows", test))]
+fn should_enforce_minimum_size(is_minimized: bool, is_maximized: bool) -> bool {
+    // Reapplying a Windows size constraint mutates the inner size and restores
+    // a maximized window. Only correct ordinary, restored windows here.
+    !is_minimized && !is_maximized
+}
+
+#[cfg(any(target_os = "windows", test))]
 pub(crate) fn corrected_main_window_size(
     current: PhysicalSize<u32>,
     scale_factor: f64,
@@ -24,7 +31,7 @@ pub(crate) fn corrected_main_window_size(
 #[cfg(any(target_os = "windows", test))]
 #[cfg_attr(test, allow(dead_code))]
 pub(crate) fn enforce_minimum_size(window: &tauri::WebviewWindow) -> tauri::Result<()> {
-    if window.is_minimized()? {
+    if !should_enforce_minimum_size(window.is_minimized()?, window.is_maximized()?) {
         return Ok(());
     }
 
@@ -61,7 +68,7 @@ pub(crate) fn restore(app: &tauri::AppHandle) {
 
 #[cfg(test)]
 mod tests {
-    use super::corrected_main_window_size;
+    use super::{corrected_main_window_size, should_enforce_minimum_size};
     use tauri::{LogicalSize, PhysicalSize};
 
     #[test]
@@ -70,5 +77,12 @@ mod tests {
             corrected_main_window_size(PhysicalSize::new(972, 612), 2.25),
             Some(LogicalSize::new(900.0, 600.0))
         );
+    }
+
+    #[test]
+    fn maximized_window_skips_minimum_size_enforcement() {
+        assert!(should_enforce_minimum_size(false, false));
+        assert!(!should_enforce_minimum_size(true, false));
+        assert!(!should_enforce_minimum_size(false, true));
     }
 }
