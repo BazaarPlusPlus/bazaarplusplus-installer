@@ -384,10 +384,8 @@ const zh = {
   streamCopyFailed: '复制失败，请手动选择文本复制',
   streamCropSaved: '裁切代码已保存',
   streamCropReset: '裁切设置已恢复默认',
-  streamProblemServiceFailed:
-    '直播服务未能启动。请确认端口 17654 可用后重试。',
-  streamProblemRestartFailed:
-    '直播服务重启失败。请确认端口 17654 可用后重试。',
+  streamProblemServiceFailed: '直播服务未能启动。请确认端口 17654 可用后重试。',
+  streamProblemRestartFailed: '直播服务重启失败。请确认端口 17654 可用后重试。',
   streamProblemPollFailed:
     '暂时无法确认直播服务的最新状态；上次状态已标记为过期，请重新获取。',
   streamProblemWindowFailed: '无法调整展示窗口，请重试。',
