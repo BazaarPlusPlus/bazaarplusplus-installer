@@ -1,5 +1,6 @@
 ---
-status: superseded by 006-steam-only-launch
+status: superseded
+superseded-by: 006-steam-only-launch
 topic: steam-tempo-launch
 ---
 

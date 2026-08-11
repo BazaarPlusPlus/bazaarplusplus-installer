@@ -7,7 +7,7 @@ topic: agent-skills-doc-layout
 
 ## Context
 
-Commit 86e18d2 adopted the agent engineering skills and their per-repo configuration under `docs/agents/`. The skills' consumer convention (`docs/agents/domain.md`) expects a root `CONTEXT.md` plus ADRs in `docs/adr/`, and creates both lazily when missing. The layout from decision 001 kept decisions in `docs/decisions/` and the entry map in `docs/truth/overview.md`, so a skill run would have forked a second, parallel decision directory.
+Commit 86e18d2 adopted the agent engineering skills and their per-repo configuration under `docs/agents/`. The skills' consumer convention (`docs/agents/domain.md`, since removed with the skills pack) expects a root `CONTEXT.md` plus ADRs in `docs/adr/`, and creates both lazily when missing. The layout from decision 001 kept decisions in `docs/decisions/` and the entry map in `docs/truth/overview.md`, so a skill run would have forked a second, parallel decision directory.
 
 ## Decision
 

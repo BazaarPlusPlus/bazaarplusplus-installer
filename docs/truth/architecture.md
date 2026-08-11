@@ -1,7 +1,7 @@
 ---
 status: truth
 topic: architecture
-last-verified: ee30e2721c41e48ca9ded635791d44369ee92987
+last-verified: e2c5cf500dc5def6a838e071b431e8fab446ae97
 ---
 
 # Architecture
