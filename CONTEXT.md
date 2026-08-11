@@ -1,7 +1,7 @@
 ---
 status: truth
 topic: context
-last-verified: ee30e2721c41e48ca9ded635791d44369ee92987
+last-verified: e2c5cf500dc5def6a838e071b431e8fab446ae97
 ---
 
 # BazaarPlusPlus Installer Context
@@ -17,7 +17,7 @@ Tauri 2 desktop app: React/Vite frontend, Rust backend. One native runtime owns 
 ## Glossary
 
 - **BepInEx** — the Unity plugin-loader framework the installer ships into the game directory; its bootstrap files plus the `BepInEx/` tree are what "mod installed" means to detection (`is_bepinex_installed` in `src-tauri/src/services/detect/game.rs`).
-- **Payload** — the exact BPP-owned file set, defined by `BPP_PRIVATE_RELATIVE_PATHS` and `BPP_BUNDLED_DEPENDENCY_RELATIVE_PATHS` in `src-tauri/src/services/bepinex/payload.rs`. Install pre-clean and uninstall only ever touch payload-owned files.
+- **Payload** — the exact BPP-owned file set, defined by `BPP_PRIVATE_RELATIVE_PATHS` and `BPP_BUNDLED_DEPENDENCY_RELATIVE_PATHS` in `src-tauri/src/services/bepinex/payload.rs`. Install pre-clean only ever removes payload-owned files; uninstall always removes private BPP files and, when BPP is the last installed mod, also the shared BepInEx bootstrap, trampoline, and launch-mode state (`uninstall_bpp` in `src-tauri/src/services/bepinex/mod.rs`). See `docs/truth/install-reset.md`.
 - **Prefix mode** — the default launch mode: BepInEx loads via Steam launch options (doorstop). One of the two `LaunchMode` variants in `src-tauri/src/services/launch_mode.rs`.
 - **Trampoline mode** — macOS launch mode (forced on macOS 27+): the real Unity executable is renamed to `.orig` and a build-time stub is swapped in by `install_trampoline` in `src-tauri/src/services/bepinex/trampoline.rs`.
 - **Launch-mode marker** — the `.bpp-launch-mode` file next to the game directory persisting the chosen mode (`MARKER_FILE` in `src-tauri/src/services/bepinex/trampoline.rs`).

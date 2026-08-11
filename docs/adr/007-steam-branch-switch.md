@@ -1,5 +1,5 @@
 ---
-status: superseded-removed
+status: removed
 topic: steam-branch-switch
 ---
 

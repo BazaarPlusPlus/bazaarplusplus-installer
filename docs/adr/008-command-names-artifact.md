@@ -1,5 +1,6 @@
 ---
-status: superseded-by-010-tauri-specta-command-bindings
+status: superseded
+superseded-by: 010-tauri-specta-command-bindings
 topic: command-names-artifact
 ---
 

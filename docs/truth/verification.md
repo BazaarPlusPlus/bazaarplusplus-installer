@@ -1,7 +1,7 @@
 ---
 status: truth
 topic: verification
-last-verified: ee30e2721c41e48ca9ded635791d44369ee92987
+last-verified: e2c5cf500dc5def6a838e071b431e8fab446ae97
 ---
 
 # Verification
@@ -20,7 +20,7 @@ Use the smallest command that verifies the changed behavior; use the authoritati
 - The `verify:native-recorder-input` script in `package.json` checks the macOS VideoToolbox bundle, CoreAudio library, and Windows Media Foundation DLL against their pinned mod commit and exact artifact hashes, in `verifyNativeRecorderInput` in `scripts/native-recorder-input.mjs`; every release-platform prebuild invokes the same check from `runPrebuildCheck` in `scripts/prebuild-check.mjs`.
 - `npm run build` generates bindings once, then runs the release prebuild guard, TypeScript check, and Vite production build — see the `build` and `build:after-bindings` scripts in `package.json`.
 - A direct Tauri build invokes that guarded `npm run build` hook through `build.beforeBuildCommand` in `src-tauri/tauri.conf.json`. The already-verified release path adds `src-tauri/tauri.release.conf.json`, which disables only the duplicate hook (`build.beforeBuildCommand` set to `null`), before `build_prod` in `build.sh` builds and bundles.
-- `./build.sh --prod` runs version synchronization, pinned-input verification, deterministic resource preparation, and `npm run verify -- --release-platform <platform>` before Tauri packaging, orchestrated by `run_release_prechecks` in `build.sh`. On macOS, `build_prod` additionally calls `prepare_signed_macos_resource_zip` in `build.sh`, which proves the VideoToolbox bundle input is ad hoc (`assert_ad_hoc_replay_recorder_input`), signs nested executables and bundles inside-out (`sign_macos_resource_app_bundles`, `sign_macos_resource_plugin_bundles`), and verifies the official Team ID (`assert_official_codesign_team_id` against `OFFICIAL_APPLE_TEAM_ID`, currently `9Z44S3N293`) before repacking the signed zip. The Tauri bundler then builds and notarizes the outer installer using the Apple API credentials `build_prod` already loaded.
+- `./build.sh --prod` runs version synchronization, pinned-input verification, deterministic resource preparation, and `npm run verify -- --release-platform <platform>` before Tauri packaging, orchestrated by `run_release_prechecks` in `build.sh`. On macOS, `build_prod` additionally calls `prepare_signed_macos_resource_zip` in `build.sh`, which proves the VideoToolbox bundle input is ad hoc (`assert_ad_hoc_replay_recorder_input`), signs nested executables and bundles inside-out (`sign_macos_resource_app_bundles`, `sign_macos_resource_plugin_bundles`), and verifies the official Team ID (`assert_official_codesign_team_id` against `OFFICIAL_APPLE_TEAM_ID`, currently `9Z44S3N293`) before repacking the signed zip. The Tauri bundler then builds and notarizes the outer installer using the Apple API credentials that `load_macos_developer_id_env` in `build.sh` exported before `build_prod` ran.
 
 ## Generated Binding Guard
 
