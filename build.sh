@@ -42,6 +42,7 @@ APPLE_API_KEY_PATH_PATH="$SIGNING_SECRETS_DIR/apple-api-key-path"
 APPLE_SIGNING_IDENTITY_PATH="$SIGNING_SECRETS_DIR/apple-signing-identity"
 OFFICIAL_APPLE_TEAM_ID="9Z44S3N293"
 REPLAY_RECORDER_RELATIVE_BUNDLE="TheBazaar.app/Contents/Plugins/GfxPluginBppReplayVideoToolbox.bundle"
+MACOS_GAME_APP_OVERLAY="TheBazaar.app"
 
 assert_command() {
     local name="$1"
@@ -70,17 +71,6 @@ invoke_step() {
     shift
     echo "==> $label"
     "$@"
-}
-
-run_checked() {
-    local status=0
-
-    set +e
-    (set -e; "$@")
-    status="$?"
-    set -e
-
-    return "$status"
 }
 
 trim_trailing_newlines() {
@@ -435,6 +425,11 @@ sign_macos_resource_app_bundles() {
 
     while IFS= read -r -d '' app_bundle; do
         app_relative_path="${app_bundle#$payload_dir/}"
+        # This is an install-path overlay, not a complete application bundle.
+        if [ "$app_relative_path" = "$MACOS_GAME_APP_OVERLAY" ]; then
+            continue
+        fi
+
         while IFS= read -r -d '' binary_path; do
             if ! is_macho_file "$binary_path"; then
                 continue
@@ -539,9 +534,11 @@ prepare_signed_macos_resource_zip() {
 
     invoke_step "Extracting macOS resource zip for signing" \
         ditto -x -k "$resource_zip" "$payload_dir"
+    assert_ad_hoc_replay_recorder_input \
+        "$payload_dir/$REPLAY_RECORDER_RELATIVE_BUNDLE"
     sign_macos_resource_binaries "$payload_dir"
-    sign_macos_resource_app_bundles "$payload_dir"
     sign_macos_resource_plugin_bundles "$payload_dir"
+    sign_macos_resource_app_bundles "$payload_dir"
     invoke_step "Repacking signed macOS resource zip" \
         create_zip_from_directory "$payload_dir" "$signed_zip" "$signed_manifest"
     invoke_step "Replacing macOS resource zip and checksum manifest with signed copies" \
@@ -682,7 +679,6 @@ build_prod() {
     local release_binary=""
     local tauri_target=""
     local release_config="$SCRIPT_DIR/src-tauri/tauri.release.conf.json"
-    local step_status=0
     local -a build_command
     local -a bundle_command
 
@@ -734,27 +730,11 @@ build_prod() {
     invoke_step "Building $platform app binary" "${build_command[@]}"
 
     if [ "$platform" = "macos" ]; then
-        if run_checked prepare_signed_macos_resource_zip "$resource_zip"; then
-            :
-        else
-            step_status="$?"
-            exit "$step_status"
-        fi
-
-        if run_checked prepare_signed_macos_resource_binary "$MACOS_TRAMPOLINE_STUB"; then
-            :
-        else
-            step_status="$?"
-            exit "$step_status"
-        fi
+        prepare_signed_macos_resource_zip "$resource_zip"
+        prepare_signed_macos_resource_binary "$MACOS_TRAMPOLINE_STUB"
     fi
 
-    if run_checked invoke_step "Bundling $platform installer" "${bundle_command[@]}"; then
-        :
-    else
-        step_status="$?"
-        exit "$step_status"
-    fi
+    invoke_step "Bundling $platform installer" "${bundle_command[@]}"
 
     invoke_step "Writing $platform artifact manifest" \
         node "$SCRIPT_DIR/scripts/artifact-manifest.mjs" generate --platform "$platform"
