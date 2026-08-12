@@ -27,7 +27,7 @@
 - `docs/truth/` is the only current-behavior location: topic-sliced, code-cited, hash-stamped. Prefer one focused file over a broad chronological document. `CONTEXT.md` is the entry map and glossary.
 - Cite code by symbol — file plus function, constant, type, or config key. Use a `file:line` range only for a single-line literal fact.
 - When a change invalidates a truth doc, update the doc and its `last-verified` hash in the same change. Stamp the commit whose code the claims were re-derived against.
-- Put immutable architecture or product choices in `docs/adr/` using Context, Decision, Rejected alternatives, and Consequences.
+- Decisions: put architecture or product choices that constrain current work in `docs/adr/`, using Context, Decision, Rejected alternatives, and Consequences.
 - Put only active future work in `docs/plans/`. Move implemented, superseded, or abandoned material to `docs/archive/` with `status`, `topic`, and `superseded-by` frontmatter, and preserve the archived body.
 - Keep generated audit reports and review artifacts under gitignored `tmp/`.
 - Keep agent-authored docs minimal; add or rewrite README-style files only when explicitly requested.

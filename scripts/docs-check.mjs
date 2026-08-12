@@ -213,7 +213,7 @@ export function checkLastVerifiedHashes(
 const BACKTICK_REFERENCE_PATTERN =
   /`([\w./-]+\.[A-Za-z][\w-]*)(?::(\d+)(?:-(\d+))?)?`/g;
 
-// ADR-013 (Documentation Citation Protocol) has truth docs cite code by
+// ADR-013 (Documentation Contract) has truth docs cite code by
 // symbol rather than by line: `DefaultStreamWorkflow.deriveSnapshot`,
 // `app.windows`, `UserConfig.BetaKey`. Those spans are syntactically
 // indistinguishable from `path.ext` (dotted, letter-led final segment), and

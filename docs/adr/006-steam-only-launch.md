@@ -1,15 +1,14 @@
 ---
 status: decision
 topic: steam-only-launch
-supersedes: 004-steam-and-tempo-launch-flows
 ---
 
-# Steam-Only Launch (Removal Of Tempo Native Flow)
+# Steam-Only Launch
 
 ## Context
 
-[Decision 004](004-steam-and-tempo-launch-flows.md) added a second launch flow so users who ran
-The Bazaar through the native **Tempo Launcher** (no Steam) could still install and launch the mod.
+The installer previously had a second launch flow so users who ran The Bazaar through the native
+**Tempo Launcher** (no Steam) could still install and launch the mod.
 It worked by a capture/replay dance: back up and temporarily remove the mod payload, start Tempo,
 let the user click PLAY, capture the vanilla game process's command line, terminate it, restore the
 payload, and relaunch the modded game with the captured arguments. That lived in a ~1,200-line
@@ -25,9 +24,7 @@ and opens `steam://rungameid/1617400` directly.
 
 Reasons (recorded per the reversal):
 
-1. **Strategic shift to Steam-only.** Product direction narrowed to Steam — the substrate for
-   Steam-side work such as beta-branch switching (online ↔ PTR dual-version). See
-   [ADR 007](007-steam-branch-switch.md) (feature later implemented and then removed).
+1. **Strategic shift to Steam-only.** Product direction narrowed to Steam.
 2. **Maintenance burden.** The capture/replay implementation (process capture, platform
    differences, backup/restore, concurrency guards, orphan recovery) was large and fragile
    relative to the size of the non-Steam user segment.
