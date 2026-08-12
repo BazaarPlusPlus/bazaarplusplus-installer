@@ -45,4 +45,4 @@ Tauri 2 desktop app: React/Vite frontend, Rust backend. One native runtime owns 
 - [History And Stream](docs/truth/history-stream.md): local history reads, screenshots, stream server, overlay routes, and CORS scope.
 - [Updater And Release](docs/truth/updater-release.md): in-app updater, release scripts, version sync, and R2 manifest flow.
 - [Verification](docs/truth/verification.md): code-backed verification commands and when they apply.
-- Immutable decisions live in `docs/adr/`; each filename names its topic.
+- Decisions that constrain the task live in `docs/adr/`; read the file whose topic matches the work.

@@ -1,7 +1,6 @@
 ---
 status: decision
 topic: tauri-specta-command-bindings
-supersedes: 008-command-names-artifact
 ---
 
 # Generate Tauri Command Bindings With tauri-specta
@@ -25,4 +24,4 @@ The native frontend adapter uses those generated functions. Browser Preview is a
 
 ## Consequences
 
-The project accepts an exactly pinned release candidate and must deliberately upgrade the three Specta packages together. Generated bindings are a single replaceable artifact and are never hand-edited. Commands require Specta metadata and all IPC DTOs require `specta::Type`. ADR-008 is superseded because there is no longer a separate command-name artifact.
+The project accepts an exactly pinned release candidate and must deliberately upgrade the three Specta packages together. Generated bindings are a single replaceable artifact and are never hand-edited. Commands require Specta metadata and all IPC DTOs require `specta::Type`; there is no separate command-name artifact.
