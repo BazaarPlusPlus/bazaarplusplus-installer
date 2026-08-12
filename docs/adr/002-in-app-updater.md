@@ -11,14 +11,14 @@ The app has Tauri updater artifacts enabled and a static updater endpoint config
 
 ## Decision
 
-Use the Tauri updater as an in-app flow: keep the returned `Update` handle alive, render update availability and progress in the shell modal, call `downloadAndInstall` from that handle, and use process restart when needed. The implementation is in the `UpdateHandle` type and `createUpdaterMachine` function in `src/features/about/updater.ts`.
+Use the Tauri updater as the primary flow: keep the returned `Update` handle alive, render update availability and progress in the shell modal, call `downloadAndInstall` from that handle, and use process restart when needed. Under the zh locale, the available-update modal may also expose the versioned mainland-China mirror as a manual fallback; automatic install remains the primary action. The implementation boundary is the `UpdateHandle` type and `createUpdaterMachine` function in `src/features/about/updater.ts`, with the fallback composed by the `ShellUpdateModal` component in `src/layouts/ShellUpdateModal.tsx`.
 
 ## Rejected Alternatives
 
-- Send users to GitHub releases for install. The current shell update modal has install/retry/restart actions and no GitHub fallback in the `ShellUpdateModal` component in `src/layouts/ShellUpdateModal.tsx`.
+- Send every user to an external download. The in-app path preserves progress, install, and restart state; the localized mirror is an optional escape hatch for network constraints.
 - Discard the `Update` handle after `check()`. The code documents that `downloadAndInstall` must run on the same handle in the `UpdateHandle` type in `src/features/about/updater.ts`.
 - Hand-edit `latest.json`. The release scripts generate platform fragments and rebuild latest metadata from uploaded fragments via `upload_release_assets` and `generate_latest_manifest` in `build.sh`.
 
 ## Consequences
 
-Updater bugs must be tested through the state machine and the shell modal, not only through release metadata. Release work must keep version alignment, updater artifacts, platform fragments, and signatures coherent.
+Updater bugs must be tested through the state machine and shell modal, including the localized fallback boundary, not only through release metadata. Release work must keep version alignment, updater artifacts, platform fragments, and signatures coherent.
