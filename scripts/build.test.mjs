@@ -75,6 +75,41 @@ test('macOS production build targets arm64 artifacts', () => {
   );
 });
 
+test('macOS production build stops at the first resource-signing failure', () => {
+  const output = runShell(`
+    set -euo pipefail
+    source ./build.sh
+    assert_file() { :; }
+    invoke_step() {
+      local label="$1"
+      shift
+      printf '%s|%s\\n' "$label" "$*"
+    }
+    prepare_signed_macos_resource_zip() {
+      printf 'resource-signing:start\\n'
+      false
+      printf 'resource-signing:continued\\n'
+    }
+    prepare_signed_macos_resource_binary() {
+      printf 'trampoline-signing:started\\n'
+    }
+    failure_log="$(mktemp)"
+    trap 'rm -f "$failure_log"' EXIT
+    set +e
+    (set -e; build_prod macos) >"$failure_log" 2>&1
+    status="$?"
+    set -e
+    cat "$failure_log"
+    printf 'exit:%s\\n' "$status"
+  `);
+
+  expect(output).toContain('resource-signing:start');
+  expect(output).toContain('exit:1');
+  expect(output).not.toContain('resource-signing:continued');
+  expect(output).not.toContain('trampoline-signing:started');
+  expect(output).not.toContain('Bundling macos installer');
+});
+
 test('macOS production build removes the entire bundle directory before rebundling', () => {
   const bundleDir = `${projectDir}/src-tauri/target/aarch64-apple-darwin/release/bundle`;
   const staleDir = `${bundleDir}/macos`;
@@ -354,6 +389,83 @@ test('macOS replay recorder plugin is signed inside-out with the official team',
   expect(bundleIndex).toBeGreaterThan(executableIndex);
   expect(verifyIndex).toBeGreaterThan(bundleIndex);
   expect(output).toContain('codesign|--verify --deep --strict --verbose=2');
+});
+
+test('macOS resource zip treats TheBazaar.app as an overlay and signs its plugin inside-out', () => {
+  const output = runShell(`
+    set -euo pipefail
+    source ./build.sh
+    fixture="$(mktemp -d)"
+    trap 'rm -rf "$fixture"' EXIT
+    trace_file="$fixture/codesign.trace"
+    resource_zip="$fixture/BepInEx.zip"
+    touch "$resource_zip"
+    APPLE_SIGNING_IDENTITY='Developer ID Application: YANG Xinyu (9Z44S3N293)'
+    export APPLE_SIGNING_IDENTITY
+    signed=false
+    assert_command() { :; }
+    assert_file() { :; }
+    ditto() {
+      local payload="\${4}"
+      local bundle="$payload/$REPLAY_RECORDER_RELATIVE_BUNDLE"
+      mkdir -p "$bundle/Contents/MacOS"
+      touch "$bundle/Contents/Info.plist"
+      touch "$bundle/Contents/MacOS/GfxPluginBppReplayVideoToolbox"
+    }
+    file() {
+      case "$1" in
+        */GfxPluginBppReplayVideoToolbox) printf '%s: Mach-O 64-bit dynamically linked shared library arm64\\n' "$1" ;;
+        *) printf '%s: ASCII text\\n' "$1" ;;
+      esac
+    }
+    codesign() {
+      local target="\${!#}"
+      printf 'codesign|%s\\n' "$*" >>"$trace_file"
+      if [ "$1" = "-dvvv" ]; then
+        if [ "$signed" = true ]; then
+          printf '%s\\n' 'Signature size=1' 'TeamIdentifier=9Z44S3N293' >&2
+        else
+          printf '%s\\n' 'Signature=adhoc' 'TeamIdentifier=not set' >&2
+        fi
+        return 0
+      fi
+      if [[ "$target" == */TheBazaar.app ]]; then
+        printf '%s: bundle format unrecognized, invalid, or unsuitable\\n' "$target" >&2
+        return 1
+      fi
+      case "$*" in
+        *'--sign '*GfxPluginBppReplayVideoToolbox*) signed=true ;;
+      esac
+    }
+    create_zip_from_directory() {
+      touch "$2" "$3"
+    }
+    set +e
+    (prepare_signed_macos_resource_zip "$resource_zip") >"$fixture/build.log" 2>&1
+    status="$?"
+    set -e
+    cat "$fixture/build.log"
+    cat "$trace_file"
+    printf 'exit:%s\\n' "$status"
+  `);
+
+  const inputCheckIndex = output.indexOf(
+    'codesign|-dvvv',
+    output.indexOf('GfxPluginBppReplayVideoToolbox.bundle')
+  );
+  const executableSignIndex = output.indexOf(
+    'codesign|--force --options runtime --timestamp --sign Developer ID Application: YANG Xinyu (9Z44S3N293)'
+  );
+  const bundleSignIndex = output.lastIndexOf(
+    'codesign|--force --options runtime --timestamp --sign Developer ID Application: YANG Xinyu (9Z44S3N293)'
+  );
+  expect(output).toContain('exit:0');
+  expect(output).not.toContain(
+    'Signing macOS resource app bundle TheBazaar.app'
+  );
+  expect(inputCheckIndex).toBeGreaterThanOrEqual(0);
+  expect(executableSignIndex).toBeGreaterThan(inputCheckIndex);
+  expect(bundleSignIndex).toBeGreaterThan(executableSignIndex);
 });
 
 test('macOS release rejects a replay recorder plugin signed by a local Developer ID', () => {
