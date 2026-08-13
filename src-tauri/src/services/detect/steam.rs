@@ -5,7 +5,6 @@ use std::path::{Path, PathBuf};
 pub(crate) struct SteamInstallPaths {
     pub(crate) steam_path: Option<PathBuf>,
     pub(crate) game_path: Option<PathBuf>,
-    pub(crate) steam_launch_options_supported: bool,
 }
 
 #[cfg(debug_assertions)]
@@ -238,22 +237,15 @@ pub(crate) fn detect_installation_paths() -> SteamInstallPaths {
     let game_path = steam_path
         .as_deref()
         .and_then(|path| get_game_path_from_detected_steam_roots(path, &steam_roots));
-    let steam_launch_options_supported = steam_path
-        .as_deref()
-        .map(crate::services::steam::supports_launch_option_updates)
-        .unwrap_or(false);
-
     crate::services::debug_log!(
-        "[detect::steam] detected startup paths steam_path={:?} game_path={:?} launch_options_supported={}",
+        "[detect::steam] detected startup paths steam_path={:?} game_path={:?}",
         steam_path.as_ref().map(|path| path.display().to_string()),
-        game_path.as_ref().map(|path| path.display().to_string()),
-        steam_launch_options_supported
+        game_path.as_ref().map(|path| path.display().to_string())
     );
 
     SteamInstallPaths {
         steam_path,
         game_path,
-        steam_launch_options_supported,
     }
 }
 

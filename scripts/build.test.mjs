@@ -305,7 +305,7 @@ test('macOS resource signing applies Developer ID timestamp only to loose Mach-O
     mkdir -p "$payload/TheBazaar.app/Contents/Plugins/GfxPluginBppReplayVideoToolbox.bundle/Contents/MacOS"
     touch "$payload/TheBazaar.app/Contents/Plugins/GfxPluginBppReplayVideoToolbox.bundle/Contents/MacOS/GfxPluginBppReplayVideoToolbox"
     touch "$payload/readme.txt"
-    APPLE_SIGNING_IDENTITY='Developer ID Application: Example Builder (TEAMID1234)'
+    APPLE_SIGNING_IDENTITY='Developer ID Application: YANG Xinyu (9Z44S3N293)'
     export APPLE_SIGNING_IDENTITY
     file() {
       case "$1" in
@@ -314,6 +314,10 @@ test('macOS resource signing applies Developer ID timestamp only to loose Mach-O
       esac
     }
     codesign() {
+      if [ "$1" = "-dvvv" ]; then
+        printf '%s\\n' 'Signature size=1' 'TeamIdentifier=9Z44S3N293' >&2
+        return 0
+      fi
       printf 'codesign|%s\\n' "$*"
     }
     invoke_step() {
@@ -326,7 +330,7 @@ test('macOS resource signing applies Developer ID timestamp only to loose Mach-O
   `);
 
   expect(output).toContain(
-    'codesign|--force --options runtime --timestamp --sign Developer ID Application: Example Builder (TEAMID1234)'
+    'codesign|--force --options runtime --timestamp --sign Developer ID Application: YANG Xinyu (9Z44S3N293)'
   );
   expect(output).toContain('libdoorstop.dylib');
   expect(output).toContain('BepInEx/plugins/libe_sqlite3.dylib');
@@ -495,12 +499,16 @@ test('macOS loose resource signing applies Developer ID timestamp to trampoline 
     trap 'rm -rf "$payload"' EXIT
     stub="$payload/bpp_launcher"
     touch "$stub"
-    APPLE_SIGNING_IDENTITY='Developer ID Application: Example Builder (TEAMID1234)'
+    APPLE_SIGNING_IDENTITY='Developer ID Application: YANG Xinyu (9Z44S3N293)'
     export APPLE_SIGNING_IDENTITY
     file() {
       printf '%s: Mach-O 64-bit executable arm64\\n' "$1"
     }
     codesign() {
+      if [ "$1" = "-dvvv" ]; then
+        printf '%s\\n' 'Signature size=1' 'TeamIdentifier=9Z44S3N293' >&2
+        return 0
+      fi
       printf 'codesign|%s\\n' "$*"
     }
     invoke_step() {
@@ -514,7 +522,7 @@ test('macOS loose resource signing applies Developer ID timestamp to trampoline 
 
   expect(output).toContain('Signing macOS resource binary');
   expect(output).toContain(
-    'codesign|--force --options runtime --timestamp --sign Developer ID Application: Example Builder (TEAMID1234)'
+    'codesign|--force --options runtime --timestamp --sign Developer ID Application: YANG Xinyu (9Z44S3N293)'
   );
   expect(output).toContain('bpp_launcher');
 });

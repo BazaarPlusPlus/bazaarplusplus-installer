@@ -1,14 +1,9 @@
 // BazaarPlusPlus macOS launch trampoline.
 //
-// Installed as the game bundle's CFBundleExecutable on macOS 27+ (where Steam no
-// longer spawns a prefix executable before %command%, killing the run_bepinex.sh
-// launch path). The real Unity bootstrap is renamed to "<exe>.orig" beside us and
-// re-signed with the JIT entitlements at install time; this stub sets the same
-// DOORSTOP_* env that run_bepinex.sh would, prepends libdoorstop.dylib to
-// DYLD_INSERT_LIBRARIES (preserving Steam's overlay), and execs the real binary.
-//
-// Compiled arm64 at build time (see build.sh). Validated end-to-end on macOS 27 +
-// Steam 2026-06-09. Keep the DOORSTOP_* keys in sync with run_bepinex.sh.
+// This is the only macOS launch bootstrap. It is installed as the game bundle's
+// CFBundleExecutable. The real Unity bootstrap is preserved beside it as
+// "<exe>.orig" and re-signed with JIT entitlements by the installer. The stub
+// configures Doorstop, preserves Steam's injected libraries, and execs Unity.
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
@@ -49,8 +44,7 @@ int main(int argc, char **argv) {
       if (cur && cur[0]) snprintf(buf, sizeof(buf), "%s:%s", dylib, cur); else snprintf(buf, sizeof(buf), "%s", dylib);
       setenv("DYLD_INSERT_LIBRARIES", buf, 1); }
 
-    // Real binary sits beside us as "<our own basename>.orig" — derived from the launched
-    // name (= current CFBundleExecutable), so no game-specific name is baked into the stub.
+    // Derive the preserved binary name from CFBundleExecutable at runtime.
     char base_copy[PATH_MAX]; strncpy(base_copy, exe, sizeof(base_copy)); base_copy[sizeof(base_copy)-1]=0;
     char real[PATH_MAX]; snprintf(real, sizeof(real), "%s/%s.orig", macos_dir, basename(base_copy));
     execv(real, argv);

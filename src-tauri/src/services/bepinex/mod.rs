@@ -3,8 +3,8 @@ mod trampoline;
 mod zip_archive;
 
 pub(crate) use trampoline::{
-    install_trampoline, is_trampolined, read_launch_mode_marker, uninstall_trampoline,
-    write_launch_mode_marker,
+    install_trampoline, is_current_trampoline, obsolete_macos_artifacts_present,
+    remove_obsolete_macos_artifacts,
 };
 pub(crate) use zip_archive::read_bundled_bpp_version;
 
@@ -136,23 +136,10 @@ fn reset_bepinex_folder_blocking_with(
     Ok(had_bepinex)
 }
 
-pub fn install_bepinex(
-    app: tauri::AppHandle,
-    steam_path: String,
-    game_path: String,
-) -> Result<(), String> {
+pub fn install_bepinex(app: tauri::AppHandle, game_path: String) -> Result<(), String> {
     let game_path = Path::new(&game_path);
     let preserved_bpp_config =
         payload::preserve_file_if_exists(game_path, payload::BPP_CONFIG_RELATIVE_PATH)?;
-    #[cfg(not(target_os = "macos"))]
-    let _ = &steam_path;
-    #[cfg(target_os = "macos")]
-    if !steam_path.trim().is_empty() {
-        crate::services::steam::prepare_steam_for_launch_option_update(
-            Path::new(&steam_path),
-            true,
-        )?;
-    }
     debug_log!("Reading bundled BepInEx.zip...");
     let relative_zip_path = zip_archive::bundled_zip_relative_path();
     let resource_path = app
@@ -176,13 +163,6 @@ pub fn install_bepinex(
             _report.written.len(),
             _report.skipped_identical.len()
         );
-
-        #[cfg(target_os = "macos")]
-        {
-            let script_path = game_path.join("run_bepinex.sh");
-            crate::services::vdf::ensure_launcher_executable(&script_path)?;
-            debug_log!("Marked {} as executable.", script_path.display());
-        }
 
         Ok(())
     })();
@@ -222,10 +202,7 @@ pub fn uninstall_bpp(
 
     #[cfg(target_os = "macos")]
     if !_steam_path.trim().is_empty() {
-        crate::services::steam::prepare_steam_for_launch_option_update(
-            Path::new(&_steam_path),
-            false,
-        )?;
+        crate::services::steam::prepare_steam_for_config_update(Path::new(&_steam_path))?;
     }
 
     let keep_shared_bootstrap =
@@ -254,8 +231,6 @@ pub fn uninstall_bpp(
     }
 
     if !keep_shared_bootstrap {
-        trampoline::remove_launch_mode_marker(game_path)?;
-
         #[cfg(target_os = "macos")]
         {
             if !_steam_path.trim().is_empty() {
@@ -263,6 +238,8 @@ pub fn uninstall_bpp(
             }
         }
     }
+
+    trampoline::remove_obsolete_macos_artifacts(game_path)?;
 
     debug_log!(
         "Uninstalled BazaarPlusPlus payload from {}",
@@ -358,14 +335,14 @@ mod tests {
         // Doorstop/trampoline bootstrap lives OUTSIDE BepInEx and must survive so
         // the bundle stays launchable; only BepInEx itself is removed.
         std::fs::write(tmp.path().join("winhttp.dll"), b"doorstop").unwrap();
-        std::fs::write(tmp.path().join("run_bepinex.sh"), b"#!/bin/sh\n").unwrap();
+        std::fs::write(tmp.path().join("libdoorstop.dylib"), b"doorstop").unwrap();
 
         let removed = reset_bepinex_folder_blocking_with(tmp.path(), || false).unwrap();
 
         assert!(removed);
         assert!(!tmp.path().join("BepInEx").exists());
         assert!(tmp.path().join("winhttp.dll").exists());
-        assert!(tmp.path().join("run_bepinex.sh").exists());
+        assert!(tmp.path().join("libdoorstop.dylib").exists());
     }
 
     #[test]

@@ -6,10 +6,8 @@ use serde::Serialize;
 pub struct InstallState {
     pub selected_game_path: Option<String>,
     pub steam_path: Option<String>,
-    pub steam_launch_options_supported: bool,
     pub game: InstallGameState,
     pub mod_state: InstallModState,
-    pub compat: InstallCompatState,
     pub actions: InstallActions,
     pub has_resettable_data: bool,
     /// Whether a `BepInEx/` directory physically exists — gates the blunt
@@ -31,20 +29,6 @@ pub struct ResetBepinexResult {
     pub removed: bool,
 }
 
-/// macOS launch-mode (兼容模式 / trampoline) state surfaced to the UI.
-#[derive(Clone, Debug, Serialize, specta::Type)]
-pub struct InstallCompatState {
-    /// Show the opt-in "兼容模式" checkbox (macOS <= 26 only).
-    pub mode_available: bool,
-    /// macOS 27+: trampoline forced — render the checkbox checked and locked.
-    pub forced: bool,
-    /// The desired launch mode (checkbox default): forced, or the persisted marker.
-    // Derived from launch_mode::LaunchModeState::expected_trampoline.
-    pub desired: bool,
-    /// Whether the bundle currently has the trampoline applied.
-    pub applied: bool,
-}
-
 #[derive(Clone, Debug, Serialize, specta::Type)]
 pub struct InstallGameState {
     pub found: bool,
@@ -57,7 +41,8 @@ pub struct InstallModState {
     pub installed: bool,
     pub installed_version: Option<String>,
     pub bundled_version: Option<String>,
-    pub version_matches: bool,
+    /// Payload version and the platform launch bootstrap are both ready.
+    pub ready: bool,
 }
 
 #[derive(Clone, Debug, Serialize, specta::Type)]
@@ -74,8 +59,10 @@ pub struct InstallActions {
 #[serde(rename_all = "snake_case")]
 pub enum InstallWarningCode {
     GameMissing,
-    LaunchOptionsUnsupported,
-    TrampolineReverted,
+    SteamConfigUnavailable,
+    LaunchOptionsNotEmpty,
+    TrampolineNotReady,
+    ObsoleteMacosArtifacts,
 }
 
 #[derive(Clone, Debug, Serialize, specta::Type)]

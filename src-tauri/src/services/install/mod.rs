@@ -4,9 +4,8 @@ mod types;
 
 pub(crate) use operation::{install, InstallRequest};
 pub use types::{
-    FileActionResult, GameDirectorySelection, InstallActions, InstallCompatState, InstallGameState,
-    InstallModState, InstallState, InstallWarning, InstallWarningCode, ResetBepinexResult,
-    ResetBppDataResult,
+    FileActionResult, GameDirectorySelection, InstallActions, InstallGameState, InstallModState,
+    InstallState, InstallWarning, InstallWarningCode, ResetBepinexResult, ResetBppDataResult,
 };
 
 use std::process::Command;
@@ -115,29 +114,27 @@ fn install_state_from_snapshot(
         (None, _) => false,
         (_, None) => installed,
     };
-    // The bundle's actual launch mode must match the desired one. A Steam "Verify
-    // integrity"/game update that reverts the trampoline (or a macOS 26->27 upgrade
-    // after a prefix install) leaves the plugin DLL version matching yet the launch
-    // broken; folding consistency into `version_matches` routes the UI to Reinstall
-    // (Repair). On non-macOS (and matched macOS) `trampoline_consistent` is true, so
-    // this reduces to today's plugin-version check.
-    let trampoline_consistent = env.launch_mode.consistent();
-    let version_matches = plugin_version_matches && trampoline_consistent;
-    let needs_trampoline_repair = env.launch_mode.needs_repair(installed);
+    let launch_options_empty =
+        env.steam_launch_options == crate::services::vdf::SteamLaunchOptionsState::Empty;
+    let platform_bootstrap_ready = !cfg!(target_os = "macos")
+        || (env.trampoline_current
+            && launch_options_empty
+            && !env.obsolete_macos_artifacts_present);
+    let ready = installed && plugin_version_matches && platform_bootstrap_ready;
     let can_launch = game_found && env.game_path_valid;
     let has_resettable_data = has_resettable_bpp_data(env.game_path.as_deref());
     let has_bepinex_files = has_bepinex_directory(env.game_path.as_deref());
     let warnings = install_warnings(
         game_found,
         env.game_path_valid,
-        env.steam_launch_options_supported,
-        needs_trampoline_repair,
+        env.steam_launch_options,
+        env.trampoline_current,
+        env.obsolete_macos_artifacts_present,
     );
 
     InstallState {
         selected_game_path,
         steam_path: env.steam_path,
-        steam_launch_options_supported: env.steam_launch_options_supported,
         game: InstallGameState {
             found: game_found,
             path_valid: env.game_path_valid,
@@ -147,13 +144,7 @@ fn install_state_from_snapshot(
             installed,
             installed_version: env.bpp_version,
             bundled_version: env.bundled_bpp_version,
-            version_matches,
-        },
-        compat: InstallCompatState {
-            mode_available: env.launch_mode.opt_in_available(),
-            forced: env.launch_mode.forced(),
-            desired: env.launch_mode.expected_trampoline,
-            applied: env.launch_mode.trampoline_applied,
+            ready,
         },
         actions: InstallActions {
             can_install: can_launch && !installed,
@@ -172,8 +163,9 @@ fn install_state_from_snapshot(
 fn install_warnings(
     game_found: bool,
     game_path_valid: bool,
-    steam_launch_options_supported: bool,
-    needs_trampoline_repair: bool,
+    steam_launch_options: crate::services::vdf::SteamLaunchOptionsState,
+    trampoline_current: bool,
+    obsolete_macos_artifacts_present: bool,
 ) -> Vec<InstallWarning> {
     let mut warnings = Vec::new();
     if !game_found || !game_path_valid {
@@ -182,17 +174,34 @@ fn install_warnings(
             params: Default::default(),
         });
     }
-    if !steam_launch_options_supported {
-        warnings.push(InstallWarning {
-            code: InstallWarningCode::LaunchOptionsUnsupported,
-            params: Default::default(),
-        });
-    }
-    if needs_trampoline_repair {
-        warnings.push(InstallWarning {
-            code: InstallWarningCode::TrampolineReverted,
-            params: Default::default(),
-        });
+    if cfg!(target_os = "macos") {
+        match steam_launch_options {
+            crate::services::vdf::SteamLaunchOptionsState::Empty => {}
+            crate::services::vdf::SteamLaunchOptionsState::NonEmpty => {
+                warnings.push(InstallWarning {
+                    code: InstallWarningCode::LaunchOptionsNotEmpty,
+                    params: Default::default(),
+                });
+            }
+            crate::services::vdf::SteamLaunchOptionsState::Unavailable => {
+                warnings.push(InstallWarning {
+                    code: InstallWarningCode::SteamConfigUnavailable,
+                    params: Default::default(),
+                });
+            }
+        }
+        if !trampoline_current {
+            warnings.push(InstallWarning {
+                code: InstallWarningCode::TrampolineNotReady,
+                params: Default::default(),
+            });
+        }
+        if obsolete_macos_artifacts_present {
+            warnings.push(InstallWarning {
+                code: InstallWarningCode::ObsoleteMacosArtifacts,
+                params: Default::default(),
+            });
+        }
     }
     warnings
 }
@@ -320,7 +329,13 @@ mod tests {
 
     #[test]
     fn install_warnings_are_semantic_codes_without_backend_copy() {
-        let warnings = install_warnings(false, false, false, true);
+        let warnings = install_warnings(
+            false,
+            false,
+            crate::services::vdf::SteamLaunchOptionsState::Unavailable,
+            false,
+            true,
+        );
 
         assert_eq!(
             warnings
@@ -329,8 +344,9 @@ mod tests {
                 .collect::<Vec<_>>(),
             vec![
                 InstallWarningCode::GameMissing,
-                InstallWarningCode::LaunchOptionsUnsupported,
-                InstallWarningCode::TrampolineReverted,
+                InstallWarningCode::SteamConfigUnavailable,
+                InstallWarningCode::TrampolineNotReady,
+                InstallWarningCode::ObsoleteMacosArtifacts,
             ]
         );
         assert!(warnings.iter().all(|warning| warning.params.is_empty()));

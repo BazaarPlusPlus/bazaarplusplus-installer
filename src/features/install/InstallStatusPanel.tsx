@@ -24,8 +24,8 @@ export function InstallStatusPanel({
   const [copied, setCopied] = useState(false);
   const state = snapshot.data;
   const installed = state.mod_state.installed;
-  const healthy = installed && state.mod_state.version_matches;
-  const needsReinstall = installed && !state.mod_state.version_matches;
+  const healthy = state.mod_state.ready;
+  const needsReinstall = installed && !state.mod_state.ready;
   const heroState = healthy
     ? t('installed')
     : needsReinstall

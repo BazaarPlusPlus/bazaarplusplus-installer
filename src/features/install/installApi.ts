@@ -20,8 +20,7 @@ export function createInstallCommandPort(
   return {
     loadInstallState: (gamePath) => commands.getInstallState(gamePath ?? null),
     chooseGameDirectory: () => commands.chooseGameDirectory(),
-    installMod: (gamePath, compatOptIn) =>
-      commands.installMod(gamePath, compatOptIn),
+    installMod: (gamePath) => commands.installMod(gamePath),
     resetBppData: (gamePath) => commands.resetBppData(gamePath),
     resetBepinex: (gamePath) => commands.resetBepinex(gamePath),
     uninstallMod: (gamePath) => commands.uninstallMod(gamePath),

@@ -36,7 +36,7 @@ export type InstallPrimaryAction = {
 };
 
 export type InstallConfirmationTarget =
-  | { kind: 'install'; gamePath: string; compatOptIn: boolean }
+  | { kind: 'install'; gamePath: string }
   | { kind: 'reset-data'; gamePath: string }
   | { kind: 'reset-bepinex'; gamePath: string }
   | { kind: 'uninstall'; gamePath: string };
@@ -77,7 +77,6 @@ export type InstallActionAvailability = {
   launch: boolean;
   confirm: boolean;
   dismissConfirmation: boolean;
-  setPendingCompatOptIn: boolean;
 };
 
 export type InstallPageSnapshot =
@@ -124,7 +123,7 @@ export type InstallPageSnapshot =
 export interface InstallCommandPort {
   loadInstallState(gamePath?: string | null): Promise<InstallState>;
   chooseGameDirectory(): Promise<{ game_path: string | null }>;
-  installMod(gamePath: string, compatOptIn: boolean): Promise<InstallState>;
+  installMod(gamePath: string): Promise<InstallState>;
   resetBppData(gamePath: string): Promise<ResetBppDataResult>;
   resetBepinex(gamePath: string): Promise<ResetBepinexResult>;
   uninstallMod(gamePath: string): Promise<InstallState>;
@@ -135,7 +134,6 @@ export interface InstallWorkflowIntents {
   refresh(): Promise<boolean>;
   chooseDirectory(): Promise<boolean>;
   requestInstall(): boolean;
-  setPendingCompatOptIn(value: boolean): boolean;
   requestResetData(): boolean;
   requestResetBepinex(): boolean;
   requestUninstall(): boolean;
@@ -192,7 +190,6 @@ class DefaultInstallWorkflow implements InstallWorkflow {
     refresh: () => this.refresh(),
     chooseDirectory: () => this.chooseDirectory(),
     requestInstall: () => this.requestInstall(),
-    setPendingCompatOptIn: (value) => this.setPendingCompatOptIn(value),
     requestResetData: () => this.requestResetData(),
     requestResetBepinex: () => this.requestResetBepinex(),
     requestUninstall: () => this.requestUninstall(),
@@ -282,25 +279,7 @@ class DefaultInstallWorkflow implements InstallWorkflow {
     if (!data?.selected_game_path) return false;
     return this.confirmation.request({
       kind: 'install',
-      gamePath: data.selected_game_path,
-      compatOptIn: data.compat.desired
-    });
-  }
-
-  private setPendingCompatOptIn(value: boolean): boolean {
-    const confirmation = this.confirmation.getSnapshot();
-    if (
-      !confirmation ||
-      confirmation.phase !== 'confirming' ||
-      confirmation.target.kind !== 'install'
-    ) {
-      return false;
-    }
-    const data = this.readyData();
-    if (data?.compat.forced) return false;
-    return this.confirmation.updateTarget({
-      ...confirmation.target,
-      compatOptIn: value
+      gamePath: data.selected_game_path
     });
   }
 
@@ -397,10 +376,7 @@ class DefaultInstallWorkflow implements InstallWorkflow {
     try {
       switch (target.kind) {
         case 'install': {
-          const next = await this.ports.commands.installMod(
-            target.gamePath,
-            target.compatOptIn
-          );
+          const next = await this.ports.commands.installMod(target.gamePath);
           if (!this.isCurrentLifecycle(lifecycle)) return { ok: true };
           this.applyReadyData(next);
           this.showNotice('install_done');
@@ -607,8 +583,7 @@ class DefaultInstallWorkflow implements InstallWorkflow {
       requestUninstall: false,
       launch: false,
       confirm: false,
-      dismissConfirmation: false,
-      setPendingCompatOptIn: false
+      dismissConfirmation: false
     };
 
     if (this.state.resource.kind === 'initial-loading') {
@@ -694,12 +669,7 @@ class DefaultInstallWorkflow implements InstallWorkflow {
           confirmationActive &&
           !busy &&
           (confirmationConfirming || confirmationFailed),
-        dismissConfirmation:
-          confirmationActive && !confirmationRunning && !busy,
-        setPendingCompatOptIn:
-          confirmationConfirming &&
-          confirmation?.target.kind === 'install' &&
-          !ready.data.compat.forced
+        dismissConfirmation: confirmationActive && !confirmationRunning && !busy
       },
       actionProblem: this.state.actionProblem,
       reconciliationProblem: this.state.reconciliationProblem,
@@ -756,10 +726,7 @@ export function deriveInstallPrimaryAction(
     mode = 'install';
     operation = 'install';
     allowed = state.actions.can_install;
-  } else if (
-    !state.mod_state.version_matches ||
-    state.compat.desired !== state.compat.applied
-  ) {
+  } else if (!state.mod_state.ready) {
     mode = 'repair';
     operation = 'install';
     allowed = state.actions.can_reinstall;

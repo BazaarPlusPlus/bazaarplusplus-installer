@@ -109,15 +109,12 @@ describe('browser-preview command adapter', () => {
     expect(emptyInstallState.has_resettable_data).toBe(false);
     expect(emptyInstallState.has_bepinex_files).toBe(false);
     expect(emptyInstallState.warnings.map((warning) => warning.code)).toEqual([
-      'game_missing',
-      'launch_options_unsupported'
+      'game_missing'
     ]);
   });
 
   it('passes native-only preview commands through to the normalized client', async () => {
-    await expect(commandClient.installMod('x', false)).rejects.toBeInstanceOf(
-      Error
-    );
+    await expect(commandClient.installMod('x')).rejects.toBeInstanceOf(Error);
     await expect(
       commandClient.deleteBattleVideo('b', 'v')
     ).rejects.toBeInstanceOf(Error);

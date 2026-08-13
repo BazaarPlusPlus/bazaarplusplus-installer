@@ -11,6 +11,7 @@ export const V5_MIN_MOD_VERSION = '4.7.0';
 
 export const REQUIRED_RELEASE_INPUTS = Object.freeze({
   macos: Object.freeze([
+    'libdoorstop.dylib',
     'BepInEx/plugins/BazaarPlusPlus.dll',
     'BepInEx/plugins/BazaarPlusPlus.ModApi.dll',
     'BepInEx/plugins/BazaarPlusPlus.Storage.dll',
@@ -33,6 +34,8 @@ export const REQUIRED_RELEASE_INPUTS = Object.freeze({
 
 const FORBIDDEN_RELEASE_INPUTS = Object.freeze({
   macos: Object.freeze([
+    'run_bepinex.sh',
+    'bpp_launcher.c',
     'BepInEx/plugins/ffmpeg',
     'BepInEx/plugins/ffmpeg-LICENSE.txt',
     'BepInEx/plugins/BppReplayRecorder.app'
@@ -45,7 +48,6 @@ const FORBIDDEN_RELEASE_INPUTS = Object.freeze({
 
 const osArtifactNames = new Set(['.DS_Store', 'Thumbs.db', 'desktop.ini']);
 const macosExecutablePaths = new Set([
-  'run_bepinex.sh',
   'TheBazaar.app/Contents/Plugins/GfxPluginBppReplayVideoToolbox.bundle/Contents/MacOS/GfxPluginBppReplayVideoToolbox'
 ]);
 const fixedDosDate = (1 << 5) | 1;
@@ -214,7 +216,6 @@ function assertMacosExecutableModes(platform, files) {
   // authoritatively on the macOS release host before packaging.
   if (platform !== 'macos' || process.platform === 'win32') return;
   for (const requiredExecutable of [
-    'run_bepinex.sh',
     'TheBazaar.app/Contents/Plugins/GfxPluginBppReplayVideoToolbox.bundle/Contents/MacOS/GfxPluginBppReplayVideoToolbox'
   ]) {
     const file = files.find((entry) => entry.path === requiredExecutable);

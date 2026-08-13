@@ -27,49 +27,6 @@ export function resolveTargetPlatforms(platformEnv) {
   return [platform];
 }
 
-function sourceMacosLauncherPath(rootDir) {
-  return path.join(
-    rootDir,
-    'src-tauri',
-    'resources',
-    'SourceForBuild',
-    'macos',
-    'run_bepinex.sh'
-  );
-}
-
-export function assertMacosLauncherScriptIsSafe(
-  script,
-  label = 'run_bepinex.sh'
-) {
-  const forbiddenSnippets = [
-    'mktemp /tmp/bepinex_ents.XXXXXX.plist',
-    'codesign --remove-signature'
-  ];
-
-  for (const snippet of forbiddenSnippets) {
-    if (script.includes(snippet)) {
-      throw new Error(
-        `${label} contains forbidden launcher snippet: ${snippet}`
-      );
-    }
-  }
-
-  const requiredSnippets = [
-    'mktemp "${TMPDIR:-/tmp}/bepinex_ents.XXXXXX"',
-    'trap cleanup_entitlements EXIT HUP INT TERM',
-    'codesign --force --deep --sign - --entitlements "$_entitlements_file" "$app_path"'
-  ];
-
-  for (const snippet of requiredSnippets) {
-    if (!script.includes(snippet)) {
-      throw new Error(
-        `${label} is missing required launcher snippet: ${snippet}`
-      );
-    }
-  }
-}
-
 export function macosTrampolineStubPath(rootDir) {
   return path.join(
     rootDir,
@@ -92,7 +49,7 @@ export function assertMacosTrampolineStubWith(rootDir, describeStub) {
   if (!fs.existsSync(stubPath)) {
     throw new Error(
       `Missing compiled macOS trampoline stub: ${stubPath}. ` +
-        'Run build.sh (which compiles it from SourceForBuild/macos/bpp_launcher.c) before bundling.'
+        'Run build.sh (which compiles it from src-tauri/trampoline/bpp_launcher.c) before bundling.'
     );
   }
 
@@ -140,27 +97,7 @@ export function runPrebuildCheck(
   verifyNativeRecorderInput({ rootDir });
 
   for (const platform of platforms) {
-    const result = validatePayloadZip({ rootDir, platform });
-    if (platform === 'macos') {
-      const sourcePath = sourceMacosLauncherPath(rootDir);
-      const sourceScript = fs.readFileSync(sourcePath, 'utf8');
-      const zipScript = result.entries
-        .get('run_bepinex.sh')
-        ?.data.toString('utf8');
-      if (!zipScript) {
-        throw new Error(`${result.zipPath} is missing run_bepinex.sh content`);
-      }
-      assertMacosLauncherScriptIsSafe(sourceScript, sourcePath);
-      assertMacosLauncherScriptIsSafe(
-        zipScript,
-        `${result.zipPath}:run_bepinex.sh`
-      );
-      if (zipScript !== sourceScript) {
-        throw new Error(
-          `${result.zipPath}:run_bepinex.sh does not match ${sourcePath}; rebuild the macOS BepInEx zip`
-        );
-      }
-    }
+    validatePayloadZip({ rootDir, platform });
   }
 
   // The compiled arm64 stub is only produced on (and needed by) a macOS build

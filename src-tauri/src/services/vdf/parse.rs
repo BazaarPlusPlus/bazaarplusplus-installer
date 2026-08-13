@@ -1,38 +1,6 @@
-#[cfg(test)]
-use keyvalues_parser::{Obj, Value};
-
 pub(crate) const THE_BAZAAR_APP_ID: &str = "1617400";
 pub(crate) const LAUNCH_OPTIONS_KEY: &str = "LaunchOptions";
-
-#[cfg(test)]
-fn first_obj<'a, 'text>(values: &'a [Value<'text>]) -> Option<&'a Obj<'text>>
-where
-    'a: 'text,
-{
-    values.first()?.get_obj()
-}
-
-#[cfg(test)]
-pub(crate) fn get_app_obj<'a, 'text>(root: &'a Obj<'text>, app_id: &str) -> Option<&'a Obj<'text>>
-where
-    'a: 'text,
-{
-    root.get("Software")
-        .and_then(|values| first_obj(values))
-        .and_then(|software| software.get("Valve").and_then(|values| first_obj(values)))
-        .and_then(|valve| valve.get("Steam").and_then(|values| first_obj(values)))
-        .and_then(|steam| steam.get("apps").and_then(|values| first_obj(values)))
-        .and_then(|apps| apps.get(app_id).and_then(|values| first_obj(values)))
-}
-
-fn escape_vdf_string(value: &str) -> String {
-    value.replace('\\', "\\\\").replace('"', "\\\"")
-}
-
-pub(crate) fn verify_launch_options_in_content(
-    vdf_content: &str,
-    expected: &str,
-) -> Result<Option<bool>, String> {
+pub(crate) fn launch_options_empty_in_content(vdf_content: &str) -> Result<Option<bool>, String> {
     let lines = vdf_content.lines().map(str::to_string).collect::<Vec<_>>();
     let Some((apps_open, apps_close)) = find_apps_block(&lines) else {
         return Err("Malformed VDF: could not locate Steam/apps object".to_string());
@@ -43,15 +11,27 @@ pub(crate) fn verify_launch_options_in_content(
         return Ok(None);
     };
 
+    let mut nested_depth = 0usize;
     for line in &lines[app_open + 1..app_close] {
-        if let Some((_indent, key, value)) = parse_line_pair(line) {
-            if key == LAUNCH_OPTIONS_KEY {
-                return Ok(Some(value == escape_vdf_string(expected)));
+        match line.trim() {
+            "{" => {
+                nested_depth += 1;
+                continue;
             }
+            "}" => {
+                nested_depth = nested_depth.saturating_sub(1);
+                continue;
+            }
+            _ => {}
+        }
+        if nested_depth == 0
+            && parse_line_pair(line)
+                .is_some_and(|(_indent, key, value)| key == LAUNCH_OPTIONS_KEY && !value.is_empty())
+        {
+            return Ok(Some(false));
         }
     }
-
-    Ok(None)
+    Ok(Some(true))
 }
 
 fn parse_line_pair(line: &str) -> Option<(&str, &str, &str)> {
@@ -151,118 +131,6 @@ fn find_named_block(
     None
 }
 
-fn malformed_launch_option_fragment_count(lines: &[String], start: usize) -> usize {
-    let mut consumed = 0usize;
-    let mut saw_command = false;
-
-    for line in lines.iter().skip(start) {
-        let Some((_indent, key, value)) = parse_line_pair(line) else {
-            break;
-        };
-
-        if consumed == 0 && !key.contains('/') && !value.contains("%command%") {
-            break;
-        }
-
-        consumed += 1;
-        if key.contains("%command%") || value.contains("%command%") {
-            saw_command = true;
-            break;
-        }
-    }
-
-    if saw_command {
-        consumed
-    } else {
-        0
-    }
-}
-
-fn collect_fragment_text(lines: &[String], start: usize, count: usize) -> String {
-    let mut parts = Vec::new();
-    for line in lines.iter().skip(start).take(count) {
-        if let Some((_indent, key, value)) = parse_line_pair(line) {
-            parts.push(key.trim().to_string());
-            if !value.trim().is_empty() {
-                parts.push(value.trim().to_string());
-            }
-        }
-    }
-    parts.join(" ")
-}
-
-fn cleanup_malformed_bpp_launch_options(lines: &mut Vec<String>) {
-    let mut idx = 0usize;
-    while idx < lines.len() {
-        let Some((_indent, key, value)) = parse_line_pair(&lines[idx]) else {
-            idx += 1;
-            continue;
-        };
-
-        if key != LAUNCH_OPTIONS_KEY || !value.is_empty() {
-            idx += 1;
-            continue;
-        }
-
-        let fragment_count = malformed_launch_option_fragment_count(lines, idx + 1);
-        if fragment_count == 0 {
-            idx += 1;
-            continue;
-        }
-
-        let fragment_text = collect_fragment_text(lines, idx + 1, fragment_count);
-        if !fragment_text.contains("run_bepinex.sh") {
-            idx += 1;
-            continue;
-        }
-
-        lines.drain(idx..idx + 1 + fragment_count);
-    }
-}
-
-fn find_launch_options_line(lines: &[String], app_open: usize, app_close: usize) -> Option<usize> {
-    lines[app_open + 1..app_close]
-        .iter()
-        .position(|line| {
-            parse_line_pair(line).is_some_and(|(_indent, key, _value)| key == LAUNCH_OPTIONS_KEY)
-        })
-        .map(|offset| app_open + 1 + offset)
-}
-
-fn upsert_launch_options_text(vdf_content: &str, args: &str) -> Result<Option<String>, String> {
-    let mut lines = vdf_content.lines().map(str::to_string).collect::<Vec<_>>();
-    let Some((apps_open, apps_close)) = find_apps_block(&lines) else {
-        return Err("Malformed VDF: could not locate Steam/apps object".to_string());
-    };
-    let Some((app_open, app_close)) =
-        find_named_block(&lines, apps_open..=apps_close, THE_BAZAAR_APP_ID)
-    else {
-        return Ok(None);
-    };
-
-    let launch_line_idx = find_launch_options_line(&lines, app_open, app_close);
-
-    let escape_args = escape_vdf_string(args);
-    let property_indent = (app_open + 1..app_close)
-        .find_map(|idx| parse_line_pair(&lines[idx]).map(|(indent, _, _)| indent.to_string()))
-        .unwrap_or_else(|| format!("{}\t", lines[app_close].split('"').next().unwrap_or("")));
-    let launch_line = format!("{property_indent}\"{LAUNCH_OPTIONS_KEY}\"\t\t\"{escape_args}\"");
-
-    if let Some(idx) = launch_line_idx {
-        lines[idx] = launch_line;
-        let malformed_count = malformed_launch_option_fragment_count(&lines, idx + 1);
-        if malformed_count > 0 {
-            lines.drain(idx + 1..idx + 1 + malformed_count);
-        }
-    } else {
-        lines.insert(app_close, launch_line);
-    }
-
-    cleanup_malformed_bpp_launch_options(&mut lines);
-
-    Ok(Some(join_lines(&lines)))
-}
-
 fn remove_launch_options_text(vdf_content: &str) -> Result<Option<String>, String> {
     let mut lines = vdf_content.lines().map(str::to_string).collect::<Vec<_>>();
     let Some((apps_open, apps_close)) = find_apps_block(&lines) else {
@@ -274,23 +142,35 @@ fn remove_launch_options_text(vdf_content: &str) -> Result<Option<String>, Strin
         return Ok(None);
     };
 
-    let Some(idx) = find_launch_options_line(&lines, app_open, app_close) else {
+    let mut nested_depth = 0usize;
+    let mut launch_option_lines = Vec::new();
+    for idx in app_open + 1..app_close {
+        match lines[idx].trim() {
+            "{" => {
+                nested_depth += 1;
+                continue;
+            }
+            "}" => {
+                nested_depth = nested_depth.saturating_sub(1);
+                continue;
+            }
+            _ => {}
+        }
+        if nested_depth == 0
+            && parse_line_pair(&lines[idx])
+                .is_some_and(|(_indent, key, _value)| key == LAUNCH_OPTIONS_KEY)
+        {
+            launch_option_lines.push(idx);
+        }
+    }
+    if launch_option_lines.is_empty() {
         return Ok(None);
-    };
-
-    let malformed_count = malformed_launch_option_fragment_count(&lines, idx + 1);
-    lines.remove(idx);
-    if malformed_count > 0 {
-        lines.drain(idx..idx + malformed_count);
+    }
+    for idx in launch_option_lines.into_iter().rev() {
+        lines.remove(idx);
     }
 
-    cleanup_malformed_bpp_launch_options(&mut lines);
-
     Ok(Some(join_lines(&lines)))
-}
-
-pub fn inject_launch_options(vdf_content: &str, args: &str) -> Result<Option<String>, String> {
-    upsert_launch_options_text(vdf_content, args)
 }
 
 pub fn clear_launch_options(vdf_content: &str) -> Result<Option<String>, String> {

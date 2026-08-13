@@ -497,6 +497,7 @@ prepare_signed_macos_resource_binary() {
 
     relative_path="$(macos_resource_relative_path "$resource_binary")"
     sign_macos_resource_binary "$resource_binary" "$relative_path"
+    assert_official_codesign_team_id "$resource_binary"
 }
 
 create_zip_from_directory() {

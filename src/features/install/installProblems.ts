@@ -91,10 +91,14 @@ function installWarningMessageKey(code: string): MessageKey {
   switch (code) {
     case 'game_missing':
       return 'installWarningGameMissing';
-    case 'launch_options_unsupported':
-      return 'installWarningLaunchOptionsUnsupported';
-    case 'trampoline_reverted':
-      return 'installWarningTrampolineReverted';
+    case 'steam_config_unavailable':
+      return 'installWarningSteamConfigUnavailable';
+    case 'launch_options_not_empty':
+      return 'installWarningLaunchOptionsNotEmpty';
+    case 'trampoline_not_ready':
+      return 'installWarningTrampolineNotReady';
+    case 'obsolete_macos_artifacts':
+      return 'installWarningObsoleteMacosArtifacts';
     default:
       return 'installWarningUnexpected';
   }

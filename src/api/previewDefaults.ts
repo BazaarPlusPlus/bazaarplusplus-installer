@@ -18,7 +18,6 @@ export const emptyInstallState: InstallState = {
   // These falsy fields gate preview-unreachable install/reset commands.
   selected_game_path: null,
   steam_path: null,
-  steam_launch_options_supported: false,
   game: {
     found: false,
     path_valid: false,
@@ -28,13 +27,7 @@ export const emptyInstallState: InstallState = {
     installed: false,
     installed_version: null,
     bundled_version: null,
-    version_matches: false
-  },
-  compat: {
-    mode_available: false,
-    forced: false,
-    desired: false,
-    applied: false
+    ready: false
   },
   actions: {
     can_install: false,
@@ -46,10 +39,7 @@ export const emptyInstallState: InstallState = {
   },
   has_resettable_data: false,
   has_bepinex_files: false,
-  warnings: [
-    { code: 'game_missing', params: {} },
-    { code: 'launch_options_unsupported', params: {} }
-  ]
+  warnings: [{ code: 'game_missing', params: {} }]
 };
 
 export const idleStreamStatus: StreamServiceStatus = {

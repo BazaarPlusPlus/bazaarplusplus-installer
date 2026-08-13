@@ -11,19 +11,12 @@ function installState(overrides: Partial<InstallState> = {}): InstallState {
   return {
     selected_game_path: '/Applications/The Bazaar',
     steam_path: '/Applications/Steam',
-    steam_launch_options_supported: true,
     game: { found: true, path_valid: true, display_version: null },
     mod_state: {
       installed: false,
       installed_version: null,
       bundled_version: '4.5.0',
-      version_matches: false
-    },
-    compat: {
-      mode_available: true,
-      forced: false,
-      desired: false,
-      applied: false
+      ready: false
     },
     actions: {
       can_install: true,
@@ -46,7 +39,7 @@ function installedState(overrides: Partial<InstallState> = {}): InstallState {
       installed: true,
       installed_version: '4.5.0',
       bundled_version: '4.5.0',
-      version_matches: true
+      ready: true
     },
     actions: {
       can_install: false,
@@ -213,7 +206,7 @@ describe('install workflow concurrency and directory selection', () => {
         installed: true,
         installed_version: '4.5.0',
         bundled_version: '4.5.0',
-        version_matches: true
+        ready: true
       }
     });
     (
@@ -230,21 +223,9 @@ describe('install workflow concurrency and directory selection', () => {
 });
 
 describe('install workflow confirmation lifecycle', () => {
-  it('captures install target, allows compat edits only while confirming, and locks params on run', async () => {
+  it('captures and locks the install target while the operation runs', async () => {
     const installMod = vi.fn().mockResolvedValue(installedState());
-    const { workflow } = setup({
-      loadInstallState: vi.fn().mockResolvedValue(
-        installState({
-          compat: {
-            mode_available: true,
-            forced: false,
-            desired: false,
-            applied: false
-          }
-        })
-      ),
-      installMod
-    });
+    const { workflow } = setup({ installMod });
     await workflow.start();
 
     expect(workflow.intents.requestInstall()).toBe(true);
@@ -252,18 +233,11 @@ describe('install workflow confirmation lifecycle', () => {
       phase: 'confirming',
       target: {
         kind: 'install',
-        gamePath: '/Applications/The Bazaar',
-        compatOptIn: false
+        gamePath: '/Applications/The Bazaar'
       }
     });
-    expect(workflow.getSnapshot().actions.setPendingCompatOptIn).toBe(true);
     expect(workflow.getSnapshot().actions.refresh).toBe(false);
     expect(workflow.getSnapshot().actions.chooseDirectory).toBe(false);
-
-    expect(workflow.intents.setPendingCompatOptIn(true)).toBe(true);
-    expect(workflow.getSnapshot().confirmation?.target).toMatchObject({
-      compatOptIn: true
-    });
 
     const running = deferred<InstallState>();
     installMod.mockImplementationOnce(() => running.promise);
@@ -273,17 +247,15 @@ describe('install workflow confirmation lifecycle', () => {
     expect(workflow.getSnapshot().confirmation).toMatchObject({
       phase: 'running',
       target: {
-        gamePath: '/Applications/The Bazaar',
-        compatOptIn: true
+        gamePath: '/Applications/The Bazaar'
       }
     });
-    expect(workflow.intents.setPendingCompatOptIn(false)).toBe(false);
     expect(workflow.intents.dismissConfirmation()).toBe(false);
     expect(await workflow.intents.refresh()).toBe(false);
 
     running.resolve(installedState());
     expect(await confirmPromise).toBe(true);
-    expect(installMod).toHaveBeenCalledWith('/Applications/The Bazaar', true);
+    expect(installMod).toHaveBeenCalledWith('/Applications/The Bazaar');
     expect(workflow.getSnapshot().confirmation).toBeNull();
     expect(workflow.getSnapshot().notice?.code).toBe('install_done');
   });
@@ -342,23 +314,18 @@ describe('install workflow confirmation lifecycle', () => {
     await workflow.start();
 
     expect(workflow.intents.requestInstall()).toBe(true);
-    expect(workflow.intents.setPendingCompatOptIn(true)).toBe(true);
     expect(await workflow.intents.confirm()).toBe(false);
     expect(workflow.getSnapshot().confirmation).toMatchObject({
       phase: 'failed',
       target: {
         kind: 'install',
-        gamePath: '/Applications/The Bazaar',
-        compatOptIn: true
+        gamePath: '/Applications/The Bazaar'
       },
       problem: { diagnostic: 'install failed' }
     });
 
     expect(await workflow.intents.confirm()).toBe(true);
-    expect(installMod).toHaveBeenLastCalledWith(
-      '/Applications/The Bazaar',
-      true
-    );
+    expect(installMod).toHaveBeenLastCalledWith('/Applications/The Bazaar');
     expect(workflow.getSnapshot().confirmation).toBeNull();
   });
 });
@@ -371,7 +338,7 @@ describe('install workflow mutation outcomes', () => {
         installed: true,
         installed_version: '4.5.0',
         bundled_version: '4.5.0',
-        version_matches: true
+        ready: true
       }
     });
     const loadInstallState = vi.fn().mockResolvedValue(installState());
@@ -391,7 +358,7 @@ describe('install workflow mutation outcomes', () => {
 
   it('reconciles against the fixed target after failure and keeps the action problem primary', async () => {
     const reconciled = installedState({
-      warnings: [{ code: 'trampoline_reverted', params: {} }]
+      warnings: [{ code: 'trampoline_not_ready', params: {} }]
     });
     const loadInstallState = vi
       .fn()
@@ -580,20 +547,20 @@ describe('install workflow notices, lifecycle, and availability', () => {
           installed: true,
           installed_version: '4.4.0',
           bundled_version: '4.5.0',
-          version_matches: false
+          ready: false
         }
       }),
       mode: 'repair',
       operation: 'install'
     },
     {
-      name: 'compatibility mode drift',
+      name: 'platform bootstrap needs repair',
       state: installedState({
-        compat: {
-          mode_available: false,
-          forced: true,
-          desired: true,
-          applied: false
+        mod_state: {
+          installed: true,
+          installed_version: '4.5.0',
+          bundled_version: '4.5.0',
+          ready: false
         }
       }),
       mode: 'repair',

@@ -40,7 +40,7 @@ function writeStagedModVersion(fixture, version) {
 }
 
 test.each([
-  ['macos', 'run_bepinex.sh', 0o755],
+  ['macos', 'libdoorstop.dylib', 0o755],
   ['windows', 'doorstop_config.ini', 0o644]
 ])(
   'preparePayloadZip creates a deterministic %s archive and preserves file mode',
@@ -85,7 +85,12 @@ test.each([
 
 test('Windows hosts normalize payload modes from the release contract', () => {
   const fixture = fixtureRoot('macos');
-  fs.writeFileSync(path.join(fixture.sourceDir, 'run_bepinex.sh'), 'launcher');
+  const plugin =
+    'TheBazaar.app/Contents/Plugins/GfxPluginBppReplayVideoToolbox.bundle/Contents/MacOS/GfxPluginBppReplayVideoToolbox';
+  fs.mkdirSync(path.dirname(path.join(fixture.sourceDir, plugin)), {
+    recursive: true
+  });
+  fs.writeFileSync(path.join(fixture.sourceDir, plugin), 'plugin');
   fs.writeFileSync(path.join(fixture.sourceDir, 'readme.txt'), 'docs');
 
   try {
@@ -95,10 +100,8 @@ test('Windows hosts normalize payload modes from the release contract', () => {
         hostPlatform: 'win32'
       }).map((entry) => [entry.path, entry.mode])
     );
-    expect(modes).toEqual({
-      'readme.txt': 0o644,
-      'run_bepinex.sh': 0o755
-    });
+    expect(modes[plugin]).toBe(0o755);
+    expect(modes['readme.txt']).toBe(0o644);
   } finally {
     fs.rmSync(fixture.rootDir, { recursive: true, force: true });
   }
@@ -300,23 +303,26 @@ test('validateZipEntrySet ignores directories and accepts one legal top-level pr
       { name: 'payload/', isDirectory: true },
       { name: 'payload/BepInEx/', isDirectory: true },
       { name: 'payload/BepInEx/a.dll', isDirectory: false },
-      { name: 'payload/run_bepinex.sh', isDirectory: false }
+      { name: 'payload/libdoorstop.dylib', isDirectory: false }
     ],
-    ['BepInEx/a.dll', 'run_bepinex.sh']
+    ['BepInEx/a.dll', 'libdoorstop.dylib']
   );
 
-  expect([...mapping.keys()]).toEqual(['BepInEx/a.dll', 'run_bepinex.sh']);
+  expect([...mapping.keys()]).toEqual(['BepInEx/a.dll', 'libdoorstop.dylib']);
 });
 
 test('BazaarPlusPlus.version is a required release invariant', () => {
   const fixture = fixtureRoot('macos');
-  fs.writeFileSync(path.join(fixture.sourceDir, 'run_bepinex.sh'), 'launcher');
+  fs.writeFileSync(
+    path.join(fixture.sourceDir, 'libdoorstop.dylib'),
+    'doorstop'
+  );
   try {
     expect(() =>
       preparePayloadZip({
         ...fixture,
         requiredStagingPaths: [
-          'run_bepinex.sh',
+          'libdoorstop.dylib',
           'BepInEx/plugins/BazaarPlusPlus.version'
         ]
       })
@@ -325,29 +331,6 @@ test('BazaarPlusPlus.version is a required release invariant', () => {
     fs.rmSync(fixture.rootDir, { recursive: true, force: true });
   }
 });
-
-test.skipIf(process.platform === 'win32')(
-  'macOS release preparation rejects a launcher without executable permission',
-  () => {
-    const fixture = fixtureRoot('macos');
-    fs.writeFileSync(
-      path.join(fixture.sourceDir, 'run_bepinex.sh'),
-      'launcher'
-    );
-    fs.chmodSync(path.join(fixture.sourceDir, 'run_bepinex.sh'), 0o644);
-    writeStagedModVersion(fixture, `${V5_MIN_MOD_VERSION}.prod`);
-    try {
-      expect(() =>
-        preparePayloadZip({
-          ...fixture,
-          requiredStagingPaths: ['run_bepinex.sh']
-        })
-      ).toThrow(/must be executable/);
-    } finally {
-      fs.rmSync(fixture.rootDir, { recursive: true, force: true });
-    }
-  }
-);
 
 test.skipIf(process.platform === 'win32')(
   'macOS release preparation rejects a native recorder plugin without executable permission',

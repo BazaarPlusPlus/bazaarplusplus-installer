@@ -1,12 +1,9 @@
 //! macOS in-bundle Mach-O launch trampoline.
 //!
-//! On macOS 27+ Steam no longer spawns a prefix executable before `%command%`,
-//! so the `run_bepinex.sh` launch path is dead and injection must move inside the
-//! `.app`. This module installs a tiny arm64 stub (`bpp_launcher.c`, compiled at
-//! build time) as the bundle's `CFBundleExecutable`, renames the real Unity
+//! The trampoline is the only macOS launch bootstrap. This module installs a
+//! tiny arm64 stub as the bundle's `CFBundleExecutable`, renames the real Unity
 //! bootstrap to `<exe>.orig`, and re-signs the real binary with the JIT
-//! entitlements so Harmony can write executable memory. See
-//! `docs/macos27-bepinex-launch-trampoline.md`.
+//! entitlements so Harmony can write executable memory.
 //!
 //! Every behaviour here is macOS-only; the public API has no-op / `false` stubs on
 //! other platforms so the install orchestrator can call it unconditionally.
@@ -18,58 +15,8 @@ use std::path::PathBuf;
 
 use tauri::AppHandle;
 
-use crate::services::launch_mode::LaunchMode;
-
-/// Game-dir sibling (OUTSIDE the `.app`) recording the chosen launch mode, so the
-/// installer still knows the desired mode after a Steam "Verify integrity" / game
-/// update reverts the bundle. Removed on uninstall.
 #[cfg(target_os = "macos")]
-pub(crate) const MARKER_FILE: &str = ".bpp-launch-mode";
-
-// ---------------------------------------------------------------------------
-// Launch-mode marker (macOS only; no-ops elsewhere keep Windows byte-identical)
-// ---------------------------------------------------------------------------
-
-#[cfg(target_os = "macos")]
-pub(crate) fn write_launch_mode_marker(game_path: &Path, mode: LaunchMode) -> Result<(), String> {
-    let path = game_path.join(MARKER_FILE);
-    std::fs::write(&path, mode.as_marker())
-        .map_err(|err| format!("Cannot write launch-mode marker {}: {err}", path.display()))
-}
-
-#[cfg(target_os = "macos")]
-pub(crate) fn read_launch_mode_marker(game_path: &Path) -> Option<LaunchMode> {
-    let content = std::fs::read_to_string(game_path.join(MARKER_FILE)).ok()?;
-    LaunchMode::from_marker(content.trim())
-}
-
-#[cfg(target_os = "macos")]
-pub(crate) fn remove_launch_mode_marker(game_path: &Path) -> Result<(), String> {
-    let path = game_path.join(MARKER_FILE);
-    match std::fs::remove_file(&path) {
-        Ok(()) => Ok(()),
-        Err(err) if err.kind() == std::io::ErrorKind::NotFound => Ok(()),
-        Err(err) => Err(format!(
-            "Cannot remove launch-mode marker {}: {err}",
-            path.display()
-        )),
-    }
-}
-
-#[cfg(not(target_os = "macos"))]
-pub(crate) fn write_launch_mode_marker(_game_path: &Path, _mode: LaunchMode) -> Result<(), String> {
-    Ok(())
-}
-
-#[cfg(not(target_os = "macos"))]
-pub(crate) fn read_launch_mode_marker(_game_path: &Path) -> Option<LaunchMode> {
-    None
-}
-
-#[cfg(not(target_os = "macos"))]
-pub(crate) fn remove_launch_mode_marker(_game_path: &Path) -> Result<(), String> {
-    Ok(())
-}
+const OBSOLETE_MACOS_ARTIFACTS: &[&str] = &["run_bepinex.sh", "bpp_launcher.c", ".bpp-launch-mode"];
 
 // ---------------------------------------------------------------------------
 // Trampoline install / uninstall (macOS)
@@ -82,8 +29,7 @@ mod imp {
     use tauri::Manager;
 
     /// The 3 JIT/library-validation entitlements that must live on the REAL binary
-    /// (the process that runs Harmony / `mprotect` W+X). Byte-identical to the keys
-    /// in `run_bepinex.sh`; a parity test guards against drift.
+    /// (the process that runs Harmony / `mprotect` W+X).
     pub(super) const TRAMPOLINE_ENTITLEMENTS: &str = r#"<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -170,7 +116,7 @@ mod imp {
         command_available("codesign", &["-h"])
     }
 
-    fn stub_resource_path(app: &AppHandle) -> Result<PathBuf, String> {
+    pub(super) fn stub_resource_path(app: &AppHandle) -> Result<PathBuf, String> {
         let stub = app
             .path()
             .resource_dir()
@@ -275,19 +221,6 @@ mod imp {
         Ok(())
     }
 
-    /// Clear the exec bits on `run_bepinex.sh` so its `--deep` re-sign (which would
-    /// strip the `.orig`'s entitlements) can never run while trampolined.
-    pub(super) fn disable_prefix_launcher(game_path: &Path) {
-        use std::os::unix::fs::PermissionsExt;
-
-        let script = game_path.join("run_bepinex.sh");
-        if let Ok(metadata) = std::fs::metadata(&script) {
-            let mut permissions = metadata.permissions();
-            permissions.set_mode(permissions.mode() & !0o111);
-            let _ = std::fs::set_permissions(&script, permissions);
-        }
-    }
-
     fn sign_real_binary(orig: &Path) -> Result<(), String> {
         let entitlements = tempfile::Builder::new()
             .prefix("bpp-ents-")
@@ -383,9 +316,11 @@ mod imp {
         let layout = bundle_paths(game_path)?;
         let stub = stub_resource_path(app)?;
 
-        // Step 1: already fully trampolined -> re-seal + verify only (idempotent).
+        // Step 1: already structurally trampolined -> refresh the stub from the
+        // current installer, then re-sign and verify. A differing stub is not a
+        // valid final state.
         if is_trampolined(game_path)? {
-            disable_prefix_launcher(game_path);
+            install_stub(&stub, &layout.exe_path)?;
             sign_real_binary(&layout.orig_path)?;
             seal_bundle(&layout.app_path)?;
             verify_bundle(&layout.app_path)?;
@@ -420,7 +355,6 @@ mod imp {
         // Steps 3-7 with rollback on any failure.
         let result = (|| -> Result<(), String> {
             swap_in_stub(&layout, &stub)?; // rename real -> .orig (if needed) + drop stub
-            disable_prefix_launcher(game_path);
             sign_real_binary(&layout.orig_path)?;
             seal_bundle(&layout.app_path)?;
             verify_bundle(&layout.app_path)?;
@@ -474,8 +408,13 @@ mod imp {
 }
 
 #[cfg(target_os = "macos")]
-pub(crate) fn is_trampolined(game_path: &Path) -> Result<bool, String> {
-    imp::is_trampolined(game_path)
+pub(crate) fn is_current_trampoline(app: &AppHandle, game_path: &Path) -> Result<bool, String> {
+    if !imp::is_trampolined(game_path)? {
+        return Ok(false);
+    }
+    let layout = imp::bundle_paths(game_path)?;
+    let bundled = imp::stub_resource_path(app)?;
+    files_are_identical(&layout.exe_path, &bundled)
 }
 
 #[cfg(target_os = "macos")]
@@ -488,9 +427,38 @@ pub(crate) fn uninstall_trampoline(game_path: &Path) -> Result<(), String> {
     imp::uninstall_trampoline(game_path)
 }
 
+#[cfg(target_os = "macos")]
+pub(crate) fn obsolete_macos_artifacts_present(game_path: &Path) -> bool {
+    OBSOLETE_MACOS_ARTIFACTS
+        .iter()
+        .any(|relative| game_path.join(relative).exists())
+}
+
+#[cfg(target_os = "macos")]
+pub(crate) fn remove_obsolete_macos_artifacts(game_path: &Path) -> Result<(), String> {
+    for relative in OBSOLETE_MACOS_ARTIFACTS {
+        let path = game_path.join(relative);
+        match std::fs::remove_file(&path) {
+            Ok(()) => {}
+            Err(err) if err.kind() == std::io::ErrorKind::NotFound => {}
+            Err(err) => return Err(format!("Cannot remove obsolete {}: {err}", path.display())),
+        }
+    }
+    Ok(())
+}
+
+#[cfg(target_os = "macos")]
+fn files_are_identical(left: &Path, right: &Path) -> Result<bool, String> {
+    let left_bytes = std::fs::read(left)
+        .map_err(|err| format!("Cannot read trampoline {}: {err}", left.display()))?;
+    let right_bytes = std::fs::read(right)
+        .map_err(|err| format!("Cannot read trampoline {}: {err}", right.display()))?;
+    Ok(left_bytes == right_bytes)
+}
+
 #[cfg(not(target_os = "macos"))]
-pub(crate) fn is_trampolined(_game_path: &Path) -> Result<bool, String> {
-    Ok(false)
+pub(crate) fn is_current_trampoline(_app: &AppHandle, _game_path: &Path) -> Result<bool, String> {
+    Ok(true)
 }
 
 #[cfg(not(target_os = "macos"))]
@@ -500,6 +468,16 @@ pub(crate) fn install_trampoline(_app: &AppHandle, _game_path: &Path) -> Result<
 
 #[cfg(not(target_os = "macos"))]
 pub(crate) fn uninstall_trampoline(_game_path: &Path) -> Result<(), String> {
+    Ok(())
+}
+
+#[cfg(not(target_os = "macos"))]
+pub(crate) fn obsolete_macos_artifacts_present(_game_path: &Path) -> bool {
+    false
+}
+
+#[cfg(not(target_os = "macos"))]
+pub(crate) fn remove_obsolete_macos_artifacts(_game_path: &Path) -> Result<(), String> {
     Ok(())
 }
 
@@ -612,33 +590,20 @@ mod tests {
     }
 
     #[test]
-    fn test_launch_mode_marker_round_trip() {
+    fn test_obsolete_macos_artifacts_are_detected_and_removed_without_parsing() {
         let tmp = tempfile::tempdir().unwrap();
-        assert_eq!(read_launch_mode_marker(tmp.path()), None);
+        for relative in OBSOLETE_MACOS_ARTIFACTS {
+            std::fs::write(tmp.path().join(relative), b"arbitrary old content").unwrap();
+        }
 
-        write_launch_mode_marker(tmp.path(), LaunchMode::Trampoline).unwrap();
-        assert_eq!(
-            read_launch_mode_marker(tmp.path()),
-            Some(LaunchMode::Trampoline)
-        );
-
-        write_launch_mode_marker(tmp.path(), LaunchMode::Prefix).unwrap();
-        assert_eq!(
-            read_launch_mode_marker(tmp.path()),
-            Some(LaunchMode::Prefix)
-        );
-
-        remove_launch_mode_marker(tmp.path()).unwrap();
-        assert_eq!(read_launch_mode_marker(tmp.path()), None);
-        // Removing a missing marker is a no-op success.
-        remove_launch_mode_marker(tmp.path()).unwrap();
+        assert!(obsolete_macos_artifacts_present(tmp.path()));
+        remove_obsolete_macos_artifacts(tmp.path()).unwrap();
+        assert!(!obsolete_macos_artifacts_present(tmp.path()));
+        remove_obsolete_macos_artifacts(tmp.path()).unwrap();
     }
 
     #[test]
-    fn test_entitlements_match_run_bepinex_script() {
-        // Keep the trampoline's entitlements byte-aligned with the prefix path so
-        // the two launch modes grant the real binary the SAME capabilities.
-        let script = include_str!("../../../resources/SourceForBuild/macos/run_bepinex.sh");
+    fn test_trampoline_entitlements_are_complete() {
         for key in [
             "com.apple.security.cs.allow-jit",
             "com.apple.security.cs.allow-unsigned-executable-memory",
@@ -648,15 +613,12 @@ mod tests {
                 TRAMPOLINE_ENTITLEMENTS.contains(key),
                 "trampoline entitlements missing {key}"
             );
-            assert!(script.contains(key), "run_bepinex.sh missing {key}");
         }
-        // Also assert COUNT parity so a 4th capability added to only one side is
-        // caught (containment alone would miss it).
-        let needle = "com.apple.security.cs.";
         assert_eq!(
-            TRAMPOLINE_ENTITLEMENTS.matches(needle).count(),
-            script.matches(needle).count(),
-            "trampoline entitlements and run_bepinex.sh have a different number of capability keys"
+            TRAMPOLINE_ENTITLEMENTS
+                .matches("com.apple.security.cs.")
+                .count(),
+            3
         );
     }
 }
