@@ -140,8 +140,8 @@ fn inspect_launch_options_for_steam_raw(
 pub(crate) fn inspect_launch_options_for_steam(steam_path: &Path) -> SteamLaunchOptionsState {
     match inspect_launch_options_for_steam_raw(steam_path) {
         Ok(state) => state,
-        Err(err) => {
-            debug_log!("Cannot inspect Steam launch options: {err}");
+        Err(_err) => {
+            debug_log!("Cannot inspect Steam launch options: {_err}");
             SteamLaunchOptionsState::Unavailable
         }
     }
