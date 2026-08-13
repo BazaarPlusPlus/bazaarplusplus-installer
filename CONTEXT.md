@@ -1,7 +1,7 @@
 ---
 status: truth
 topic: context
-last-verified: e2c5cf500dc5def6a838e071b431e8fab446ae97
+last-verified: 8c5c3af5d844635b9c2b6ef9124fd7a951533e37
 ---
 
 # BazaarPlusPlus Installer Context
@@ -17,11 +17,9 @@ Tauri 2 desktop app: React/Vite frontend, Rust backend. One native runtime owns 
 ## Glossary
 
 - **BepInEx** — the Unity plugin-loader framework the installer ships into the game directory; its bootstrap files plus the `BepInEx/` tree are what "mod installed" means to detection (`is_bepinex_installed` in `src-tauri/src/services/detect/game.rs`).
-- **Payload** — the exact BPP-owned file set, defined by `BPP_PRIVATE_RELATIVE_PATHS` and `BPP_BUNDLED_DEPENDENCY_RELATIVE_PATHS` in `src-tauri/src/services/bepinex/payload.rs`. Install pre-clean only ever removes payload-owned files; uninstall always removes private BPP files and, when BPP is the last installed mod, also the shared BepInEx bootstrap, trampoline, and launch-mode state (`uninstall_bpp` in `src-tauri/src/services/bepinex/mod.rs`). See `docs/truth/install-reset.md`.
-- **Prefix mode** — the default launch mode: BepInEx loads via Steam launch options (doorstop). One of the two `LaunchMode` variants in `src-tauri/src/services/launch_mode.rs`.
-- **Trampoline mode** — macOS launch mode (forced on macOS 27+): the real Unity executable is renamed to `.orig` and a build-time stub is swapped in by `install_trampoline` in `src-tauri/src/services/bepinex/trampoline.rs`.
-- **Launch-mode marker** — the `.bpp-launch-mode` file next to the game directory persisting the chosen mode (`MARKER_FILE` in `src-tauri/src/services/bepinex/trampoline.rs`).
-- **InstallState** — the frontend/backend contract for the install page: paths, game/mod state, compat state, action gates, and semantic warning codes plus parameters (`InstallState` and `InstallWarning` in `src-tauri/src/services/install/types.rs`).
+- **Payload** — the exact BPP-owned file set, defined by `BPP_PRIVATE_RELATIVE_PATHS` and `BPP_BUNDLED_DEPENDENCY_RELATIVE_PATHS` in `src-tauri/src/services/bepinex/payload.rs`. Install pre-clean only ever removes payload-owned files; uninstall always removes private BPP files and, when BPP is the last installed mod, also the shared BepInEx bootstrap and trampoline (`uninstall_bpp` in `src-tauri/src/services/bepinex/mod.rs`). See `docs/truth/install-reset.md`.
+- **macOS trampoline** — the sole macOS launch bootstrap: the real Unity executable is preserved as `.orig` and a build-time Mach-O stub becomes the bundle executable via `install_trampoline` in `src-tauri/src/services/bepinex/trampoline.rs`. A ready install also requires empty Steam LaunchOptions. See `docs/truth/macos-launch.md`.
+- **InstallState** — the frontend/backend contract for the install page: paths, game/mod readiness, action gates, and semantic warning codes plus parameters (`InstallState` and `InstallWarning` in `src-tauri/src/services/install/types.rs`).
 - **Selected game installation** — the one session-scoped The Bazaar installation shared by Install, History, and Stream, held only in managed memory and recreated empty on app restart (`SelectedGameInstallationState` in `src-tauri/src/services/selected_game_installation.rs`). See `docs/truth/architecture.md` for its resolution priority.
 - **Reset (local data)** — the only flow that deletes the mod's `BazaarPlusPlusV5/` data directory; explicit, confirmed, and refused while the game runs (`reset_bpp_data` in `src-tauri/src/services/bepinex/mod.rs`). Uninstall never touches it. See `docs/truth/install-reset.md`.
 - **History** — the facade around the Selected game installation's mod-owned SQLite database, including reads, detail, reveal, video deletion, and storage cleanup (`History` in `src-tauri/src/services/history.rs`); the database is created and primarily written by the mod.
@@ -41,7 +39,7 @@ Tauri 2 desktop app: React/Vite frontend, Rust backend. One native runtime owns 
 - [Architecture](docs/truth/architecture.md): repo layout, runtime boundaries, build/versioning, and generated bindings.
 - [Frontend](docs/truth/frontend.md): shell, native-feel rules, modals, current product surfaces, and verified UI behavior.
 - [Install And Reset](docs/truth/install-reset.md): install state contract, BepInEx install/uninstall, and reset-local-data behavior.
-- [Launch Modes](docs/truth/launch-modes.md): Steam launch and macOS prefix/trampoline mode.
+- [macOS Launch](docs/truth/macos-launch.md): Steam launch, the sole macOS trampoline bootstrap, and empty-LaunchOptions invariant.
 - [History And Stream](docs/truth/history-stream.md): local history reads, screenshots, stream server, overlay routes, and CORS scope.
 - [Updater And Release](docs/truth/updater-release.md): in-app updater, release scripts, version sync, and R2 manifest flow.
 - [Verification](docs/truth/verification.md): code-backed verification commands and when they apply.

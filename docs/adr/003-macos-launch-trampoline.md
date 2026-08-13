@@ -7,28 +7,26 @@ topic: macos-launch-trampoline
 
 ## Context
 
-After macOS updated to 27.0 and the Steam client self-updated to `macos-signed-2` (2026-06-09), The Bazaar stopped launching with BepInEx. The root cause was reproduced live against Steam's `logs/console_log.txt` and `logs/gameprocess_log.txt`:
+Steam must launch The Bazaar's application bundle directly. A launch bootstrap placed in Steam `LaunchOptions` is not a reliable macOS process boundary, while BepInEx still needs Doorstop environment variables and JIT entitlements before Unity starts. The installer therefore needs one deterministic, inspectable bootstrap inside the game bundle.
 
-| LaunchOptions first token | Steam result |
-| --- | --- |
-| `TheBazaar.app` (empty options) | `Game process added` then `Completed` |
-| `run_bepinex.sh` **or** `/bin/sh` (prefix) | `Failed to spawn process`, `AppError_46 "OS Error 0"` |
-| `DYLD_…=… %command%` (env prefix) | `OS Error 260` |
-
-The macOS 27 Steam client no longer spawns a prefix executable before `%command%` — even `/bin/sh` fails. The failure is pre-plugin: the mod DLLs never load. BepInEx on macOS depended entirely on the prefix script that set `LaunchOptions` to `"…/run_bepinex.sh" %command%`, so that mechanism is dead on this client. Launching the `.app` directly is the only path that still works, which forces injection to move inside the `.app`.
-
-The same conclusion is recorded next to the code in `src-tauri/src/services/macos_version.rs` and `src-tauri/src/services/bepinex/trampoline.rs`.
+Steam LaunchOptions are user-editable, account-scoped configuration. The installer cannot safely classify arbitrary strings by provenance. Readiness must depend on a structural invariant instead of recognizing specific command text.
 
 ## Decision
 
-Force the in-bundle Mach-O trampoline on macOS 27+, offer it as an opt-in compatibility mode on macOS <= 26, and leave non-macOS paths as no-ops. The version gate is `LaunchModeGate::from_platform`, which compares the cached OS probe against `TRAMPOLINE_FORCED_MAJOR`, both in `src-tauri/src/services/launch_mode.rs`; trampoline install/uninstall are the `install_trampoline` and `uninstall_trampoline` functions in `src-tauri/src/services/bepinex/trampoline.rs`.
+macOS uses the in-bundle Mach-O trampoline as its only installation and launch bootstrap on every supported macOS version. The real Unity executable is preserved as `.orig`; the bundled trampoline becomes `CFBundleExecutable`, establishes the Doorstop environment, and executes the preserved binary. The installer signs and verifies the resulting bundle and compares the installed stub byte-for-byte with the bundled resource.
+
+The Bazaar's Steam LaunchOptions must be empty across every numeric Steam account. Any non-empty direct value is dirty, regardless of content, and Install or Repair removes the whole property after closing Steam. Unreadable or malformed Steam configuration blocks mutation rather than being treated as clean.
+
+The payload contains `libdoorstop.dylib` but no launcher script or trampoline source. The fixed filenames `run_bepinex.sh`, `bpp_launcher.c`, and `.bpp-launch-mode` are non-canonical residue: repair deletes them by name without reading, parsing, or using them to infer state.
 
 ## Rejected Alternatives
 
-- Keep relying on the prefix launcher for macOS 27+. The module doc comment in `src-tauri/src/services/macos_version.rs` identifies that path as dead on macOS 27+.
-- Use trampoline mode without persisting desired launch mode. The implementation writes the `MARKER_FILE` (`.bpp-launch-mode`) in `src-tauri/src/services/bepinex/trampoline.rs` so future detection can distinguish desired mode from a bundle reverted by Steam verify or update.
-- Apply trampoline without rollback. The `install_trampoline` function in `src-tauri/src/services/bepinex/trampoline.rs` verifies codesign availability first and restores vanilla layout on failure.
+- Bootstrap through Steam LaunchOptions. It depends on Steam executing an external prefix before the application bundle and makes correctness depend on mutable command text.
+- Support multiple macOS bootstrap choices. It multiplies state, recovery paths, UI controls, and release payloads without adding a supported product behavior.
+- Infer or preserve selected LaunchOptions fragments. Arbitrary user content has no reliable ownership boundary; the only deterministic invariant is an empty property.
+- Accept any structurally valid trampoline. The bundle must converge to the exact signed stub shipped by the current installer so upgrades and repairs have one final state.
+- Mutate when Steam configuration cannot be inspected. A partial install would make readiness unverifiable and recovery ambiguous.
 
 ## Consequences
 
-macOS install behavior is now mode-dependent. Detection must compare desired and applied trampoline state, and reinstall is the repair path when the bundle has been reverted.
+Install and Repair converge to one ordered macOS state: Steam stopped, current payload present, current trampoline installed, LaunchOptions empty, and non-canonical residue absent. The UI exposes no compatibility control or mode status. Steam Verify, game updates, manual LaunchOptions edits, and stub updates make `ready` false and route the existing primary action to Repair.
