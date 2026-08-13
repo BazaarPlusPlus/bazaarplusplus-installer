@@ -25,7 +25,7 @@ fn expose_windows_resources_to_test_harnesses() {
     );
 }
 
-/// Compile the macOS launch trampoline stub (arm64) from its committed C source so
+/// Compile the sole macOS launch trampoline stub (arm64) from its committed C source so
 /// the bundled resource declared in `tauri.macos.conf.json` exists before
 /// `tauri_build` validates resource paths. The generated binary is gitignored and
 /// is replaced when it is missing, older than its source, or built against a
@@ -36,7 +36,7 @@ fn compile_macos_trampoline_stub() {
         return;
     }
 
-    let source = "resources/SourceForBuild/macos/bpp_launcher.c";
+    let source = "trampoline/bpp_launcher.c";
     let output = "resources/Trampoline/macos/bpp_launcher";
     // Re-run when the source changes or the generated output disappears. Merely
     // running the build script must not rewrite the watched output: doing so makes

@@ -36,7 +36,3 @@
 
 - Add repo-level instructions here only when they are non-obvious, specific enough to act on, and repeatedly useful — not for one-off observations during normal feature or fix work. Put feature- or module-specific guidance near the relevant code instead.
 - When proposing a new instruction in a PR, use a `Suggested CLAUDE.md additions` heading and let reviewers decide what becomes permanent.
-
-## Issue Tracker
-
-- Issues are GitHub Issues. For creating, listing, commenting, labeling, closing, or deciding whether to pick one up unprompted (`ready-for-agent`), see `docs/agents/issue-tracker.md`.

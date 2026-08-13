@@ -180,14 +180,13 @@ test('checkLastVerifiedHash skips instead of failing when no ancestry ref is ava
   expect(result.skipped).toBe(true);
 });
 
-test('resolveAncestryRef falls back to local master when origin/master is unavailable', () => {
+test('resolveAncestryRef uses the current checkout so branch-local stamps are valid', () => {
   const execFileSyncImpl = (_command, args) => {
-    if (args.includes('origin/master')) throw new Error('unknown ref');
-    if (args.includes('master')) return '';
+    if (args.includes('HEAD')) return '';
     throw new Error(`unexpected git invocation: ${args.join(' ')}`);
   };
 
-  expect(resolveAncestryRef({ execFileSyncImpl })).toBe('master');
+  expect(resolveAncestryRef({ execFileSyncImpl })).toBe('HEAD');
 });
 
 test('checkLastVerifiedHashes reports a dangling hash by file', () => {

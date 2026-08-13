@@ -1,7 +1,7 @@
 ---
 status: truth
 topic: verification
-last-verified: e2c5cf500dc5def6a838e071b431e8fab446ae97
+last-verified: 8c5c3af5d844635b9c2b6ef9124fd7a951533e37
 ---
 
 # Verification
@@ -39,7 +39,7 @@ Use the smallest command that verifies the changed behavior; use the authoritati
 ## Architecture Behavior Tests
 
 - Selected-installation priority (explicit > selected > startup > fallback) and invalid-explicit-path rejection are tested against a bare `SelectedGameInstallationState`, with no Tauri handle, in `src-tauri/src/services/selected_game_installation.rs`.
-- Install effect ordering — fresh/changed/no-op/mode-repair payload states, trampoline-vs-prefix effect sequences, first-error truncation, and the post-effect refresh — is pinned through the private `InstallEffects` trait and `execute_and_refresh` in `src-tauri/src/services/install/operation.rs`, with no filesystem or Tauri call involved.
+- Install effect ordering — fresh/changed/no-op/bootstrap-repair payload states, the sole macOS trampoline sequence, first-error truncation, and the post-effect refresh — is pinned through the private `InstallEffects` trait and `execute_and_refresh` in `src-tauri/src/services/install/operation.rs`, with no filesystem or Tauri call involved. VDF tests in `src-tauri/src/services/vdf/tests.rs` pin arbitrary non-empty LaunchOptions detection, all-account clearing, nested-property isolation, and unavailable-config handling.
 - `StreamRuntime` concurrency guarantees — a concurrent `ensure` starts exactly one task, lifecycle transitions keep snapshot and task state consistent, a failed start leaves no task behind, and `exclusive_maintenance` blocks other lifecycle calls without resuming them — are exercised against an in-memory `StreamServerAdapter` in `src-tauri/src/stream/runtime.rs`.
 - `SemanticProblem`'s JSON shape (`code`/`params`/optional `diagnostic`) is pinned once in `src-tauri/src/problem.rs`; each domain then pins its own classification against that shape — Stream's `stream_service_problem`/`stream_window_problem`/`stream_crop_problem` in `src-tauri/src/commands/stream.rs`, History's read/schema/action classification in `src-tauri/src/services/history.rs`, and Install's reset/partial-failure classification in `src-tauri/src/services/install/mod.rs`. History also has one end-to-end test, `history_facade_owns_paths_queries_reveals_deletes_and_cleanup`, driving a real SQLite schema and on-disk screenshot/video files through list, reveal, delete, and both cleanup scopes.
 - Frontend features pair an ordering test (stale/older responses ignored, single-flight action gates, refresh failure keeps prior data) with a bilingual presentation test (Chinese and English copy differ from the raw semantic code and from each other) across Stream (`streamCapabilityState`/`streamWorkflow`), History (`historyPageState`/`historyProblems`/`historyPreview`/`format`), Run Detail (`runDetailPageState`/`runDetailProblems`), Install (`installWorkflow`/`installProblems`), and About/Updater (`appBootstrap`/`aboutProblems`, `updater`/`updaterPresentation`/`updaterProblems`/`mainlandDownload`/`ShellUpdateModal`). Where the underlying problem carries a diagnostic — `updaterProblems.test.ts`, `aboutProblems.test.ts`, and `storageCleanupProblems.test.ts` — the presentation test additionally asserts it never leaks into the localized copy.

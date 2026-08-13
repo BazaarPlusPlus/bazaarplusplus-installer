@@ -8,7 +8,7 @@ export const commands = {
 	setAppLocale: (locale: string) => __TAURI_INVOKE<AppLocalePayload>("set_app_locale", { locale }),
 	getInstallState: (gamePath: string | null) => __TAURI_INVOKE<InstallState>("get_install_state", { gamePath }),
 	chooseGameDirectory: () => __TAURI_INVOKE<GameDirectorySelection>("choose_game_directory"),
-	installMod: (gamePath: string, compatOptIn: boolean) => __TAURI_INVOKE<InstallState>("install_mod", { gamePath, compatOptIn }),
+	installMod: (gamePath: string) => __TAURI_INVOKE<InstallState>("install_mod", { gamePath }),
 	resetBppData: (gamePath: string) => __TAURI_INVOKE<ResetBppDataResult>("reset_bpp_data", { gamePath }),
 	resetBepinex: (gamePath: string) => __TAURI_INVOKE<ResetBepinexResult>("reset_bepinex", { gamePath }),
 	uninstallMod: (gamePath: string) => __TAURI_INVOKE<InstallState>("uninstall_mod", { gamePath }),
@@ -172,18 +172,6 @@ export type InstallActions = {
 	can_launch: boolean,
 };
 
-/**  macOS launch-mode (兼容模式 / trampoline) state surfaced to the UI. */
-export type InstallCompatState = {
-	/**  Show the opt-in "兼容模式" checkbox (macOS <= 26 only). */
-	mode_available: boolean,
-	/**  macOS 27+: trampoline forced — render the checkbox checked and locked. */
-	forced: boolean,
-	/**  The desired launch mode (checkbox default): forced, or the persisted marker. */
-	desired: boolean,
-	/**  Whether the bundle currently has the trampoline applied. */
-	applied: boolean,
-};
-
 export type InstallGameState = {
 	found: boolean,
 	path_valid: boolean,
@@ -194,16 +182,15 @@ export type InstallModState = {
 	installed: boolean,
 	installed_version: string | null,
 	bundled_version: string | null,
-	version_matches: boolean,
+	/**  Payload version and the platform launch bootstrap are both ready. */
+	ready: boolean,
 };
 
 export type InstallState = {
 	selected_game_path: string | null,
 	steam_path: string | null,
-	steam_launch_options_supported: boolean,
 	game: InstallGameState,
 	mod_state: InstallModState,
-	compat: InstallCompatState,
 	actions: InstallActions,
 	has_resettable_data: boolean,
 	/**
@@ -220,7 +207,7 @@ export type InstallWarning = {
 	params: { [key in string]: string },
 };
 
-export type InstallWarningCode = "game_missing" | "launch_options_unsupported" | "trampoline_reverted";
+export type InstallWarningCode = "game_missing" | "steam_config_unavailable" | "launch_options_not_empty" | "trampoline_not_ready" | "obsolete_macos_artifacts";
 
 export type ResetBepinexResult = {
 	state: InstallState,

@@ -17,7 +17,6 @@ pub(crate) struct InstallerStartup {
     pub(crate) bundled_bpp_version: Option<String>,
     pub(crate) steam_path: Option<PathBuf>,
     pub(crate) game_path: Option<PathBuf>,
-    pub(crate) steam_launch_options_supported: bool,
 }
 
 #[derive(Default)]
@@ -38,7 +37,7 @@ fn compute_startup(app: &AppHandle) -> InstallerStartup {
     let detected_paths = detect_installation_paths();
 
     crate::services::debug_log!(
-        "[startup] initialized bundled_bpp_version={:?} steam_path={:?} game_path={:?} launch_options_supported={}",
+        "[startup] initialized bundled_bpp_version={:?} steam_path={:?} game_path={:?}",
         bundled_bpp_version,
         detected_paths
             .steam_path
@@ -48,13 +47,11 @@ fn compute_startup(app: &AppHandle) -> InstallerStartup {
             .game_path
             .as_ref()
             .map(|path| path.display().to_string()),
-        detected_paths.steam_launch_options_supported,
     );
 
     InstallerStartup {
         bundled_bpp_version,
         steam_path: detected_paths.steam_path,
         game_path: detected_paths.game_path,
-        steam_launch_options_supported: detected_paths.steam_launch_options_supported,
     }
 }

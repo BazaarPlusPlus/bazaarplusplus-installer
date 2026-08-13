@@ -74,7 +74,7 @@ BazaarPlusPlus.Localization.dll
 /src-tauri/resources/SourceForBuild/*/BepInEx/plugins/BazaarPlusPlus.BazaarAgentHost.dll
 
 # macOS launch trampoline stub is compiled arm64 at build time from the committed
-# SourceForBuild/macos/bpp_launcher.c. Never commit the compiled binary.
+# src-tauri/trampoline/bpp_launcher.c. Never commit the compiled binary.
 /src-tauri/resources/Trampoline/
 /src-tauri/resources/BepInExSource/*/BepInEx.zip.manifest.json
 /src-tauri/resources/BepInExSource/*/BepInEx.zip.tmp-*

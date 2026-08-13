@@ -126,11 +126,6 @@ export default function Install() {
               busy={confirmationRunning}
               installAcknowledged={installAcknowledged}
               onAcknowledgedChange={setInstallAcknowledged}
-              compat={snapshot.data.compat}
-              compatOptIn={confirmation.target.compatOptIn}
-              onCompatOptInChange={(value) =>
-                intents.setPendingCompatOptIn(value)
-              }
               problem={confirmationFailed}
               onClose={() => intents.dismissConfirmation()}
               onConfirm={() => void intents.confirm()}

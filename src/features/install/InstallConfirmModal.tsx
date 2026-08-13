@@ -1,7 +1,7 @@
 import { BookOpen, ExternalLink, TriangleAlert } from 'lucide-react';
-import type { InstallCompatState } from '../../types/backend';
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 import { useI18n } from '../../i18n/LocaleProvider';
+import { isWindowsPlatform } from '../shared/platform';
 import { InstallProblemBanner } from './InstallProblemBanner';
 import type { InstallProblem } from './installProblems';
 
@@ -9,9 +9,6 @@ export function InstallConfirmModal({
   busy,
   installAcknowledged,
   onAcknowledgedChange,
-  compat,
-  compatOptIn,
-  onCompatOptInChange,
   problem,
   onClose,
   onConfirm
@@ -19,15 +16,11 @@ export function InstallConfirmModal({
   busy: boolean;
   installAcknowledged: boolean;
   onAcknowledgedChange: (acknowledged: boolean) => void;
-  compat: InstallCompatState;
-  compatOptIn: boolean;
-  onCompatOptInChange: (value: boolean) => void;
   problem: InstallProblem | null;
   onClose: () => void;
   onConfirm: () => void | Promise<void>;
 }) {
   const { t } = useI18n();
-  const showCompatToggle = compat.mode_available || compat.forced;
   return (
     <ConfirmDialog
       titleId="install-modal-title"
@@ -76,31 +69,15 @@ export function InstallConfirmModal({
           strokeWidth={1.55}
           className="bpp-install-warning-icon"
         />
-        <p>{t('installSteamNotice')}</p>
+        <p>
+          {t(
+            isWindowsPlatform()
+              ? 'installSteamNotice'
+              : 'installSteamNoticeMacos'
+          )}
+        </p>
       </section>
 
-      {showCompatToggle && (
-        <label className="bpp-install-compat-card group">
-          <input
-            type="checkbox"
-            className="bpp-install-checkbox"
-            checked={compat.forced ? true : compatOptIn}
-            disabled={compat.forced || busy || problem !== null}
-            onChange={(event) => onCompatOptInChange(event.target.checked)}
-          />
-          <span className="bpp-install-card-copy">
-            <span className="bpp-install-card-title">
-              {t('compatModeLabel')}
-            </span>
-            <span className="bpp-install-card-description">
-              {compat.forced
-                ? t('compatModeForcedNotice')
-                : t('compatModeDescription')}
-            </span>
-          </span>
-          <span className="bpp-install-compat-orbit" aria-hidden="true" />
-        </label>
-      )}
       {problem && <InstallProblemBanner problem={problem} />}
     </ConfirmDialog>
   );

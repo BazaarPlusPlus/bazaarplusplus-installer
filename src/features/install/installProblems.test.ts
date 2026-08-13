@@ -9,8 +9,10 @@ import {
 
 const warnings = [
   { code: 'game_missing', params: {} },
-  { code: 'launch_options_unsupported', params: {} },
-  { code: 'trampoline_reverted', params: {} }
+  { code: 'steam_config_unavailable', params: {} },
+  { code: 'launch_options_not_empty', params: {} },
+  { code: 'trampoline_not_ready', params: {} },
+  { code: 'obsolete_macos_artifacts', params: {} }
 ] as const;
 
 const problems = [

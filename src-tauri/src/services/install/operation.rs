@@ -8,15 +8,13 @@ use crate::problem::SemanticProblem;
 use crate::services::{
     bepinex::{self, install_bepinex},
     detect::detect_for_install,
-    launch_mode::LaunchModeGate,
     startup::InstallerContextState,
-    steam::prepare_steam_for_launch_option_update,
-    vdf::{clear_launch_options_for_steam, patch_launch_options},
+    steam::prepare_steam_for_config_update,
+    vdf::{clear_launch_options_for_steam, SteamLaunchOptionsState},
 };
 
 pub(crate) struct InstallRequest {
     pub(crate) game_path: String,
-    pub(crate) compat_opt_in: bool,
 }
 
 fn classify_payload(
@@ -47,21 +45,27 @@ pub(crate) async fn install(
             Some(request.game_path.clone()),
         )?;
         let steam_path = before.steam_path.clone().unwrap_or_default();
-        let requested = LaunchModeGate::current().requested_mode(request.compat_opt_in);
-        let requested_trampoline =
-            requested == crate::services::launch_mode::LaunchMode::Trampoline;
+        let requires_macos_bootstrap = cfg!(target_os = "macos");
+        if requires_macos_bootstrap
+            && (steam_path.trim().is_empty()
+                || before.steam_launch_options == SteamLaunchOptionsState::Unavailable)
+        {
+            return Err(
+                "Steam localconfig.vdf is unavailable; start Steam once, close it, and retry."
+                    .to_string(),
+            );
+        }
         let facts = InstallPlanInputs {
-            requested,
-            was_trampolined: before.launch_mode.trampoline_applied,
-            has_steam_path: !steam_path.trim().is_empty(),
-            steam_launch_options_supported: before.steam_launch_options_supported,
+            requires_macos_bootstrap,
             payload: classify_payload(
                 before.bepinex_installed,
                 before.bpp_version.as_deref(),
                 before.bundled_bpp_version.as_deref(),
             ),
-            launch_mode_satisfied: before.launch_mode.expected_trampoline == requested_trampoline
-                && before.launch_mode.trampoline_applied == requested_trampoline,
+            bootstrap_satisfied: !requires_macos_bootstrap
+                || (before.trampoline_current
+                    && before.steam_launch_options == SteamLaunchOptionsState::Empty
+                    && !before.obsolete_macos_artifacts_present),
         };
         let mut effects = ProductionInstallEffects {
             app: task_app.clone(),
@@ -96,24 +100,15 @@ impl InstallEffects for ProductionInstallEffects {
         let steam = Path::new(&self.steam_path);
         let game = Path::new(&self.game_path);
         match effect {
-            InstallEffect::CloseSteam => prepare_steam_for_launch_option_update(steam, false),
-            InstallEffect::InstallBepInEx => install_bepinex(
-                self.app.clone(),
-                self.steam_path.clone(),
-                self.game_path.clone(),
-            ),
-            InstallEffect::InstallTrampoline => bepinex::install_trampoline(&self.app, game),
-            InstallEffect::UninstallTrampoline => bepinex::uninstall_trampoline(game),
-            InstallEffect::WriteLaunchModeMarker(mode) => {
-                bepinex::write_launch_mode_marker(game, mode)
+            InstallEffect::CloseSteam => prepare_steam_for_config_update(steam),
+            InstallEffect::InstallBepInEx => {
+                install_bepinex(self.app.clone(), self.game_path.clone())
             }
+            InstallEffect::InstallTrampoline => bepinex::install_trampoline(&self.app, game),
             InstallEffect::ClearLaunchOptions => clear_launch_options_for_steam(steam),
-            InstallEffect::PatchLaunchOptions => patch_launch_options(
-                self.app.clone(),
-                self.steam_path.clone(),
-                self.game_path.clone(),
-            )
-            .map(|_| ()),
+            InstallEffect::RemoveObsoleteMacosArtifacts => {
+                bepinex::remove_obsolete_macos_artifacts(game)
+            }
         }
     }
 }
@@ -132,7 +127,6 @@ fn execute_and_refresh<T>(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::services::launch_mode::LaunchMode;
 
     #[derive(Default)]
     struct Recorder {
@@ -150,19 +144,11 @@ mod tests {
         }
     }
 
-    fn facts(
-        requested: LaunchMode,
-        was_trampolined: bool,
-        has_steam_path: bool,
-        steam_launch_options_supported: bool,
-    ) -> InstallPlanInputs {
+    fn facts(payload: PayloadState, bootstrap_satisfied: bool) -> InstallPlanInputs {
         InstallPlanInputs {
-            requested,
-            was_trampolined,
-            has_steam_path,
-            steam_launch_options_supported,
-            payload: PayloadState::Missing,
-            launch_mode_satisfied: false,
+            requires_macos_bootstrap: true,
+            payload,
+            bootstrap_satisfied,
         }
     }
 
@@ -183,69 +169,33 @@ mod tests {
     }
 
     #[test]
-    fn complete_install_records_prefix_effects_then_returns_refreshed_outcome() {
+    fn complete_install_records_one_macos_bootstrap_then_returns_refreshed_outcome() {
         let mut recorder = Recorder::default();
 
-        let outcome = execute_and_refresh(
-            facts(LaunchMode::Prefix, false, true, true),
-            &mut recorder,
-            || Ok("state read back from disk"),
-        );
+        let outcome =
+            execute_and_refresh(facts(PayloadState::Missing, false), &mut recorder, || {
+                Ok("state read back from disk")
+            });
 
         assert_eq!(outcome.unwrap(), "state read back from disk");
         assert_eq!(
             recorder.effects,
             vec![
+                InstallEffect::CloseSteam,
                 InstallEffect::InstallBepInEx,
-                InstallEffect::PatchLaunchOptions,
-                InstallEffect::WriteLaunchModeMarker(LaunchMode::Prefix),
+                InstallEffect::InstallTrampoline,
+                InstallEffect::ClearLaunchOptions,
+                InstallEffect::RemoveObsoleteMacosArtifacts,
             ]
         );
     }
 
     #[test]
-    fn complete_install_records_trampoline_and_downgrade_effects() {
-        let scenarios = [
-            (
-                facts(LaunchMode::Trampoline, false, true, true),
-                vec![
-                    InstallEffect::CloseSteam,
-                    InstallEffect::InstallBepInEx,
-                    InstallEffect::InstallTrampoline,
-                    InstallEffect::WriteLaunchModeMarker(LaunchMode::Trampoline),
-                    InstallEffect::ClearLaunchOptions,
-                ],
-            ),
-            (
-                facts(LaunchMode::Prefix, true, true, true),
-                vec![
-                    InstallEffect::CloseSteam,
-                    InstallEffect::InstallBepInEx,
-                    InstallEffect::UninstallTrampoline,
-                    InstallEffect::PatchLaunchOptions,
-                    InstallEffect::WriteLaunchModeMarker(LaunchMode::Prefix),
-                ],
-            ),
-        ];
-
-        for (facts, expected) in scenarios {
-            let mut recorder = Recorder::default();
-            execute_and_refresh(facts, &mut recorder, || Ok(())).unwrap();
-            assert_eq!(recorder.effects, expected);
-        }
-    }
-
-    #[test]
-    fn install_operation_covers_fresh_changed_current_and_mode_repair_states() {
-        let mut fresh = facts(LaunchMode::Prefix, false, false, false);
-        fresh.payload = PayloadState::Missing;
-        let mut changed = facts(LaunchMode::Prefix, false, false, false);
-        changed.payload = PayloadState::Changed;
-        let mut no_op = facts(LaunchMode::Prefix, false, false, false);
-        no_op.payload = PayloadState::Current;
-        no_op.launch_mode_satisfied = true;
-        let mut mode_repair = facts(LaunchMode::Trampoline, false, false, false);
-        mode_repair.payload = PayloadState::Current;
+    fn install_operation_covers_fresh_changed_current_and_bootstrap_repair_states() {
+        let fresh = facts(PayloadState::Missing, false);
+        let changed = facts(PayloadState::Changed, false);
+        let no_op = facts(PayloadState::Current, true);
+        let bootstrap_repair = facts(PayloadState::Current, false);
 
         for scenario in [fresh, changed] {
             let mut recorder = Recorder::default();
@@ -258,7 +208,7 @@ mod tests {
         assert!(recorder.effects.is_empty());
 
         let mut recorder = Recorder::default();
-        execute_and_refresh(mode_repair, &mut recorder, || Ok(())).unwrap();
+        execute_and_refresh(bootstrap_repair, &mut recorder, || Ok(())).unwrap();
         assert!(!recorder.effects.contains(&InstallEffect::InstallBepInEx));
         assert!(recorder.effects.contains(&InstallEffect::InstallTrampoline));
     }
@@ -266,19 +216,15 @@ mod tests {
     #[test]
     fn complete_install_stops_on_first_error_and_does_not_refresh() {
         let mut recorder = Recorder {
-            fail_on: Some(InstallEffect::PatchLaunchOptions),
+            fail_on: Some(InstallEffect::ClearLaunchOptions),
             ..Recorder::default()
         };
         let mut refreshed = false;
 
-        let error = execute_and_refresh(
-            facts(LaunchMode::Prefix, false, true, true),
-            &mut recorder,
-            || {
-                refreshed = true;
-                Ok(())
-            },
-        )
+        let error = execute_and_refresh(facts(PayloadState::Missing, false), &mut recorder, || {
+            refreshed = true;
+            Ok(())
+        })
         .unwrap_err();
 
         assert_eq!(error, "effect failed");
@@ -286,8 +232,10 @@ mod tests {
         assert_eq!(
             recorder.effects,
             vec![
+                InstallEffect::CloseSteam,
                 InstallEffect::InstallBepInEx,
-                InstallEffect::PatchLaunchOptions
+                InstallEffect::InstallTrampoline,
+                InstallEffect::ClearLaunchOptions,
             ]
         );
     }

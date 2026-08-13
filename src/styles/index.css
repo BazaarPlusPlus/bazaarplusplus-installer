@@ -3129,7 +3129,6 @@ body {
 }
 .bpp-install-guide-card,
 .bpp-install-steam-warning,
-.bpp-install-compat-card,
 .bpp-install-confirm-ack {
   position: relative;
   border-radius: 6px;
@@ -3237,18 +3236,6 @@ body {
   font-size: 13.5px;
   letter-spacing: 0.018em;
   line-height: 1.75;
-}
-.bpp-install-compat-card {
-  display: flex;
-  min-height: 112px;
-  align-items: flex-start;
-  gap: 16px;
-  padding: 18px 20px;
-  overflow: hidden;
-  border: 1px solid color-mix(in srgb, var(--bpp-accent-muted) 34%, transparent);
-}
-.bpp-install-compat-orbit {
-  display: none;
 }
 .bpp-install-confirm-card input[type='checkbox'] {
   position: relative;

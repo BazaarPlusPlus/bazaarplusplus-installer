@@ -110,7 +110,6 @@ fn existing_file_is_identical(path: &Path, contents: &[u8]) -> bool {
 mod tests {
     use super::{bundled_zip_relative_path, extract_zip, zip_entry_paths};
     use std::io::{Cursor, Write};
-    use std::path::PathBuf;
 
     fn make_test_zip() -> Vec<u8> {
         let buffer = Cursor::new(Vec::new());
@@ -179,22 +178,5 @@ mod tests {
     #[test]
     fn test_bundled_zip_relative_path_matches_supported_targets() {
         assert_eq!(bundled_zip_relative_path(), "BepInExSource/BepInEx.zip");
-    }
-
-    #[test]
-    fn test_macos_source_launcher_uses_safe_codesign_tempfile() {
-        let manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-        let source_script_path = manifest_dir.join("resources/SourceForBuild/macos/run_bepinex.sh");
-        let source_script = std::fs::read_to_string(&source_script_path)
-            .unwrap_or_else(|err| panic!("failed to read {}: {err}", source_script_path.display()));
-
-        assert_macos_launcher_script_is_safe(&source_script);
-    }
-
-    fn assert_macos_launcher_script_is_safe(script: &str) {
-        assert!(script.contains("mktemp \"${TMPDIR:-/tmp}/bepinex_ents.XXXXXX\""));
-        assert!(!script.contains("mktemp /tmp/bepinex_ents.XXXXXX.plist"));
-        assert!(script.contains("trap cleanup_entitlements EXIT HUP INT TERM"));
-        assert!(!script.contains("codesign --remove-signature"));
     }
 }

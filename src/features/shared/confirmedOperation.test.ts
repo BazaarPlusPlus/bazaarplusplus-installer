@@ -70,24 +70,24 @@ describe('confirmed operation controller', () => {
 
   it('allows pending target updates only while confirming', () => {
     const controller = createConfirmedOperationController<
-      { kind: 'install'; path: string; compatOptIn: boolean },
+      { kind: 'install'; path: string; acknowledged: boolean },
       string
     >();
     controller.request({
       kind: 'install',
       path: '/game',
-      compatOptIn: false
+      acknowledged: false
     });
     expect(
       controller.updateTarget({
         kind: 'install',
         path: '/game',
-        compatOptIn: true
+        acknowledged: true
       })
     ).toBe(true);
     expect(controller.getSnapshot()).toMatchObject({
       phase: 'confirming',
-      target: { compatOptIn: true }
+      target: { acknowledged: true }
     });
 
     void controller.run(async () => {
@@ -95,7 +95,7 @@ describe('confirmed operation controller', () => {
         controller.updateTarget({
           kind: 'install',
           path: '/game',
-          compatOptIn: false
+          acknowledged: false
         })
       ).toBe(false);
       return { ok: true };

@@ -148,10 +148,14 @@ const zh = {
   uninstallDone: '卸载完成',
   installWarningGameMissing:
     '未找到有效的 The Bazaar 游戏目录，请选择游戏目录。',
-  installWarningLaunchOptionsUnsupported:
-    '当前 Steam 安装不支持自动写入启动项，请检查 Steam 目录后重试。',
-  installWarningTrampolineReverted:
-    '游戏文件已还原，BazaarPlusPlus 的启动配置需要修复。',
+  installWarningSteamConfigUnavailable:
+    '无法读取 Steam 启动项配置。请先启动一次 Steam，然后完全退出并重试。',
+  installWarningLaunchOptionsNotEmpty:
+    'The Bazaar 的 Steam 启动项必须为空；修复会移除其中的全部内容。',
+  installWarningTrampolineNotReady:
+    'macOS 游戏启动配置缺失或不是当前版本，需要修复。',
+  installWarningObsoleteMacosArtifacts:
+    '检测到不属于当前 macOS 安装方式的文件，需要清理。',
   installWarningUnexpected:
     '检测到未知的安装警告，请重新检测；若持续出现，请查看诊断信息。',
   installProblemDetectionFailed: '检测安装状态失败，请重试。',
@@ -175,13 +179,10 @@ const zh = {
     '安装会写入 BazaarPlusPlus 与 BepInEx 组件（BepInEx 用于让插件在游戏内运行）。',
   viewTutorial: '查看教程',
   installSteamNotice:
-    '安装前请先关闭 Steam，以确保启动项正确写入；如果 Steam 正在运行，请手动退出后再继续。',
+    '安装前请先关闭 Steam；如果 Steam 正在运行，请手动退出后再继续。',
+  installSteamNoticeMacos:
+    'macOS 安装仅使用游戏内 trampoline，并要求 The Bazaar 的 Steam 启动项为空。继续后会关闭 Steam，并移除启动项中的全部内容。',
   installAcknowledge: '我确认安装插件存在风险，并愿意自行承担相关责任',
-  compatModeLabel: '兼容模式（实验性）',
-  compatModeDescription:
-    '改为从游戏内部注入，不再依赖 Steam 启动脚本。更稳健，但会清空当前启动项；如遇游戏校验/更新还原，需要在此重新安装修复。仅在默认方式无法启动时开启。',
-  compatModeForcedNotice:
-    'macOS 27 及以上必须使用兼容模式：新版 Steam 不再支持启动脚本，已自动开启且无法关闭。',
   installing: '安装中…',
   confirmInstall: '确认安装',
 
@@ -569,10 +570,14 @@ const en: Record<MessageKey, string> = {
   uninstallDone: 'Uninstall complete',
   installWarningGameMissing:
     'No valid The Bazaar installation was found. Choose the game directory.',
-  installWarningLaunchOptionsUnsupported:
-    'This Steam installation cannot update launch options automatically. Check the Steam directory and retry.',
-  installWarningTrampolineReverted:
-    'Game files were restored and the BazaarPlusPlus launch configuration needs repair.',
+  installWarningSteamConfigUnavailable:
+    'Steam launch-option configuration could not be read. Start Steam once, quit it completely, and retry.',
+  installWarningLaunchOptionsNotEmpty:
+    "The Bazaar's Steam launch options must be empty; Repair removes all of their contents.",
+  installWarningTrampolineNotReady:
+    'The macOS game bootstrap is missing or is not the current version and needs repair.',
+  installWarningObsoleteMacosArtifacts:
+    'Files outside the current macOS installation layout were found and need cleanup.',
   installWarningUnexpected:
     'An unknown installation warning was detected. Re-detect; if it persists, check the diagnostics.',
   installProblemDetectionFailed:
@@ -598,14 +603,11 @@ const en: Record<MessageKey, string> = {
     'Installation writes the BazaarPlusPlus and BepInEx components (BepInEx lets the plugin run inside the game).',
   viewTutorial: 'View tutorial',
   installSteamNotice:
-    'Please close Steam before installing so the launch options are written correctly. If Steam is running, quit it manually before continuing.',
+    'Please close Steam before installing. If Steam is running, quit it manually before continuing.',
+  installSteamNoticeMacos:
+    "macOS uses only the in-game trampoline and requires The Bazaar's Steam launch options to be empty. Continuing closes Steam and removes all launch-option contents.",
   installAcknowledge:
     'I understand installing the plugin carries risk and accept responsibility for it.',
-  compatModeLabel: 'Compatibility mode (experimental)',
-  compatModeDescription:
-    'Inject from inside the game instead of relying on the Steam launch script. More robust, but it clears your current launch options; if a game verify/update reverts it, reinstall here to repair. Enable only if the default launch fails.',
-  compatModeForcedNotice:
-    'Required on macOS 27+: the new Steam client no longer supports the launch script, so this is enabled automatically and cannot be turned off.',
   installing: 'Installing…',
   confirmInstall: 'Confirm Install',
 

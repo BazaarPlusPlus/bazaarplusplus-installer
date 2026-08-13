@@ -46,16 +46,8 @@ pub async fn choose_game_directory(
 pub async fn install_mod(
     app: tauri::AppHandle,
     game_path: String,
-    compat_opt_in: bool,
 ) -> Result<InstallState, SemanticProblem> {
-    install(
-        app,
-        InstallRequest {
-            game_path,
-            compat_opt_in,
-        },
-    )
-    .await
+    install(app, InstallRequest { game_path }).await
 }
 
 #[tauri::command]
