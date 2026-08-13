@@ -116,7 +116,7 @@ export function resolveAncestryRef({
   execFileSyncImpl = execFileSync,
   cwd
 } = {}) {
-  for (const ref of ['origin/master', 'master']) {
+  for (const ref of ['HEAD', 'origin/master', 'master']) {
     try {
       execFileSyncImpl('git', ['rev-parse', '--verify', '--quiet', ref], {
         cwd,
@@ -147,7 +147,7 @@ export function checkLastVerifiedHash(
     return {
       ok: true,
       skipped: true,
-      reason: 'no origin/master or local master ref available'
+      reason: 'no current, origin/master, or local master ref available'
     };
   }
 
