@@ -144,8 +144,8 @@ fn remove_launch_options_text(vdf_content: &str) -> Result<Option<String>, Strin
 
     let mut nested_depth = 0usize;
     let mut launch_option_lines = Vec::new();
-    for idx in app_open + 1..app_close {
-        match lines[idx].trim() {
+    for (idx, line) in lines.iter().enumerate().take(app_close).skip(app_open + 1) {
+        match line.trim() {
             "{" => {
                 nested_depth += 1;
                 continue;
@@ -157,8 +157,7 @@ fn remove_launch_options_text(vdf_content: &str) -> Result<Option<String>, Strin
             _ => {}
         }
         if nested_depth == 0
-            && parse_line_pair(&lines[idx])
-                .is_some_and(|(_indent, key, _value)| key == LAUNCH_OPTIONS_KEY)
+            && parse_line_pair(line).is_some_and(|(_indent, key, _value)| key == LAUNCH_OPTIONS_KEY)
         {
             launch_option_lines.push(idx);
         }
