@@ -94,7 +94,7 @@ export function runPrebuildCheck(
   if (!releaseResources) return;
 
   const platforms = resolveTargetPlatforms(platformEnv);
-  verifyNativeRecorderInput({ rootDir });
+  verifyNativeRecorderInput({ rootDir, platforms });
 
   for (const platform of platforms) {
     validatePayloadZip({ rootDir, platform });
