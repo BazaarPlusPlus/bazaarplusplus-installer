@@ -1,7 +1,7 @@
 ---
 status: current
 topic: install-reset
-last-verified: ef77a33ab317dcb8b447f5590452eeff1d7cf6f4
+last-verified: f6ec47512a477109488bd21acfc4be7c387e222a
 ---
 
 # Install And Reset
@@ -27,7 +27,7 @@ The installer launches The Bazaar through `launch_game_via_steam` in `src-tauri/
 ## macOS Trampoline Invariant
 
 - `install_trampoline` in `src-tauri/src/services/bepinex/trampoline.rs` preserves the Unity executable as `.orig`, installs the bundled Mach-O stub as `CFBundleExecutable`, signs the real executable with the required entitlements, seals the bundle, verifies it, and rolls back the layout if installation fails.
-- `is_current_trampoline` in the same module requires both the structural `.orig` layout and byte identity with the bundled stub. Steam Verify, game updates, or a new stub therefore produce a repairable state.
+- `is_current_trampoline` in the same module requires both the structural `.orig` layout and the same Mach-O build UUID as the bundled stub. The UUID remains stable when bundle signing rewrites signature bytes; Steam Verify, game updates, or a new stub still produce a repairable state.
 - `inspect_launch_options_for_steam` and `clear_launch_options_for_steam` in `src-tauri/src/services/vdf/launch_options.rs` require every direct The Bazaar `LaunchOptions` value to be empty across Steam accounts. Unreadable configuration blocks mutation.
 - `remove_obsolete_macos_artifacts` in `src-tauri/src/services/bepinex/trampoline.rs` removes fixed non-canonical residue by name; those files never select behavior.
 - `uninstall_trampoline` restores `.orig` and re-seals the vanilla bundle. `uninstall_bpp` invokes it only when BPP is the last installed mod.

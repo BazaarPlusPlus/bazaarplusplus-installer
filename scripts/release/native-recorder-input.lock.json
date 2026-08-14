@@ -74,24 +74,32 @@
       }
     },
     "windows": {
-      "inputDigest": null,
-      "inputFiles": {},
+      "inputDigest": "sha256:d5412ebdb57341a4230255129133dfbe439d97cdb13db28364c557b9023b4f7d",
+      "inputFiles": {
+        "native/windows/BppReplayMediaFoundation.cpp": "2f0395be1e5e8d9c008745db420b9351dccfad197db3ab2c26b5c516414546ef",
+        "native/windows/BppReplayMediaFoundation.h": "977b6070ac230e7c44a62bc756f9fee7bb74489ff8845928908ca0b6b573b660",
+        "native/windows/BppReplayMediaFoundationSmoke.cpp": "71f52734ad638350df2272d8a0ad5dd2fa1402220198c179792c4fee71e7d0b5",
+        "native/windows/build.ps1": "75b2a0bdb143a975fceb80c96b95e7218fce3fb926dff0badccc6d9c04bdb295",
+        "native/windows/test.ps1": "8556acb4b93c05aae7ffc4e83aa30321206a34961c95543bc976db76a4b43164",
+        "src/BazaarPlusPlus/Game/CombatReplay/Video/WindowsMediaFoundationVideoEncoder.cs": "6936949b69661e73519811bb32ae708f535833fae6073f4a808fd707a7bf802b",
+        "src/BazaarPlusPlus/Game/CombatReplay/Video/WindowsNativeReplayAudioMuxer.cs": "41fa3e3f8cc809f187498a82cb53056afc6c25dc1a5c3b86ff1e57e114f0b4d8"
+      },
       "policy": {
         "architecture": "x64",
         "signing": "unsigned"
       },
       "producer": {
         "repository": "BazaarPlusPlus/bazaarplusplus-mod",
-        "commit": "e7c06abaa0633d8cd0eb9f2849ea2e2df7b16723",
-        "dirty": null
+        "commit": "3884a4f2144d75e6b22875b1434620206a0ebb3b",
+        "dirty": true
       },
       "artifacts": {
         "windows-replay": {
           "destinationPath": "src-tauri/resources/SourceForBuild/windows/TheBazaar_Data/Plugins/x86_64/GfxPluginBppReplayMediaFoundation.dll",
           "content": {
             "kind": "file",
-            "size": 193536,
-            "sha256": "fa135fd768aa774494718bd56e19ee68945c71a22b1b66b3bbad2e0d1fdbf4c7"
+            "size": 202752,
+            "sha256": "6bd46cefe264febbdc9ef7cb0730e8c7dbcecf78a365c7abd536c48fb9d5c0d1"
           }
         }
       }
