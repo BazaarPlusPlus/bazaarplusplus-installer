@@ -12,7 +12,7 @@
         "maximizable": true,
         "fullscreen": false,
         "decorations": false,
-        "shadow": true,
+        "shadow": false,
         "visible": false
       }
     ]
