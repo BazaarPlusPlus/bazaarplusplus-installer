@@ -2,7 +2,7 @@ import { test, expect } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
-import { runShell, toBashPath } from './test-helpers.mjs';
+import { runShell, toBashPath } from './test-support/shell.mjs';
 import {
   RELEASE_PLATFORMS,
   RELEASE_PLATFORM_KEYS,

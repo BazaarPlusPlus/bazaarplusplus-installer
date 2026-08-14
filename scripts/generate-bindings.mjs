@@ -13,7 +13,6 @@ import {
 } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 
 const GENERATED_COMMANDS_FILE = 'commands.ts';
 
@@ -124,17 +123,13 @@ export function runGenerateBindings(
   }
 }
 
-const scriptPath = fileURLToPath(import.meta.url);
-const invokedAsScript =
-  process.argv[1] && path.resolve(process.argv[1]) === scriptPath;
-
-if (invokedAsScript) {
+if (import.meta.main) {
   const args = process.argv.slice(2);
   if (args.some((arg) => arg !== '--with-rust-tests')) {
     console.error('Usage: generate-bindings.mjs [--with-rust-tests]');
     process.exit(2);
   }
-  runGenerateBindings(path.resolve(path.dirname(scriptPath), '..'), {
+  runGenerateBindings(path.resolve(import.meta.dirname, '..'), {
     runAllRustTests: args.includes('--with-rust-tests')
   });
 }

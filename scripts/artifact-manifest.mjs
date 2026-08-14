@@ -3,7 +3,6 @@ import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 import { execFileSync } from 'node:child_process';
-import { fileURLToPath } from 'node:url';
 import { RELEASE_PLATFORMS } from './release-platforms.mjs';
 
 function platformDefinition(buildPlatform) {
@@ -266,10 +265,7 @@ function main(args) {
       'Usage: artifact-manifest.mjs <generate|paths> --platform <macos|windows>'
     );
   }
-  const rootDir = path.resolve(
-    path.dirname(fileURLToPath(import.meta.url)),
-    '..'
-  );
+  const rootDir = path.resolve(import.meta.dirname, '..');
   const version = packageVersion(rootDir);
   if (verb === 'generate') {
     const result = createArtifactManifest({ rootDir, platform, version });
@@ -288,10 +284,7 @@ function main(args) {
   console.log(result.signature);
 }
 
-if (
-  process.argv[1] &&
-  path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)
-) {
+if (import.meta.main) {
   try {
     main(process.argv.slice(2));
   } catch (error) {
