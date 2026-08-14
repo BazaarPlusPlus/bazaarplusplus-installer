@@ -1,7 +1,7 @@
 ---
 status: current
 topic: release
-last-verified: 17b17d67ba7cc27b52a435d2cff8eadfd3278840
+last-verified: ef77a33ab317dcb8b447f5590452eeff1d7cf6f4
 ---
 
 # Release
@@ -24,7 +24,7 @@ last-verified: 17b17d67ba7cc27b52a435d2cff8eadfd3278840
 
 `run_release_prechecks` in `build.sh` synchronizes versions, verifies native inputs, prepares resources, and runs the platform release gate before Tauri packaging.
 
-On macOS, the installer accepts ad-hoc native recorder inputs, signs nested Mach-O components and bundles inside-out with the official identity, rebuilds the payload ZIP, and then packages and notarizes the outer installer. The ownership decision lives in [ADR-012](adr/012-native-replay-recorder-signing.md). `assertMacosTrampolineStub` in `scripts/prebuild-check.mjs` separately proves the bundled trampoline architecture and deployment target.
+On macOS, the installer accepts ad-hoc native recorder inputs, signs nested Mach-O components and bundles inside-out with the official identity, rebuilds the payload ZIP, and then packages and notarizes the outer installer. The ownership decision lives in [ADR-006](adr/006-native-replay-recorder-signing.md). `assertMacosTrampolineStub` in `scripts/prebuild-check.mjs` separately proves the bundled trampoline architecture and deployment target.
 
 ## Artifact And Upload Boundary
 

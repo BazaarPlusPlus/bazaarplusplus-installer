@@ -11,7 +11,7 @@ The installer once supported the native Tempo Launcher through process capture, 
 
 ## Decision
 
-Support Steam installations only. Detection resolves Steam copies, and launch opens the fixed Steam game entry. Keep no one-variant launch abstraction or dormant non-Steam detection path. Current behavior is specified in [macOS Launch](../macos-launch.md) and [Install And Reset](../install-reset.md).
+Support Steam installations only. Detection resolves Steam copies, and launch opens the fixed Steam game entry. Keep no one-variant launch abstraction or dormant non-Steam detection path. Current behavior is specified in [Install And Reset](../install-reset.md).
 
 ## Rejected Alternatives
 

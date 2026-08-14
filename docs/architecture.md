@@ -1,7 +1,7 @@
 ---
 status: current
 topic: architecture
-last-verified: 17b17d67ba7cc27b52a435d2cff8eadfd3278840
+last-verified: ef77a33ab317dcb8b447f5590452eeff1d7cf6f4
 ---
 
 # Architecture
@@ -25,4 +25,4 @@ last-verified: 17b17d67ba7cc27b52a435d2cff8eadfd3278840
 
 Rust command signatures are the only IPC schema. `builder` in `src-tauri/src/commands/registry.rs` supplies both the production invoke handler and the binding export command list. `runGenerateBindings` in `scripts/generate-bindings.mjs` validates a temporary export before atomically replacing `src/types/generated/`.
 
-The frontend selects one `CommandAdapter` implementation in `src/api/commandClient.ts`: generated native commands or the Browser Preview adapter. Feature modules depend on that typed interface rather than command strings. The rationale and upgrade constraint live in [ADR-010](adr/010-tauri-specta-command-bindings.md).
+The frontend selects one `CommandAdapter` implementation in `src/api/commandClient.ts`: generated native commands or the Browser Preview adapter. Feature modules depend on that typed interface rather than command strings. The rationale and upgrade constraint live in [ADR-004](adr/004-tauri-specta-command-bindings.md).
