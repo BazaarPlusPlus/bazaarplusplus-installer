@@ -6,18 +6,10 @@ import type {
 import type { UpdaterSnapshot } from './updater';
 
 export type UpdaterHeaderIcon =
-  | 'download'
-  | 'checking'
-  | 'current'
-  | 'preview'
-  | 'restart'
-  | 'error';
+  'download' | 'checking' | 'current' | 'preview' | 'restart' | 'error';
 
 export type UpdaterModalAction =
-  | 'install'
-  | 'restart'
-  | 'retry-install'
-  | 'retry-restart';
+  'install' | 'restart' | 'retry-install' | 'retry-restart';
 
 export type UpdaterUiContract = {
   header: {

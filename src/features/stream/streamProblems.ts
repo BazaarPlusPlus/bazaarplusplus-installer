@@ -18,9 +18,7 @@ export type StreamProblemCode =
 export type StreamProblem = UiProblem<StreamProblemCode>;
 
 export type StreamNoticeCode =
-  | 'stream_obs_url_copied'
-  | 'stream_crop_saved'
-  | 'stream_crop_reset';
+  'stream_obs_url_copied' | 'stream_crop_saved' | 'stream_crop_reset';
 
 export type StreamNotice = {
   code: StreamNoticeCode;
