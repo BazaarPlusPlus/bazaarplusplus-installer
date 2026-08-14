@@ -180,8 +180,7 @@ const zh = {
   viewTutorial: '查看教程',
   installSteamNotice:
     '安装前请先关闭 Steam；如果 Steam 正在运行，请手动退出后再继续。',
-  installSteamNoticeMacos:
-    'macOS 安装仅使用游戏内 trampoline，并要求 The Bazaar 的 Steam 启动项为空。继续后会关闭 Steam，并移除启动项中的全部内容。',
+  installSteamNoticeMacos: '继续后，安装器将关闭 Steam，以完成 macOS 配置。',
   installAcknowledge: '我确认安装插件存在风险，并愿意自行承担相关责任',
   installing: '安装中…',
   confirmInstall: '确认安装',
@@ -605,7 +604,7 @@ const en: Record<MessageKey, string> = {
   installSteamNotice:
     'Please close Steam before installing. If Steam is running, quit it manually before continuing.',
   installSteamNoticeMacos:
-    "macOS uses only the in-game trampoline and requires The Bazaar's Steam launch options to be empty. Continuing closes Steam and removes all launch-option contents.",
+    'Continuing will close Steam to complete the macOS setup.',
   installAcknowledge:
     'I understand installing the plugin carries risk and accept responsibility for it.',
   installing: 'Installing…',
