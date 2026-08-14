@@ -214,10 +214,7 @@ export function synchronizeVersions(rootDir) {
   return collectVersionSnapshot(rootDir);
 }
 
-const invokedAsScript =
-  process.argv[1] && path.resolve(process.argv[1]) === import.meta.filename;
-
-if (invokedAsScript) {
+if (import.meta.main) {
   const snapshot = synchronizeVersions(process.cwd());
   console.log(`version-sync: aligned to ${snapshot.packageVersion}`);
 }

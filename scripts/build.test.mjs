@@ -1,7 +1,7 @@
 import { test, expect } from 'vitest';
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { relative } from 'node:path';
-import { runShell, toBashPath } from './test-helpers.mjs';
+import { runShell, toBashPath } from './test-support/shell.mjs';
 
 const projectDir = process.cwd();
 

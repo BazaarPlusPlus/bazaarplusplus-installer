@@ -1,12 +1,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { execFileSync, spawnSync } from 'node:child_process';
-import { fileURLToPath } from 'node:url';
 
-const rootDir = path.resolve(
-  path.dirname(fileURLToPath(import.meta.url)),
-  '..'
-);
+const rootDir = path.resolve(import.meta.dirname, '..');
 const appIconName = 'AppIcon';
 const iconSource = path.join(
   rootDir,
@@ -131,10 +127,7 @@ export function compileMacOSIcon({ allowFlatFallback = false } = {}) {
   return { platform: 'macos', compiled: true, outputDir };
 }
 
-if (
-  process.argv[1] &&
-  path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)
-) {
+if (import.meta.main) {
   compileMacOSIcon({
     allowFlatFallback: process.env.BPP_ALLOW_FLAT_MACOS_ICON_FALLBACK === '1'
   });

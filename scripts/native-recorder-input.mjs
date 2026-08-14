@@ -2,7 +2,6 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
-import { fileURLToPath } from 'node:url';
 
 export const NATIVE_RECORDER_LOCK_PATH =
   'scripts/native-recorder-input.lock.json';
@@ -71,16 +70,13 @@ export function verifyNativeRecorderInput({
 }
 
 function main() {
-  const rootDir = path.resolve(
-    path.dirname(fileURLToPath(import.meta.url)),
-    '..'
-  );
+  const rootDir = path.resolve(import.meta.dirname, '..');
   const result = verifyNativeRecorderInput({ rootDir });
   console.log(
     `native-recorder-input: verified ${result.sourceRepository}@${result.sourceCommit}`
   );
 }
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
+if (import.meta.main) {
   main();
 }

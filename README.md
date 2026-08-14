@@ -20,7 +20,7 @@ Start the desktop app in development mode:
 Or run the underlying commands manually:
 
 ```bash
-npm install
+npm ci
 npm run tauri dev
 ```
 
@@ -58,7 +58,8 @@ Artifacts land under `src-tauri/target/release/bundle/nsis/` on Windows and `src
 
 - `src/` — React frontend
 - `src-tauri/` — Rust backend: native commands, services, packaging
-- `scripts/` — build tooling: bindings generation, version sync, prebuild checks, release manifests
+- `static/` — frontend media and fonts imported by Vite; the favicon reuses the canonical Tauri `src-tauri/icons/icon.png`
+- `scripts/` — build tooling with colocated `*.test.mjs` behavior tests; test-only utilities live under `scripts/test-support/`
 - `docs/` — project documentation (see below)
 
 ## Documentation

@@ -1,7 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
-import { fileURLToPath } from 'node:url';
 import { buildZipBuffer } from './payload-zip.mjs';
 import { RELEASE_PLATFORMS } from './release-platforms.mjs';
 
@@ -21,14 +20,8 @@ export function writeCiResourceFixtures(rootDir) {
   });
 }
 
-if (
-  process.argv[1] &&
-  path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)
-) {
-  const rootDir = path.resolve(
-    path.dirname(fileURLToPath(import.meta.url)),
-    '..'
-  );
+if (import.meta.main) {
+  const rootDir = path.resolve(import.meta.dirname, '..');
   for (const output of writeCiResourceFixtures(rootDir)) {
     console.log(`prepare:ci-resources: wrote non-release fixture ${output}`);
   }

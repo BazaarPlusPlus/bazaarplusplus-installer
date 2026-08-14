@@ -2,7 +2,6 @@ import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
-import { fileURLToPath } from 'node:url';
 
 const ROOT_DOC_FILES = ['CLAUDE.md', 'CONTEXT.md', 'README.md'];
 const REQUIRED_FRONTMATTER_KEYS = ['status', 'topic', 'last-verified'];
@@ -581,15 +580,8 @@ export function runDocsCheck(
   return ok;
 }
 
-const invokedAsScript =
-  process.argv[1] &&
-  path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
-
-if (invokedAsScript) {
-  const rootDir = path.resolve(
-    path.dirname(fileURLToPath(import.meta.url)),
-    '..'
-  );
+if (import.meta.main) {
+  const rootDir = path.resolve(import.meta.dirname, '..');
   try {
     const ok = runDocsCheck(rootDir);
     console.log(ok ? 'docs-check: ok' : 'docs-check: failed');

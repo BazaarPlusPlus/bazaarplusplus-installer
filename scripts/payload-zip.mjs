@@ -3,7 +3,6 @@ import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 import zlib from 'node:zlib';
-import { fileURLToPath } from 'node:url';
 import { resolveBuildPlatform } from './release-platforms.mjs';
 
 // This is the first mod version guaranteed to write the BazaarPlusPlusV5 data root.
@@ -633,19 +632,13 @@ function main(args) {
   }
   const platform = resolveBuildPlatform(args[1]);
   if (!platform) throw new Error(`Unsupported payload platform: ${args[1]}`);
-  const rootDir = path.resolve(
-    path.dirname(fileURLToPath(import.meta.url)),
-    '..'
-  );
+  const rootDir = path.resolve(import.meta.dirname, '..');
   const result = preparePayloadZip({ rootDir, platform });
   console.log(`prepare:resources: wrote ${result.zipPath}`);
   console.log(`prepare:resources: wrote ${result.manifestPath}`);
 }
 
-if (
-  process.argv[1] &&
-  path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)
-) {
+if (import.meta.main) {
   try {
     main(process.argv.slice(2));
   } catch (error) {

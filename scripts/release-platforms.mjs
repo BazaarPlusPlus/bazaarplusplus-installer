@@ -1,6 +1,5 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 
 // Release platform facts live here so build.sh and the Node release scripts
 // cannot drift independently. `key` values are an external wire contract: they
@@ -200,9 +199,6 @@ export function cliMain(args) {
   }
 }
 
-if (
-  process.argv[1] &&
-  path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)
-) {
+if (import.meta.main) {
   process.exitCode = cliMain(process.argv.slice(2));
 }

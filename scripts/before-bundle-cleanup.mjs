@@ -1,5 +1,4 @@
 import fs from 'node:fs';
-import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import {
   RELEASE_PLATFORMS,
@@ -32,10 +31,7 @@ export function cleanupBundleArtifacts(rootDir, platformEnv) {
 }
 
 function main() {
-  const rootDir = path.resolve(
-    path.dirname(fileURLToPath(import.meta.url)),
-    '..'
-  );
+  const rootDir = path.resolve(import.meta.dirname, '..');
   const platformEnv = process.env.TAURI_ENV_PLATFORM ?? process.platform;
   const { cleanupPath, removed } = cleanupBundleArtifacts(rootDir, platformEnv);
 
@@ -58,9 +54,6 @@ function main() {
   );
 }
 
-if (
-  process.argv[1] &&
-  path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)
-) {
+if (import.meta.main) {
   main();
 }

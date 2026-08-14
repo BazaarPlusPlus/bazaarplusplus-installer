@@ -1,7 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { parseArgs } from 'node:util';
-import { fileURLToPath } from 'node:url';
 import { RELEASE_PLATFORM_KEYS } from './release-platforms.mjs';
 
 function readJsonIfExists(filePath) {
@@ -138,9 +137,6 @@ function main() {
   }
 }
 
-if (
-  process.argv[1] &&
-  path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)
-) {
+if (import.meta.main) {
   main();
 }

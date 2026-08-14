@@ -107,10 +107,7 @@ export function runPrebuildCheck(
   }
 }
 
-const invokedAsScript =
-  process.argv[1] && path.resolve(process.argv[1]) === import.meta.filename;
-
-if (invokedAsScript) {
+if (import.meta.main) {
   try {
     const args = process.argv.slice(2);
     let platformEnv = process.env.TAURI_ENV_PLATFORM;

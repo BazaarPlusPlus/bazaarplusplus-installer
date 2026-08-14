@@ -1,6 +1,5 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { updaterFragmentUrl } from './release-platforms.mjs';
 
 export function buildPlatformFragment({
@@ -71,9 +70,6 @@ function main() {
   });
 }
 
-if (
-  process.argv[1] &&
-  path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)
-) {
+if (import.meta.main) {
   main();
 }

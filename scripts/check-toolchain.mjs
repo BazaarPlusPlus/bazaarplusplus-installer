@@ -1,7 +1,5 @@
 import fs from 'node:fs';
-import path from 'node:path';
 import process from 'node:process';
-import { fileURLToPath } from 'node:url';
 
 function parseVersion(value) {
   const match = String(value)
@@ -52,10 +50,7 @@ function main(args) {
   assertSupportedVersion('npm', npmVersion, packageJson.engines.npm);
 }
 
-if (
-  process.argv[1] &&
-  path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)
-) {
+if (import.meta.main) {
   try {
     main(process.argv.slice(2));
   } catch (error) {

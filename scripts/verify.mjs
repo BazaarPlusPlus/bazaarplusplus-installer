@@ -1,7 +1,6 @@
 import path from 'node:path';
 import process from 'node:process';
 import { spawnSync } from 'node:child_process';
-import { fileURLToPath } from 'node:url';
 
 const manifestPath = 'src-tauri/Cargo.toml';
 
@@ -147,15 +146,11 @@ function parseCliArgs(args) {
   return { mode, releasePlatform };
 }
 
-const invokedAsScript =
-  process.argv[1] &&
-  path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
-
-if (invokedAsScript) {
+if (import.meta.main) {
   try {
     const options = parseCliArgs(process.argv.slice(2));
     process.exitCode = runVerification({
-      rootDir: path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'),
+      rootDir: path.resolve(import.meta.dirname, '..'),
       ...options
     });
   } catch (error) {
