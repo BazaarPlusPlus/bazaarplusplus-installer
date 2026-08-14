@@ -91,9 +91,7 @@ export function replaceRunDetailData(
 }
 
 export type RunDetailActionName =
-  | 'screenshot'
-  | `video:${string}`
-  | `delete:${string}`;
+  'screenshot' | `video:${string}` | `delete:${string}`;
 
 export type RunDetailActionTarget = 'screenshot' | `battle:${string}`;
 

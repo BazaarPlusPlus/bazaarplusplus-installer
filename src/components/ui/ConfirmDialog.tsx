@@ -12,9 +12,7 @@ import { useI18n } from '../../i18n/LocaleProvider';
 export type ConfirmTone = 'gold' | 'danger';
 
 export type ConfirmDialogDismissReason =
-  | DialogCloseReason
-  | 'close-button'
-  | 'secondary-action';
+  DialogCloseReason | 'close-button' | 'secondary-action';
 
 export type ActiveDismissalPolicy =
   | { kind: 'blocked' }

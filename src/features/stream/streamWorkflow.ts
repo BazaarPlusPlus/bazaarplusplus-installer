@@ -13,10 +13,7 @@ import {
 } from './streamProblems';
 
 export type StreamCapabilityPhase =
-  | 'loading'
-  | 'available'
-  | 'degraded'
-  | 'unavailable';
+  'loading' | 'available' | 'degraded' | 'unavailable';
 
 type StatusOperation = 'restart' | 'window';
 type CropOperation = 'load' | 'crop' | 'display_mode' | 'reset';
