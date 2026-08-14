@@ -14,8 +14,8 @@
 ## Local Workflow
 
 - Write paths relative to the project root.
-- Frontend-only smoke checks: run `npm run dev -- --host 127.0.0.1 --port 14207` and open `http://127.0.0.1:14207/`.
-- Full desktop shell: use `./build.sh` or `npm run tauri dev`.
+- Frontend-only smoke checks: run `npm run dev` and open `http://127.0.0.1:14207/`.
+- Full desktop shell: `npm run tauri dev`.
 
 ## Commits And Pull Requests
 
