@@ -6,8 +6,6 @@ mod problem;
 mod services;
 mod stream;
 mod tray;
-#[cfg(target_os = "windows")]
-mod windows_window;
 
 // The unit-test harness links the same Tauri dialog code as the application,
 // but tauri-build only attaches its Common Controls v6 resource to binaries.
@@ -81,28 +79,6 @@ pub fn run() {
                 });
 
                 window.show()?;
-
-                // Showing the window can refresh its Win32 frame, so apply the
-                // border and corner style after it has its final native frame.
-                let border_window = window.clone();
-                window.run_on_main_thread(move || {
-                    if let Err(error) = crate::windows_window::apply_dwm_frame_style(&border_window)
-                    {
-                        eprintln!("failed to apply the Windows DWM frame style: {error}");
-                    }
-                })?;
-
-                // Reapply after activation changes as recommended for DWM border
-                // color overrides. This also makes tray hide/show cycles robust.
-                let border_window = window.clone();
-                window.on_window_event(move |event| {
-                    if matches!(event, WindowEvent::Focused(_)) {
-                        if let Err(error) = crate::windows_window::refresh_dwm_frame(&border_window)
-                        {
-                            eprintln!("failed to reapply the Windows DWM border override: {error}");
-                        }
-                    }
-                });
             }
 
             let handle = app.app_handle();

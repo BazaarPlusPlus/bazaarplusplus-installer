@@ -1,7 +1,7 @@
 ---
 status: truth
 topic: architecture
-last-verified: e2c5cf500dc5def6a838e071b431e8fab446ae97
+last-verified: 5cf05c3bb30a2167c0862d3aca9e217e8a575a2e
 ---
 
 # Architecture
@@ -11,7 +11,7 @@ last-verified: e2c5cf500dc5def6a838e071b431e8fab446ae97
 - `package.json`'s `name` field defines the desktop app package as `bppinstaller`, and its `scripts` map exposes the development, build, test, type-check, verification, and Tauri entry points; its `version` field is the single version source (see version sync below).
 - The frontend is built by Vite from `src/`; `build.beforeDevCommand` and `build.beforeBuildCommand` in `src-tauri/tauri.conf.json` invoke `npm run dev` for development and `npm run build` before bundle creation. The `scripts.build` chain in `package.json` (`build` → `build:after-bindings`) generates bindings, runs the prebuild source/resource checks and TypeScript check, then builds the frontend via `scripts.build:frontend`.
 - The main desktop shell is Rust/Tauri. The `run()` function in `src-tauri/src/lib.rs` registers native plugins (window-state, single-instance, updater, process, dialog, opener) and shared state (`SelectedGameInstallationState`, `StreamRuntime`, `InstallerContextState`, `TrayMenuState`), attaches the canonical Specta builder's invoke handler, builds the generated Tauri context, and runs the app with a platform event callback for macOS `Reopen`.
-- The default main window is resizable and maximizable at 1020 x 680 with a 900 x 600 minimum, set via `app.windows` in `src-tauri/tauri.conf.json`. Windows overrides it with a resizable 972 x 612 frameless window with the same minimum that starts hidden, via `app.windows` in `src-tauri/tauri.windows.conf.json`. The `setup()` closure's Windows block in `src-tauri/src/lib.rs` shows the window, actively re-enforces the minimum size on native resize events through `main_window::enforce_minimum_size` (`src-tauri/src/main_window.rs`), and applies only DWM border-color and corner-radius styling through `apply_dwm_frame_style` and `refresh_dwm_frame` (`src-tauri/src/windows_window.rs`) — Tao/Tauri retains the native resize frame itself.
+- The default main window is resizable and maximizable at 1020 x 680 with a 900 x 600 minimum, set via `app.windows` in `src-tauri/tauri.conf.json`. Windows overrides it with a resizable 972 x 612 frameless, shadowless window with the same minimum that starts hidden, via `app.windows` in `src-tauri/tauri.windows.conf.json`; disabling the undecorated native shadow also removes its one-pixel system border, while Tauri's undecorated resize handler keeps edge resizing available. The `setup()` closure's Windows block in `src-tauri/src/lib.rs` shows the window and actively re-enforces the minimum size on native resize events through `main_window::enforce_minimum_size` (`src-tauri/src/main_window.rs`).
 
 ## Native Runtime
 
