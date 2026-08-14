@@ -1,8 +1,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
-import { buildZipBuffer } from './payload-zip.mjs';
-import { RELEASE_PLATFORMS } from './release-platforms.mjs';
+import { buildZipBuffer } from './release/payload-zip.mjs';
+import { RELEASE_PLATFORMS } from './release/release-platforms.mjs';
 
 const markerName = 'CI_FIXTURE_ONLY_DO_NOT_RELEASE.txt';
 const markerContent =

@@ -13,7 +13,7 @@ Steam must launch The Bazaar's application bundle directly, while BepInEx needs 
 
 Use one in-bundle Mach-O trampoline on every supported macOS version. Preserve the Unity executable as `.orig`, install the bundled stub as the bundle executable, sign and verify the resulting bundle, and require byte identity with the current stub.
 
-Require empty The Bazaar LaunchOptions across every Steam account. Any non-empty direct value is dirty; unreadable configuration blocks mutation. Repair converges residue, payload, trampoline, and LaunchOptions to one final state. Current mechanics are specified in [macOS Launch](../macos-launch.md).
+Require empty The Bazaar LaunchOptions across every Steam account. Any non-empty direct value is dirty; unreadable configuration blocks mutation. Repair converges residue, payload, trampoline, and LaunchOptions to one final state. Current mechanics are specified in [Install And Reset](../install-reset.md).
 
 ## Rejected Alternatives
 

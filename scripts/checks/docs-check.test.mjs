@@ -329,7 +329,7 @@ test('checkPathExistence exempts docs/adr/ from ghost-path failures', () => {
   writeRootDocFiles(rootDir);
   writeFile(
     rootDir,
-    'docs/adr/006-steam-only-launch.md',
+    'docs/adr/003-steam-only-launch.md',
     'It worked through `services/tempo.rs`, which no longer exists.\n'
   );
 

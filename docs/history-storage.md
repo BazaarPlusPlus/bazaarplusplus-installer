@@ -1,7 +1,7 @@
 ---
 status: current
 topic: history-storage
-last-verified: 17b17d67ba7cc27b52a435d2cff8eadfd3278840
+last-verified: ef77a33ab317dcb8b447f5590452eeff1d7cf6f4
 ---
 
 # History And Storage
@@ -23,6 +23,6 @@ last-verified: 17b17d67ba7cc27b52a435d2cff8eadfd3278840
 
 ## Data Ownership
 
-The current root name comes from `BAZAAR_DATA_DIRECTORY` in `src-tauri/src/config.rs`. Reset may delete that current root; uninstall does not. Legacy V4 data remains user-owned. `BundleOutbox/` and `bundle_outbox` remain mod-owned: installer cleanup may consult upload status but never deletes their files or rows. [ADR-011](adr/011-v5-data-root-and-v4-orphan-policy.md) records that ownership boundary.
+The current root name comes from `BAZAAR_DATA_DIRECTORY` in `src-tauri/src/config.rs`. Reset may delete that current root; uninstall does not. Legacy V4 data remains user-owned. `BundleOutbox/` and `bundle_outbox` remain mod-owned: installer cleanup may consult upload status but never deletes their files or rows. [ADR-005](adr/005-data-ownership-and-reset.md) records that ownership boundary.
 
 Frontend History and Run Detail use the shared page-state and confirmed-operation seams described in [Frontend Architecture](frontend-architecture.md). History reads do not own or start the Stream service; preview availability is a separate capability.

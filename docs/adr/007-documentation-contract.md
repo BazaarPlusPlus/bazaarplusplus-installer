@@ -13,18 +13,9 @@ The first topic layout solved that ambiguity but placed every current document u
 
 ## Decision
 
-Use one entry map and path-based lifecycle boundaries:
+Use one entry map and path-based lifecycle boundaries: `CONTEXT.md` is the task-triggered topic map, current behavior is the default at `docs/*.md`, and decisions, plans, and archived history are explicit subdirectories. ADRs own rationale and consequences rather than mirroring the current implementation.
 
-- `CONTEXT.md` is a lightweight vocabulary and task-triggered topic map; it carries no verification hash.
-- `CLAUDE.md` holds always-loaded agent policy.
-- `docs/*.md` contains current behavior, split by task branch and verified against code.
-- `docs/adr/` contains architecture or product choices that still constrain the repository.
-- `docs/plans/` contains active future work.
-- `docs/archive/` contains frozen material with lasting historical value.
-
-Keep each claim in one authoritative place. Current documents record non-obvious ownership, invariants, and cross-file behavior; directly readable scripts, config values, dependency lists, and UI inventories remain in the environment. ADRs own rationale and consequences rather than mirroring the current implementation.
-
-Cite code by file and symbol. Use a line citation only for a single-line literal. A current document's `last-verified` value names the commit against which every retained claim was re-derived. Documentation-only changes may stamp an existing default-branch commit; a branch-local stamp requires a merge commit so the hash remains reachable.
+The operational rules — claim ownership, symbol-level citation form, `last-verified` semantics, and lifecycle frontmatter — are owned by `CLAUDE.md`, the always-loaded policy file. This record does not restate them.
 
 `npm run docs:check` checks current-document metadata, unique topics, entry-map coverage, reachable hashes, paths, links, and line bounds. It is a mechanical guard, not evidence that prose is true.
 
@@ -33,6 +24,7 @@ Cite code by file and symbol. Use a line citation only for a single-line literal
 - Keep `docs/truth/`. The current root already has an unambiguous meaning because every other lifecycle has a named subdirectory.
 - Add `docs/INDEX.md`. It would compete with `CONTEXT.md` and cache metadata owned elsewhere.
 - Put all current behavior in `CONTEXT.md`. Always-loaded detail raises context cost and weakens topic triggers.
+- Duplicate the operational rules here. Two authoritative statements of one rule drift; `CLAUDE.md` is the single always-loaded owner.
 - Archive pruned current documentation. Git retains deleted mechanics without presenting stale claims as current search results.
 - Replace symbols with line ranges. Unrelated insertions can silently retarget an otherwise valid range.
 

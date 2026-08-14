@@ -2,7 +2,7 @@ import { test, expect } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
-import { runShell, toBashPath } from './test-support/shell.mjs';
+import { runShell, toBashPath } from '../test-support/shell.mjs';
 import {
   RELEASE_PLATFORMS,
   RELEASE_PLATFORM_KEYS,
@@ -15,7 +15,7 @@ import {
   defaultTargetBuildPlatforms
 } from './release-platforms.mjs';
 import { resolveBundleCleanupPath } from './before-bundle-cleanup.mjs';
-import { resolveTargetPlatforms } from './prebuild-check.mjs';
+import { resolveTargetPlatforms } from '../checks/prebuild-check.mjs';
 
 test.each(RELEASE_PLATFORMS)(
   'Tauri overlay and target layout agree with $key',
@@ -154,13 +154,17 @@ test('r2-key unknown platform keeps the exact build.sh error contract', () => {
 test('CLI list flushes full stdout with exit 0; unknown verb exits 1', () => {
   const out = execFileSync(
     process.execPath,
-    ['scripts/release-platforms.mjs', 'list'],
+    ['scripts/release/release-platforms.mjs', 'list'],
     { cwd: process.cwd() }
   );
   expect(out.toString()).toBe(RELEASE_PLATFORM_KEYS.join('\n') + '\n');
   expect(() =>
-    execFileSync(process.execPath, ['scripts/release-platforms.mjs', 'bogus'], {
-      cwd: process.cwd()
-    })
+    execFileSync(
+      process.execPath,
+      ['scripts/release/release-platforms.mjs', 'bogus'],
+      {
+        cwd: process.cwd()
+      }
+    )
   ).toThrow();
 });

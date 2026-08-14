@@ -1,7 +1,7 @@
 ---
 status: current
 topic: install-reset
-last-verified: 17b17d67ba7cc27b52a435d2cff8eadfd3278840
+last-verified: ef77a33ab317dcb8b447f5590452eeff1d7cf6f4
 ---
 
 # Install And Reset
@@ -20,10 +20,22 @@ last-verified: 17b17d67ba7cc27b52a435d2cff8eadfd3278840
 - `BPP_PRIVATE_RELATIVE_PATHS` and `BPP_BUNDLED_DEPENDENCY_RELATIVE_PATHS` in `src-tauri/src/services/bepinex/payload.rs` define payload ownership.
 - `uninstall_bpp` in `src-tauri/src/services/bepinex/mod.rs` always removes private BPP files. It removes shared BepInEx and platform bootstrap state only when no third-party plugin or patcher remains. Uninstall preserves the BPP data root.
 
-macOS readiness, repair order, and vanilla restoration are specified in [macOS Launch](macos-launch.md).
+## Steam Launch Boundary
+
+The installer launches The Bazaar through `launch_game_via_steam` in `src-tauri/src/services/install/mod.rs`, which opens the fixed Steam game URL. Detection resolves Steam installations through `detect_installation_paths` in `src-tauri/src/services/detect/steam.rs`; there is no alternate launch-mode state. The Steam-only product boundary lives in [ADR-003](adr/003-steam-only-launch.md).
+
+## macOS Trampoline Invariant
+
+- `install_trampoline` in `src-tauri/src/services/bepinex/trampoline.rs` preserves the Unity executable as `.orig`, installs the bundled Mach-O stub as `CFBundleExecutable`, signs the real executable with the required entitlements, seals the bundle, verifies it, and rolls back the layout if installation fails.
+- `is_current_trampoline` in the same module requires both the structural `.orig` layout and byte identity with the bundled stub. Steam Verify, game updates, or a new stub therefore produce a repairable state.
+- `inspect_launch_options_for_steam` and `clear_launch_options_for_steam` in `src-tauri/src/services/vdf/launch_options.rs` require every direct The Bazaar `LaunchOptions` value to be empty across Steam accounts. Unreadable configuration blocks mutation.
+- `remove_obsolete_macos_artifacts` in `src-tauri/src/services/bepinex/trampoline.rs` removes fixed non-canonical residue by name; those files never select behavior.
+- `uninstall_trampoline` restores `.orig` and re-seals the vanilla bundle. `uninstall_bpp` invokes it only when BPP is the last installed mod.
+
+`compile_macos_trampoline_stub` in `src-tauri/build.rs` builds the bundled arm64 stub with the deployment target defined by `MACOS_TRAMPOLINE_DEPLOYMENT_TARGET` in `src-tauri/build_support.rs`. Release validation inspects that target before packaging. The rationale for the sole-bootstrap and empty-LaunchOptions choices lives in [ADR-002](adr/002-macos-launch-trampoline.md).
 
 ## Reset Local Data
 
 Reset is the only installer operation that deletes the current BPP data root. `reset_bpp_data` in `src-tauri/src/services/bepinex/mod.rs` enters `StreamRuntime::exclusive_maintenance`, refuses deletion while the game is running, and delegates filesystem cleanup to `cleanup_bpp_data_directory` in `src-tauri/src/services/bepinex/payload.rs`.
 
-The Install workflow fixes the target path when confirmation opens. A successful `ResetBppDataResult` installs the returned refreshed state and distinguishes removed data from an already-empty target; a failure retains the target for retry. The durable product boundary is recorded in [ADR-005](adr/005-reset-local-data-contract.md) and [ADR-011](adr/011-v5-data-root-and-v4-orphan-policy.md).
+The Install workflow fixes the target path when confirmation opens. A successful `ResetBppDataResult` installs the returned refreshed state and distinguishes removed data from an already-empty target; a failure retains the target for retry. The durable product boundary is recorded in [ADR-005](adr/005-data-ownership-and-reset.md).

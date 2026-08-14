@@ -25,8 +25,7 @@ This file is the entry map. Open only the topic that matches the work; architect
 
 - [Architecture](docs/architecture.md) — read for runtime ownership, subsystem boundaries, selected-installation state, or generated IPC bindings.
 - [Frontend architecture](docs/frontend-architecture.md) — read for command adapters, async page state, modal coordination, confirmation lifecycles, or localization boundaries.
-- [Install and reset](docs/install-reset.md) — read before changing detection, payload ownership, install, repair, uninstall, reset, or their action gates.
-- [macOS launch](docs/macos-launch.md) — read before changing the trampoline, Steam LaunchOptions, bundle signing, repair, or vanilla restoration.
+- [Install and reset](docs/install-reset.md) — read before changing detection, payload ownership, install, repair, uninstall, reset, their action gates, the macOS trampoline, Steam LaunchOptions, bundle signing, or vanilla restoration.
 - [History and storage](docs/history-storage.md) — read before changing SQLite access, run history, screenshots, video deletion, or destructive cleanup.
 - [Stream service](docs/stream-service.md) — read before changing service lifecycle, polling capability state, overlay routes, settings, or CORS.
 - [Updater](docs/updater.md) — read before changing update checks, download/install phases, restart recovery, or the manual mainland-China fallback.

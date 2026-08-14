@@ -258,14 +258,14 @@ export function checkLastVerifiedHashes(
 const BACKTICK_REFERENCE_PATTERN =
   /`([\w./-]+\.[A-Za-z][\w-]*)(?::(\d+)(?:-(\d+))?)?`/g;
 
-// ADR-013 (Documentation Contract) has current docs cite code by
+// The documentation contract (CLAUDE.md; ADR-007) has current docs cite code by
 // symbol rather than by line: `DefaultStreamWorkflow.deriveSnapshot`,
 // `app.windows`, `UserConfig.BetaKey`. Those spans are syntactically
 // indistinguishable from `path.ext` (dotted, letter-led final segment), and
 // prose also names external, non-repo paths the same way (a Steam client
 // file: `steamapps/libraryfolders.vdf`; the game's own binary: `TheBazaar.exe`).
 // A real citation always uses one of these actual source/config/doc
-// extensions. A `:N`/`:N-M` suffix is the second signal: ADR-013 keeps
+// extensions. A `:N`/`:N-M` suffix is the second signal: the contract keeps
 // `file:line` valid specifically for a single-line literal fact (e.g.
 // `build.sh:43`), which is often a bare root filename with no directory
 // component, so a line suffix is accepted on its own. Without one, a bare
@@ -396,10 +396,10 @@ export function checkCodeCitations(rootDir) {
 // ---------- assertion 4: backticked path existence ----------
 
 // docs/adr/ is deliberately excluded here, not merely skipped by accident.
-// ADR-006 names `services/tempo.rs`, a file removed along with the Tempo
-// launch flow it documents — that historical mention is the record's value.
-// Do not widen this scope to include docs/adr/: an ADR must be free to name
-// deleted code without turning a clean tree red.
+// An ADR must be free to name deleted code without turning a clean tree red
+// — e.g. ADR-003 documents the removed Tempo launch flow, and that
+// historical mention is the record's value. Do not widen this scope to
+// include docs/adr/.
 function pathExistenceScanTargets(rootDir) {
   return [
     ...ROOT_DOC_FILES,
@@ -581,7 +581,7 @@ export function runDocsCheck(
 }
 
 if (import.meta.main) {
-  const rootDir = path.resolve(import.meta.dirname, '..');
+  const rootDir = path.resolve(import.meta.dirname, '..', '..');
   try {
     const ok = runDocsCheck(rootDir);
     console.log(ok ? 'docs-check: ok' : 'docs-check: failed');

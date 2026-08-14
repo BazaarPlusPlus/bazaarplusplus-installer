@@ -3,7 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { expect, test } from 'vitest';
 
-import { readZipEntries } from './payload-zip.mjs';
+import { readZipEntries } from './release/payload-zip.mjs';
 import { writeCiResourceFixtures } from './ci-resource-fixture.mjs';
 
 test('source-only CI fixtures are visibly marked and cannot resemble release payloads', () => {
