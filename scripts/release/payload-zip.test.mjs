@@ -40,7 +40,7 @@ function writeStagedModVersion(fixture, version) {
 }
 
 test.each([
-  ['macos', 'libdoorstop.dylib', 0o755],
+  ['macos', 'libdoorstop.dylib', 0o644],
   ['windows', 'doorstop_config.ini', 0o644]
 ])(
   'preparePayloadZip creates a deterministic %s archive and preserves file mode',

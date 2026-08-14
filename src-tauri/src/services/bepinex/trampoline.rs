@@ -414,7 +414,7 @@ pub(crate) fn is_current_trampoline(app: &AppHandle, game_path: &Path) -> Result
     }
     let layout = imp::bundle_paths(game_path)?;
     let bundled = imp::stub_resource_path(app)?;
-    files_are_identical(&layout.exe_path, &bundled)
+    trampoline_builds_match(&layout.exe_path, &bundled)
 }
 
 #[cfg(target_os = "macos")]
@@ -448,12 +448,96 @@ pub(crate) fn remove_obsolete_macos_artifacts(game_path: &Path) -> Result<(), St
 }
 
 #[cfg(target_os = "macos")]
-fn files_are_identical(left: &Path, right: &Path) -> Result<bool, String> {
-    let left_bytes = std::fs::read(left)
-        .map_err(|err| format!("Cannot read trampoline {}: {err}", left.display()))?;
-    let right_bytes = std::fs::read(right)
-        .map_err(|err| format!("Cannot read trampoline {}: {err}", right.display()))?;
-    Ok(left_bytes == right_bytes)
+fn trampoline_builds_match(left: &Path, right: &Path) -> Result<bool, String> {
+    Ok(read_macho_uuid(left)? == read_macho_uuid(right)?)
+}
+
+#[cfg(target_os = "macos")]
+fn read_macho_uuid(path: &Path) -> Result<[u8; 16], String> {
+    const MACH_HEADER_64_SIZE: usize = 32;
+    const MH_MAGIC_64: u32 = 0xfeedfacf;
+    const LC_UUID: u32 = 0x1b;
+    const LC_UUID_SIZE: usize = 24;
+
+    fn read_u32(bytes: &[u8], offset: usize) -> Option<u32> {
+        let value = bytes.get(offset..offset.checked_add(4)?)?;
+        Some(u32::from_le_bytes(value.try_into().ok()?))
+    }
+
+    let bytes = std::fs::read(path)
+        .map_err(|err| format!("Cannot read trampoline {}: {err}", path.display()))?;
+    if read_u32(&bytes, 0) != Some(MH_MAGIC_64) {
+        return Err(format!(
+            "Trampoline {} is not a 64-bit little-endian Mach-O image",
+            path.display()
+        ));
+    }
+
+    let command_count = read_u32(&bytes, 16).ok_or_else(|| {
+        format!(
+            "Trampoline {} has an incomplete Mach-O header",
+            path.display()
+        )
+    })?;
+    let command_bytes = read_u32(&bytes, 20).ok_or_else(|| {
+        format!(
+            "Trampoline {} has an incomplete Mach-O header",
+            path.display()
+        )
+    })? as usize;
+    let commands_end = MACH_HEADER_64_SIZE
+        .checked_add(command_bytes)
+        .filter(|end| *end <= bytes.len())
+        .ok_or_else(|| {
+            format!(
+                "Trampoline {} has invalid Mach-O load commands",
+                path.display()
+            )
+        })?;
+
+    let mut offset = MACH_HEADER_64_SIZE;
+    for _ in 0..command_count {
+        let command = read_u32(&bytes, offset).ok_or_else(|| {
+            format!(
+                "Trampoline {} has an incomplete Mach-O load command",
+                path.display()
+            )
+        })?;
+        let command_size = read_u32(&bytes, offset + 4).ok_or_else(|| {
+            format!(
+                "Trampoline {} has an incomplete Mach-O load command",
+                path.display()
+            )
+        })? as usize;
+        let next_offset = offset
+            .checked_add(command_size)
+            .filter(|next| command_size >= 8 && *next <= commands_end)
+            .ok_or_else(|| {
+                format!(
+                    "Trampoline {} has an invalid Mach-O load command",
+                    path.display()
+                )
+            })?;
+
+        if command == LC_UUID {
+            if command_size < LC_UUID_SIZE {
+                return Err(format!(
+                    "Trampoline {} has an invalid Mach-O UUID command",
+                    path.display()
+                ));
+            }
+            return bytes[offset + 8..offset + LC_UUID_SIZE]
+                .try_into()
+                .map_err(|_| format!("Cannot read Mach-O UUID from {}", path.display()));
+        }
+
+        offset = next_offset;
+    }
+
+    Err(format!(
+        "Trampoline {} has no Mach-O build UUID",
+        path.display()
+    ))
 }
 
 #[cfg(not(target_os = "macos"))]
@@ -489,6 +573,37 @@ mod tests {
         restore_vanilla_layout, swap_in_stub, RealBinarySource, TRAMPOLINE_ENTITLEMENTS,
     };
     use super::*;
+
+    fn write_macho_stub(path: &Path, uuid: [u8; 16], signature: &[u8]) {
+        const MACH_HEADER_64_SIZE: usize = 32;
+        const LC_UUID: u32 = 0x1b;
+        const LC_UUID_SIZE: u32 = 24;
+
+        let mut bytes = vec![0; MACH_HEADER_64_SIZE];
+        bytes[0..4].copy_from_slice(&0xfeedfacfu32.to_le_bytes());
+        bytes[16..20].copy_from_slice(&1u32.to_le_bytes());
+        bytes[20..24].copy_from_slice(&LC_UUID_SIZE.to_le_bytes());
+        bytes.extend_from_slice(&LC_UUID.to_le_bytes());
+        bytes.extend_from_slice(&LC_UUID_SIZE.to_le_bytes());
+        bytes.extend_from_slice(&uuid);
+        bytes.extend_from_slice(signature);
+        std::fs::write(path, bytes).unwrap();
+    }
+
+    #[test]
+    fn trampoline_build_identity_ignores_signatures_but_rejects_different_builds() {
+        let tmp = tempfile::tempdir().unwrap();
+        let bundled = tmp.path().join("bundled");
+        let installed = tmp.path().join("installed");
+        let outdated = tmp.path().join("outdated");
+
+        write_macho_stub(&bundled, [7; 16], b"developer-id-signature");
+        write_macho_stub(&installed, [7; 16], b"adhoc-bundle-signature");
+        write_macho_stub(&outdated, [8; 16], b"adhoc-bundle-signature");
+
+        assert!(trampoline_builds_match(&installed, &bundled).unwrap());
+        assert!(!trampoline_builds_match(&outdated, &bundled).unwrap());
+    }
 
     /// Build a minimal `TheBazaar.app` fixture with a fake main executable.
     fn make_bundle(real_contents: &[u8]) -> tempfile::TempDir {
