@@ -15,6 +15,8 @@ Legacy `BazaarPlusPlusV4/` data remains owned by the user. The installer does no
 
 `BundleOutbox/` and `bundle_outbox` remain exclusively mod-managed. The installer does not delete outbox files or rows and does not include their bytes in cleanup estimates.
 
+Current reset and cleanup behavior is specified in [Install And Reset](../install-reset.md) and [History And Storage](../history-storage.md).
+
 ## Rejected Alternatives
 
 - Extend Reset to clean `BazaarPlusPlusV4/`. This would silently broaden a current-data reset into deletion of user-owned legacy artifacts.

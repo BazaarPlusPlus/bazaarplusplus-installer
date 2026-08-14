@@ -63,6 +63,6 @@ Artifacts land under `src-tauri/target/release/bundle/nsis/` on Windows and `src
 
 ## Documentation
 
-- Start with `CONTEXT.md` — entry map, glossary, and the index of `docs/truth/` topics.
+- Start with `CONTEXT.md` — entry map, vocabulary, and pointers to current topic docs.
 - Architectural decisions live in `docs/adr/`. Doc-layout policy lives in `CLAUDE.md`.
 - Platform smoke-test gaps are tracked as GitHub issues labelled `manual-validation`.

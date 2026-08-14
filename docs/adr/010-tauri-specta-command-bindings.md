@@ -7,21 +7,21 @@ topic: tauri-specta-command-bindings
 
 ## Context
 
-The old IPC contract was repeated across Rust command signatures, `ts-rs` DTO exports, a generated command-name artifact, and a handwritten TypeScript command map. That let command payload fields drift even when the name list remained complete.
+The IPC contract was once repeated across Rust signatures, DTO exports, a command-name artifact, and a handwritten TypeScript map. Command payloads could drift even when the name list remained complete.
 
 ## Decision
 
-Rust Tauri commands are the only IPC schema. `tauri-specta = "=2.0.0-rc.25"`, `specta = "=2.0.0-rc.25"`, and `specta-typescript = "=0.0.12"` are pinned exactly; the release-candidate risk is accepted to support Tauri 2 without a second generator. One Specta builder registers the Tauri invoke handler and exports `src/types/generated/commands.ts`, including both DTO types and typed command functions.
+Make Rust Tauri commands the only IPC schema. One Specta builder registers the production invoke handler and exports typed DTOs plus command functions. The native frontend and Browser Preview implement the generated interface at one adapter boundary.
 
-The native frontend adapter uses those generated functions. Browser Preview is a second adapter implementing the generated command interface; it does not preserve a handwritten command-name or payload registry. Binding generation is mandatory for check, test, build, and prebuild validation, and a generation failure must leave the previous generated directory intact and fail the invoking command.
+Generation is mandatory for check, test, build, and prebuild validation. A failed generation preserves the previous artifact and fails the invoking command. Current ownership and generation mechanics are specified in [Architecture](../architecture.md).
 
 ## Rejected Alternatives
 
-- Keep `ts-rs` as a fallback. This would preserve two schema generators and make drift possible again.
-- Keep the command-name artifact or handwritten `TauriCommandMap`. Names alone cannot verify argument or result shapes.
-- Generate only DTO types and continue calling `invoke` manually. That would still duplicate command strings and payload construction in TypeScript.
-- Make Preview branch inside feature modules. Runtime selection belongs at one adapter boundary so feature workflows have one command interface.
+- Keep a second DTO generator as fallback. Two schemas recreate drift.
+- Keep a command-name artifact or handwritten command map. Names cannot verify payload or result shapes.
+- Generate DTOs but invoke string commands manually. Command names and payload construction would still be duplicated.
+- Branch Preview behavior inside features. Runtime selection belongs at the adapter boundary.
 
 ## Consequences
 
-The project accepts an exactly pinned release candidate and must deliberately upgrade the three Specta packages together. Generated bindings are a single replaceable artifact and are never hand-edited. Commands require Specta metadata and all IPC DTOs require `specta::Type`; there is no separate command-name artifact.
+The compatible Specta packages are upgraded deliberately as one set. Generated bindings are replaceable and never hand-edited; every IPC DTO and command must satisfy the generator's metadata requirements.
