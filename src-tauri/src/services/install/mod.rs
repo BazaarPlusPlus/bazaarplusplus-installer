@@ -332,6 +332,27 @@ mod tests {
         let warnings = install_warnings(
             false,
             false,
+            crate::services::vdf::SteamLaunchOptionsState::Empty,
+            true,
+            false,
+        );
+
+        assert_eq!(
+            warnings
+                .iter()
+                .map(|warning| warning.code)
+                .collect::<Vec<_>>(),
+            vec![InstallWarningCode::GameMissing]
+        );
+        assert!(warnings.iter().all(|warning| warning.params.is_empty()));
+    }
+
+    #[cfg(target_os = "macos")]
+    #[test]
+    fn install_warnings_include_macos_bootstrap_problems() {
+        let warnings = install_warnings(
+            true,
+            true,
             crate::services::vdf::SteamLaunchOptionsState::Unavailable,
             false,
             true,
@@ -343,13 +364,26 @@ mod tests {
                 .map(|warning| warning.code)
                 .collect::<Vec<_>>(),
             vec![
-                InstallWarningCode::GameMissing,
                 InstallWarningCode::SteamConfigUnavailable,
                 InstallWarningCode::TrampolineNotReady,
                 InstallWarningCode::ObsoleteMacosArtifacts,
             ]
         );
         assert!(warnings.iter().all(|warning| warning.params.is_empty()));
+    }
+
+    #[cfg(not(target_os = "macos"))]
+    #[test]
+    fn install_warnings_ignore_macos_bootstrap_inputs_on_other_platforms() {
+        let warnings = install_warnings(
+            true,
+            true,
+            crate::services::vdf::SteamLaunchOptionsState::Unavailable,
+            false,
+            true,
+        );
+
+        assert!(warnings.is_empty());
     }
 
     #[test]
