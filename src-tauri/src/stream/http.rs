@@ -26,6 +26,7 @@ const SETTINGS_HTML: &str = include_str!("../../resources/stream/settings.html")
 const SETTINGS_CSS: &str = include_str!("../../resources/stream/settings.css");
 const SETTINGS_JS: &str = include_str!("../../resources/stream/settings.js");
 static BADGES_DIR: Dir<'_> = include_dir!("$CARGO_MANIFEST_DIR/resources/stream/badges");
+const CINZEL_FONT: &[u8] = include_bytes!("../../resources/stream/fonts/cinzel-latin.woff2");
 const OVERLAY_ROUTE: &str = "/overlay";
 const SETTINGS_ROUTE: &str = "/settings";
 const LATEST_RECORD_ROUTE: &str = "/api/stream/records/latest";
@@ -38,6 +39,7 @@ const OVERLAY_JS_ROUTE: &str = "/assets/overlay.js";
 const SETTINGS_CSS_ROUTE: &str = "/assets/settings.css";
 const SETTINGS_JS_ROUTE: &str = "/assets/settings.js";
 const BADGE_ROUTE: &str = "/assets/badges/{category}/{file_name}";
+const CINZEL_FONT_ROUTE: &str = "/assets/fonts/cinzel-latin.woff2";
 
 #[derive(Clone)]
 struct HttpAppState {
@@ -100,6 +102,7 @@ pub(super) fn router(
         .route(SETTINGS_CSS_ROUTE, get(settings_css))
         .route(SETTINGS_JS_ROUTE, get(settings_js))
         .route(BADGE_ROUTE, get(badge_asset))
+        .route(CINZEL_FONT_ROUTE, get(cinzel_font))
         .layer(cors)
         .with_state(HttpAppState {
             overlay_records,
@@ -494,6 +497,20 @@ async fn settings_js() -> Response {
         .into_response()
 }
 
+async fn cinzel_font() -> Response {
+    (
+        [
+            (header::CONTENT_TYPE, HeaderValue::from_static("font/woff2")),
+            (
+                header::CACHE_CONTROL,
+                HeaderValue::from_static("public, max-age=31536000, immutable"),
+            ),
+        ],
+        CINZEL_FONT,
+    )
+        .into_response()
+}
+
 async fn badge_asset(Path((category, file_name)): Path<(String, String)>) -> Response {
     if !file_name.ends_with(".svg") {
         return StatusCode::NOT_FOUND.into_response();
@@ -532,9 +549,10 @@ async fn badge_asset(Path((category, file_name)): Path<(String, String)>) -> Res
 mod tests {
     use super::{
         crop_cache_path, crop_dynamic_image, is_allowed_cors_origin, load_or_create_strip_cache,
-        overlay_asset_path, BADGES_DIR, BADGE_ROUTE, CROP_CONFIG_ROUTE, LATEST_RECORD_ROUTE,
-        OVERLAY_CSS_ROUTE, OVERLAY_JS_ROUTE, OVERLAY_ROUTE, RECORD_IMAGE_ROUTE, RECORD_LIST_ROUTE,
-        SETTINGS_CSS_ROUTE, SETTINGS_JS_ROUTE, SETTINGS_ROUTE, STRIP_IMAGE_ROUTE,
+        overlay_asset_path, BADGES_DIR, BADGE_ROUTE, CINZEL_FONT, CINZEL_FONT_ROUTE,
+        CROP_CONFIG_ROUTE, LATEST_RECORD_ROUTE, OVERLAY_CSS, OVERLAY_CSS_ROUTE, OVERLAY_JS_ROUTE,
+        OVERLAY_ROUTE, RECORD_IMAGE_ROUTE, RECORD_LIST_ROUTE, SETTINGS_CSS_ROUTE,
+        SETTINGS_JS_ROUTE, SETTINGS_ROUTE, STRIP_IMAGE_ROUTE,
     };
     use crate::stream::overlay_settings::OverlayCropSettings;
     use axum::http::HeaderValue;
@@ -582,6 +600,7 @@ mod tests {
                 SETTINGS_CSS_ROUTE,
                 SETTINGS_JS_ROUTE,
                 BADGE_ROUTE,
+                CINZEL_FONT_ROUTE,
             ],
             [
                 "/overlay",
@@ -596,7 +615,21 @@ mod tests {
                 "/assets/settings.css",
                 "/assets/settings.js",
                 "/assets/badges/{category}/{file_name}",
+                "/assets/fonts/cinzel-latin.woff2",
             ]
+        );
+    }
+
+    #[test]
+    fn overlay_css_font_url_resolves_to_a_served_route() {
+        assert!(
+            OVERLAY_CSS.contains(&format!("url('{CINZEL_FONT_ROUTE}')")),
+            "overlay.css must load the brand face from the route the server exposes"
+        );
+        assert_eq!(
+            &CINZEL_FONT[..4],
+            b"wOF2",
+            "the embedded brand face must be a woff2 payload"
         );
     }
 
