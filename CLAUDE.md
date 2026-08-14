@@ -2,37 +2,38 @@
 
 ## Verification
 
-- Match effort to the risk and scope of the change.
-- Docs-only or instruction-only changes need only `npm run docs:check`.
-- React or TypeScript UI changes should usually run `npm run check`.
-- Changes under `scripts/` should run the smallest relevant vitest coverage when one exists (e.g. `npx vitest run scripts/<file>.test.mjs`, or `npm run test:unit`); otherwise run the touched script directly when practical.
-- Changes affecting versioning, bundled resources, Tauri config, or release packaging should run `npm run prebuild-check` before broader validation.
-- Run `./build.sh --prod` only for packaging, platform bundling, or release-oriented changes.
-- Add a unit test only when it verifies a real behavior seam — not coverage decoration, mock call sequencing, or assertions on exact source text; otherwise say so and ship without one.
-- Release-gate and command semantics beyond this list: `docs/truth/verification.md`.
+- Match verification to the changed behavior.
+- Docs-only or instruction-only changes: run `npm run docs:check`.
+- React or TypeScript UI changes: usually run `npm run check`.
+- `scripts/` changes: run the smallest relevant Vitest file when one exists; otherwise run the touched script when practical.
+- Versioning, bundled resources, Tauri config, or release packaging: run `npm run prebuild-check` before broader validation.
+- Packaging or release work: run `./build.sh --prod` only when the task requires a platform bundle.
+- Tests should prove a behavior seam, not mock sequencing or exact source text.
+- Release gates: read `docs/release.md` before changing verification, packaging, signing, or upload behavior.
 
 ## Local Workflow
 
 - Write paths relative to the project root.
-- For frontend debugging and browser smoke checks (no Tauri shell), run `npm run dev -- --host 127.0.0.1 --port 14207` and use `http://127.0.0.1:14207/`. The full desktop shell is `./build.sh` or `npm run tauri dev`.
+- Frontend-only smoke checks: run `npm run dev -- --host 127.0.0.1 --port 14207` and open `http://127.0.0.1:14207/`.
+- Full desktop shell: use `./build.sh` or `npm run tauri dev`.
 
 ## Commits And Pull Requests
 
-- Write every Git commit message in Conventional Commits format: `<type>(<scope>): <description>`.
-- End every PR body with a `Release Notes:` section holding one blank line then the notes; use `- N/A` for non-user-facing changes.
-- Merge with a merge commit, never a squash, when the PR stamps a `last-verified` hash taken from its own branch — squashing rewrites that commit and the stamp dangles.
+- Use Conventional Commits: `<type>(<scope>): <description>`.
+- End every PR body with a `Release Notes:` section, one blank line, then the notes; use `- N/A` for non-user-facing changes.
+- A PR whose `last-verified` value names one of its own commits must use a merge commit so that hash remains reachable.
 
-## Documentation Structure
+## Documentation
 
-- `docs/truth/` is the only current-behavior location: topic-sliced, code-cited, hash-stamped. Prefer one focused file over a broad chronological document. `CONTEXT.md` is the entry map and glossary.
-- Cite code by symbol — file plus function, constant, type, or config key. Use a `file:line` range only for a single-line literal fact.
-- When a change invalidates a truth doc, update the doc and its `last-verified` hash in the same change. Stamp the commit whose code the claims were re-derived against.
-- Decisions: put architecture or product choices that constrain current work in `docs/adr/`, using Context, Decision, Rejected alternatives, and Consequences.
-- Put only active future work in `docs/plans/`. Move implemented, superseded, or abandoned material to `docs/archive/` with `status`, `topic`, and `superseded-by` frontmatter, and preserve the archived body.
-- Keep generated audit reports and review artifacts under gitignored `tmp/`.
-- Keep agent-authored docs minimal; add or rewrite README-style files only when explicitly requested.
+- Start with `CONTEXT.md`; its topic pointers define when to open each current-behavior document.
+- `docs/*.md` contains current behavior, split by task branch and cited by file plus symbol. Use a line citation only for a single-line literal.
+- Give each claim one owner. Environment files are the source for directly readable scripts, values, paths, and dependency lists.
+- Re-verify every claim in a changed current-behavior document and update its `last-verified` hash in the same change.
+- `docs/adr/` holds decisions that still constrain work, using Context, Decision, Rejected Alternatives, and Consequences.
+- `docs/plans/` holds active future work. Move completed, superseded, or abandoned material with lasting historical value to `docs/archive/`, using `status`, `topic`, and `superseded-by` frontmatter.
+- Keep generated audits and review artifacts under gitignored `tmp/`.
 
 ## Instruction Maintenance
 
-- Add repo-level instructions here only when they are non-obvious, specific enough to act on, and repeatedly useful — not for one-off observations during normal feature or fix work. Put feature- or module-specific guidance near the relevant code instead.
-- When proposing a new instruction in a PR, use a `Suggested CLAUDE.md additions` heading and let reviewers decide what becomes permanent.
+- Add a repository instruction only when it is non-obvious, actionable, and repeatedly useful. Put feature-specific guidance beside the feature.
+- Propose repository instruction changes under a `Suggested CLAUDE.md additions` heading for reviewer selection.

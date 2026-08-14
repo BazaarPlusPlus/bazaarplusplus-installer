@@ -6,6 +6,8 @@ import { test, expect } from 'vitest';
 import {
   checkCitationBounds,
   checkCodeCitations,
+  checkContextTopicCoverage,
+  checkCurrentDocMetadata,
   checkFrontmatterCompleteness,
   checkLastVerifiedHash,
   checkLastVerifiedHashes,
@@ -14,6 +16,7 @@ import {
   extractBacktickReferences,
   extractMarkdownLinks,
   findMissingFrontmatterKeys,
+  listCurrentDocFiles,
   listMarkdownFiles,
   resolveAncestryRef
 } from './docs-check.mjs';
@@ -35,7 +38,7 @@ function writeRootDocFiles(rootDir) {
 }
 
 const FRONTMATTER = (extra = '') =>
-  `---\nstatus: truth\ntopic: sample\nlast-verified: deadbeef\n${extra}---\n`;
+  `---\nstatus: current\ntopic: sample\nlast-verified: deadbeef\n${extra}---\n`;
 
 // ---------- extraction ----------
 
@@ -92,7 +95,7 @@ test('extractBacktickReferences still ignores a bare symbol span even with a col
 // ---------- assertion 1: frontmatter completeness ----------
 
 test('findMissingFrontmatterKeys catches a missing key', () => {
-  const content = '---\nstatus: truth\nlast-verified: deadbeef\n---\n# Doc\n';
+  const content = '---\nstatus: current\nlast-verified: deadbeef\n---\n# Doc\n';
   expect(
     findMissingFrontmatterKeys(content, ['status', 'topic', 'last-verified'])
   ).toEqual(['topic']);
@@ -110,26 +113,70 @@ test('findMissingFrontmatterKeys passes when all keys are present', () => {
 
 test('checkFrontmatterCompleteness reports the offending file and key', () => {
   const rootDir = createFixtureRoot();
-  writeFile(rootDir, 'CONTEXT.md', FRONTMATTER());
   writeFile(
     rootDir,
-    'docs/truth/architecture.md',
-    '---\nstatus: truth\n---\n# Architecture\n'
+    'docs/architecture.md',
+    '---\nstatus: current\n---\n# Architecture\n'
   );
 
   const result = checkFrontmatterCompleteness(rootDir);
 
   expect(result.failures).toHaveLength(2);
   expect(result.failures).toContainEqual({
-    file: 'docs/truth/architecture.md',
+    file: 'docs/architecture.md',
     line: 1,
     message: 'missing frontmatter key `topic`'
   });
   expect(result.failures).toContainEqual({
-    file: 'docs/truth/architecture.md',
+    file: 'docs/architecture.md',
     line: 1,
     message: 'missing frontmatter key `last-verified`'
   });
+});
+
+test('checkCurrentDocMetadata requires current status and unique topics', () => {
+  const rootDir = createFixtureRoot();
+  writeFile(
+    rootDir,
+    'docs/architecture.md',
+    FRONTMATTER().replace('status: current', 'status: truth')
+  );
+  writeFile(rootDir, 'docs/frontend.md', FRONTMATTER());
+
+  const result = checkCurrentDocMetadata(rootDir);
+
+  expect(result.failures).toContainEqual({
+    file: 'docs/architecture.md',
+    line: 1,
+    message: 'status must be `current`, found `truth`'
+  });
+  expect(result.failures).toContainEqual({
+    file: 'docs/frontend.md',
+    line: 1,
+    message: 'topic `sample` is already owned by `docs/architecture.md`'
+  });
+});
+
+test('checkContextTopicCoverage reports an unlinked current topic', () => {
+  const rootDir = createFixtureRoot();
+  writeFile(rootDir, 'CONTEXT.md', '# Context\n');
+  writeFile(rootDir, 'docs/architecture.md', FRONTMATTER());
+
+  expect(checkContextTopicCoverage(rootDir).failures).toEqual([
+    {
+      file: 'docs/architecture.md',
+      line: 1,
+      message: 'current topic is not linked from `CONTEXT.md`'
+    }
+  ]);
+});
+
+test('checkContextTopicCoverage accepts a relative topic link', () => {
+  const rootDir = createFixtureRoot();
+  writeFile(rootDir, 'CONTEXT.md', '[Architecture](docs/architecture.md)\n');
+  writeFile(rootDir, 'docs/architecture.md', FRONTMATTER());
+
+  expect(checkContextTopicCoverage(rootDir).failures).toEqual([]);
 });
 
 // ---------- assertion 2: last-verified hash ancestry ----------
@@ -191,7 +238,7 @@ test('resolveAncestryRef uses the current checkout so branch-local stamps are va
 
 test('checkLastVerifiedHashes reports a dangling hash by file', () => {
   const rootDir = createFixtureRoot();
-  writeFile(rootDir, 'CONTEXT.md', FRONTMATTER());
+  writeFile(rootDir, 'docs/architecture.md', FRONTMATTER());
   const execFileSyncImpl = (_command, args) => {
     if (args[0] === 'rev-parse') return '';
     if (args[0] === 'cat-file') throw new Error('unknown revision');
@@ -201,7 +248,7 @@ test('checkLastVerifiedHashes reports a dangling hash by file', () => {
   const result = checkLastVerifiedHashes(rootDir, { execFileSyncImpl });
 
   expect(result.failures).toHaveLength(1);
-  expect(result.failures[0].file).toBe('CONTEXT.md');
+  expect(result.failures[0].file).toBe('docs/architecture.md');
   expect(result.failures[0].message).toMatch(/deadbeef/);
 });
 
@@ -337,6 +384,15 @@ test('checkMarkdownLinks resolves a link relative to the linking file and passes
 });
 
 // ---------- missing/empty directory handling ----------
+
+test('listCurrentDocFiles includes only Markdown files directly under docs', () => {
+  const rootDir = createFixtureRoot();
+  writeFile(rootDir, 'docs/architecture.md', '# Architecture\n');
+  writeFile(rootDir, 'docs/notes.txt', 'notes\n');
+  writeFile(rootDir, 'docs/adr/001-example.md', '# Decision\n');
+
+  expect(listCurrentDocFiles(rootDir)).toEqual(['docs/architecture.md']);
+});
 
 test('listMarkdownFiles returns an empty list for a missing directory without throwing', () => {
   const rootDir = createFixtureRoot();

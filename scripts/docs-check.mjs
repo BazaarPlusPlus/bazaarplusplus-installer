@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 const ROOT_DOC_FILES = ['CLAUDE.md', 'CONTEXT.md', 'README.md'];
 const REQUIRED_FRONTMATTER_KEYS = ['status', 'topic', 'last-verified'];
 const LAST_VERIFIED_KEY = 'last-verified';
+const CURRENT_STATUS = 'current';
 
 // ---------- shared file helpers ----------
 
@@ -50,6 +51,21 @@ export function listMarkdownFiles(rootDir, relDir) {
   return matches.sort();
 }
 
+// Current behavior lives directly under docs/. Lifecycle-specific material
+// belongs to named subdirectories and is intentionally excluded here.
+export function listCurrentDocFiles(rootDir) {
+  const docsDir = path.join(rootDir, 'docs');
+  if (!fs.statSync(docsDir, { throwIfNoEntry: false })?.isDirectory()) {
+    return [];
+  }
+
+  return fs
+    .readdirSync(docsDir, { withFileTypes: true })
+    .filter((dirent) => dirent.isFile() && dirent.name.endsWith('.md'))
+    .map((dirent) => `docs/${dirent.name}`)
+    .sort();
+}
+
 function lineNumberAt(content, index) {
   let line = 1;
   for (let cursor = 0; cursor < index; cursor += 1) {
@@ -88,7 +104,7 @@ export function findMissingFrontmatterKeys(content, requiredKeys) {
 }
 
 function frontmatterScanTargets(rootDir) {
-  return ['CONTEXT.md', ...listMarkdownFiles(rootDir, 'docs/truth')];
+  return listCurrentDocFiles(rootDir);
 }
 
 export function checkFrontmatterCompleteness(rootDir) {
@@ -107,6 +123,36 @@ export function checkFrontmatterCompleteness(rootDir) {
       });
     }
   }
+  return { checked: files.length, failures };
+}
+
+export function checkCurrentDocMetadata(rootDir) {
+  const files = frontmatterScanTargets(rootDir);
+  const completeness = checkFrontmatterCompleteness(rootDir);
+  const failures = [...completeness.failures];
+  const topics = new Map();
+
+  for (const relativePath of files) {
+    const metadata = parseFrontmatter(readFile(rootDir, relativePath));
+    if (metadata.status && metadata.status !== CURRENT_STATUS) {
+      failures.push({
+        file: relativePath,
+        line: 1,
+        message: `status must be \`${CURRENT_STATUS}\`, found \`${metadata.status}\``
+      });
+    }
+    if (!metadata.topic) continue;
+    if (topics.has(metadata.topic)) {
+      failures.push({
+        file: relativePath,
+        line: 1,
+        message: `topic \`${metadata.topic}\` is already owned by \`${topics.get(metadata.topic)}\``
+      });
+    } else {
+      topics.set(metadata.topic, relativePath);
+    }
+  }
+
   return { checked: files.length, failures };
 }
 
@@ -213,7 +259,7 @@ export function checkLastVerifiedHashes(
 const BACKTICK_REFERENCE_PATTERN =
   /`([\w./-]+\.[A-Za-z][\w-]*)(?::(\d+)(?:-(\d+))?)?`/g;
 
-// ADR-013 (Documentation Contract) has truth docs cite code by
+// ADR-013 (Documentation Contract) has current docs cite code by
 // symbol rather than by line: `DefaultStreamWorkflow.deriveSnapshot`,
 // `app.windows`, `UserConfig.BetaKey`. Those spans are syntactically
 // indistinguishable from `path.ext` (dotted, letter-led final segment), and
@@ -298,7 +344,7 @@ export function checkCitationBounds(citation, lineCount) {
 function citationScanTargets(rootDir) {
   return [
     ...ROOT_DOC_FILES,
-    ...listMarkdownFiles(rootDir, 'docs/truth'),
+    ...listCurrentDocFiles(rootDir),
     ...listMarkdownFiles(rootDir, 'docs/adr'),
     ...listMarkdownFiles(rootDir, 'docs/agents'),
     ...listMarkdownFiles(rootDir, 'docs/plans')
@@ -358,7 +404,7 @@ export function checkCodeCitations(rootDir) {
 function pathExistenceScanTargets(rootDir) {
   return [
     ...ROOT_DOC_FILES,
-    ...listMarkdownFiles(rootDir, 'docs/truth'),
+    ...listCurrentDocFiles(rootDir),
     ...listMarkdownFiles(rootDir, 'docs/agents'),
     ...listMarkdownFiles(rootDir, 'docs/plans')
   ];
@@ -451,12 +497,43 @@ export function checkMarkdownLinks(rootDir) {
   return { checked, failures };
 }
 
+// CONTEXT.md is the sole topic map. Every current document must be reachable
+// from it so a new file cannot silently increase cognitive load.
+export function checkContextTopicCoverage(rootDir) {
+  const currentFiles = listCurrentDocFiles(rootDir);
+  const linkedPaths = new Set(
+    extractMarkdownLinks(readFile(rootDir, 'CONTEXT.md')).map((link) =>
+      path.resolve(resolveMarkdownLinkPath(rootDir, 'CONTEXT.md', link.target))
+    )
+  );
+  const failures = [];
+
+  for (const relativePath of currentFiles) {
+    const absolutePath = path.resolve(
+      path.join(rootDir, ...relativePath.split('/'))
+    );
+    if (!linkedPaths.has(absolutePath)) {
+      failures.push({
+        file: relativePath,
+        line: 1,
+        message: 'current topic is not linked from `CONTEXT.md`'
+      });
+    }
+  }
+
+  return { checked: currentFiles.length, failures };
+}
+
 // ---------- runner ----------
 
 const ASSERTIONS = [
   {
-    name: 'Frontmatter completeness (status/topic/last-verified)',
-    run: (rootDir) => checkFrontmatterCompleteness(rootDir)
+    name: 'Current topic metadata (status/topic/last-verified)',
+    run: (rootDir) => checkCurrentDocMetadata(rootDir)
+  },
+  {
+    name: 'CONTEXT.md current-topic coverage',
+    run: (rootDir) => checkContextTopicCoverage(rootDir)
   },
   {
     name: 'last-verified hash ancestry',
