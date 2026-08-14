@@ -31,7 +31,7 @@ export function cleanupBundleArtifacts(rootDir, platformEnv) {
 }
 
 function main() {
-  const rootDir = path.resolve(import.meta.dirname, '..');
+  const rootDir = path.resolve(import.meta.dirname, '..', '..');
   const platformEnv = process.env.TAURI_ENV_PLATFORM ?? process.platform;
   const { cleanupPath, removed } = cleanupBundleArtifacts(rootDir, platformEnv);
 

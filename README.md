@@ -69,7 +69,7 @@ Artifacts land under:
 - **Windows:** `src-tauri/target/release/bundle/nsis/`
 - **macOS:** `src-tauri/target/aarch64-apple-darwin/release/bundle/` (`app`, `dmg`)
 
-Platform facts (bundle paths, updater keys, Rust targets) are defined in `scripts/release-platforms.mjs`. Read `docs/release.md` before changing anything release-related.
+Platform facts (bundle paths, updater keys, Rust targets) are defined in `scripts/release/release-platforms.mjs`. Read `docs/release.md` before changing anything release-related.
 
 ## Repository layout
 
@@ -78,7 +78,7 @@ Platform facts (bundle paths, updater keys, Rust targets) are defined in `script
 | `src/` | React frontend |
 | `src-tauri/` | Rust backend: native commands, services, packaging |
 | `static/` | Frontend media and fonts imported by Vite |
-| `scripts/` | Build tooling, with colocated `*.test.mjs` behavior tests |
+| `scripts/` | Build tooling — `release/` holds the packaging pipeline, `checks/` the verification entry points; behavior tests are colocated as `*.test.mjs` |
 | `docs/` | Project documentation (see below) |
 
 ## Documentation

@@ -4,7 +4,7 @@ import path from 'node:path';
 import process from 'node:process';
 
 export const NATIVE_RECORDER_LOCK_PATH =
-  'scripts/native-recorder-input.lock.json';
+  'scripts/release/native-recorder-input.lock.json';
 export const NATIVE_RECORDER_INPUT_PATHS = Object.freeze([
   'src-tauri/resources/SourceForBuild/macos/BepInEx/plugins/libBppMacAudio.dylib',
   'src-tauri/resources/SourceForBuild/macos/TheBazaar.app/Contents/Plugins/GfxPluginBppReplayVideoToolbox.bundle/Contents/Info.plist',
@@ -70,7 +70,7 @@ export function verifyNativeRecorderInput({
 }
 
 function main() {
-  const rootDir = path.resolve(import.meta.dirname, '..');
+  const rootDir = path.resolve(import.meta.dirname, '..', '..');
   const result = verifyNativeRecorderInput({ rootDir });
   console.log(
     `native-recorder-input: verified ${result.sourceRepository}@${result.sourceCommit}`

@@ -5,14 +5,14 @@ import process from 'node:process';
 import {
   assertVersionsAreAligned,
   collectVersionSnapshot
-} from './version-sync.mjs';
+} from '../release/version-sync.mjs';
 import {
   assertPlatformCoherence,
   defaultTargetBuildPlatforms,
   resolveBuildPlatform
-} from './release-platforms.mjs';
-import { validatePayloadZip } from './payload-zip.mjs';
-import { verifyNativeRecorderInput } from './native-recorder-input.mjs';
+} from '../release/release-platforms.mjs';
+import { validatePayloadZip } from '../release/payload-zip.mjs';
+import { verifyNativeRecorderInput } from '../release/native-recorder-input.mjs';
 
 export function resolveTargetPlatforms(platformEnv) {
   if (!platformEnv) {

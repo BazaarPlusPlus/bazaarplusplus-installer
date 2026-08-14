@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { execFileSync, spawnSync } from 'node:child_process';
 
-const rootDir = path.resolve(import.meta.dirname, '..');
+const rootDir = path.resolve(import.meta.dirname, '..', '..');
 const appIconName = 'AppIcon';
 const iconSource = path.join(
   rootDir,

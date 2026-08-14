@@ -150,7 +150,7 @@ if (import.meta.main) {
   try {
     const options = parseCliArgs(process.argv.slice(2));
     process.exitCode = runVerification({
-      rootDir: path.resolve(import.meta.dirname, '..'),
+      rootDir: path.resolve(import.meta.dirname, '..', '..'),
       ...options
     });
   } catch (error) {

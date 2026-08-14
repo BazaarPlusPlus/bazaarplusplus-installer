@@ -141,7 +141,7 @@ public_base_url() {
 }
 
 release_platforms_cli() {
-    node "$SCRIPT_DIR/scripts/release-platforms.mjs" "$@"
+    node "$SCRIPT_DIR/scripts/release/release-platforms.mjs" "$@"
 }
 
 platform_r2_key() {
@@ -505,7 +505,7 @@ create_zip_from_directory() {
     local output_zip="$2"
     local output_manifest="$3"
 
-    node "$SCRIPT_DIR/scripts/payload-zip.mjs" pack \
+    node "$SCRIPT_DIR/scripts/release/payload-zip.mjs" pack \
         --source "$source_dir" --output "$output_zip" \
         --manifest-output "$output_manifest" --platform macos
 }
@@ -552,7 +552,7 @@ prepare_signed_macos_resource_zip() {
 
 run_release_prechecks() {
     local platform="$1"
-    invoke_step "Synchronizing package versions" node scripts/version-sync.mjs
+    invoke_step "Synchronizing package versions" node scripts/release/version-sync.mjs
     invoke_step "Verifying pinned native replay recorder inputs" \
         npm run verify:native-recorder-input
     invoke_step "Preparing $platform release resources" \
@@ -578,7 +578,7 @@ upload_r2_object() {
 
 artifact_manifest_paths() {
     local platform="$1"
-    node "$SCRIPT_DIR/scripts/artifact-manifest.mjs" paths --platform "$platform"
+    node "$SCRIPT_DIR/scripts/release/artifact-manifest.mjs" paths --platform "$platform"
 }
 
 upload_release_assets() {
@@ -613,7 +613,7 @@ upload_release_assets() {
         "$version/$platform_key/updater/$(basename "$updater_sig")"
 
     fragment_file="$SCRIPT_DIR/src-tauri/target/platform-manifest.$platform_key.json"
-    node "$SCRIPT_DIR/scripts/generate-platform-manifest.mjs" \
+    node "$SCRIPT_DIR/scripts/release/generate-platform-manifest.mjs" \
         "$fragment_file" "$platform_key" "$base_url" "$version" "$updater_file" "$updater_sig"
 
     upload_r2_object \
@@ -649,7 +649,7 @@ generate_latest_manifest() {
         --file "$temp_dir/existing-latest.json" \
         --remote >/dev/null 2>&1 || true
 
-    node "$SCRIPT_DIR/scripts/generate-latest-manifest.mjs" \
+    node "$SCRIPT_DIR/scripts/release/generate-latest-manifest.mjs" \
         --output "$latest_file" \
         --version "$version" \
         --temp-dir "$temp_dir"
@@ -738,7 +738,7 @@ build_prod() {
     invoke_step "Bundling $platform installer" "${bundle_command[@]}"
 
     invoke_step "Writing $platform artifact manifest" \
-        node "$SCRIPT_DIR/scripts/artifact-manifest.mjs" generate --platform "$platform"
+        node "$SCRIPT_DIR/scripts/release/artifact-manifest.mjs" generate --platform "$platform"
 
     echo
     echo "Build complete."
@@ -788,7 +788,7 @@ main() {
     assert_command npm "Install Node.js/npm first."
     node_version="$(node --version)"
     npm_version="$(npm --version)"
-    node scripts/check-toolchain.mjs "$node_version" "$npm_version"
+    node scripts/checks/check-toolchain.mjs "$node_version" "$npm_version"
     if [ "$PROD" = false ] && [ "$UPLOAD" = false ]; then
         assert_command cargo "Install Rust toolchain first."
         install_dependencies true

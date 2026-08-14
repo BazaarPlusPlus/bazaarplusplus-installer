@@ -581,7 +581,7 @@ export function runDocsCheck(
 }
 
 if (import.meta.main) {
-  const rootDir = path.resolve(import.meta.dirname, '..');
+  const rootDir = path.resolve(import.meta.dirname, '..', '..');
   try {
     const ok = runDocsCheck(rootDir);
     console.log(ok ? 'docs-check: ok' : 'docs-check: failed');

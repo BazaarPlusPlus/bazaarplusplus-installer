@@ -265,7 +265,7 @@ function main(args) {
       'Usage: artifact-manifest.mjs <generate|paths> --platform <macos|windows>'
     );
   }
-  const rootDir = path.resolve(import.meta.dirname, '..');
+  const rootDir = path.resolve(import.meta.dirname, '..', '..');
   const version = packageVersion(rootDir);
   if (verb === 'generate') {
     const result = createArtifactManifest({ rootDir, platform, version });

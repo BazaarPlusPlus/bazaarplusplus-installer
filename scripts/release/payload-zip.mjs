@@ -632,7 +632,7 @@ function main(args) {
   }
   const platform = resolveBuildPlatform(args[1]);
   if (!platform) throw new Error(`Unsupported payload platform: ${args[1]}`);
-  const rootDir = path.resolve(import.meta.dirname, '..');
+  const rootDir = path.resolve(import.meta.dirname, '..', '..');
   const result = preparePayloadZip({ rootDir, platform });
   console.log(`prepare:resources: wrote ${result.zipPath}`);
   console.log(`prepare:resources: wrote ${result.manifestPath}`);
