@@ -1,5 +1,7 @@
 # Agent Instructions
 
+Start every task with `CONTEXT.md`; its topic pointers define when to open each current-behavior document.
+
 ## Verification
 
 - Match verification to the changed behavior.
@@ -9,11 +11,9 @@
 - Versioning, bundled resources, Tauri config, or release packaging: run `npm run prebuild-check` before broader validation.
 - Packaging or release work: run `./build.sh --prod` only when the task requires a platform bundle.
 - Tests should prove a behavior seam, not mock sequencing or exact source text.
-- Release gates: read `docs/release.md` before changing verification, packaging, signing, or upload behavior.
 
 ## Local Workflow
 
-- Write paths relative to the project root.
 - Frontend-only smoke checks: run `npm run dev` and open `http://127.0.0.1:14207/`.
 - Full desktop shell: `npm run tauri dev`.
 
@@ -25,12 +25,11 @@
 
 ## Documentation
 
-- Start with `CONTEXT.md`; its topic pointers define when to open each current-behavior document.
-- `docs/*.md` contains current behavior, split by task branch and cited by file plus symbol. Use a line citation only for a single-line literal.
+- `docs/*.md` contains current behavior, split by task branch and cited by root-relative file path plus symbol. Use a line citation only for a single-line literal.
 - Give each claim one owner. Environment files are the source for directly readable scripts, values, paths, and dependency lists.
 - Re-verify every claim in a changed current-behavior document and update its `last-verified` hash in the same change.
 - `docs/adr/` holds decisions that still constrain work, using Context, Decision, Rejected Alternatives, and Consequences.
-- `docs/plans/` holds active future work. Move completed, superseded, or abandoned material with lasting historical value to `docs/archive/`, using `status`, `topic`, and `superseded-by` frontmatter.
+- `docs/plans/` holds active future work; retired material with lasting value moves to `docs/archive/`, using `status`, `topic`, and `superseded-by` frontmatter.
 - Keep generated audits and review artifacts under gitignored `tmp/`.
 
 ## Instruction Maintenance
