@@ -345,13 +345,12 @@ test.each([
   ).toThrow(error);
 });
 
-test('validateZipEntrySet ignores directories and accepts one legal top-level prefix', () => {
+test('validateZipEntrySet ignores directory entries', () => {
   const mapping = validateZipEntrySet(
     [
-      { name: 'payload/', isDirectory: true },
-      { name: 'payload/BepInEx/', isDirectory: true },
-      { name: 'payload/BepInEx/a.dll', isDirectory: false },
-      { name: 'payload/libdoorstop.dylib', isDirectory: false }
+      { name: 'BepInEx/', isDirectory: true },
+      { name: 'BepInEx/a.dll', isDirectory: false },
+      { name: 'libdoorstop.dylib', isDirectory: false }
     ],
     ['BepInEx/a.dll', 'libdoorstop.dylib']
   );

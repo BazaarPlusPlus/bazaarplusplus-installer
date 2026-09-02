@@ -45,7 +45,7 @@ export function toBashPath(p) {
 }
 
 export function runShell(script) {
-  return execFileSync(bashCommand, ['-lc', script], {
+  return execFileSync(bashCommand, ['-c', script], {
     cwd: projectDir,
     encoding: 'utf8',
     timeout: 120000

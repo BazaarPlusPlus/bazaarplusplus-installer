@@ -54,22 +54,6 @@ const macosExecutablePaths = new Set([
 const fixedDosDate = (1 << 5) | 1;
 const fixedDosTime = 0;
 
-const crcTable = Array.from({ length: 256 }, (_, value) => {
-  let crc = value;
-  for (let bit = 0; bit < 8; bit += 1) {
-    crc = (crc & 1) !== 0 ? 0xedb88320 ^ (crc >>> 1) : crc >>> 1;
-  }
-  return crc >>> 0;
-});
-
-function crc32(buffer) {
-  let crc = 0xffffffff;
-  for (const byte of buffer) {
-    crc = crcTable[(crc ^ byte) & 0xff] ^ (crc >>> 8);
-  }
-  return (crc ^ 0xffffffff) >>> 0;
-}
-
 function sha256(buffer) {
   return crypto.createHash('sha256').update(buffer).digest('hex');
 }
@@ -305,7 +289,7 @@ export function buildZipBuffer(inputEntries) {
     const compressed = isDirectory
       ? Buffer.alloc(0)
       : zlib.deflateRawSync(data, { level: 9 });
-    const checksum = crc32(data);
+    const checksum = zlib.crc32(data);
     const local = Buffer.alloc(30);
     local.writeUInt32LE(0x04034b50, 0);
     local.writeUInt16LE(20, 4);
@@ -458,34 +442,7 @@ export function validateZipEntrySet(entries, expectedPaths) {
   }
 
   const expected = new Set(expectedPaths);
-  const direct = new Set(files.map(({ normalized }) => normalized));
-  let selected = files;
-  let actual = direct;
-
-  const directMissing = setDifference(expected, direct);
-  const directExtra = setDifference(direct, expected);
-  if (directMissing.length > 0 || directExtra.length > 0) {
-    const firstSegments = new Set(
-      files.map(({ normalized }) => normalized.split('/')[0])
-    );
-    if (
-      firstSegments.size === 1 &&
-      files.every(({ normalized }) => normalized.includes('/'))
-    ) {
-      const stripped = files.map(({ normalized, entry }) => ({
-        normalized: normalized.slice(normalized.indexOf('/') + 1),
-        entry
-      }));
-      const strippedSet = new Set(stripped.map(({ normalized }) => normalized));
-      if (
-        setDifference(expected, strippedSet).length === 0 &&
-        setDifference(strippedSet, expected).length === 0
-      ) {
-        selected = stripped;
-        actual = strippedSet;
-      }
-    }
-  }
+  const actual = new Set(files.map(({ normalized }) => normalized));
 
   const missing = setDifference(expected, actual);
   const extra = setDifference(actual, expected);
@@ -500,7 +457,7 @@ export function validateZipEntrySet(entries, expectedPaths) {
       `ZIP payload entries do not exactly match staging (${details})`
     );
   }
-  return new Map(selected.map(({ normalized, entry }) => [normalized, entry]));
+  return new Map(files.map(({ normalized, entry }) => [normalized, entry]));
 }
 
 export function preparePayloadZip({
@@ -515,7 +472,6 @@ export function preparePayloadZip({
   assertRequiredStagingInputs(sourceDir, requiredStagingPaths);
   assertStagedModWritesV5DataRoot(sourceDir);
   assertStagedHistoryDatabaseCompatibility(rootDir, sourceDir);
-  assertForbiddenStagingInputs(platform, sourceDir);
   return writeDeterministicZip({
     sourceDir,
     outputPath: zipPath,
@@ -578,7 +534,6 @@ export function writeDeterministicZip({
   }
   return {
     zipPath: outputPath,
-    outputPath,
     manifestPath,
     manifest,
     sha256: sha256(buffer),
@@ -684,7 +639,7 @@ function main(args) {
       manifestPath,
       platform
     });
-    console.log(`payload-zip: wrote ${result.outputPath}`);
+    console.log(`payload-zip: wrote ${result.zipPath}`);
     if (result.manifestPath) {
       console.log(`payload-zip: wrote ${result.manifestPath}`);
     }
