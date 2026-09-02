@@ -2,6 +2,7 @@ use chrono::{DateTime, Datelike, Duration, NaiveDate, SecondsFormat, TimeZone, U
 use rusqlite::{params, Connection};
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
+use std::sync::LazyLock;
 
 use crate::history::files::resolve_cleanup_file_path;
 use crate::history::queries::{open_cleanup_connection, open_connection};
@@ -147,14 +148,12 @@ pub fn plan_screenshot_cleanup(
     let cutoff_utc = cutoff.map(|value| value.utc.as_str());
     let screenshots_dir = crate::services::paths::screenshots_dir(game_path);
     let items = eligible_screenshots(&conn, cutoff_utc)?;
-    let remaining_referenced_paths =
-        remaining_screenshot_relative_paths_after_cleanup(&conn, &items)?;
-    let items = mark_screenshot_file_deletions(items, &remaining_referenced_paths);
+    let path_sets = screenshot_relative_path_sets(&conn, &items)?;
+    let items = mark_screenshot_file_deletions(items, &path_sets.remaining);
     let skipped_pending_uploads = pending_upload_count(&conn, cutoff_utc)?;
-    let referenced_paths = all_screenshot_relative_paths(&conn)?;
     let orphan_files = scan_orphan_screenshot_files(
         &screenshots_dir,
-        &referenced_paths,
+        &path_sets.all,
         cutoff.map(|c| c.local_date),
         today_local_date,
     );
@@ -261,11 +260,10 @@ fn execute_screenshot_cleanup_plan(
     })
 }
 
-fn delete_screenshot_if_unprotected(
-    conn: &Connection,
-    screenshot_id: &str,
-) -> Result<usize, String> {
-    let sql = format!(
+/// Built once from `PROTECTED_RUN_PREDICATE` — the per-row delete loop must not
+/// re-format a ~600-byte SQL text for every screenshot it visits.
+static DELETE_SCREENSHOT_IF_UNPROTECTED_SQL: LazyLock<String> = LazyLock::new(|| {
+    format!(
         "delete from run_screenshots
          where screenshot_id = ?1
            and not (
@@ -278,9 +276,17 @@ fn delete_screenshot_if_unprotected(
                      and ({PROTECTED_RUN_PREDICATE})
                )
            )"
-    );
-    conn.execute(&sql, [screenshot_id])
-        .map_err(|err| err.to_string())
+    )
+});
+
+fn delete_screenshot_if_unprotected(
+    conn: &Connection,
+    screenshot_id: &str,
+) -> Result<usize, String> {
+    let mut stmt = conn
+        .prepare_cached(&DELETE_SCREENSHOT_IF_UNPROTECTED_SQL)
+        .map_err(|err| err.to_string())?;
+    stmt.execute([screenshot_id]).map_err(|err| err.to_string())
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -360,6 +366,10 @@ pub fn plan_run_data_cleanup(
     let mut items = Vec::new();
     let mut screenshot_items_for_estimate = Vec::new();
     let mut video_items_for_estimate = Vec::new();
+    // Execution unlinks one replay payload per distinct battle id, so the
+    // estimate counts each payload once too — same dedupe key as
+    // `deleted_replay_payloads` in `execute_run_data_cleanup_plan`.
+    let mut estimated_replay_payloads = HashSet::new();
     let mut estimated_bytes = 0i64;
     for run_id in run_ids {
         let battle_ids = run_battle_ids(&conn, &run_id)?;
@@ -371,9 +381,13 @@ pub fn plan_run_data_cleanup(
         );
 
         for battle_id in &battle_ids {
-            if let Some(path) = replay_payload_path(&replays_dir, battle_id) {
-                estimated_bytes += file_size(&path);
+            let Some(path) = replay_payload_path(&replays_dir, battle_id) else {
+                continue;
+            };
+            if !estimated_replay_payloads.insert(battle_id.trim().to_string()) {
+                continue;
             }
+            estimated_bytes += file_size(&path);
         }
         video_items_for_estimate.extend(videos.iter().cloned());
         screenshot_items_for_estimate.extend(screenshots.iter().cloned());
@@ -555,13 +569,20 @@ fn execute_run_data_cleanup_plan(
     })
 }
 
-fn delete_run_if_unprotected(conn: &Connection, run_id: &str) -> Result<usize, String> {
-    let sql = format!(
+/// Built once from `PROTECTED_RUN_PREDICATE`; see the screenshot twin above.
+static DELETE_RUN_IF_UNPROTECTED_SQL: LazyLock<String> = LazyLock::new(|| {
+    format!(
         "delete from runs as r
          where r.run_id = ?1
            and not ({PROTECTED_RUN_PREDICATE})"
-    );
-    conn.execute(&sql, [run_id]).map_err(|err| err.to_string())
+    )
+});
+
+fn delete_run_if_unprotected(conn: &Connection, run_id: &str) -> Result<usize, String> {
+    let mut stmt = conn
+        .prepare_cached(&DELETE_RUN_IF_UNPROTECTED_SQL)
+        .map_err(|err| err.to_string())?;
+    stmt.execute([run_id]).map_err(|err| err.to_string())
 }
 
 fn eligible_run_ids(conn: &Connection, cutoff_utc: Option<&str>) -> Result<Vec<String>, String> {
@@ -598,7 +619,7 @@ fn skipped_pending_run_count(conn: &Connection, cutoff_utc: Option<&str>) -> Res
 
 fn run_battle_ids(conn: &Connection, run_id: &str) -> Result<Vec<String>, String> {
     let mut stmt = conn
-        .prepare("select battle_id from battles where run_id = ?1 order by battle_id asc")
+        .prepare_cached("select battle_id from battles where run_id = ?1 order by battle_id asc")
         .map_err(|err| err.to_string())?;
     let rows = stmt
         .query_map([run_id], |row| row.get::<_, String>(0))
@@ -609,7 +630,7 @@ fn run_battle_ids(conn: &Connection, run_id: &str) -> Result<Vec<String>, String
 
 fn run_video_refs(conn: &Connection, run_id: &str) -> Result<Vec<RunDataVideoCleanupItem>, String> {
     let mut stmt = conn
-        .prepare(
+        .prepare_cached(
             "select v.video_id, v.video_relative_path
              from combat_replay_videos v
              join battles b on b.battle_id = v.battle_id
@@ -635,7 +656,7 @@ fn run_screenshot_items(
     run_id: &str,
 ) -> Result<Vec<ScreenshotCleanupItem>, String> {
     let mut stmt = conn
-        .prepare(
+        .prepare_cached(
             "select screenshot_id, image_relative_path
              from run_screenshots
              where run_id = ?1
@@ -812,28 +833,20 @@ fn pending_upload_count(conn: &Connection, cutoff_utc: Option<&str>) -> Result<i
         .map_err(|err| err.to_string())
 }
 
-fn all_screenshot_relative_paths(conn: &Connection) -> Result<HashSet<String>, String> {
-    let mut stmt = conn
-        .prepare("select image_relative_path from run_screenshots")
-        .map_err(|err| err.to_string())?;
-    let rows = stmt
-        .query_map([], |row| row.get::<_, String>(0))
-        .map_err(|err| err.to_string())?;
-
-    let mut paths = HashSet::new();
-    for row in rows {
-        let normalized = normalize_relative_path(&row.map_err(|err| err.to_string())?);
-        if !normalized.is_empty() {
-            paths.insert(normalized);
-        }
-    }
-    Ok(paths)
+/// Both screenshot path sets a plan needs, derived from one table scan.
+struct ScreenshotRelativePathSets {
+    /// Every referenced path, including those of the planned items. Feeds the
+    /// orphan sweep, which must not treat a planned row's file as unreferenced.
+    all: HashSet<String>,
+    /// Paths still referenced once the planned rows are gone. Feeds the
+    /// shared-file guard that keeps a surviving row's image on disk.
+    remaining: HashSet<String>,
 }
 
-fn remaining_screenshot_relative_paths_after_cleanup(
+fn screenshot_relative_path_sets(
     conn: &Connection,
     items: &[ScreenshotCleanupItem],
-) -> Result<HashSet<String>, String> {
+) -> Result<ScreenshotRelativePathSets, String> {
     let planned_ids = items
         .iter()
         .map(|item| item.screenshot_id.as_str())
@@ -847,18 +860,20 @@ fn remaining_screenshot_relative_paths_after_cleanup(
         })
         .map_err(|err| err.to_string())?;
 
-    let mut paths = HashSet::new();
+    let mut all = HashSet::new();
+    let mut remaining = HashSet::new();
     for row in rows {
         let (screenshot_id, image_relative_path) = row.map_err(|err| err.to_string())?;
-        if planned_ids.contains(screenshot_id.as_str()) {
+        let normalized = normalize_relative_path(&image_relative_path);
+        if normalized.is_empty() {
             continue;
         }
-        let normalized = normalize_relative_path(&image_relative_path);
-        if !normalized.is_empty() {
-            paths.insert(normalized);
+        if !planned_ids.contains(screenshot_id.as_str()) {
+            remaining.insert(normalized.clone());
         }
+        all.insert(normalized);
     }
-    Ok(paths)
+    Ok(ScreenshotRelativePathSets { all, remaining })
 }
 
 fn mark_video_file_deletions(
