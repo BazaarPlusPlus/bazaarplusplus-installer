@@ -1,8 +1,3 @@
----
-status: decision
-topic: native-replay-recorder-signing
----
-
 # Installer Owns Native Replay Recorder Release Artifacts
 
 ## Context

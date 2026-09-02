@@ -1,8 +1,3 @@
----
-status: decision
-topic: tauri-specta-command-bindings
----
-
 # Generate Tauri Command Bindings With tauri-specta
 
 ## Context

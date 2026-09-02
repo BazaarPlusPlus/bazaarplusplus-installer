@@ -1,8 +1,3 @@
----
-status: decision
-topic: data-ownership-and-reset
----
-
 # Data Ownership And Reset
 
 ## Context

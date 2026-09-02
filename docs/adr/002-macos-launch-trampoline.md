@@ -1,8 +1,3 @@
----
-status: decision
-topic: macos-launch-trampoline
----
-
 # macOS Launch Trampoline
 
 ## Context

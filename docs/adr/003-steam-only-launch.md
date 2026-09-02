@@ -1,8 +1,3 @@
----
-status: decision
-topic: steam-only-launch
----
-
 # Steam-Only Launch
 
 ## Context
