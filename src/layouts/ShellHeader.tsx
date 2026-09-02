@@ -168,10 +168,20 @@ function isWindowsTauriRuntime() {
   return hasTauriRuntime() && isWindowsPlatform();
 }
 
+/**
+ * Gate, not a wrapper: the hooks that poll native state live in the inner
+ * component so they are never scheduled off Windows, where the controls render
+ * nothing at all.
+ */
 function WindowsWindowControls() {
+  const [isWindowsRuntime] = useState(isWindowsTauriRuntime);
+  if (!isWindowsRuntime) return null;
+  return <WindowsWindowControlsContent />;
+}
+
+function WindowsWindowControlsContent() {
   const { t } = useI18n();
   const streamRunning = useShellStreamServiceRunning();
-  const [isWindowsRuntime] = useState(isWindowsTauriRuntime);
   const [isMaximized, setIsMaximized] = useState(false);
   const closeLabel = streamRunning
     ? t('hideToTrayWhileStreaming')
@@ -179,8 +189,6 @@ function WindowsWindowControls() {
   const maximizeLabel = isMaximized ? t('restoreWindow') : t('maximizeWindow');
 
   useEffect(() => {
-    if (!isWindowsRuntime) return;
-
     let active = true;
     let unlisten: (() => void) | undefined;
     const window = getCurrentWindow();
@@ -219,9 +227,7 @@ function WindowsWindowControls() {
       active = false;
       unlisten?.();
     };
-  }, [isWindowsRuntime]);
-
-  if (!isWindowsRuntime) return null;
+  }, []);
 
   const minimize = () => {
     void getCurrentWindow()

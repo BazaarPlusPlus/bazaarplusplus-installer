@@ -130,7 +130,11 @@ export function useRunDetailPage() {
         revealRunScreenshot(state.data.run.run_id)
       )
     ).ok;
-  }, [runAction, state]);
+  }, [
+    runAction,
+    state.phase,
+    state.phase === 'ready' ? state.data.run.run_id : null
+  ]);
 
   const revealVideo = useCallback(
     async (battleId: string, videoId?: string) => {

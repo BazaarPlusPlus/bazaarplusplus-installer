@@ -73,7 +73,7 @@ function GlobalShellContent() {
         action: { label: t('retry'), onClick: updater.checkNow }
       });
     }
-  }, [showToast, t, updater]);
+  }, [showToast, t, updater.phase, updater.problem, updater.checkNow]);
 
   // Close the header popovers on Escape or a click outside them — the native
   // behaviour these controlled dropdowns were missing.

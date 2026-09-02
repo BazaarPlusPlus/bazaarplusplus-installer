@@ -9,7 +9,7 @@ import {
   RefreshCw,
   Settings2
 } from 'lucide-react';
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import type { StreamOverlayDisplayMode } from '../types/backend';
 import { Button } from '../components/ui/Button';
 import { PageShell } from '../components/ui/PageShell';
@@ -36,7 +36,10 @@ const displayModes: Array<{
 export default function Stream() {
   const { t } = useI18n();
   const { snapshot, intents } = useStreamPage();
-  const presentation = presentStreamSnapshot(snapshot, t);
+  const presentation = useMemo(
+    () => presentStreamSnapshot(snapshot, t),
+    [snapshot, t]
+  );
   const status = snapshot.service.status;
   const cropSettings = snapshot.crop.settings;
   const statusTone = presentation.status.tone;
