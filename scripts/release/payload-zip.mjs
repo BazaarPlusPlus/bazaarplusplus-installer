@@ -2,6 +2,7 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
+import { parseArgs } from 'node:util';
 import zlib from 'node:zlib';
 import { resolveBuildPlatform } from './release-platforms.mjs';
 
@@ -612,22 +613,27 @@ export function validatePayloadZip({
 
 function main(args) {
   if (args[0] === 'pack') {
-    const sourceIndex = args.indexOf('--source');
-    const outputIndex = args.indexOf('--output');
-    const manifestIndex = args.indexOf('--manifest-output');
-    const platformIndex = args.indexOf('--platform');
-    const sourceDir = sourceIndex < 0 ? undefined : args[sourceIndex + 1];
-    const outputPath = outputIndex < 0 ? undefined : args[outputIndex + 1];
-    const manifestPath =
-      manifestIndex < 0 ? undefined : args[manifestIndex + 1];
+    const { values } = parseArgs({
+      args: args.slice(1),
+      strict: true,
+      options: {
+        source: { type: 'string' },
+        output: { type: 'string' },
+        'manifest-output': { type: 'string' },
+        platform: { type: 'string' }
+      }
+    });
+    const sourceDir = values.source;
+    const outputPath = values.output;
+    const manifestPath = values['manifest-output'];
     const platform =
-      platformIndex < 0
+      values.platform === undefined
         ? undefined
-        : resolveBuildPlatform(args[platformIndex + 1]);
+        : resolveBuildPlatform(values.platform);
     if (
       !sourceDir ||
       !outputPath ||
-      (manifestIndex >= 0 && (!manifestPath || !platform))
+      (manifestPath !== undefined && (!manifestPath || !platform))
     ) {
       throw new Error(
         'Usage: payload-zip.mjs pack --source <directory> --output <zip> [--manifest-output <json> --platform <macos|windows>]'
@@ -645,13 +651,19 @@ function main(args) {
     }
     return;
   }
-  if (args.length !== 2 || args[0] !== '--platform') {
+  const { values } = parseArgs({
+    args,
+    strict: true,
+    options: { platform: { type: 'string' } }
+  });
+  if (!values.platform) {
     throw new Error(
       'Usage: payload-zip.mjs --platform <macos|windows> | pack --source <directory> --output <zip> [--manifest-output <json> --platform <macos|windows>]'
     );
   }
-  const platform = resolveBuildPlatform(args[1]);
-  if (!platform) throw new Error(`Unsupported payload platform: ${args[1]}`);
+  const platform = resolveBuildPlatform(values.platform);
+  if (!platform)
+    throw new Error(`Unsupported payload platform: ${values.platform}`);
   const rootDir = path.resolve(import.meta.dirname, '..', '..');
   const result = preparePayloadZip({ rootDir, platform });
   console.log(`prepare:resources: wrote ${result.zipPath}`);

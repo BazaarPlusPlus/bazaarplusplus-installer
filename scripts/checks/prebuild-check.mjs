@@ -2,6 +2,7 @@ import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
+import { parseArgs } from 'node:util';
 import {
   assertVersionsAreAligned,
   collectVersionSnapshot
@@ -109,27 +110,22 @@ export function runPrebuildCheck(
 
 if (import.meta.main) {
   try {
-    const args = process.argv.slice(2);
-    let platformEnv = process.env.TAURI_ENV_PLATFORM;
-    let releaseResources = true;
-    let bindingsOnly = false;
-    for (let index = 0; index < args.length; index += 1) {
-      if (args[index] === '--source-only') {
-        releaseResources = false;
-      } else if (args[index] === '--bindings-only') {
-        bindingsOnly = true;
-      } else if (args[index] === '--platform') {
-        platformEnv = args[index + 1];
-        if (!platformEnv) throw new Error('--platform needs a value');
-        index += 1;
-      } else {
-        throw new Error(`Unknown prebuild-check argument: ${args[index]}`);
+    const { values } = parseArgs({
+      args: process.argv.slice(2),
+      strict: true,
+      options: {
+        'source-only': { type: 'boolean' },
+        'bindings-only': { type: 'boolean' },
+        platform: { type: 'string' }
       }
+    });
+    if (values.platform !== undefined && !values.platform) {
+      throw new Error('--platform needs a value');
     }
     runPrebuildCheck(process.cwd(), {
-      platformEnv,
-      releaseResources,
-      bindingsOnly
+      platformEnv: values.platform ?? process.env.TAURI_ENV_PLATFORM,
+      releaseResources: values['source-only'] !== true,
+      bindingsOnly: values['bindings-only'] === true
     });
     console.log('prebuild-check: ok');
   } catch (error) {
