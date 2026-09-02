@@ -390,10 +390,10 @@ fn history_read_problem_with(
     diagnostic: String,
     is_game_running: impl FnOnce() -> bool,
 ) -> SemanticProblem {
-    if let Some((found, expected)) = crate::history::unsupported_schema_versions(&diagnostic) {
+    if let Some((found, supported)) = crate::history::unsupported_schema_versions(&diagnostic) {
         return SemanticProblem::new(SemanticProblemCode::HistoryDatabaseUnsupportedSchema)
             .with_param("found", found.to_string())
-            .with_param("expected", expected.to_string())
+            .with_param("supported", supported)
             .with_diagnostic(diagnostic);
     }
 
@@ -712,8 +712,8 @@ mod tests {
             );
             assert_eq!(problem.params.get("found").map(String::as_str), Some("0"));
             assert_eq!(
-                problem.params.get("expected").map(String::as_str),
-                Some("1")
+                problem.params.get("supported").map(String::as_str),
+                Some("1,2")
             );
             assert!(problem.diagnostic.is_some());
         }
@@ -735,7 +735,7 @@ mod tests {
         assert!(problem
             .diagnostic
             .as_deref()
-            .is_some_and(|value| value.contains("found=0") && value.contains("expected=1")));
+            .is_some_and(|value| value.contains("found=0") && value.contains("supported=1,2")));
     }
 
     #[test]

@@ -131,7 +131,7 @@ mod tests {
 
         let unsupported_schema = stream_window_problem(
             0,
-            "Unsupported mod database schema: found=2, expected=1.".to_string(),
+            "Unsupported mod database schema: found=3, supported=1,2.".to_string(),
         );
         assert_eq!(
             unsupported_schema.code,

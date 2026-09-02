@@ -247,7 +247,7 @@ const zh = {
   historyEndGameProcessFailedMac:
     '结束游戏进程失败。请在“活动监视器”中结束 The Bazaar 后重试。',
   historyProblemUnsupportedSchema:
-    '战绩数据库版本不受支持（当前 {found}，支持 {expected}）。请更新 BazaarPlusPlus 插件或安装器。',
+    '战绩数据库版本不受支持（当前 {found}，支持 {supported}）。请更新 BazaarPlusPlus 插件或安装器。',
   historyProblemPreviewUnavailable:
     '战绩已载入，但缩略图服务当前不可用。可前往直播页启动本地服务。',
   historyProblemUnexpected: '加载本地战绩时发生意外错误。请重试。',
@@ -677,7 +677,7 @@ const en: Record<MessageKey, string> = {
   historyEndGameProcessFailedMac:
     'The game process could not be ended. Quit The Bazaar from Activity Monitor, then retry.',
   historyProblemUnsupportedSchema:
-    'The History database schema is unsupported (found {found}, expected {expected}). Update the BazaarPlusPlus plugin or installer.',
+    'The History database schema is unsupported (found {found}, supported {supported}). Update the BazaarPlusPlus plugin or installer.',
   historyProblemPreviewUnavailable:
     'Runs are loaded, but thumbnails are unavailable. Start the local service from the Stream page.',
   historyProblemUnexpected:

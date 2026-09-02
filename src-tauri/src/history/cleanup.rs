@@ -1124,7 +1124,7 @@ mod tests {
         conn.execute_batch(
             "
             pragma foreign_keys = on;
-            pragma user_version = 1;
+            pragma user_version = 2;
             create table runs (
                 run_id text primary key,
                 started_at_utc text not null,
@@ -1147,7 +1147,20 @@ mod tests {
                 recorded_at_utc text not null,
                 combat_kind text not null default 'PVP',
                 deleted_at_utc text null,
-                foreign key (run_id) references runs(run_id) on delete cascade
+                has_local_payload integer not null default 0,
+                local_payload_state text null,
+                local_payload_maintenance_at_utc text null,
+                foreign key (run_id) references runs(run_id) on delete cascade,
+                check (
+                    (source = 'LOCAL' and local_payload_state is not null and (
+                        (local_payload_state = 'ready' and has_local_payload = 1)
+                        or
+                        (local_payload_state in ('delete_pending', 'evicted', 'missing')
+                         and has_local_payload = 0)
+                    ))
+                    or
+                    (source <> 'LOCAL' and local_payload_state is null)
+                )
             );
             create table battle_snapshots (
                 battle_id text primary key,
@@ -1180,8 +1193,45 @@ mod tests {
                 codec text not null default 'h264',
                 started_at_utc text not null,
                 file_size_bytes integer null,
-                status text not null
+                status text not null,
+                attachment_state text not null default 'attached',
+                file_state text not null default 'pending',
+                detached_at_utc text null,
+                missing_at_utc text null,
+                last_reconciled_at_utc text null,
+                check (attachment_state in ('attached', 'detached')),
+                check (file_state in ('pending', 'present', 'missing', 'deleted'))
             );
+            create trigger trg_battles_local_payload_insert
+            before insert on battles
+            when not (
+                (new.source = 'LOCAL' and new.local_payload_state is not null and (
+                    (new.local_payload_state = 'ready' and new.has_local_payload = 1)
+                    or
+                    (new.local_payload_state in ('delete_pending', 'evicted', 'missing')
+                     and new.has_local_payload = 0)
+                ))
+                or
+                (new.source <> 'LOCAL' and new.local_payload_state is null)
+            )
+            begin
+                select raise(abort, 'invalid local payload lifecycle state');
+            end;
+            create trigger trg_battles_local_payload_update
+            before update of source, has_local_payload, local_payload_state on battles
+            when not (
+                (new.source = 'LOCAL' and new.local_payload_state is not null and (
+                    (new.local_payload_state = 'ready' and new.has_local_payload = 1)
+                    or
+                    (new.local_payload_state in ('delete_pending', 'evicted', 'missing')
+                     and new.has_local_payload = 0)
+                ))
+                or
+                (new.source <> 'LOCAL' and new.local_payload_state is null)
+            )
+            begin
+                select raise(abort, 'invalid local payload lifecycle state');
+            end;
             create table bundle_seal_jobs (
                 run_id text primary key,
                 state text not null default 'waiting',
@@ -1853,7 +1903,7 @@ mod tests {
             plan_screenshot_cleanup(&database_path, &game_path, None, test_today()).unwrap_err();
 
         assert!(error.contains("found=0"), "{error}");
-        assert!(error.contains("expected=1"), "{error}");
+        assert!(error.contains("supported=1,2"), "{error}");
     }
 
     #[test]
@@ -1945,8 +1995,13 @@ mod tests {
         insert_outbox(&conn, "run-race", "pending");
         conn.execute_batch(
             "
-            insert into battles (battle_id, source, run_id, recorded_at_utc)
-                values ('battle-race', 'LOCAL', 'run-race', '2026-06-10T09:00:00Z');
+            insert into battles (
+                battle_id, source, run_id, recorded_at_utc,
+                has_local_payload, local_payload_state
+            ) values (
+                'battle-race', 'LOCAL', 'run-race', '2026-06-10T09:00:00Z',
+                1, 'ready'
+            );
             insert into combat_replay_videos (
                 video_id, battle_id, video_relative_path, started_at_utc, status
             ) values (
@@ -2040,9 +2095,12 @@ mod tests {
         insert_outbox(&conn, "run-b", "pending");
         conn.execute_batch(
             "
-            insert into battles (battle_id, source, run_id, recorded_at_utc) values
-                ('battle-a', 'LOCAL', 'run-a', '2026-06-10T09:00:00Z'),
-                ('battle-b', 'LOCAL', 'run-b', '2026-06-10T09:01:00Z');
+            insert into battles (
+                battle_id, source, run_id, recorded_at_utc,
+                has_local_payload, local_payload_state
+            ) values
+                ('battle-a', 'LOCAL', 'run-a', '2026-06-10T09:00:00Z', 0, 'missing'),
+                ('battle-b', 'LOCAL', 'run-b', '2026-06-10T09:01:00Z', 0, 'missing');
             insert into combat_replay_videos (
                 video_id, battle_id, video_relative_path, started_at_utc, status
             ) values
@@ -2215,9 +2273,12 @@ mod tests {
         );
         conn.execute_batch(
             "
-            insert into battles (battle_id, source, run_id, recorded_at_utc) values
-                ('battle-clean', 'LOCAL', 'run-clean', '2026-06-10T09:00:00Z'),
-                ('battle-pending', 'LOCAL', 'run-shot-pending', '2026-06-10T09:05:00Z');
+            insert into battles (
+                battle_id, source, run_id, recorded_at_utc,
+                has_local_payload, local_payload_state
+            ) values
+                ('battle-clean', 'LOCAL', 'run-clean', '2026-06-10T09:00:00Z', 0, 'missing'),
+                ('battle-pending', 'LOCAL', 'run-shot-pending', '2026-06-10T09:05:00Z', 0, 'missing');
             insert into combat_replay_videos (video_id, battle_id, video_relative_path, started_at_utc, status) values
                 ('video-clean', 'battle-clean', '2026-06-10\\shared.mp4', '2026-06-10T09:01:00Z', 'COMPLETED'),
                 ('video-pending', 'battle-pending', '2026-06-10/shared.mp4', '2026-06-10T09:06:00Z', 'COMPLETED');
@@ -2310,9 +2371,12 @@ mod tests {
         );
         conn.execute_batch(
             "
-            insert into battles (battle_id, source, run_id, recorded_at_utc) values
-                ('battle-files', 'LOCAL', 'run-files', '2026-06-10T09:00:00Z'),
-                ('../battle-escape', 'LOCAL', 'run-files', '2026-06-10T09:30:00Z');
+            insert into battles (
+                battle_id, source, run_id, recorded_at_utc,
+                has_local_payload, local_payload_state
+            ) values
+                ('battle-files', 'LOCAL', 'run-files', '2026-06-10T09:00:00Z', 1, 'ready'),
+                ('../battle-escape', 'LOCAL', 'run-files', '2026-06-10T09:30:00Z', 1, 'ready');
             insert into combat_replay_videos (
                 video_id, battle_id, video_relative_path, started_at_utc, status
             ) values
@@ -2393,9 +2457,12 @@ mod tests {
             "
             insert into run_events (run_id, seq, ts_utc, kind, payload_json)
                 values ('run-1', 1, '2026-06-10T09:00:00Z', 'test', '{}');
-            insert into battles (battle_id, source, run_id, recorded_at_utc) values
-                ('battle-1', 'LOCAL', 'run-1', '2026-06-10T09:00:00Z'),
-                ('battle-ghost', 'GHOST', null, '2026-06-10T09:00:00Z');
+            insert into battles (
+                battle_id, source, run_id, recorded_at_utc,
+                has_local_payload, local_payload_state
+            ) values
+                ('battle-1', 'LOCAL', 'run-1', '2026-06-10T09:00:00Z', 1, 'ready'),
+                ('battle-ghost', 'GHOST', null, '2026-06-10T09:00:00Z', 0, null);
             insert into battle_snapshots (battle_id, player_hand_json) values ('battle-1', '[]');
             insert into combat_replay_videos (video_id, battle_id, video_relative_path, started_at_utc, status)
                 values ('video-1', 'battle-1', '2026-06-10/v1.mp4', '2026-06-10T09:05:00Z', 'COMPLETED');
