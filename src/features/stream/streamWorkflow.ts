@@ -405,7 +405,7 @@ class DefaultStreamWorkflow implements StreamWorkflow {
       () => this.ports.clipboard.writeText(url),
       'stream_copy_failed',
       { operation: 'copy_obs_url' },
-      { code: 'stream_obs_url_copied', params: {} }
+      { code: 'stream_obs_url_copied' }
     );
   }
 
@@ -453,7 +453,7 @@ class DefaultStreamWorkflow implements StreamWorkflow {
       () => this.ports.commands.applyCropCode(this.state.cropCode.trim()),
       { operation: 'apply_code' },
       true,
-      { code: 'stream_crop_saved', params: {} }
+      { code: 'stream_crop_saved' }
     );
   }
 
@@ -463,7 +463,7 @@ class DefaultStreamWorkflow implements StreamWorkflow {
       () => this.ports.commands.resetCropSettings(),
       { operation: 'reset' },
       true,
-      { code: 'stream_crop_reset', params: {} }
+      { code: 'stream_crop_reset' }
     );
   }
 

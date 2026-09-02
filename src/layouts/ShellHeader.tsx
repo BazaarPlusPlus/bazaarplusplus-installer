@@ -74,7 +74,6 @@ export function ShellHeader({
 }
 
 function ShellBrand() {
-  const app = useAppBootstrapVersion();
   return (
     <div
       className="flex min-w-0 items-center gap-3 z-10"
@@ -87,13 +86,9 @@ function ShellBrand() {
         draggable={false}
       />
       <h1 className="bpp-brand-title">BazaarPlusPlus</h1>
-      <span className="bpp-version-chip">v{app}</span>
+      <span className="bpp-version-chip">v{__FRONTEND_VERSION__}</span>
     </div>
   );
-}
-
-function useAppBootstrapVersion() {
-  return __FRONTEND_VERSION__;
 }
 
 type ShellHeaderActionsProps = {

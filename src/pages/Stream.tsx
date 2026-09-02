@@ -16,11 +16,11 @@ import { PageShell } from '../components/ui/PageShell';
 import { SegmentedControl } from '../components/ui/SegmentedControl';
 import { useToast, type ToastTone } from '../components/ui/Toast';
 import { useStreamPage } from '../features/stream/useStreamPage';
+import { presentStreamSnapshot } from '../features/stream/streamPresentation';
 import {
   presentStreamProblem,
-  presentStreamSnapshot
-} from '../features/stream/streamPresentation';
-import type { StreamProblem } from '../features/stream/streamProblems';
+  type StreamProblem
+} from '../features/stream/streamProblems';
 import { useI18n } from '../i18n/LocaleProvider';
 import type { MessageKey } from '../i18n/messages';
 

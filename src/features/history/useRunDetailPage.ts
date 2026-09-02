@@ -166,10 +166,8 @@ export function useRunDetailPage() {
   );
 
   return {
-    runId,
     state,
     detail: state.phase === 'ready' ? state.data : null,
-    action: actionState.current,
     busy:
       state.phase === 'initial-loading' ||
       refreshing ||

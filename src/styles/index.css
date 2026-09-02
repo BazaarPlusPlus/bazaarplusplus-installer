@@ -391,17 +391,6 @@ body {
   color: color-mix(in srgb, var(--bpp-danger) 68%, white);
   background: color-mix(in srgb, var(--bpp-danger) 18%, transparent);
 }
-.bpp-brand-mark {
-  display: block;
-  width: 48px;
-  height: 48px;
-  flex: none;
-  overflow: visible;
-}
-.bpp-brand-mark.is-compact {
-  width: 38px;
-  height: 38px;
-}
 .bpp-brand-logo {
   display: block;
   width: 36px;
@@ -2557,12 +2546,6 @@ body {
 .bpp-install-refreshing,
 .bpp-run-detail-refreshing {
   color: var(--bpp-text-2);
-}
-.bpp-error-banner {
-  border: 1px solid color-mix(in srgb, var(--bpp-danger) 28%, transparent);
-  border-radius: var(--bpp-radius-control);
-  color: var(--bpp-danger);
-  background: color-mix(in srgb, var(--bpp-danger) 8%, transparent);
 }
 .bpp-confirm-close {
   display: grid;
