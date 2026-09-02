@@ -127,22 +127,28 @@ fn describe_error(error: &rusqlite::Error) -> String {
 }
 
 fn validate_supported_schema(found: i64) -> Result<(), String> {
-    let expected = crate::config::SUPPORTED_MOD_DB_USER_VERSION;
-    if found == expected {
+    let supported = crate::config::supported_mod_db_user_versions();
+    if supported.contains(&found) {
         return Ok(());
     }
 
+    let supported = supported
+        .iter()
+        .map(i64::to_string)
+        .collect::<Vec<_>>()
+        .join(",");
+
     Err(format!(
-        "{UNSUPPORTED_SCHEMA_ERROR_PREFIX}{found}, expected={expected}."
+        "{UNSUPPORTED_SCHEMA_ERROR_PREFIX}{found}, supported={supported}."
     ))
 }
 
-pub(crate) fn unsupported_schema_versions(diagnostic: &str) -> Option<(i64, i64)> {
+pub(crate) fn unsupported_schema_versions(diagnostic: &str) -> Option<(i64, String)> {
     let versions = diagnostic.strip_prefix(UNSUPPORTED_SCHEMA_ERROR_PREFIX)?;
-    let (found, expected) = versions.split_once(", expected=")?;
+    let (found, supported) = versions.split_once(", supported=")?;
     Some((
         found.parse().ok()?,
-        expected.strip_suffix('.')?.parse().ok()?,
+        supported.strip_suffix('.')?.to_string(),
     ))
 }
 
@@ -538,7 +544,22 @@ mod tests {
             open_write_connection(&database_path).unwrap_err(),
         ] {
             assert!(error.contains("found=0"), "{error}");
-            assert!(error.contains("expected=1"), "{error}");
+            assert!(error.contains("supported=1,2"), "{error}");
+        }
+    }
+
+    #[test]
+    fn connections_open_supported_mod_database_schema_versions() {
+        for user_version in [1, 2] {
+            let temp_dir = tempfile::tempdir().unwrap();
+            let database_path = temp_dir.path().join("bazaarplusplus.db");
+            rusqlite::Connection::open(&database_path)
+                .unwrap()
+                .execute_batch(&format!("pragma user_version = {user_version};"))
+                .unwrap();
+
+            assert!(open_connection(&database_path).is_ok());
+            assert!(open_write_connection(&database_path).is_ok());
         }
     }
 
@@ -597,13 +618,13 @@ mod tests {
         let database_path = temp_dir.path().join("bazaarplusplus.db");
         rusqlite::Connection::open(&database_path)
             .unwrap()
-            .execute_batch("pragma user_version = 2;")
+            .execute_batch("pragma user_version = 3;")
             .unwrap();
 
         let error = open_connection(&database_path).unwrap_err();
 
-        assert!(error.contains("found=2"), "{error}");
-        assert!(error.contains("expected=1"), "{error}");
+        assert!(error.contains("found=3"), "{error}");
+        assert!(error.contains("supported=1,2"), "{error}");
     }
 
     #[test]
