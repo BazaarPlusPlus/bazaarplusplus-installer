@@ -12,7 +12,7 @@ export const commands = {
 	resetBppData: (gamePath: string) => __TAURI_INVOKE<ResetBppDataResult>("reset_bpp_data", { gamePath }),
 	resetBepinex: (gamePath: string) => __TAURI_INVOKE<ResetBepinexResult>("reset_bepinex", { gamePath }),
 	uninstallMod: (gamePath: string) => __TAURI_INVOKE<InstallState>("uninstall_mod", { gamePath }),
-	launchGame: () => __TAURI_INVOKE<FileActionResult>("launch_game"),
+	launchGame: () => __TAURI_INVOKE<null>("launch_game"),
 	/**
 	 *  End a game process that outlived its window. Both History and Install stall
 	 *  on that state — one cannot read the mod database, the other refuses to touch
@@ -77,10 +77,6 @@ export type AppLinks = {
 
 export type AppLocalePayload = {
 	locale: string,
-};
-
-export type FileActionResult = {
-	ok: boolean,
 };
 
 export type GameDirectorySelection = {

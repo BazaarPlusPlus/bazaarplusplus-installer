@@ -85,7 +85,6 @@ describe('browser-preview command adapter', () => {
     expect(await commandClient.chooseGameDirectory()).toEqual({
       game_path: null
     });
-    expect(await commandClient.launchGame()).toEqual({ ok: true });
   });
 
   it('preserves nullable read-only desktop preview results', async () => {
@@ -94,6 +93,7 @@ describe('browser-preview command adapter', () => {
 
   it('returns typed locale state and null for Tauri unit-returning no-ops', async () => {
     expect(await commandClient.setAppLocale('en')).toEqual({ locale: 'en' });
+    expect(await commandClient.launchGame()).toBeNull();
     expect(await commandClient.revealRunScreenshot('r')).toBeNull();
     expect(await commandClient.revealBattleVideo('b', null)).toBeNull();
   });

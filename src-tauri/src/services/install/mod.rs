@@ -4,8 +4,8 @@ mod types;
 
 pub(crate) use operation::{install, InstallRequest};
 pub use types::{
-    FileActionResult, GameDirectorySelection, InstallActions, InstallGameState, InstallModState,
-    InstallState, InstallWarning, InstallWarningCode, ResetBepinexResult, ResetBppDataResult,
+    GameDirectorySelection, InstallActions, InstallGameState, InstallModState, InstallState,
+    InstallWarning, InstallWarningCode, ResetBepinexResult, ResetBppDataResult,
 };
 
 use std::process::Command;
