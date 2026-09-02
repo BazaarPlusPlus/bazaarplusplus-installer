@@ -8,9 +8,8 @@ use crate::history::dto::HistoryRunDetail as HistoryRunDetailDto;
 use crate::history::files::{remove_video_file, resolve_data_file_path, resolve_screenshot_path};
 use crate::history::mapper::{map_run_to_detail_row, map_run_to_list_row};
 use crate::history::queries::{
-    self, completed_video_count, completed_video_counts, list_run_rows, load_battle_rows,
-    load_battle_video_ref, load_run_row, load_run_video_refs, load_summary, local_player_name,
-    open_connection, open_write_connection, table_exists,
+    self, list_run_rows, load_battle_rows, load_battle_video_ref, load_run_row, load_summary,
+    local_player_name, open_connection, open_write_connection, table_exists,
 };
 use crate::history::screenshots::{primary_screenshot, primary_screenshot_ids};
 
@@ -42,15 +41,12 @@ pub fn list_history_runs(database_path: &Path, limit: usize) -> Result<HistoryRu
         .map(|row| row.run_id.clone())
         .collect::<Vec<_>>();
     let screenshot_ids = primary_screenshot_ids(&conn, &run_ids)?;
-    let video_counts = completed_video_counts(&conn, &run_ids)?;
 
     let runs = rows
         .into_iter()
         .map(|row| {
-            let run_id = row.run_id.clone();
-            let screenshot_id = screenshot_ids.get(&run_id).cloned();
-            let video_count = video_counts.get(&run_id).copied().unwrap_or(0);
-            map_run_to_list_row(row, screenshot_id, video_count)
+            let screenshot_id = screenshot_ids.get(&row.run_id).cloned();
+            map_run_to_list_row(row, screenshot_id)
         })
         .collect();
 
@@ -74,12 +70,11 @@ pub fn get_history_run_detail(
         return Ok(None);
     };
     let screenshot_id = primary_screenshot(&conn, run_id)?.map(|screenshot| screenshot.id);
-    let video_count = completed_video_count(&conn, run_id)?;
     let player_name = local_player_name(&conn, run_id)?;
     let battles = load_battle_rows(&conn, run_id)?;
 
     Ok(Some(HistoryRunDetailDto {
-        run: map_run_to_detail_row(row, screenshot_id, video_count, player_name),
+        run: map_run_to_detail_row(row, screenshot_id, player_name),
         battles,
     }))
 }
@@ -136,34 +131,9 @@ pub fn delete_battle_video(
     Ok(deleted > 0)
 }
 
-pub fn delete_run_videos(
-    database_path: &Path,
-    video_dir: &Path,
-    run_id: &str,
-) -> Result<usize, String> {
-    let mut conn = open_write_connection(database_path)?;
-    let videos = load_run_video_refs(&conn, run_id)?;
-    for video in &videos {
-        remove_video_file(video_dir, &video.relative_path)?;
-    }
-    let transaction = conn.transaction().map_err(|err| err.to_string())?;
-    for video in &videos {
-        transaction
-            .execute(
-                "delete from combat_replay_videos where video_id = ?1",
-                [&video.video_id],
-            )
-            .map_err(|err| err.to_string())?;
-    }
-    transaction.commit().map_err(|err| err.to_string())?;
-    Ok(videos.len())
-}
-
 #[cfg(test)]
 mod tests {
-    use super::{
-        delete_battle_video, delete_run_videos, get_history_run_detail, list_history_runs,
-    };
+    use super::{delete_battle_video, get_history_run_detail, list_history_runs};
     use crate::config::DATABASE_FILE_NAME;
     use crate::history::dto::{HistoryBattleRow, HistoryBattleVideo};
     use crate::services::paths;
@@ -351,7 +321,7 @@ mod tests {
     }
 
     #[test]
-    fn list_history_runs_derives_summary_results_video_counts_and_strip_urls() {
+    fn list_history_runs_derives_summary_results_and_strip_urls() {
         let temp_dir = tempfile::tempdir().unwrap();
         let database_path = temp_dir.path().join(DATABASE_FILE_NAME);
         let conn = rusqlite::Connection::open(&database_path).unwrap();
@@ -412,7 +382,6 @@ mod tests {
             payload.runs[1].strip_url.as_deref(),
             Some("/images/shot-win/strip")
         );
-        assert_eq!(payload.runs[1].video_count, 1);
         assert_eq!(payload.runs[2].run_id, "run-loss");
         assert_eq!(payload.runs[2].result, "loss");
     }
@@ -481,7 +450,6 @@ mod tests {
             .unwrap()
             .unwrap();
         assert_eq!(detail.run.player_name.as_deref(), Some("cauyxy"));
-        assert_eq!(detail.run.final_hour, Some(7));
         assert_eq!(
             detail.run.strip_url.as_deref(),
             Some("/images/shot-win/strip")
@@ -523,15 +491,5 @@ mod tests {
                 .map(|video| video.video_id.as_str()),
             Some("video-old")
         );
-
-        assert_eq!(
-            delete_run_videos(&database_path, &video_dir, "run-win").unwrap(),
-            1
-        );
-        assert!(!dated_videos_dir.join("old.mp4").exists());
-        let detail = get_history_run_detail(&database_path, "run-win")
-            .unwrap()
-            .unwrap();
-        assert_eq!(detail.battles[0].video, None);
     }
 }

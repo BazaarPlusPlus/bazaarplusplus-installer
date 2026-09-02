@@ -17,7 +17,6 @@ const oneRun = {
       game_mode: 'Ranked',
       started_at_utc: '2026-01-02T15:04:00',
       ended_at_utc: null,
-      last_seen_at_utc: '2026-01-02T15:04:00',
       result: 'active',
       victories: 1,
       losses: 0,
@@ -25,8 +24,7 @@ const oneRun = {
       final_player_rank: null,
       final_player_rating: null,
       screenshot_id: null,
-      strip_url: null,
-      video_count: 0
+      strip_url: null
     }
   ]
 };

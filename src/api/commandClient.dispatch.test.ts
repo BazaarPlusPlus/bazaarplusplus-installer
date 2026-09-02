@@ -29,9 +29,7 @@ describe('native command adapter', () => {
     invokeMock.mockRejectedValueOnce('raw backend failure');
     const { commandClient } = await import('./commandClient');
 
-    await expect(
-      commandClient.deleteRunVideos('run', null)
-    ).rejects.toMatchObject({
+    await expect(commandClient.listHistoryRuns(null)).rejects.toMatchObject({
       message: 'raw backend failure'
     });
   });

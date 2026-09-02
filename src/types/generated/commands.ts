@@ -38,7 +38,6 @@ export const commands = {
 	revealRunScreenshot: (runId: string) => __TAURI_INVOKE<null>("reveal_run_screenshot", { runId }),
 	revealBattleVideo: (battleId: string, videoId: string | null) => __TAURI_INVOKE<null>("reveal_battle_video", { battleId, videoId }),
 	deleteBattleVideo: (battleId: string, videoId: string) => __TAURI_INVOKE<HistoryRunDetail>("delete_battle_video", { battleId, videoId }),
-	deleteRunVideos: (runId: string, limit: number | null) => __TAURI_INVOKE<HistoryRunList>("delete_run_videos", { runId, limit }),
 	previewStorageCleanup: (scope: StorageCleanupScope, preset: StorageCleanupPreset) => __TAURI_INVOKE<StorageCleanupPreview>("preview_storage_cleanup", { scope, preset }),
 	executeStorageCleanup: (scope: StorageCleanupScope, preset: StorageCleanupPreset) => __TAURI_INVOKE<StorageCleanupExecution>("execute_storage_cleanup", { scope, preset }),
 };
@@ -118,18 +117,15 @@ export type HistoryRunDetailRow = {
 	game_mode: string,
 	started_at_utc: string,
 	ended_at_utc: string | null,
-	last_seen_at_utc: string,
 	status: string,
 	result: string,
 	victories: number | null,
 	losses: number | null,
 	final_day: number | null,
-	final_hour: number | null,
 	final_player_rank: string | null,
 	final_player_rating: number | null,
 	screenshot_id: string | null,
 	strip_url: string | null,
-	video_count: number,
 	player_name: string | null,
 };
 
@@ -144,7 +140,6 @@ export type HistoryRunRow = {
 	game_mode: string,
 	started_at_utc: string,
 	ended_at_utc: string | null,
-	last_seen_at_utc: string,
 	result: string,
 	victories: number | null,
 	losses: number | null,
@@ -153,7 +148,6 @@ export type HistoryRunRow = {
 	final_player_rating: number | null,
 	screenshot_id: string | null,
 	strip_url: string | null,
-	video_count: number,
 };
 
 export type HistorySummary = {

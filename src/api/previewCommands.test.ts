@@ -90,9 +90,6 @@ describe('browser-preview command adapter', () => {
 
   it('preserves nullable read-only desktop preview results', async () => {
     expect(await commandClient.getHistoryRunDetail('r')).toBeNull();
-    expect(await commandClient.deleteRunVideos('r', null)).toBe(
-      emptyHistoryRunList
-    );
   });
 
   it('returns typed locale state and null for Tauri unit-returning no-ops', async () => {
