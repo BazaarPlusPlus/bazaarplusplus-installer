@@ -16,9 +16,6 @@ vite.config.ts.timestamp-*
 /src-tauri/target/
 /src-tauri/gen/schemas/
 /src-tauri/**/*.rs.bk
-/src/lib/generated/commands.ts
-/src/lib/generated/bindings/
-/src-tauri/bindings/
 
 # Environment and local overrides
 .env
