@@ -4,7 +4,7 @@ use crate::services::history::{
     StorageCleanupPreview, StorageCleanupScope,
 };
 
-#[tauri::command]
+#[tauri::command(async)]
 #[specta::specta]
 pub fn list_history_runs(
     app: tauri::AppHandle,
@@ -13,7 +13,7 @@ pub fn list_history_runs(
     history::list_runs(&app, limit)
 }
 
-#[tauri::command]
+#[tauri::command(async)]
 #[specta::specta]
 pub fn get_history_run_detail(
     app: tauri::AppHandle,
@@ -22,13 +22,13 @@ pub fn get_history_run_detail(
     history::get_run_detail(&app, &run_id)
 }
 
-#[tauri::command]
+#[tauri::command(async)]
 #[specta::specta]
 pub fn reveal_run_screenshot(app: tauri::AppHandle, run_id: String) -> Result<(), SemanticProblem> {
     history::reveal_run_screenshot(&app, &run_id)
 }
 
-#[tauri::command]
+#[tauri::command(async)]
 #[specta::specta]
 pub fn reveal_battle_video(
     app: tauri::AppHandle,
@@ -38,7 +38,7 @@ pub fn reveal_battle_video(
     history::reveal_battle_video(&app, &battle_id, video_id.as_deref())
 }
 
-#[tauri::command]
+#[tauri::command(async)]
 #[specta::specta]
 pub fn delete_battle_video(
     app: tauri::AppHandle,
@@ -48,7 +48,7 @@ pub fn delete_battle_video(
     history::delete_battle_video(&app, &battle_id, &video_id)
 }
 
-#[tauri::command]
+#[tauri::command(async)]
 #[specta::specta]
 pub fn preview_storage_cleanup(
     app: tauri::AppHandle,
@@ -58,7 +58,7 @@ pub fn preview_storage_cleanup(
     history::preview_storage_cleanup(&app, scope, preset)
 }
 
-#[tauri::command]
+#[tauri::command(async)]
 #[specta::specta]
 pub fn execute_storage_cleanup(
     app: tauri::AppHandle,
