@@ -1,9 +1,3 @@
----
-status: current
-topic: stream-service
-last-verified: 17b17d67ba7cc27b52a435d2cff8eadfd3278840
----
-
 # Stream Service
 
 ## Native Lifecycle

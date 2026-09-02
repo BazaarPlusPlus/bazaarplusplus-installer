@@ -1,9 +1,3 @@
----
-status: current
-topic: install-reset
-last-verified: f6ec47512a477109488bd21acfc4be7c387e222a
----
-
 # Install And Reset
 
 ## State And Planning

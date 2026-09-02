@@ -1,8 +1,3 @@
----
-status: decision
-topic: in-app-updater
----
-
 # In-App Updater
 
 ## Context

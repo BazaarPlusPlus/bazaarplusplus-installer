@@ -1,9 +1,3 @@
----
-status: current
-topic: history-storage
-last-verified: ef77a33ab317dcb8b447f5590452eeff1d7cf6f4
----
-
 # History And Storage
 
 ## History Boundary

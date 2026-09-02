@@ -1,9 +1,3 @@
----
-status: current
-topic: frontend-architecture
-last-verified: 17b17d67ba7cc27b52a435d2cff8eadfd3278840
----
-
 # Frontend Architecture
 
 ## Native Boundary
