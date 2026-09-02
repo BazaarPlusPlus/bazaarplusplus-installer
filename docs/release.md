@@ -3,7 +3,7 @@
 ## Verification Gates
 
 - `npm run verify -- --source-only` is the authoritative clean-checkout source gate. `npm run verify -- --release-platform <macos|windows>` adds real release-payload validation for one platform.
-- `verificationSteps` in `scripts/checks/verify.mjs` generates bindings while running the Rust suite once, checks generated drift and formatting, type-checks, runs Vitest, validates the locked Cargo graph, runs strict Rust checks, applies the selected prebuild guard, and builds the production frontend. `runVerification` stops on the first failed step.
+- `verificationSteps` in `scripts/checks/verify.mjs` runs the sub-second gates first — formatting, Rust formatting, and the locked Cargo graph — then generates bindings while running the Rust suite once, checks generated drift, type-checks, runs Vitest, runs strict Rust checks, applies the selected prebuild guard, and builds the production frontend. `runVerification` stops on the first failed step.
 - `npm run prebuild-check` is the focused guard for version alignment, generated bindings, platform configuration, bundled resources, and pinned native inputs.
 - `./build.sh --prod` is the only path that produces a platform bundle, and it runs the release prechecks below before packaging.
 

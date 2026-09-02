@@ -11,7 +11,8 @@
   "scripts": {
     "generate:bindings": "node scripts/generate-bindings.mjs",
     "generate:bindings:test": "node scripts/generate-bindings.mjs --with-rust-tests",
-    "dev": "npm run generate:bindings && vite dev",
+    "generate:bindings:if-stale": "node scripts/generate-bindings.mjs --if-stale",
+    "dev": "npm run generate:bindings:if-stale && vite dev",
     "version:sync": "node scripts/release/version-sync.mjs",
     "prepare:resources": "node scripts/release/payload-zip.mjs",
     "verify:native-recorder-input": "node scripts/release/native-recorder-input.mjs",
@@ -27,7 +28,7 @@
     "test:unit": "vitest run",
     "format": "prettier --write \"*.json\" \"src/**/*.{ts,tsx,html}\" \"scripts/**/*.mjs\" \"src-tauri/*.json\" \"src-tauri/capabilities/**/*.json\" \"vite.config.ts\"",
     "format:check": "prettier --check \"*.json\" \"src/**/*.{ts,tsx,html}\" \"scripts/**/*.mjs\" \"src-tauri/*.json\" \"src-tauri/capabilities/**/*.json\" \"vite.config.ts\"",
-    "check": "npm run generate:bindings && npm run check:ts",
+    "check": "npm run generate:bindings:if-stale && npm run check:ts",
     "check:ts": "tsc --noEmit",
     "verify": "node scripts/checks/verify.mjs",
     "docs:check": "node scripts/checks/docs-check.mjs",
