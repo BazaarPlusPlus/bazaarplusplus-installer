@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 import { parseArgs } from 'node:util';
+import { runGit } from '../git-command.mjs';
 import {
   assertVersionsAreAligned,
   collectVersionSnapshot
@@ -66,10 +67,9 @@ const generatedTypesDir = 'src/types/generated';
 
 export function assertBindingsUpToDate(rootDir) {
   console.log('Checking generated TypeScript binding freshness...');
-  const porcelain = execFileSync(
-    'git',
+  const porcelain = runGit(
     ['status', '--porcelain', '--untracked-files=all', '--', generatedTypesDir],
-    { cwd: rootDir, encoding: 'utf8' }
+    { cwd: rootDir }
   ).trim();
 
   if (porcelain) {
