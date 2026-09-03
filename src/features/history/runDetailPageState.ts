@@ -82,7 +82,7 @@ export function reduceRunDetailPageState(
   }
 }
 
-export function replaceRunDetailData(
+function replaceRunDetailData(
   state: RunDetailPageState,
   data: HistoryRunDetail
 ): RunDetailPageState {
