@@ -75,8 +75,3 @@ pub struct InstallWarning {
 pub struct GameDirectorySelection {
     pub game_path: Option<String>,
 }
-
-#[derive(Clone, Debug, Serialize, specta::Type)]
-pub struct FileActionResult {
-    pub ok: bool,
-}

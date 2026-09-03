@@ -50,16 +50,6 @@ pub fn delete_battle_video(
 
 #[tauri::command]
 #[specta::specta]
-pub fn delete_run_videos(
-    app: tauri::AppHandle,
-    run_id: String,
-    limit: Option<usize>,
-) -> Result<HistoryRunList, String> {
-    history::delete_run_videos(&app, &run_id, limit)
-}
-
-#[tauri::command]
-#[specta::specta]
 pub fn preview_storage_cleanup(
     app: tauri::AppHandle,
     scope: StorageCleanupScope,

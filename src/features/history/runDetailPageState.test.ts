@@ -20,18 +20,15 @@ const detail: HistoryRunDetail = {
     game_mode: 'Ranked',
     started_at_utc: '2026-01-02T15:04:00Z',
     ended_at_utc: '2026-01-02T15:34:00Z',
-    last_seen_at_utc: '2026-01-02T15:34:00Z',
     status: 'completed',
     result: 'win',
     victories: 10,
     losses: 2,
     final_day: 12,
-    final_hour: 1,
     final_player_rank: 'Gold',
     final_player_rating: 1234,
     screenshot_id: 'shot-1',
     strip_url: null,
-    video_count: 1,
     player_name: 'Player'
   },
   battles: []
