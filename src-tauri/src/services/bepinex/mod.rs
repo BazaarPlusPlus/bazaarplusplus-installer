@@ -9,7 +9,6 @@ pub(crate) use trampoline::{
 pub(crate) use zip_archive::read_bundled_bpp_version;
 
 use std::path::{Path, PathBuf};
-use tauri::Manager;
 
 use crate::stream::runtime::StreamRuntime;
 
@@ -136,17 +135,12 @@ fn reset_bepinex_folder_blocking_with(
     Ok(had_bepinex)
 }
 
-pub fn install_bepinex(app: tauri::AppHandle, game_path: String) -> Result<(), String> {
-    let game_path = Path::new(&game_path);
+pub fn install_bepinex(resource_dir: &Path, game_path: &Path) -> Result<(), String> {
     let preserved_bpp_config =
         payload::preserve_file_if_exists(game_path, payload::BPP_CONFIG_RELATIVE_PATH)?;
     debug_log!("Reading bundled BepInEx.zip...");
     let relative_zip_path = zip_archive::bundled_zip_relative_path();
-    let resource_path = app
-        .path()
-        .resource_dir()
-        .map_err(|err| err.to_string())?
-        .join(relative_zip_path);
+    let resource_path = resource_dir.join(relative_zip_path);
     let zip_bytes = std::fs::read(&resource_path).map_err(|err| {
         debug_error!("Cannot read bundled BepInEx.zip: {err}");
         format!("Cannot read bundled BepInEx.zip: {err}")

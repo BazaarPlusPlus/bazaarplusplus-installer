@@ -14,6 +14,8 @@
 - `BPP_PRIVATE_RELATIVE_PATHS` and `BPP_BUNDLED_DEPENDENCY_RELATIVE_PATHS` in `src-tauri/src/services/bepinex/payload.rs` define payload ownership.
 - `uninstall_bpp` in `src-tauri/src/services/bepinex/mod.rs` always removes private BPP files. It removes shared BepInEx and platform bootstrap state only when no third-party plugin or patcher remains. Uninstall preserves the BPP data root.
 
+On macOS, `plan_install` keeps Steam running when detected launch options are empty; only non-empty launch options add Steam shutdown and cleanup. `ensure_bazaar_stopped` in `src-tauri/src/services/game_process.rs` checks the selected game process before install effects and again before trampoline replacement, and fails closed when process inspection fails.
+
 ## Steam Launch Boundary
 
 The installer launches The Bazaar through `launch_game_via_steam` in `src-tauri/src/services/install/mod.rs`, which opens the fixed Steam game URL. Detection resolves Steam installations through `detect_installation_paths` in `src-tauri/src/services/detect/steam.rs`; there is no alternate launch-mode state. The Steam-only product boundary lives in [ADR-003](adr/003-steam-only-launch.md).
@@ -33,3 +35,7 @@ The installer launches The Bazaar through `launch_game_via_steam` in `src-tauri/
 Reset is the only installer operation that deletes the current BPP data root. `reset_bpp_data` in `src-tauri/src/services/bepinex/mod.rs` enters `StreamRuntime::exclusive_maintenance`, refuses deletion while the game is running, and delegates filesystem cleanup to `cleanup_bpp_data_directory` in `src-tauri/src/services/bepinex/payload.rs`.
 
 The Install workflow fixes the target path when confirmation opens. A successful `ResetBppDataResult` installs the returned refreshed state and distinguishes removed data from an already-empty target; a failure retains the target for retry. The durable product boundary is recorded in [ADR-005](adr/005-data-ownership-and-reset.md).
+
+## Isolated Fresh-Install Acceptance
+
+The opt-in `fresh_install_writes_payload_and_signed_trampoline_without_quitting_steam` test in `src-tauri/src/services/install/operation.rs` creates a disposable macOS bundle and Steam config, then executes the production filesystem effects against a packaged resource directory supplied through `BPP_ACCEPTANCE_RESOURCE_DIR`. It checks every payload file, the trampoline UUID and deep signature, and unchanged Steam config. A shutdown effect fails the test before it can reach Steam. The bundle contains a fixture executable, so this verifies installation and signing, not game startup or BPP initialization.
