@@ -293,7 +293,7 @@ mod imp {
             && links_unity(&layout.orig_path))
     }
 
-    pub(super) fn install_trampoline(app: &AppHandle, game_path: &Path) -> Result<(), String> {
+    pub(super) fn install_trampoline(resource_dir: &Path, game_path: &Path) -> Result<(), String> {
         // Step 0: absolute preconditions BEFORE any filesystem mutation — a
         // modified-but-unsigned bundle is AMFI-killed on Apple Silicon.
         if !codesign_available() {
@@ -302,19 +302,16 @@ mod imp {
                     .to_string(),
             );
         }
-        // Best-effort guard. Currently a no-op on macOS (is_bazaar_running_best_effort
-        // returns false there); real protection comes from the orchestrator closing
-        // Steam first, which takes down a Steam-launched Bazaar. Kept so a future
-        // macOS process probe activates it automatically.
-        if crate::services::game_process::is_bazaar_running_best_effort() {
-            return Err(
-                "The Bazaar is running. Close the game before installing BazaarPlusPlus."
-                    .to_string(),
-            );
-        }
+        crate::services::game_process::ensure_bazaar_stopped(game_path)?;
 
         let layout = bundle_paths(game_path)?;
-        let stub = stub_resource_path(app)?;
+        let stub = resource_dir.join("Trampoline/bpp_launcher");
+        if !stub.is_file() {
+            return Err(format!(
+                "Bundled trampoline stub is missing at {}",
+                stub.display()
+            ));
+        }
 
         // Step 1: already structurally trampolined -> refresh the stub from the
         // current installer, then re-sign and verify. A differing stub is not a
@@ -418,8 +415,8 @@ pub(crate) fn is_current_trampoline(app: &AppHandle, game_path: &Path) -> Result
 }
 
 #[cfg(target_os = "macos")]
-pub(crate) fn install_trampoline(app: &AppHandle, game_path: &Path) -> Result<(), String> {
-    imp::install_trampoline(app, game_path)
+pub(crate) fn install_trampoline(resource_dir: &Path, game_path: &Path) -> Result<(), String> {
+    imp::install_trampoline(resource_dir, game_path)
 }
 
 #[cfg(target_os = "macos")]
@@ -546,7 +543,7 @@ pub(crate) fn is_current_trampoline(_app: &AppHandle, _game_path: &Path) -> Resu
 }
 
 #[cfg(not(target_os = "macos"))]
-pub(crate) fn install_trampoline(_app: &AppHandle, _game_path: &Path) -> Result<(), String> {
+pub(crate) fn install_trampoline(_resource_dir: &Path, _game_path: &Path) -> Result<(), String> {
     Ok(())
 }
 

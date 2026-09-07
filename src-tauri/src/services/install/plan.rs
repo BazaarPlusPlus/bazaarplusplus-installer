@@ -3,7 +3,9 @@
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(super) enum InstallEffect {
-    /// Quit Steam before changing its config or the game bundle.
+    /// Refuse to modify an active game installation.
+    EnsureGameStopped,
+    /// Quit Steam only when its launch options need changing.
     CloseSteam,
     /// Extract the current BepInEx and BazaarPlusPlus payload.
     InstallBepInEx,
@@ -27,6 +29,7 @@ pub(super) struct InstallPlanInputs {
     pub requires_macos_bootstrap: bool,
     pub payload: PayloadState,
     pub bootstrap_satisfied: bool,
+    pub launch_options_empty: bool,
 }
 
 pub(super) fn plan_install(inputs: InstallPlanInputs) -> Vec<InstallEffect> {
@@ -36,7 +39,10 @@ pub(super) fn plan_install(inputs: InstallPlanInputs) -> Vec<InstallEffect> {
 
     let mut steps = Vec::new();
     if inputs.requires_macos_bootstrap {
-        steps.push(InstallEffect::CloseSteam);
+        steps.push(InstallEffect::EnsureGameStopped);
+        if !inputs.launch_options_empty {
+            steps.push(InstallEffect::CloseSteam);
+        }
     }
     if inputs.payload != PayloadState::Current {
         steps.push(InstallEffect::InstallBepInEx);
@@ -44,74 +50,78 @@ pub(super) fn plan_install(inputs: InstallPlanInputs) -> Vec<InstallEffect> {
     if inputs.requires_macos_bootstrap {
         steps.extend([
             InstallEffect::InstallTrampoline,
-            InstallEffect::ClearLaunchOptions,
             InstallEffect::RemoveObsoleteMacosArtifacts,
         ]);
+        if !inputs.launch_options_empty {
+            steps.push(InstallEffect::ClearLaunchOptions);
+        }
     }
     steps
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{plan_install, InstallEffect, InstallPlanInputs, PayloadState};
-    use InstallEffect::*;
-
+    use super::*;
     #[test]
-    fn macos_install_converges_to_one_ordered_bootstrap() {
-        for payload in [PayloadState::Missing, PayloadState::Changed] {
+    fn empty_launch_options_keep_steam_running_for_install_update_and_repair() {
+        for payload in [
+            PayloadState::Missing,
+            PayloadState::Changed,
+            PayloadState::Current,
+        ] {
+            let steps = plan_install(InstallPlanInputs {
+                requires_macos_bootstrap: true,
+                payload,
+                bootstrap_satisfied: false,
+                launch_options_empty: true,
+            });
+            assert_eq!(steps.first(), Some(&InstallEffect::EnsureGameStopped));
+            assert!(!steps.contains(&InstallEffect::CloseSteam));
+            assert!(!steps.contains(&InstallEffect::ClearLaunchOptions));
+            assert!(steps.contains(&InstallEffect::InstallTrampoline));
             assert_eq!(
-                plan_install(InstallPlanInputs {
-                    requires_macos_bootstrap: true,
-                    payload,
-                    bootstrap_satisfied: false,
-                }),
-                vec![
-                    CloseSteam,
-                    InstallBepInEx,
-                    InstallTrampoline,
-                    ClearLaunchOptions,
-                    RemoveObsoleteMacosArtifacts,
-                ]
+                steps.contains(&InstallEffect::InstallBepInEx),
+                payload != PayloadState::Current
             );
         }
     }
-
     #[test]
-    fn macos_bootstrap_only_repair_preserves_current_payload() {
+    fn legacy_launch_options_require_steam_exit_before_mutation() {
+        let steps = plan_install(InstallPlanInputs {
+            requires_macos_bootstrap: true,
+            payload: PayloadState::Missing,
+            bootstrap_satisfied: false,
+            launch_options_empty: false,
+        });
         assert_eq!(
-            plan_install(InstallPlanInputs {
-                requires_macos_bootstrap: true,
-                payload: PayloadState::Current,
-                bootstrap_satisfied: false,
-            }),
+            steps,
             vec![
-                CloseSteam,
-                InstallTrampoline,
-                ClearLaunchOptions,
-                RemoveObsoleteMacosArtifacts,
+                InstallEffect::EnsureGameStopped,
+                InstallEffect::CloseSteam,
+                InstallEffect::InstallBepInEx,
+                InstallEffect::InstallTrampoline,
+                InstallEffect::RemoveObsoleteMacosArtifacts,
+                InstallEffect::ClearLaunchOptions
             ]
         );
     }
-
     #[test]
-    fn current_payload_and_bootstrap_is_a_no_op() {
+    fn current_install_is_noop_and_windows_only_updates_payload() {
         assert!(plan_install(InstallPlanInputs {
             requires_macos_bootstrap: true,
             payload: PayloadState::Current,
             bootstrap_satisfied: true,
+            launch_options_empty: true
         })
         .is_empty());
-    }
-
-    #[test]
-    fn non_macos_install_only_updates_the_payload() {
         assert_eq!(
             plan_install(InstallPlanInputs {
                 requires_macos_bootstrap: false,
                 payload: PayloadState::Missing,
                 bootstrap_satisfied: true,
+                launch_options_empty: true
             }),
-            vec![InstallBepInEx]
+            vec![InstallEffect::InstallBepInEx]
         );
     }
 }

@@ -175,13 +175,13 @@ const zh = {
   // Install confirmation modal
   installModalTitle: '安装 BazaarPlusPlus',
   tutorialKicker: '使用教程',
-  installModalBody:
-    '安装会写入 BazaarPlusPlus 与 BepInEx 组件（BepInEx 用于让插件在游戏内运行）。',
+  installModalBody: '安装完成后，从 Steam 启动游戏即可使用。',
   viewTutorial: '查看教程',
   installSteamNotice:
     '安装前请先关闭 Steam；如果 Steam 正在运行，请手动退出后再继续。',
-  installSteamNoticeMacos: '继续后，安装器将关闭 Steam，以完成 macOS 配置。',
-  installAcknowledge: '我确认安装插件存在风险，并愿意自行承担相关责任',
+  installSteamNoticeMacos: '请先退出游戏。继续安装将关闭 Steam。',
+  installCloseGameNotice: '请先退出游戏，再继续安装。',
+  installAcknowledge: '我了解使用第三方插件的风险，并自行承担。',
   installing: '安装中…',
   confirmInstall: '确认安装',
 
@@ -432,7 +432,6 @@ const zh = {
   maintenanceResetBepinexDescription: '重置插件环境',
   checkUpdateDescription: '获取最新版本信息',
   maintenanceUninstallDescription: '移除所有组件',
-  installModalSubtitle: '安装前确认与环境检查',
   historySummaryRunsDescription: '总对局场次',
   historySummaryVideosDescription: '已录制视频',
   historySummaryWinRateDescription: '已完成对局胜率',
@@ -599,14 +598,14 @@ const en: Record<MessageKey, string> = {
   installModalTitle: 'Install BazaarPlusPlus',
   tutorialKicker: 'Tutorial',
   installModalBody:
-    'Installation writes the BazaarPlusPlus and BepInEx components (BepInEx lets the plugin run inside the game).',
+    'After installation, launch the game from Steam to use the mod.',
   viewTutorial: 'View tutorial',
   installSteamNotice:
     'Please close Steam before installing. If Steam is running, quit it manually before continuing.',
-  installSteamNoticeMacos:
-    'Continuing will close Steam to complete the macOS setup.',
+  installSteamNoticeMacos: 'Close the game first. Continuing will quit Steam.',
+  installCloseGameNotice: 'Close the game before continuing.',
   installAcknowledge:
-    'I understand installing the plugin carries risk and accept responsibility for it.',
+    'I understand and accept the risks of using third-party mods.',
   installing: 'Installing…',
   confirmInstall: 'Confirm Install',
 
@@ -884,7 +883,6 @@ const en: Record<MessageKey, string> = {
   maintenanceResetBepinexDescription: 'Reset the plugin environment',
   checkUpdateDescription: 'Fetch the latest version information',
   maintenanceUninstallDescription: 'Remove all components',
-  installModalSubtitle: 'Pre-install confirmation and environment check',
   historySummaryRunsDescription: 'Total recorded runs',
   historySummaryVideosDescription: 'Recorded videos',
   historySummaryWinRateDescription: 'Across completed runs',
