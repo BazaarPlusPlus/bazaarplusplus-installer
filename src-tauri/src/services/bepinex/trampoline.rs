@@ -722,6 +722,10 @@ mod tests {
         use super::super::bundle_root::tests::copy_tree;
         let (game, stub) = native_bundle();
         let layout = bundle_paths(game.path()).unwrap();
+        std::fs::write(layout.app_path.join(".DS_Store"), b"Finder metadata").unwrap();
+        let backups = game.path().join(".bpp-bundle-root-stash");
+        std::fs::create_dir(&backups).unwrap();
+        std::fs::write(backups.join(".DS_Store"), b"Legacy Finder metadata").unwrap();
         let clean = game.path().join("steam.app");
         copy_tree(&layout.app_path, &clean);
         copy_tree(&clean, &layout.app_path.join("TheBazaar_ARM64.app"));
@@ -773,6 +777,14 @@ mod tests {
         assert!(imp::links_unity(&layout.exe_path));
         assert!(!layout.orig_path.exists());
         imp::verify_bundle(&layout.app_path).unwrap();
+        assert_eq!(
+            std::fs::read(layout.app_path.join(".DS_Store")).unwrap(),
+            b"Finder metadata"
+        );
+        assert_eq!(
+            std::fs::read(backups.join(".DS_Store")).unwrap(),
+            b"Legacy Finder metadata"
+        );
     }
 
     #[test]

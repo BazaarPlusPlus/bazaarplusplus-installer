@@ -197,7 +197,14 @@ pub(super) fn normalize(game: &Path) -> Result<(), String> {
             .file_name()
             .and_then(|name| name.to_str())
             .unwrap_or("");
-        if name == "current" || name == "current.tmp" {
+        if name == ".DS_Store" {
+            if !io(&entry, fs::symlink_metadata(&entry))?
+                .file_type()
+                .is_file()
+            {
+                return Err(format!("Invalid Finder metadata: {}", entry.display()));
+            }
+        } else if name == "current" || name == "current.tmp" {
             if !io(&entry, fs::symlink_metadata(&entry))?
                 .file_type()
                 .is_file()
@@ -435,15 +442,60 @@ pub(super) mod tests {
     fn legacy_stash_is_adopted_without_restoring_invalid_root() {
         let game = tempfile::tempdir().unwrap();
         let app = make_bundle(game.path());
+        fs::write(app.join(".DS_Store"), b"Finder metadata").unwrap();
         let backups = game.path().join(BACKUPS);
         fs::create_dir(&backups).unwrap();
         copy_tree(&app, &backups.join(DUPLICATE));
         let digest = fingerprint(&backups.join(DUPLICATE)).unwrap();
+        fs::write(backups.join(".DS_Store"), b"Legacy Finder metadata").unwrap();
         normalize(game.path()).unwrap();
+        normalize(game.path()).unwrap();
+        add_duplicate(game.path(), &app);
         normalize(game.path()).unwrap();
         assert!(!app.join(DUPLICATE).exists());
-        assert!(backups.join(format!("{digest}.app")).exists());
+        assert_eq!(
+            fingerprint(&backups.join(format!("{digest}.app"))).unwrap(),
+            digest
+        );
         assert!(!backups.join(DUPLICATE).exists());
+        assert_eq!(children(&backups).unwrap().len(), 3);
+        assert_eq!(fs::read(app.join(".DS_Store")).unwrap(), b"Finder metadata");
+        assert_eq!(
+            fs::read(backups.join(".DS_Store")).unwrap(),
+            b"Legacy Finder metadata"
+        );
+    }
+
+    #[test]
+    fn backup_metadata_rejects_directories_links_and_unknown_files() {
+        for kind in ["directory", "symbolic-link", "unknown-file"] {
+            let game = tempfile::tempdir().unwrap();
+            let app = make_bundle(game.path());
+            add_duplicate(game.path(), &app);
+            let backups = game.path().join(BACKUPS);
+            fs::create_dir(&backups).unwrap();
+            let outside = game.path().join("outside");
+            fs::write(&outside, b"keep").unwrap();
+            let entry = backups.join(if kind == "unknown-file" {
+                "user-file"
+            } else {
+                ".DS_Store"
+            });
+            match kind {
+                "directory" => fs::create_dir(&entry).unwrap(),
+                "symbolic-link" => std::os::unix::fs::symlink(&outside, &entry).unwrap(),
+                _ => fs::write(&entry, b"keep").unwrap(),
+            }
+            assert!(normalize(game.path()).is_err(), "{kind}");
+            assert!(app.join(DUPLICATE).is_dir());
+            assert!(!backups.join("current").exists());
+            assert_eq!(fs::read(&outside).unwrap(), b"keep");
+            if kind == "directory" {
+                assert!(entry.is_dir());
+            } else {
+                assert_eq!(fs::read(&entry).unwrap(), b"keep");
+            }
+        }
     }
 
     #[test]
