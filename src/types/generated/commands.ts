@@ -30,7 +30,7 @@ export const commands = {
 	saveOverlayDisplayMode: (displayMode: StreamOverlayDisplayMode) => __TAURI_INVOKE<StreamOverlayCropSettingsPayload>("save_overlay_display_mode", { displayMode }),
 	applyOverlayCropCode: (code: string) => __TAURI_INVOKE<StreamOverlayCropSettingsPayload>("apply_overlay_crop_code", { code }),
 	resetOverlayCrop: () => __TAURI_INVOKE<StreamOverlayCropSettingsPayload>("reset_overlay_crop"),
-	listHistoryRuns: (limit: number | null) => __TAURI_INVOKE<HistoryRunList>("list_history_runs", { limit }),
+	listHistoryRuns: (limit: number | null, offset: number | null) => __TAURI_INVOKE<HistoryRunList>("list_history_runs", { limit, offset }),
 	getHistoryRunDetail: (runId: string) => __TAURI_INVOKE<{
 	run: HistoryRunDetailRow,
 	battles: HistoryBattleRow[],

@@ -1,11 +1,11 @@
-import { ChevronDown, Trash2 } from 'lucide-react';
+import { ChevronDown, HardDrive } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '../../components/ui/Button';
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 import { ModalSource } from '../../components/ui/ModalCoordinator';
 import { ProblemBanner } from '../../components/ui/ProblemBanner';
 import { useI18n } from '../../i18n/LocaleProvider';
-import type { StorageCleanupPreset } from '../../types/backend';
+import type { HistorySummary, StorageCleanupPreset } from '../../types/backend';
 import { formatBytes } from './format';
 import { formatProblemDiagnostic } from '../shared/problems';
 import {
@@ -44,14 +44,17 @@ function pendingItemCount(pending: PendingCleanup): number {
   return pending.preview.runs;
 }
 
-export function StorageCleanupCard({
+export function HistoryOverview({
+  summary,
   onCompleted
 }: {
+  summary: HistorySummary;
   onCompleted: () => Promise<void> | void;
 }) {
   const { locale, t } = useI18n();
   const cleanup = useStorageCleanup(onCompleted);
   const [expanded, setExpanded] = useState(false);
+  const numberFormat = new Intl.NumberFormat(locale);
 
   const pendingBody = (pending: PendingCleanup): string => {
     if (pendingItemCount(pending) === 0) {
@@ -87,24 +90,57 @@ export function StorageCleanupCard({
 
   return (
     <>
-      <section className={`bpp-history-cleanup ${expanded ? 'is-open' : ''}`}>
-        <button
-          type="button"
-          className="bpp-history-cleanup-toggle"
-          aria-expanded={expanded}
-          aria-controls="history-storage-cleanup-content"
-          onClick={() => setExpanded((open) => !open)}
-        >
-          <ChevronDown size={16} className="bpp-history-cleanup-chevron" />
-          <Trash2 size={19} className="bpp-history-cleanup-trash" />
-          <span className="bpp-history-cleanup-title">
-            {t('storageCleanupTitle')}
-          </span>
-        </button>
+      <section
+        className={`bpp-history-overview ${expanded ? 'is-open' : ''}`}
+        aria-label={t('historyOverviewLabel')}
+      >
+        <div className="bpp-history-overview-bar">
+          <dl className="bpp-history-stats">
+            <OverviewMetric
+              label={t('historySummaryRuns')}
+              value={numberFormat.format(summary.runs)}
+            />
+            <OverviewMetric
+              label={t('historySummaryVideos')}
+              value={numberFormat.format(summary.videos)}
+            />
+            <OverviewMetric
+              label={t('historySummaryWinRate')}
+              value={
+                summary.win_rate === null
+                  ? '—'
+                  : `${Math.round(summary.win_rate * 100)}%`
+              }
+              detail={t(
+                summary.win_rate === null
+                  ? 'historySummaryWinRateUnavailable'
+                  : 'historySummaryWinRateDescription'
+              )}
+              accent
+            />
+          </dl>
+          <button
+            type="button"
+            className="bpp-history-cleanup-toggle"
+            aria-expanded={expanded}
+            aria-controls="history-storage-cleanup-content"
+            onClick={() => setExpanded((open) => !open)}
+          >
+            <HardDrive size={15} aria-hidden="true" />
+            <span>{t('storageCleanupTitle')}</span>
+            <ChevronDown
+              size={14}
+              className="bpp-history-cleanup-chevron"
+              aria-hidden="true"
+            />
+          </button>
+        </div>
 
         <div
           id="history-storage-cleanup-content"
           className="bpp-history-cleanup-reveal"
+          role="region"
+          aria-label={t('storageCleanupTitle')}
           aria-hidden={!expanded}
           inert={!expanded}
         >
@@ -202,6 +238,28 @@ export function StorageCleanupCard({
   );
 }
 
+function OverviewMetric({
+  label,
+  value,
+  detail,
+  accent = false
+}: {
+  label: string;
+  value: string;
+  detail?: string;
+  accent?: boolean;
+}) {
+  return (
+    <div className={`bpp-history-stat ${accent ? 'is-accent' : ''}`}>
+      <dt className="bpp-history-stat-label">{label}</dt>
+      <dd className="bpp-history-stat-reading">
+        <span className="bpp-history-stat-value">{value}</span>
+        {detail && <span className="bpp-history-stat-detail">{detail}</span>}
+      </dd>
+    </div>
+  );
+}
+
 function StorageCleanupProblemBanner({
   problem
 }: {
@@ -235,6 +293,9 @@ function CleanupRow({
 }) {
   const { t } = useI18n();
 
+  const [preset, setPreset] =
+    useState<StorageCleanupPreset>('before_this_month');
+
   return (
     <div className="bpp-history-cleanup-row">
       <div className="bpp-history-cleanup-row-copy">
@@ -244,28 +305,33 @@ function CleanupRow({
         </span>
       </div>
       <div className="bpp-history-cleanup-actions">
-        {PRESETS.map(({ preset, labelKey }) => {
-          // The visible label is the range alone so the three buttons read as
-          // one axis; the full action stays available to assistive tech.
-          const actionLabel = t('storageCleanupActionLabel', {
-            scope: label,
-            preset: t(labelKey)
-          });
-          return (
-            <Button
-              key={preset}
-              type="button"
-              size="small"
-              disabled={busy}
-              onClick={() => void onSelect(scope, preset)}
-              className="bpp-history-cleanup-action"
-              title={actionLabel}
-              aria-label={actionLabel}
-            >
-              {t(labelKey)}
-            </Button>
-          );
-        })}
+        <div className="bpp-history-cleanup-range">
+          <select
+            aria-label={t('storageCleanupRangeLabel', { scope: label })}
+            value={preset}
+            disabled={busy}
+            onChange={(event) =>
+              setPreset(event.target.value as StorageCleanupPreset)
+            }
+          >
+            {PRESETS.map(({ preset, labelKey }) => (
+              <option key={preset} value={preset}>
+                {t(labelKey)}
+              </option>
+            ))}
+          </select>
+          <ChevronDown size={14} aria-hidden="true" />
+        </div>
+        <Button
+          type="button"
+          size="small"
+          disabled={busy}
+          onClick={() => void onSelect(scope, preset)}
+          className="bpp-history-cleanup-action"
+          aria-label={t('storageCleanupPreviewLabel', { scope: label })}
+        >
+          {t('storageCleanupPreviewAction')}
+        </Button>
       </div>
     </div>
   );
