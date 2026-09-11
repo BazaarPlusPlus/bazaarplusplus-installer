@@ -13,7 +13,11 @@ use crate::history::queries::{
 };
 use crate::history::screenshots::{primary_screenshot, primary_screenshot_ids};
 
-pub fn list_history_runs(database_path: &Path, limit: usize) -> Result<HistoryRunList, String> {
+pub fn list_history_runs(
+    database_path: &Path,
+    limit: usize,
+    offset: usize,
+) -> Result<HistoryRunList, String> {
     let empty = || HistoryRunList {
         summary: HistorySummary {
             runs: 0,
@@ -35,7 +39,8 @@ pub fn list_history_runs(database_path: &Path, limit: usize) -> Result<HistoryRu
 
     let summary = load_summary(&conn)?;
     let effective_limit = i64::try_from(limit.max(1)).map_err(|err| err.to_string())?;
-    let rows = list_run_rows(&conn, effective_limit)?;
+    let effective_offset = i64::try_from(offset).map_err(|err| err.to_string())?;
+    let rows = list_run_rows(&conn, effective_limit, effective_offset)?;
     let run_ids = rows
         .iter()
         .map(|row| row.run_id.clone())
@@ -364,7 +369,7 @@ mod tests {
         )
         .unwrap();
 
-        let payload = list_history_runs(&database_path, 20).unwrap();
+        let payload = list_history_runs(&database_path, 20, 0).unwrap();
 
         assert_eq!(payload.summary.runs, 3);
         assert_eq!(payload.summary.videos, 1);
@@ -384,6 +389,38 @@ mod tests {
         );
         assert_eq!(payload.runs[2].run_id, "run-loss");
         assert_eq!(payload.runs[2].result, "loss");
+    }
+
+    #[test]
+    fn history_pages_reach_older_runs_without_duplicates_and_keep_the_full_summary() {
+        let temp_dir = tempfile::tempdir().unwrap();
+        let database_path = temp_dir.path().join(DATABASE_FILE_NAME);
+        let conn = rusqlite::Connection::open(&database_path).unwrap();
+        create_history_schema(&conn);
+        for index in 0..235 {
+            conn.execute(
+                "insert into runs (run_id, started_at_utc, last_seen_at_utc, status, hero, game_mode)
+                 values (?1, '2026-09-12T10:00:00Z', '2026-09-12T11:00:00Z', 'active', 'Vanessa', 'Ranked')",
+                [format!("run-{index:03}")],
+            )
+            .unwrap();
+        }
+
+        let mut ids = Vec::new();
+        for offset in [0, 50, 100, 150, 200] {
+            let page = list_history_runs(&database_path, 50, offset).unwrap();
+            assert_eq!(page.summary.runs, 235);
+            assert_eq!(page.runs.len(), if offset == 200 { 35 } else { 50 });
+            ids.extend(page.runs.into_iter().map(|run| run.run_id));
+        }
+        let expected: Vec<_> = (0..235)
+            .rev()
+            .map(|index| format!("run-{index:03}"))
+            .collect();
+        assert_eq!(ids, expected);
+        let beyond_end = list_history_runs(&database_path, 50, 250).unwrap();
+        assert!(beyond_end.runs.is_empty());
+        assert_eq!(beyond_end.summary.runs, 235);
     }
 
     #[test]

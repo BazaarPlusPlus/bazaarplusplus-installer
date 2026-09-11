@@ -42,6 +42,28 @@ function transition(
 }
 
 describe('History page state', () => {
+  it('clears the previous page and rejects its late response after changing pages', () => {
+    const loaded = transition(
+      { phase: 'initial-loading', requestId: 1 },
+      { type: 'request-succeeded', requestId: 1, data: oneRun }
+    );
+    const changing = transition(loaded, { type: 'page-changed', requestId: 2 });
+    expect(changing).toEqual({ phase: 'initial-loading', requestId: 2 });
+    expect(
+      transition(changing, {
+        type: 'request-succeeded',
+        requestId: 1,
+        data: oneRun
+      })
+    ).toEqual(changing);
+    const failed = transition(changing, {
+      type: 'request-failed',
+      requestId: 2,
+      problem: readProblem
+    });
+    expect(failed.phase).toBe('blocking-failure');
+    expect(failed).not.toHaveProperty('data');
+  });
   it('shows empty only after a successful empty response', () => {
     const loading = transition(initialHistoryPageState, {
       type: 'request-started',

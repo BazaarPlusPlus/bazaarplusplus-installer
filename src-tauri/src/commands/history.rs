@@ -9,8 +9,9 @@ use crate::services::history::{
 pub fn list_history_runs(
     app: tauri::AppHandle,
     limit: Option<usize>,
+    offset: Option<usize>,
 ) -> Result<HistoryRunList, SemanticProblem> {
-    history::list_runs(&app, limit)
+    history::list_runs(&app, limit, offset)
 }
 
 #[tauri::command(async)]

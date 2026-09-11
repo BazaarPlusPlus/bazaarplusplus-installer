@@ -96,12 +96,16 @@ impl History {
             .map_err(|_| SemanticProblem::new(SemanticProblemCode::HistoryUnavailable))
     }
 
-    fn list_runs(&self, limit: usize) -> Result<HistoryRunList, String> {
-        list_history_runs(&self.paths.database_path, limit.clamp(1, 200))
+    fn list_runs(&self, limit: usize, offset: usize) -> Result<HistoryRunList, String> {
+        list_history_runs(&self.paths.database_path, limit.clamp(1, 200), offset)
     }
 
-    fn list_runs_for_page(&self, limit: usize) -> Result<HistoryRunList, SemanticProblem> {
-        self.list_runs(limit).map_err(|diagnostic| {
+    fn list_runs_for_page(
+        &self,
+        limit: usize,
+        offset: usize,
+    ) -> Result<HistoryRunList, SemanticProblem> {
+        self.list_runs(limit, offset).map_err(|diagnostic| {
             history_read_problem_with("list_runs", diagnostic, self.is_game_running)
         })
     }
@@ -258,9 +262,10 @@ impl History {
 pub fn list_runs(
     app: &tauri::AppHandle,
     limit: Option<usize>,
+    offset: Option<usize>,
 ) -> Result<HistoryRunList, SemanticProblem> {
     History::from_resolved_game_path_for_page(History::resolved_game_path(app))?
-        .list_runs_for_page(limit.unwrap_or(50))
+        .list_runs_for_page(limit.unwrap_or(50), offset.unwrap_or(0))
 }
 
 pub fn get_run_detail(
@@ -621,7 +626,7 @@ mod tests {
         std::fs::create_dir_all(history.paths.database_path.parent().unwrap()).unwrap();
         std::fs::write(&history.paths.database_path, b"not sqlite").unwrap();
 
-        let read_failed = history.list_runs_for_page(50).unwrap_err();
+        let read_failed = history.list_runs_for_page(50, 0).unwrap_err();
         assert_eq!(read_failed.code, SemanticProblemCode::HistoryReadFailed);
         assert_eq!(
             read_failed.params.get("operation").map(String::as_str),
@@ -651,7 +656,7 @@ mod tests {
         rusqlite::Connection::open(&history.paths.database_path).unwrap();
 
         for problem in [
-            history.list_runs_for_page(50).unwrap_err(),
+            history.list_runs_for_page(50, 0).unwrap_err(),
             history.run_detail_for_page("run-1").unwrap_err(),
         ] {
             assert_eq!(
@@ -841,7 +846,7 @@ mod tests {
         drop(conn);
 
         let history = History::from_resolved_game_path(Some(game_path)).unwrap();
-        let list = history.list_runs(50).unwrap();
+        let list = history.list_runs(50, 0).unwrap();
         assert_eq!(list.summary.runs, 1);
         assert_eq!(list.summary.videos, 1);
         assert_eq!(list.runs.len(), 1);
@@ -892,7 +897,7 @@ mod tests {
             panic!("expected run-data result");
         };
         assert_eq!(result.deleted_runs, 1);
-        assert_eq!(history.list_runs(50).unwrap().summary.runs, 0);
+        assert_eq!(history.list_runs(50, 0).unwrap().summary.runs, 0);
     }
 
     #[test]

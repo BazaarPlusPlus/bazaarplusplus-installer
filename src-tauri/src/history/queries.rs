@@ -214,7 +214,7 @@ pub fn load_summary(conn: &Connection) -> Result<HistorySummary, String> {
     })
 }
 
-pub fn list_run_rows(conn: &Connection, limit: i64) -> Result<Vec<RunRow>, String> {
+pub fn list_run_rows(conn: &Connection, limit: i64, offset: i64) -> Result<Vec<RunRow>, String> {
     let mut stmt = conn
         .prepare(
             "
@@ -223,12 +223,12 @@ pub fn list_run_rows(conn: &Connection, limit: i64) -> Result<Vec<RunRow>, Strin
               status, victories, losses, final_day, final_player_rank, final_player_rating
             from runs
             order by coalesce(ended_at_utc, last_seen_at_utc, started_at_utc) desc, run_id desc
-            limit ?1
+            limit ?1 offset ?2
             ",
         )
         .map_err(|err| err.to_string())?;
     let rows = stmt
-        .query_map([limit], map_run_row_from_statement)
+        .query_map([limit, offset], map_run_row_from_statement)
         .map_err(|err| err.to_string())?;
     rows.collect::<Result<Vec<_>, _>>()
         .map_err(|err| err.to_string())
