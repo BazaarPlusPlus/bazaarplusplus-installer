@@ -1,3 +1,5 @@
+#[cfg(target_os = "macos")]
+mod bundle_root;
 mod payload;
 mod trampoline;
 mod zip_archive;
@@ -202,38 +204,43 @@ pub fn uninstall_bpp(
     let keep_shared_bootstrap =
         payload::has_third_party_plugins(game_path) || payload::has_third_party_patchers(game_path);
 
-    // Restore the vanilla bundle only when BPP is the last installed mod. If
-    // another mod remains — a plugin in BepInEx/plugins or a patcher-only mod
-    // under BepInEx/patchers — the trampoline / launch options are shared
-    // BepInEx bootstrap state and removing them would disable that mod.
-    if !keep_shared_bootstrap {
-        // Call uninstall_trampoline UNCONDITIONALLY (not gated on is_trampolined):
-        // it self-classifies — a no-op when already vanilla, a restore when a
-        // `.orig` exists, and a hard error in the broken stub-without-backup state.
-        // If this fails, abort so we never strand a stubbed bundle whose `.orig`
-        // we then can't recover. No-op off macOS.
-        trampoline::uninstall_trampoline(game_path)?;
-    }
+    // Payload removal can fail after restoring the executable or deleting a
+    // native plugin. Always seal the resulting bundle before returning an error.
+    trampoline::with_finalized_bundle(game_path, || {
+        // Restore the vanilla bundle only when BPP is the last installed mod. If
+        // another mod remains — a plugin in BepInEx/plugins or a patcher-only mod
+        // under BepInEx/patchers — the trampoline / launch options are shared
+        // BepInEx bootstrap state and removing them would disable that mod.
+        if !keep_shared_bootstrap {
+            // Call uninstall_trampoline UNCONDITIONALLY (not gated on is_trampolined):
+            // it self-classifies — a no-op when already vanilla, a restore when a
+            // `.orig` exists, and a hard error in the broken stub-without-backup state.
+            // If this fails, abort so we never strand a stubbed bundle whose `.orig`
+            // we then can't recover. No-op off macOS.
+            trampoline::uninstall_trampoline(game_path)?;
+        }
 
-    if keep_shared_bootstrap {
-        payload::uninstall_payload_preserving_shared_dependencies(game_path)?;
-    } else {
-        payload::uninstall_payload(game_path)?;
-        // Last plugin standing: also tear down the BepInEx bootstrap so the
-        // Windows doorstop stops injecting and detection reports uninstalled.
-        payload::remove_bootstrap_files(game_path)?;
-    }
+        if keep_shared_bootstrap {
+            payload::uninstall_payload_preserving_shared_dependencies(game_path)?;
+        } else {
+            payload::uninstall_payload(game_path)?;
+            // Last plugin standing: also tear down the BepInEx bootstrap so the
+            // Windows doorstop stops injecting and detection reports uninstalled.
+            payload::remove_bootstrap_files(game_path)?;
+        }
 
-    if !keep_shared_bootstrap {
-        #[cfg(target_os = "macos")]
-        {
-            if !_steam_path.trim().is_empty() {
-                crate::services::vdf::clear_launch_options_for_steam(Path::new(&_steam_path))?;
+        if !keep_shared_bootstrap {
+            #[cfg(target_os = "macos")]
+            {
+                if !_steam_path.trim().is_empty() {
+                    crate::services::vdf::clear_launch_options_for_steam(Path::new(&_steam_path))?;
+                }
             }
         }
-    }
 
-    trampoline::remove_obsolete_macos_artifacts(game_path)?;
+        trampoline::remove_obsolete_macos_artifacts(game_path)?;
+        Ok(())
+    })?;
 
     debug_log!(
         "Uninstalled BazaarPlusPlus payload from {}",
