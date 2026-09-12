@@ -2,12 +2,12 @@ use std::path::Path;
 
 use tauri::Manager;
 
-use super::plan::{plan_install, InstallEffect, InstallPlanInputs, PayloadState};
+use super::plan::{plan_install, InstallEffect};
 use super::{build_install_state_raw, install_action_problem, InstallState};
 use crate::problem::SemanticProblem;
 use crate::services::{
     bepinex::{self, install_bepinex},
-    detect::detect_for_install,
+    detect::{detect_for_install, InstallEnvironmentSnapshot},
     startup::InstallerContextState,
     steam::prepare_steam_for_config_update,
     vdf::{clear_launch_options_for_steam, SteamLaunchOptionsState},
@@ -15,21 +15,6 @@ use crate::services::{
 
 pub(crate) struct InstallRequest {
     pub(crate) game_path: String,
-}
-
-fn classify_payload(
-    bepinex_installed: bool,
-    installed_version: Option<&str>,
-    bundled_version: Option<&str>,
-) -> PayloadState {
-    if !bepinex_installed || installed_version.is_none() {
-        return PayloadState::Missing;
-    }
-    if bundled_version.is_none() || installed_version == bundled_version {
-        PayloadState::Current
-    } else {
-        PayloadState::Changed
-    }
 }
 
 pub(crate) async fn install(
@@ -55,19 +40,6 @@ pub(crate) async fn install(
                     .to_string(),
             );
         }
-        let facts = InstallPlanInputs {
-            launch_options_empty: before.steam_launch_options == SteamLaunchOptionsState::Empty,
-            requires_macos_bootstrap,
-            payload: classify_payload(
-                before.bepinex_installed,
-                before.bpp_version.as_deref(),
-                before.bundled_bpp_version.as_deref(),
-            ),
-            bootstrap_satisfied: !requires_macos_bootstrap
-                || (before.trampoline_current
-                    && before.steam_launch_options == SteamLaunchOptionsState::Empty
-                    && !before.obsolete_macos_artifacts_present),
-        };
         let mut effects = ProductionInstallEffects {
             resource_dir: task_app
                 .path()
@@ -77,7 +49,7 @@ pub(crate) async fn install(
             game_path: request.game_path.clone(),
         };
 
-        execute_and_refresh(facts, &mut effects, || {
+        execute_and_refresh(&before, &mut effects, || {
             let installer_state = task_app.state::<InstallerContextState>();
             build_install_state_raw(task_app.clone(), installer_state, Some(request.game_path))
         })
@@ -121,7 +93,7 @@ impl InstallEffects for ProductionInstallEffects {
 }
 
 fn execute_and_refresh<T>(
-    facts: InstallPlanInputs,
+    facts: &InstallEnvironmentSnapshot,
     effects: &mut impl InstallEffects,
     refresh: impl FnOnce() -> Result<T, String>,
 ) -> Result<T, String> {
@@ -151,39 +123,32 @@ mod tests {
         }
     }
 
-    fn facts(payload: PayloadState, bootstrap_satisfied: bool) -> InstallPlanInputs {
-        InstallPlanInputs {
-            requires_macos_bootstrap: true,
-            payload,
-            bootstrap_satisfied,
-            launch_options_empty: false,
+    fn facts(payload_current: bool, bootstrap_satisfied: bool) -> InstallEnvironmentSnapshot {
+        InstallEnvironmentSnapshot {
+            steam_path: Some("steam".into()),
+            game_path: None,
+            game_path_valid: false,
+            bepinex_installed: payload_current,
+            bpp_version: payload_current.then(|| "2".into()),
+            bundled_bpp_version: Some("2".into()),
+            steam_launch_options: if bootstrap_satisfied {
+                SteamLaunchOptionsState::Empty
+            } else {
+                SteamLaunchOptionsState::NonEmpty
+            },
+            trampoline_current: bootstrap_satisfied,
+            obsolete_macos_artifacts_present: false,
         }
     }
 
-    #[test]
-    fn payload_classification_covers_fresh_missing_changed_and_current() {
-        for (installed, installed_version, bundled_version, expected) in [
-            (false, None, Some("2"), PayloadState::Missing),
-            (true, None, Some("2"), PayloadState::Missing),
-            (true, Some("1"), Some("2"), PayloadState::Changed),
-            (true, Some("2"), Some("2"), PayloadState::Current),
-            (true, Some("2"), None, PayloadState::Current),
-        ] {
-            assert_eq!(
-                classify_payload(installed, installed_version, bundled_version),
-                expected
-            );
-        }
-    }
-
+    #[cfg(target_os = "macos")]
     #[test]
     fn complete_install_records_one_macos_bootstrap_then_returns_refreshed_outcome() {
         let mut recorder = Recorder::default();
 
-        let outcome =
-            execute_and_refresh(facts(PayloadState::Missing, false), &mut recorder, || {
-                Ok("state read back from disk")
-            });
+        let outcome = execute_and_refresh(&facts(false, false), &mut recorder, || {
+            Ok("state read back from disk")
+        });
 
         assert_eq!(outcome.unwrap(), "state read back from disk");
         assert_eq!(
@@ -201,36 +166,43 @@ mod tests {
 
     #[test]
     fn install_operation_covers_fresh_changed_current_and_bootstrap_repair_states() {
-        let fresh = facts(PayloadState::Missing, false);
-        let changed = facts(PayloadState::Changed, false);
-        let no_op = facts(PayloadState::Current, true);
-        let bootstrap_repair = facts(PayloadState::Current, false);
+        let fresh = facts(false, false);
+        let changed = InstallEnvironmentSnapshot {
+            bepinex_installed: true,
+            bpp_version: Some("1".into()),
+            ..facts(false, false)
+        };
+        let no_op = facts(true, true);
+        let bootstrap_repair = facts(true, false);
 
         for scenario in [fresh, changed] {
             let mut recorder = Recorder::default();
-            execute_and_refresh(scenario, &mut recorder, || Ok(())).unwrap();
+            execute_and_refresh(&scenario, &mut recorder, || Ok(())).unwrap();
             assert!(recorder.effects.contains(&InstallEffect::InstallBepInEx));
         }
 
         let mut recorder = Recorder::default();
-        execute_and_refresh(no_op, &mut recorder, || Ok(())).unwrap();
+        execute_and_refresh(&no_op, &mut recorder, || Ok(())).unwrap();
         assert!(recorder.effects.is_empty());
 
         let mut recorder = Recorder::default();
-        execute_and_refresh(bootstrap_repair, &mut recorder, || Ok(())).unwrap();
+        execute_and_refresh(&bootstrap_repair, &mut recorder, || Ok(())).unwrap();
         assert!(!recorder.effects.contains(&InstallEffect::InstallBepInEx));
-        assert!(recorder.effects.contains(&InstallEffect::InstallTrampoline));
+        assert_eq!(
+            recorder.effects.contains(&InstallEffect::InstallTrampoline),
+            cfg!(target_os = "macos")
+        );
     }
 
     #[test]
     fn complete_install_stops_on_first_error_and_does_not_refresh() {
         let mut recorder = Recorder {
-            fail_on: Some(InstallEffect::ClearLaunchOptions),
+            fail_on: Some(InstallEffect::InstallBepInEx),
             ..Recorder::default()
         };
         let mut refreshed = false;
 
-        let error = execute_and_refresh(facts(PayloadState::Missing, false), &mut recorder, || {
+        let error = execute_and_refresh(&facts(false, false), &mut recorder, || {
             refreshed = true;
             Ok(())
         })
@@ -239,16 +211,13 @@ mod tests {
         assert_eq!(error, "effect failed");
         assert!(!refreshed);
         assert_eq!(
-            recorder.effects,
-            vec![
-                InstallEffect::EnsureGameStopped,
-                InstallEffect::CloseSteam,
-                InstallEffect::InstallBepInEx,
-                InstallEffect::InstallTrampoline,
-                InstallEffect::RemoveObsoleteMacosArtifacts,
-                InstallEffect::ClearLaunchOptions,
-            ]
+            recorder.effects.last(),
+            Some(&InstallEffect::InstallBepInEx)
         );
+        assert!(!recorder.effects.contains(&InstallEffect::InstallTrampoline));
+        assert!(!recorder
+            .effects
+            .contains(&InstallEffect::ClearLaunchOptions));
     }
 }
 
@@ -359,18 +328,23 @@ mod fresh_install_acceptance {
         assert_eq!(options, SteamLaunchOptionsState::Empty);
         assert!(!game.join("BepInEx").exists());
         assert!(!macos.join("The Bazaar.orig").exists());
-        let facts = InstallPlanInputs {
-            requires_macos_bootstrap: true,
-            payload: classify_payload(false, None, Some("packaged")),
-            bootstrap_satisfied: false,
-            launch_options_empty: options == SteamLaunchOptionsState::Empty,
+        let facts = InstallEnvironmentSnapshot {
+            steam_path: Some(steam.to_string_lossy().into_owned()),
+            game_path: Some(game.to_string_lossy().into_owned()),
+            game_path_valid: true,
+            bepinex_installed: false,
+            bpp_version: None,
+            bundled_bpp_version: Some("packaged".into()),
+            steam_launch_options: options,
+            trampoline_current: false,
+            obsolete_macos_artifacts_present: false,
         };
         let mut effects = KeepSteamRunning(ProductionInstallEffects {
             resource_dir: resources.clone(),
             steam_path: steam.to_string_lossy().into_owned(),
             game_path: game.to_string_lossy().into_owned(),
         });
-        execute_and_refresh(facts, &mut effects, || {
+        execute_and_refresh(&facts, &mut effects, || {
             let mut archive = zip::ZipArchive::new(
                 std::fs::File::open(resources.join("BepInExSource/BepInEx.zip")).unwrap(),
             )

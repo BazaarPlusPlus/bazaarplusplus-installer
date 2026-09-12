@@ -1,6 +1,9 @@
 //! Private install planner: turns gathered facts into ordered effects.
 //! macOS has one bootstrap only: trampoline plus empty Steam launch options.
 
+use crate::services::detect::InstallEnvironmentSnapshot;
+use crate::services::vdf::SteamLaunchOptionsState;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(super) enum InstallEffect {
     /// Refuse to modify an active game installation.
@@ -17,42 +20,45 @@ pub(super) enum InstallEffect {
     RemoveObsoleteMacosArtifacts,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(super) enum PayloadState {
-    Missing,
-    Changed,
-    Current,
+pub(super) fn plan_install(env: &InstallEnvironmentSnapshot) -> Vec<InstallEffect> {
+    plan_install_for_platform(env, cfg!(target_os = "macos"))
 }
 
-#[derive(Debug, Clone, Copy)]
-pub(super) struct InstallPlanInputs {
-    pub requires_macos_bootstrap: bool,
-    pub payload: PayloadState,
-    pub bootstrap_satisfied: bool,
-    pub launch_options_empty: bool,
-}
-
-pub(super) fn plan_install(inputs: InstallPlanInputs) -> Vec<InstallEffect> {
-    if inputs.payload == PayloadState::Current && inputs.bootstrap_satisfied {
+fn plan_install_for_platform(
+    env: &InstallEnvironmentSnapshot,
+    requires_macos_bootstrap: bool,
+) -> Vec<InstallEffect> {
+    let payload_current = env.bepinex_installed
+        && env.bpp_version.as_ref().is_some_and(|installed| {
+            env.bundled_bpp_version
+                .as_ref()
+                .is_none_or(|bundled| installed == bundled)
+        });
+    let launch_options_empty = env.steam_launch_options == SteamLaunchOptionsState::Empty;
+    let bootstrap_ready = !requires_macos_bootstrap
+        || (env.trampoline_current
+            && launch_options_empty
+            && !env.obsolete_macos_artifacts_present);
+    if payload_current && bootstrap_ready {
         return Vec::new();
     }
 
     let mut steps = Vec::new();
-    if inputs.requires_macos_bootstrap {
+    if requires_macos_bootstrap {
         steps.push(InstallEffect::EnsureGameStopped);
-        if !inputs.launch_options_empty {
+        if !launch_options_empty {
             steps.push(InstallEffect::CloseSteam);
         }
     }
-    if inputs.payload != PayloadState::Current {
+    if !payload_current {
         steps.push(InstallEffect::InstallBepInEx);
     }
-    if inputs.requires_macos_bootstrap {
+    if requires_macos_bootstrap {
         steps.extend([
             InstallEffect::InstallTrampoline,
             InstallEffect::RemoveObsoleteMacosArtifacts,
         ]);
-        if !inputs.launch_options_empty {
+        if !launch_options_empty {
             steps.push(InstallEffect::ClearLaunchOptions);
         }
     }
@@ -61,67 +67,70 @@ pub(super) fn plan_install(inputs: InstallPlanInputs) -> Vec<InstallEffect> {
 
 #[cfg(test)]
 mod tests {
+    use super::super::install_state_from_snapshot;
     use super::*;
+
     #[test]
-    fn empty_launch_options_keep_steam_running_for_install_update_and_repair() {
-        for payload in [
-            PayloadState::Missing,
-            PayloadState::Changed,
-            PayloadState::Current,
+    fn detected_facts_drive_readiness_and_effects_on_both_platforms() {
+        use InstallEffect::*;
+        use SteamLaunchOptionsState::*;
+
+        for (installed, version, bundled, payload_current) in [
+            (false, None, Some("2"), false),
+            (false, Some("2"), Some("2"), false),
+            (true, None, Some("2"), false),
+            (true, None, None, false),
+            (true, Some("1"), Some("2"), false),
+            (true, Some("2"), Some("2"), true),
+            (true, Some("2"), None, true),
         ] {
-            let steps = plan_install(InstallPlanInputs {
-                requires_macos_bootstrap: true,
-                payload,
-                bootstrap_satisfied: false,
-                launch_options_empty: true,
-            });
-            assert_eq!(steps.first(), Some(&InstallEffect::EnsureGameStopped));
-            assert!(!steps.contains(&InstallEffect::CloseSteam));
-            assert!(!steps.contains(&InstallEffect::ClearLaunchOptions));
-            assert!(steps.contains(&InstallEffect::InstallTrampoline));
-            assert_eq!(
-                steps.contains(&InstallEffect::InstallBepInEx),
-                payload != PayloadState::Current
-            );
+            for (trampoline, options, obsolete, bootstrap_ready) in [
+                (true, Empty, false, true),
+                (false, Empty, false, false),
+                (true, NonEmpty, false, false),
+                (true, Unavailable, false, false),
+                (true, Empty, true, false),
+            ] {
+                let env = InstallEnvironmentSnapshot {
+                    steam_path: Some("steam".into()),
+                    game_path: None,
+                    game_path_valid: false,
+                    bepinex_installed: installed,
+                    bpp_version: version.map(str::to_owned),
+                    bundled_bpp_version: bundled.map(str::to_owned),
+                    steam_launch_options: options,
+                    trampoline_current: trampoline,
+                    obsolete_macos_artifacts_present: obsolete,
+                };
+                for macos in [false, true] {
+                    let ready = payload_current && (!macos || bootstrap_ready);
+                    let steps = plan_install_for_platform(&env, macos);
+                    assert_eq!(steps.is_empty(), ready, "{env:?}, macos={macos}");
+                    assert_eq!(steps.contains(&InstallBepInEx), !payload_current);
+                    assert_eq!(steps.contains(&InstallTrampoline), macos && !ready);
+                    assert_eq!(
+                        steps.contains(&RemoveObsoleteMacosArtifacts),
+                        macos && !ready
+                    );
+                    assert_eq!(steps.contains(&CloseSteam), macos && options != Empty);
+                    assert_eq!(
+                        steps.contains(&ClearLaunchOptions),
+                        macos && options != Empty
+                    );
+                    if macos && !ready {
+                        assert_eq!(steps.first(), Some(&EnsureGameStopped));
+                    } else if !macos && !ready {
+                        assert_eq!(steps, vec![InstallBepInEx]);
+                    }
+                    if macos == cfg!(target_os = "macos") {
+                        assert_eq!(
+                            install_state_from_snapshot(env.clone()).mod_state.ready,
+                            ready,
+                            "{env:?}"
+                        );
+                    }
+                }
+            }
         }
-    }
-    #[test]
-    fn legacy_launch_options_require_steam_exit_before_mutation() {
-        let steps = plan_install(InstallPlanInputs {
-            requires_macos_bootstrap: true,
-            payload: PayloadState::Missing,
-            bootstrap_satisfied: false,
-            launch_options_empty: false,
-        });
-        assert_eq!(
-            steps,
-            vec![
-                InstallEffect::EnsureGameStopped,
-                InstallEffect::CloseSteam,
-                InstallEffect::InstallBepInEx,
-                InstallEffect::InstallTrampoline,
-                InstallEffect::RemoveObsoleteMacosArtifacts,
-                InstallEffect::ClearLaunchOptions
-            ]
-        );
-    }
-    #[test]
-    fn current_install_is_noop_and_windows_only_updates_payload() {
-        assert!(plan_install(InstallPlanInputs {
-            requires_macos_bootstrap: true,
-            payload: PayloadState::Current,
-            bootstrap_satisfied: true,
-            launch_options_empty: true
-        })
-        .is_empty());
-        assert_eq!(
-            plan_install(InstallPlanInputs {
-                requires_macos_bootstrap: false,
-                payload: PayloadState::Missing,
-                bootstrap_satisfied: true,
-                launch_options_empty: true
-            }),
-            vec![InstallEffect::InstallBepInEx]
-        );
     }
 }

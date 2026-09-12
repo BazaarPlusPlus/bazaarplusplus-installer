@@ -60,8 +60,8 @@ export default function RunDetail() {
     RunDetailProblem
   >();
   const pendingDelete = deleteOperation.state?.target ?? null;
-  const screenshotAvailability = page.availability('screenshot');
-  const screenshotFailure = page.problemFor('screenshot');
+  const screenshotAvailability = page.screenshot;
+  const screenshotFailure = page.screenshot.problem;
 
   const confirmDelete = () =>
     deleteOperation.controller.run(
@@ -195,7 +195,7 @@ export default function RunDetail() {
 
             {screenshotFailure && (
               <RunDetailProblemBanner
-                problem={screenshotFailure.problem}
+                problem={screenshotFailure}
                 onRetry={() => void page.revealScreenshot()}
               />
             )}
@@ -392,11 +392,11 @@ function BattleRow({
 }) {
   const { locale, t } = useI18n();
   const battleResult = formatBattleResult(battle.result);
-  const videoAction = `video:${battle.battle_id}` as const;
-  const deleteAction = `delete:${battle.battle_id}` as const;
-  const videoAvailability = page.availability(videoAction);
-  const deleteAvailability = page.availability(deleteAction);
-  const failure = page.problemFor(`battle:${battle.battle_id}`);
+  const {
+    reveal: videoAvailability,
+    delete: deleteAvailability,
+    failure
+  } = page.battles[battle.battle_id];
   const actionLabel = (action: string) =>
     t('battleVideoActionLabel', {
       action,
@@ -406,7 +406,7 @@ function BattleRow({
 
   const retryFailure = () => {
     if (!battle.video || !failure) return;
-    if (failure.action === videoAction) {
+    if (failure.action === 'reveal') {
       void page.revealVideo(battle.battle_id, battle.video.video_id);
       return;
     }
