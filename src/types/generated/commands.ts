@@ -165,7 +165,6 @@ export type InstallActions = {
 export type InstallGameState = {
 	found: boolean,
 	path_valid: boolean,
-	display_version: string | null,
 };
 
 export type InstallModState = {
